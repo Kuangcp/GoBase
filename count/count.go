@@ -7,10 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 )
-// 汉字以及中文标点 Unicode : 0x4E00 - 0x9FA5 
-// 该程序只对 UTF-8 编码的文件保证统计正确
+// WARN: 该程序只对 采用 UTF-8 编码的文件保证统计正确
 
-// TODO 去除中文标点
 // TODO 分析用字的数据, 得到一个统计报表
 
 var totalFile int = 0
@@ -41,7 +39,8 @@ func readfile(fileName string){
 	}
 	var total int = showchar(content)
 	// fmt.Println("\n ", fileName, " total char : ", total)
-	fmt.Println(fileName, " total char : ", total)
+	// fmt.Println(fileName, " -> chinese char : ", total)
+	fmt.Printf("%-60v -> chinese char = \033[0;32m %v \033[0m \n", fileName, total)
 	totalFile += total
 }
 func showchar(origin []byte) int{
@@ -49,13 +48,11 @@ func showchar(origin []byte) int{
 	temp := [3]byte{}
 	var count int = 0
 	for _, item := range origin {
-
-		// 满足 110xxxxx
-		if count == 0 && item >= 224 && item <= 239{
+		// 满足 110xxxxx 4e00 9fa5  头部分别为 0100 1001 
+		if count == 0 && item >= 228 && item <= 233{
 			temp[count] = item
 			count++
 		}
-		
 		// 满足 10xxxxxx
 		if count != 0 && item >= 128 && item <= 191{
 			temp[count] = item 
@@ -73,5 +70,6 @@ func showchar(origin []byte) int{
 
 func main() {
 	filepath.Walk("./", walkfunc)
-	fmt.Println("\nall file char : ", totalFile)
+	fmt.Println()
+	fmt.Println("all file chinese char : ", totalFile)
 }

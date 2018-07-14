@@ -1,6 +1,6 @@
 # 忽略所有文件然后加入 go
 
-*.*
+# *.*
 !*.go
 
 # Binaries for programs and plugins
