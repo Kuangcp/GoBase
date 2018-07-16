@@ -18,15 +18,40 @@ var println = fmt.Println
 
 // 往递归遍历目录 作为参数传入的函数 
 func handlerDir(path string, info os.FileInfo, err error) error {
+	println("path > ", path)
+	var ignoreDirList = [...]string{
+		".git",
+		".svn",
+		".vscode",
+		".idea",
+		".gradle",
+		"out",
+		"build",
+		"target",		
+		"log",
+		"logs",
+		"__pycache__",
+	}
 	if(info.IsDir()){
+		for _, dir := range ignoreDirList {
+			if path == dir {
+				return filepath.SkipDir
+			}
+		}
 		return nil
 	}
-	var ignoreList = [...]string{
+	var handleFileList = [...]string{
 		".md",
 		".markdown", 
 		".txt", 
+		".java",
+		".groovy",
+		".go",
+		".c",
+		".cpp",
+		".py",
 	}
-	for _, fileType := range ignoreList {
+	for _, fileType := range handleFileList {
 		if strings.HasSuffix(path, fileType) {
 			readfile(path)
 			return nil
