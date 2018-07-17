@@ -12,13 +12,13 @@ import (
 // TODO 分析用字的数据, 得到一个统计报表
 
 var totalFile int = 0
-var wordDetail bool = false
+var wordDetail int = 0 // 默认 0 输出路径 1,所有字, 2, 只有统计
 var printf = fmt.Printf
 var println = fmt.Println
 
 // 往递归遍历目录 作为参数传入的函数 
 func handlerDir(path string, info os.FileInfo, err error) error {
-	println("path > ", path)
+	// println("path > ", path)
 	var ignoreDirList = [...]string{
 		".git",
 		".svn",
@@ -75,7 +75,7 @@ func readfile(fileName string){
 	}
 	var total int = countChineseChar(content)
 	// printf("%-50v-> chinese char =\033[0;32m %v\033[0m \n", fileName, total)
-	if !wordDetail{
+	if wordDetail == 0{
 		printf(">\033[0;32m %-5v\033[0m %v\n", total, fileName)
 	}
 	totalFile += total
@@ -98,7 +98,7 @@ func countChineseChar(origin []byte) int{
 		}
 		if count == 3 {
 			// fmt.Println("ch char : ", temp, string(temp[0:3]))
-			if wordDetail {
+			if wordDetail == 1{
 				printf(string(temp[0:3]))
 			}
 			total ++
@@ -120,7 +120,10 @@ func handlerArgs(verb string, param string){
 			printf(format, "-w", "", "输出所有汉字")
 			os.Exit(0)
 		case "-w":
-			wordDetail = true
+			wordDetail = 1
+			break
+		case "-s":
+			wordDetail = 2
 			break
 	}
 }
