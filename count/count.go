@@ -118,6 +118,7 @@ func handlerArgs(verb string, param string){
 			var format string = "%-5v %-10v %v \n"
 			printf(format, "-h", "", "帮助")
 			printf(format, "-w", "", "输出所有汉字")
+			printf(format, "-s", "", "简洁输出总字数")
 			os.Exit(0)
 		case "-w":
 			wordDetail = 1
