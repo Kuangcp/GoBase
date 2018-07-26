@@ -27,7 +27,7 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 		".gradle",
 		"out",
 		"build",
-		"target",		
+		"target",
 		"log",
 		"logs",
 		"__pycache__",
@@ -42,8 +42,8 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 	}
 	var handleFileList = [...]string{
 		".md",
-		".markdown", 
-		".txt", 
+		".markdown",
+		".txt",
 		".java",
 		".groovy",
 		".go",
@@ -76,7 +76,7 @@ func readfile(fileName string){
 	var total int = countChineseChar(content)
 	// printf("%-50v-> chinese char =\033[0;32m %v\033[0m \n", fileName, total)
 	if wordDetail == 0{
-		printf(">\033[0;32m %-5v\033[0m %v\n", total, fileName)
+		printf("%-5v \033[0;32m%-5v\033[0m %v \n", total, total, fileName)
 	}
 	totalFile += total
 }
