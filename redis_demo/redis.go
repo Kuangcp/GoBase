@@ -16,13 +16,12 @@ func ExampleNewClient() {
 
 	pong, err := client.Ping().Result()
 	fmt.Println(pong, err)
-	// Output: PONG <nil>
 
 	ExampleClient(client)
 }
 
 func ExampleClient(client *redis.Client) {
-	err := client.Set("key", "value", 0).Err()
+	err := client.Set("key", "go set", 0).Err()
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +30,7 @@ func ExampleClient(client *redis.Client) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("get : key", val)
+	fmt.Println("get : key=", val)
 
 	val2, err := client.Get("key2").Result()
 	if err == redis.Nil {
@@ -41,6 +40,4 @@ func ExampleClient(client *redis.Client) {
 	} else {
 		fmt.Println("key2", val2)
 	}
-	// Output: key value
-	// key2 does not exist
 }

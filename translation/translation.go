@@ -12,7 +12,7 @@ var printf = fmt.Printf
 var println = fmt.Println
 
 func handlerArgs(verb string) {
-	sendYoudaoEntoZh(verb)
+	sendYoudaoEnToZh(verb)
 }
 func sendGet(url string) []byte {
 	resp, err := http.Get(url)
@@ -37,7 +37,7 @@ func readConfig() string {
 
 // TODO 同样的参数做正则检验
 // https://ai.youdao.com/docs/doc-trans-api.s#p01
-func sendYoudaoEntoZh(word string) {
+func sendYoudaoEnToZh(word string) {
 	var url = readConfig()
 	body := sendGet(url + word)
 	type web struct {

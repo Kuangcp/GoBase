@@ -1,7 +1,8 @@
-# 忽略所有文件然后加入 go
-
 # *.*
 !*.go
+
+.idea/
+*.iml
 
 # Binaries for programs and plugins
 *.exe
