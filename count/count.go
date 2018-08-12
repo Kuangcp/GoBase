@@ -6,14 +6,16 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"strconv"
 	"github.com/go-redis/redis"
 )
 
 // WARN: 该程序只对 采用 UTF-8 编码的文件保证统计正确
 
 var totalFile = 0
-var wordDetail = 0 // 默认 0:输出路径, 1:所有字, 2:只有统计 3 分析
+var wordDetail = 0 // 默认 0:输出路径, 1:所有字, 2:只有统计 3 统计加分析
 var printf = fmt.Printf
+var analysisKey = "total_char_rank"
 
 var green = "\033[0;32m"
 var yellow = "\033[0;33m"
@@ -43,16 +45,20 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 		}
 		return nil
 	}
+	return handleFile(path)
+}
+
+func handleFile(filename string) error {
 	var handleFileList = [...]string{
 		".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
 	}
 	for _, fileType := range handleFileList {
-		if strings.HasSuffix(path, fileType) {
+		if strings.HasSuffix(filename, fileType) {
 			if wordDetail == 3 {
-				param := []string{"", "", path, "a"}
+				param := []string{"", "", filename, analysisKey}
 				analysisTotalChar(param)
 			} else {
-				countNumByFile(path)
+				countNumByFile(filename)
 			}
 			return nil
 		}
@@ -122,71 +128,92 @@ func countChineseChar(origin []byte, countChar func(string, string), keyName str
 	return total
 }
 
-// TODO 分析 所有汉字
 func analysisTotalChar(params []string) {
 	fileName := params[2]
 	keyName := params[3]
 	fileAsBytes := readFileAsBytes(fileName)
-	countChineseChar(fileAsBytes, addCharNum, keyName)
+	countChineseChar(fileAsBytes, increaseCharNum, keyName)
 }
 
-func addCharNum(keyName string, CNChar string) {
+func increaseCharNum(keyName string, CNChar string) {
 	result, e := client.ZIncrBy(keyName, 1, CNChar).Result()
 	if e == redis.Nil {
 		println(result)
 	}
 }
 
-// 读取参数, 设置全局变量的值
-func handlerArgs(verb string, param []string) {
-	switch verb {
-	case "-h":
-		var format = "%-5v %-10v %v \n"
-		printf(format, "-h", "", "帮助")
-		printf(format, "-w", "", "输出所有汉字")
-		printf(format, "-s", "", "简洁输出总字数")
-		os.Exit(0)
-	case "-w":
-		wordDetail = 1
-		break
-	case "-s":
-		wordDetail = 2
-		break
-	case "-a":
-		if len(param) < 4 {
-			println("please input all param: filename, keyName")
-			os.Exit(1)
-		}
-		analysisTotalChar(param)
-		os.Exit(0)
-	case "-al":
-		wordDetail = 3
-		break
+func showCharRank(start int64, stop int64) {
+	result, e := client.ZRevRangeWithScores(analysisKey, start, stop).Result()
+	if e != nil {
+		println("occur error ")
+		return
 	}
-
+	for _, a := range result {
+		printf("%-6v -> %v \n", a.Score, a.Member)
+	}
 }
 
-func main() {
-	// 递归遍历目录
-	var argLen = len(os.Args)
-	//printf("len of args:%d\n", argLen)
-	//for i, v := range os.Args {
-	//	printf("args[%d]=%s\n", i, v)
-	//}
+func help(){
+	var format = "%-5v %-10v %v \n"
+	printf(format, "-h", "", "帮助")
+	printf(format, "-w", "", "输出所有汉字")
+	printf(format, "-s", "", "简洁输出总字数")
+	printf(format, "-all", "", "统计字数,列出排行")
+	printf(format, "-del", "", "删除排行数据")
+	printf(format, "-show", "start stop", "近列出排行(redis中的 zset 结构)")
+}
 
-	if argLen == 2 {
-		handlerArgs(os.Args[1], nil)
+// 参数构成: 0 文件 1 参数 2 参数
+func main() {
+	param := os.Args
+	if len(param) > 1 {
+		verb := param[1]
+		switch verb {
+		case "-h":
+			help()
+			return
+		case "-w":
+			wordDetail = 1
+			break
+		case "-s":
+			wordDetail = 2
+			break
+		case "-a":
+			if len(param) < 4 {
+				println("please input all param: filename, keyName")
+				os.Exit(1)
+			}
+			analysisTotalChar(param)
+			return
+		case "-all":
+			wordDetail = 3
+			break
+		case "-show":
+			if len(param) < 4 {
+				println("please input all param: start, stop")
+				os.Exit(1)
+			}
+			start, err1 := strconv.ParseInt(param[2], 10, 64)
+			stop, err2 := strconv.ParseInt(param[3], 10, 64)
+			if err1 != nil || err2 != nil {
+				println("please input correct param: start, stop")
+				os.Exit(1)
+			}
+
+			showCharRank(start, stop)
+			os.Exit(0)
+		case "-del":
+			client.Del(analysisKey)
+			return
+		}
 	}
-	if argLen > 2 {
-		handlerArgs(os.Args[1], os.Args)
-	}
+
+	// 递归遍历目录
 	filepath.Walk("./", handlerDir)
 	printf("\n %v Total characters of all files : %v %v %v \n", purple, yellow, totalFile, end)
 
-	if wordDetail == 3 {
-		result, e := client.ZRevRangeWithScores("a", 0, 100).Result()
-		for _, a := range result {
-			printf("%6v-%v %v \n", a.Score, a.Member, e)
-		}
+	if wordDetail != 3 {
+		return
 	}
+	showCharRank(0, 10)
 }
