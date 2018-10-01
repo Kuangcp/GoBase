@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
+	"os"
 	"path/filepath"
-	"strings"
 	"strconv"
+	"strings"
+
 	"github.com/go-redis/redis"
 )
 
@@ -28,7 +29,7 @@ var client = redis.NewClient(&redis.Options{
 	DB:       0,  // use default DB
 })
 
-// 往递归遍历目录 作为参数传入的函数 
+// 往递归遍历目录 作为参数传入的函数
 func handlerDir(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		fmt.Println("occur error: ", err)
@@ -121,7 +122,7 @@ func countChineseChar(origin []byte, countChar func(string, string), keyName str
 			if countChar != nil {
 				countChar(keyName, string(temp[0:3]))
 			}
-			total ++
+			total++
 			count = 0
 		}
 	}
@@ -153,7 +154,7 @@ func showCharRank(start int64, stop int64) {
 	}
 }
 
-func help(){
+func help() {
 	var format = "%-5v %-10v %v \n"
 	printf(format, "-h", "", "帮助")
 	printf(format, "-w", "", "输出所有汉字")
@@ -199,7 +200,6 @@ func main() {
 				println("please input correct param: start, stop")
 				os.Exit(1)
 			}
-
 			showCharRank(start, stop)
 			os.Exit(0)
 		case "-del":
