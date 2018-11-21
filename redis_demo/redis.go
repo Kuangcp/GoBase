@@ -1,12 +1,16 @@
 package main
 
 import (
-	"github.com/go-redis/redis"
 	"fmt"
+
+	"github.com/go-redis/redis"
 )
-func main()  {
+
+func main() {
 	ExampleNewClient()
 }
+
+// ExampleNewClient new
 func ExampleNewClient() {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "127.0.0.1:6666",
