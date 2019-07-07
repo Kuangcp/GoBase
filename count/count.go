@@ -35,7 +35,8 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 	var ignoreDirList = [...]string{
-		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__",
+		".git", ".svn", ".vscode", ".idea", ".gradle", 
+		"out", "build", "target", "log", "logs", "__pycache__",
 	}
 	if info.IsDir() {
 		for _, dir := range ignoreDirList {
