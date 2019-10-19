@@ -1,4 +1,4 @@
-module redistransdata
+module syncredis
 
 go 1.13
 
