@@ -24,6 +24,7 @@ func ExampleNewClient() {
 	ExampleClient(client)
 }
 
+// ExampleClient client
 func ExampleClient(client *redis.Client) {
 	err := client.Set("key", "go set", 0).Err()
 	if err != nil {
