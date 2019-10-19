@@ -1,4 +1,4 @@
-module redis-trans-data
+module redistransdata
 
 go 1.13
 

@@ -11,7 +11,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
-// WARN: 该程序只对 采用 UTF-8 编码的文件保证统计正确
+// WARN: 只对 采用 UTF-8 编码的文件保证统计正确
 
 var totalFile = 0
 var wordDetail = 0 // 默认 0:输出路径, 1:所有字, 2:只有统计 3 统计加分析
@@ -24,12 +24,12 @@ var purple = "\033[0;35m"
 var end = "\033[0m"
 
 var client = redis.NewClient(&redis.Options{
-	Addr:     "127.0.0.1:6666",
+	Addr:     "127.0.0.1:6667",
 	Password: "", // no password set
 	DB:       0,  // use default DB
 })
 
-// 往递归遍历目录 作为参数传入的函数
+// 递归遍历目录 被内部模块回调
 func handlerDir(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		fmt.Println("occur error: ", err)
@@ -50,6 +50,7 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 	return handleFile(path)
 }
 
+// 处理文件
 func handleFile(filename string) error {
 	var handleFileList = [...]string{
 		".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
@@ -137,6 +138,7 @@ func analysisTotalChar(params []string) {
 	countChineseChar(fileAsBytes, increaseCharNum, keyName)
 }
 
+// increase count in redis
 func increaseCharNum(keyName string, CNChar string) {
 	result, e := client.ZIncrBy(keyName, 1, CNChar).Result()
 	if e == redis.Nil {
@@ -147,7 +149,7 @@ func increaseCharNum(keyName string, CNChar string) {
 func showCharRank(start int64, stop int64) {
 	result, e := client.ZRevRangeWithScores(analysisKey, start, stop).Result()
 	if e != nil {
-		println("occur error ")
+		println("error: ", e)
 		return
 	}
 	for _, a := range result {
@@ -166,9 +168,9 @@ func help() {
 	printParam("-h", "", "帮助")
 	printParam("-w", "", "输出所有汉字")
 	printParam("-s", "", "简洁输出总字数")
-	printParam("-all", "", "统计字数,列出排行")
-	printParam("-del", "", "删除排行数据")
-	printParam("-show", "start stop", "近列出排行(redis中的 zset 结构)")
+	printParam("-all", "", "统计字数 列出排行, 存入 redis")
+	printParam("-del", "", "删除 redis 排行数据")
+	printParam("-show", "start stop", "近列出排行, 读取 redis中的 zset 结构")
 }
 
 // 参数构成: 0 文件 1 参数 2 参数
