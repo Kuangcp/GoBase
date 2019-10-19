@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
 	"github.com/go-redis/redis"
 )
 
@@ -35,7 +36,7 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 	var ignoreDirList = [...]string{
-		".git", ".svn", ".vscode", ".idea", ".gradle", 
+		".git", ".svn", ".vscode", ".idea", ".gradle",
 		"out", "build", "target", "log", "logs", "__pycache__",
 	}
 	if info.IsDir() {
@@ -154,20 +155,20 @@ func showCharRank(start int64, stop int64) {
 	}
 }
 
-func printParam(verb string, param string, comment string){
+func printParam(verb string, param string, comment string) {
 	var format = "   %v %-5v %v %-10v %v %v\n"
 	printf(format, green, verb, yellow, param, end, comment)
 }
 
 func help() {
 	printf("  count %v <verb> %v <param> \n", green, yellow)
-	printParam( "", "", "遍历并统计所有文件汉字数")
-	printParam( "-h", "", "帮助")
-	printParam( "-w", "", "输出所有汉字")
-	printParam( "-s", "", "简洁输出总字数")
-	printParam( "-all", "", "统计字数,列出排行")
-	printParam( "-del", "", "删除排行数据")
-	printParam( "-show", "start stop", "近列出排行(redis中的 zset 结构)")
+	printParam("", "", "遍历并统计所有文件汉字数")
+	printParam("-h", "", "帮助")
+	printParam("-w", "", "输出所有汉字")
+	printParam("-s", "", "简洁输出总字数")
+	printParam("-all", "", "统计字数,列出排行")
+	printParam("-del", "", "删除排行数据")
+	printParam("-show", "start stop", "近列出排行(redis中的 zset 结构)")
 }
 
 // 参数构成: 0 文件 1 参数 2 参数
