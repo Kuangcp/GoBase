@@ -190,7 +190,7 @@ func showAllCNChar(handleCNChar func(string), showFileInfo bool) {
 	}
 	println()
 	log.Printf("Total characters. files: %v%v%v chars: %v%v%v\n",
-		yellow, totalFile, end, purple, totalCNChar, end)
+		yellow, totalFile, end, yellow, totalCNChar, end)
 }
 
 // 参数构成: 0 文件 1 参数 2 参数
