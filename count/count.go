@@ -1,8 +1,10 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,31 +16,42 @@ import (
 // WARN: 只对 采用 UTF-8 编码的文件保证统计正确
 
 var totalFile = 0
-var wordDetail = 0 // 默认 0:输出路径, 1:所有字, 2:只有统计 3 统计加分析
-var printf = fmt.Printf
-var analysisKey = "total_char_rank"
+var totalCNChar = 0
+var fileList = list.New()
 
+var printf = fmt.Printf
 var green = "\033[0;32m"
 var yellow = "\033[0;33m"
 var purple = "\033[0;35m"
 var end = "\033[0m"
 
-var client = redis.NewClient(&redis.Options{
-	Addr:     "127.0.0.1:6667",
-	Password: "", // no password set
-	DB:       0,  // use default DB
-})
+var charRankKey = "total_char_rank"
 
-// 递归遍历目录 被内部模块回调
+var ignoreDirList = [...]string{
+	".git", ".svn", ".vscode", ".idea", ".gradle",
+	"out", "build", "target", "log", "logs", "__pycache__",
+}
+var handleFileList = [...]string{
+	".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
+}
+
+var client *redis.Client
+
+func initRedisClient() {
+	client = redis.NewClient(&redis.Options{
+		Addr:     "127.0.0.1:6666",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+}
+
+// 递归遍历目录
 func handlerDir(path string, info os.FileInfo, err error) error {
 	if err != nil {
 		fmt.Println("occur error: ", err)
 		return nil
 	}
-	var ignoreDirList = [...]string{
-		".git", ".svn", ".vscode", ".idea", ".gradle",
-		"out", "build", "target", "log", "logs", "__pycache__",
-	}
+
 	if info.IsDir() {
 		for _, dir := range ignoreDirList {
 			if path == dir {
@@ -47,61 +60,54 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 		}
 		return nil
 	}
-	return handleFile(path)
-}
-
-// 处理文件
-func handleFile(filename string) error {
-	var handleFileList = [...]string{
-		".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
-	}
-	for _, fileType := range handleFileList {
-		if strings.HasSuffix(filename, fileType) {
-			if wordDetail == 3 {
-				param := []string{"", "", filename, analysisKey}
-				analysisTotalChar(param)
-			} else {
-				countNumByFile(filename)
-			}
-			return nil
-		}
-	}
+	fileList.PushBack(path)
 	return nil
 }
 
-func readFileAsBytes(fileName string) []byte {
+func isNeedHandle(filename string) bool {
+	for _, fileType := range handleFileList {
+		if strings.HasSuffix(filename, fileType) {
+			return true
+		}
+	}
+	return false
+}
+
+func readFileToBytes(fileName string) []byte {
 	file, err := os.Open(fileName)
 	if err != nil {
-		fmt.Println("error: ", err)
+		log.Println("error: ", err)
 		return nil
 	}
 	defer file.Close()
 	//读取文件全部内容
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println("occur error: ", err)
+		log.Println("occur error: ", err)
 		return nil
 	}
 	return content
 }
 
-// 根据文件路径读取文件字节
-func countNumByFile(fileName string) {
-	var content = readFileAsBytes(fileName)
-	var total = countChineseChar(content, nil, "")
-	// printf("%-50v-> chinese char =\033[0;32m %v\033[0m \n", fileName, total)
-	if wordDetail == 0 {
-		printf("%-5v %v %-5v %v %v \n", total, green, total, end, fileName)
+// increase count in redis
+func increaseCharNum(CNChar string) {
+	result, e := client.ZIncrBy(charRankKey, 1, CNChar).Result()
+	if e == redis.Nil {
+		println(result)
 	}
-	totalFile += total
+}
+
+func showChar(CNChar string) {
+	printf(CNChar)
 }
 
 // 根据字节流  统计中文字符
-func countChineseChar(origin []byte, countChar func(string, string), keyName string) int {
-	var total = 0
-	temp := [3]byte{}
+func handleFile(fileName string, handleCNChar func(string)) int {
+	bytes := readFileToBytes(fileName)
+	var totalChar = 0
 	var count = 0
-	for _, item := range origin {
+	temp := [3]byte{}
+	for _, item := range bytes {
 		// 首字节 满足 110xxxxx [4e00,9fa5]  字节的头部分别为 0100 1001
 		if count == 0 && item >= 228 && item <= 233 {
 			temp[count] = item
@@ -116,113 +122,141 @@ func countChineseChar(origin []byte, countChar func(string, string), keyName str
 			count = 0
 			continue
 		}
-		// 满了三个字节, 就可以确定为一个汉字了
+		// 缓存满了三个字节, 就可以确定为一个汉字了
 		if count == 3 {
-			if wordDetail == 1 {
-				printf(string(temp[0:3]))
+			if handleCNChar != nil {
+				handleCNChar(string(temp[0:3]))
 			}
-			if countChar != nil {
-				countChar(keyName, string(temp[0:3]))
-			}
-			total++
+			totalChar++
 			count = 0
 		}
 	}
-	return total
-}
-
-func analysisTotalChar(params []string) {
-	fileName := params[2]
-	keyName := params[3]
-	fileAsBytes := readFileAsBytes(fileName)
-	countChineseChar(fileAsBytes, increaseCharNum, keyName)
-}
-
-// increase count in redis
-func increaseCharNum(keyName string, CNChar string) {
-	result, e := client.ZIncrBy(keyName, 1, CNChar).Result()
-	if e == redis.Nil {
-		println(result)
-	}
+	return totalChar
 }
 
 func showCharRank(start int64, stop int64) {
-	result, e := client.ZRevRangeWithScores(analysisKey, start, stop).Result()
+	result, e := client.ZRevRangeWithScores(charRankKey, start, stop).Result()
 	if e != nil {
 		println("error: ", e)
 		return
 	}
 	for _, a := range result {
-		printf("%-6v -> %v \n", a.Score, a.Member)
+		printf("%-6v %v->%v %v \n", a.Score, green, end, a.Member)
 	}
 }
 
 func printParam(verb string, param string, comment string) {
-	var format = "   %v %-5v %v %-10v %v %v\n"
+	var format = "   %v %-5v %v %-15v %v %v\n"
 	printf(format, green, verb, yellow, param, end, comment)
 }
 
 func help() {
 	printf("  count %v <verb> %v <param> \n", green, yellow)
-	printParam("", "", "遍历并统计所有文件汉字数")
 	printParam("-h", "", "帮助")
+	printParam("", "", "遍历并统计所有文件汉字数")
 	printParam("-w", "", "输出所有汉字")
 	printParam("-s", "", "简洁输出总字数")
-	printParam("-all", "", "统计字数 列出排行, 存入 redis")
+	printParam("-a", "file redisKey", "统计单个文件字数, 存入 redis")
+	printParam("-all", "showNum", "统计字数 列出排行, 存入 redis")
 	printParam("-del", "", "删除 redis 排行数据")
 	printParam("-show", "start stop", "近列出排行, 读取 redis中的 zset 结构")
+}
+
+func countWithRedis() {
+	// 递归遍历目录 读取所有文件
+	filepath.Walk("./", handlerDir)
+	for e := fileList.Front(); e != nil; e = e.Next() {
+		fileName := e.Value.(string)
+		if isNeedHandle(fileName) {
+			handleFile(fileName, increaseCharNum)
+		}
+	}
+}
+
+func showAllCNChar(handleCNChar func(string), showFileInfo bool) {
+	printf("%v%-3v %-5v %-5v %v%v\n", yellow, "No", "Total", "Cur", "File", end)
+	filepath.Walk("./", handlerDir)
+	for e := fileList.Front(); e != nil; e = e.Next() {
+		fileName := e.Value.(string)
+		if isNeedHandle(fileName) {
+			totalFile++
+			var total = 0
+			total = handleFile(fileName, handleCNChar)
+			totalCNChar += total
+			if showFileInfo {
+				printf("%-3v %-5v %v%-5v %v%v \n", totalFile, totalCNChar, green, total, end, fileName)
+			}
+		}
+	}
+	println()
+	log.Printf("Total characters. files: %v%v%v chars: %v%v%v\n",
+		yellow, totalFile, end, yellow, totalCNChar, end)
 }
 
 // 参数构成: 0 文件 1 参数 2 参数
 func main() {
 	param := os.Args
-	if len(param) > 1 {
-		verb := param[1]
-		switch verb {
-		case "-h":
-			help()
-			return
-		case "-w":
-			wordDetail = 1
-			break
-		case "-s":
-			wordDetail = 2
-			break
-		case "-a":
-			if len(param) < 4 {
-				println("please input all param: filename, keyName")
-				os.Exit(1)
-			}
-			analysisTotalChar(param)
-			return
-		case "-all":
-			wordDetail = 3
-			break
-		case "-show":
-			if len(param) < 4 {
-				println("please input all param: start, stop")
-				os.Exit(1)
-			}
-			start, err1 := strconv.ParseInt(param[2], 10, 64)
-			stop, err2 := strconv.ParseInt(param[3], 10, 64)
-			if err1 != nil || err2 != nil {
-				println("please input correct param: start, stop")
-				os.Exit(1)
-			}
-			showCharRank(start, stop)
-			os.Exit(0)
-		case "-del":
-			client.Del(analysisKey)
-			return
-		}
-	}
-
-	// 递归遍历目录
-	filepath.Walk("./", handlerDir)
-	printf("\n %v Total characters of all files : %v %v %v \n", purple, yellow, totalFile, end)
-
-	if wordDetail != 3 {
+	if len(param) <= 1 {
+		showAllCNChar(nil, true)
 		return
 	}
-	showCharRank(0, 10)
+
+	switch param[1] {
+	case "-h":
+		help()
+	case "-del":
+		client.Del(charRankKey)
+		log.Printf("del %v%v%v", green, charRankKey, end)
+	case "-w":
+		showAllCNChar(showChar, false)
+	case "-s":
+		showAllCNChar(nil, false)
+	case "-f":
+		if len(param) < 4 {
+			log.Fatal("please input param: filename keyName")
+		}
+
+		fileName := param[2]
+		charRankKey = param[3]
+
+		log.Printf("%v read file: %v, redis key: %v %v ", green, fileName, charRankKey, end)
+		initRedisClient()
+		handleFile(fileName, increaseCharNum)
+
+		if len(param) == 5 {
+			num, err := strconv.ParseInt(param[4], 10, 64)
+			if err == nil {
+				showCharRank(0, num-1)
+				return
+			}
+		}
+		showCharRank(0, 15)
+	case "-all":
+		initRedisClient()
+		countWithRedis()
+		if len(param) == 3 {
+			num, err := strconv.ParseInt(param[2], 10, 64)
+			if err == nil {
+				showCharRank(0, num-1)
+				return
+			}
+		}
+
+		showCharRank(0, 10)
+	case "-show":
+
+		if len(param) < 4 {
+			log.Fatal("please input all param: start, stop")
+		}
+		start, err1 := strconv.ParseInt(param[2], 10, 64)
+		stop, err2 := strconv.ParseInt(param[3], 10, 64)
+		if err1 != nil || err2 != nil {
+			log.Fatal("please input correct param: start, stop")
+		}
+		initRedisClient()
+		showCharRank(start, stop)
+	default:
+		help()
+		return
+	}
 }
