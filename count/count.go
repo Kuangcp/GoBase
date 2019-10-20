@@ -204,9 +204,6 @@ func main() {
 	switch param[1] {
 	case "-h":
 		help()
-	case "-del":
-		client.Del(charRankKey)
-		log.Printf("del %v%v%v", green, charRankKey, end)
 	case "-w":
 		showAllCNChar(showChar, false)
 	case "-s":
@@ -244,7 +241,6 @@ func main() {
 
 		showCharRank(0, 10)
 	case "-show":
-
 		if len(param) < 4 {
 			log.Fatal("please input all param: start, stop")
 		}
@@ -255,6 +251,10 @@ func main() {
 		}
 		initRedisClient()
 		showCharRank(start, stop)
+	case "-del":
+		initRedisClient()
+		client.Del(charRankKey)
+		log.Printf("del %v%v%v", green, charRankKey, end)
 	default:
 		help()
 		return
