@@ -174,7 +174,9 @@ func countWithRedis() {
 }
 
 func showAllCNChar(handleCNChar func(string), showFileInfo bool) {
-	printf("%v%-3v %-5v %-5v %v%v\n", yellow, "No", "Total", "Cur", "File", end)
+	if showFileInfo {
+		printf("%v%-3v %-5v %-5v %v%v\n", yellow, "No", "Total", "Cur", "File", end)
+	}
 	filepath.Walk("./", handlerDir)
 	for e := fileList.Front(); e != nil; e = e.Next() {
 		fileName := e.Value.(string)
@@ -188,9 +190,7 @@ func showAllCNChar(handleCNChar func(string), showFileInfo bool) {
 			}
 		}
 	}
-	println()
-	log.Printf("Total characters. files: %v%v%v chars: %v%v%v\n",
-		yellow, totalFile, end, yellow, totalCNChar, end)
+	printf("\nTotal characters. files: %v%v%v chars: %v%v%v\n", yellow, totalFile, end, yellow, totalCNChar, end)
 }
 
 // 参数构成: 0 文件 1 参数 2 参数
