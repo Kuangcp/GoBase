@@ -1,4 +1,4 @@
-module count
+module github.com/kuangcp/gobase/count
 
 go 1.13
 
