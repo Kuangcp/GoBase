@@ -1,6 +1,7 @@
 # *.*
 !*.go
 *.sum
+.vscode/
 
 .idea/
 *.iml
