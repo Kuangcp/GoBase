@@ -15,11 +15,12 @@ var white = "\033[0;37m"
 var end = "\033[0m"
 
 // 参数构成: 0 文件 1 参数 2 参数
-func AssertParamCount(count int) {
+func AssertParamCount(count int, msg string) {
 	param := os.Args
 	flag := enoughCount(param, count)
 	if !flag {
-		log.Fatalf("param count less than %v \n", count)
+		log.Printf("param count less than %v \n", count)
+		log.Fatal(msg)
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/cuibase"
 )
 
 // WARN: 只对 采用 UTF-8 编码的文件保证统计正确
@@ -209,9 +210,7 @@ func main() {
 	case "-s":
 		showAllCNChar(nil, false)
 	case "-f":
-		if len(param) < 4 {
-			log.Fatal("please input param: filename keyName")
-		}
+		cuibase.AssertParamCount(3, "Please input param: filename keyName")
 
 		fileName := param[2]
 		charRankKey = param[3]
@@ -241,9 +240,7 @@ func main() {
 
 		showCharRank(0, 10)
 	case "-show":
-		if len(param) < 4 {
-			log.Fatal("please input all param: start, stop")
-		}
+		cuibase.AssertParamCount(3, "Please input all param: start stop")
 		start, err1 := strconv.ParseInt(param[2], 10, 64)
 		stop, err2 := strconv.ParseInt(param[3], 10, 64)
 		if err1 != nil || err2 != nil {
