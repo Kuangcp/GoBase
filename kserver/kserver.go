@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"strconv"
 )
 
 var green = "\033[0;32m"
+var yellow = "\033[0;33m"
 var end = "\033[0m"
 
 func readPortByParam() string {
@@ -33,8 +36,29 @@ func readPortByParam() string {
 	return portStr
 }
 
+func getInternalIp()(string){
+	addrs, err := net.InterfaceAddrs()
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+	var internalIp=""
+    for _, addr := range addrs {
+        if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+            if ipnet.IP.To4() != nil {
+				ip := ipnet.IP.String()
+				if strings.HasPrefix(ip, "192"){
+					internalIp = ip
+				}
+            }
+        }
+	}
+	return internalIp
+}
+
 func main() {
 	portStr := readPortByParam()
+	internalIp := getInternalIp()
 
 	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hi Mythos !")
@@ -44,7 +68,8 @@ func main() {
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	log.Printf("%v Start webserver success on http://127.0.0.1:%v %v\n", green, portStr, end)
+	log.Printf("%v Start webserver success on http://127.0.0.1:%v %vhttp://%v:%v %v ",
+                 green, portStr, yellow, internalIp, portStr, end)
 	err := http.ListenAndServe(":"+portStr, nil)
 	if err != nil {
 		log.Fatal("error: ", err)
