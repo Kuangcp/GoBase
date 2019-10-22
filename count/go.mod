@@ -7,4 +7,4 @@ require (
 	github.com/kuangcp/gobase/cuibase v0.0.0-20191021063012-d92aa1f00d16 // indirect
 )
 
-replace github.com/kuangcp/gobase/cuibase => /home/kcp/Code/go/GoBase/cuibase/
+replace github.com/kuangcp/gobase/cuibase => ./../cuibase
