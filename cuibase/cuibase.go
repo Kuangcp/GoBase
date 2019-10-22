@@ -14,7 +14,7 @@ var cyan = "\033[0;36m"
 var white = "\033[0;37m"
 var end = "\033[0m"
 
-// 参数构成: 0 文件 1 参数 2 参数
+// AssertParamCount os.Args 参数构成: 0 文件 1 参数 2 参数
 func AssertParamCount(count int, msg string) {
 	param := os.Args
 	flag := enoughCount(param, count)
