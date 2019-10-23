@@ -147,7 +147,7 @@ func printParam(verb string, param string, comment string) {
 }
 
 func help() {
-	fmt.Printf("  count %v <verb> %v <param> \n", cuibase.Green, cuibase.Yellow)
+	cuibase.PrintTitle("count", "Count chinese char from file that current dir recursive")
 	format := cuibase.BuildFormat(-5, -15)
 	cuibase.PrintParams(format, []cuibase.ParamInfo{
 		{
@@ -157,7 +157,7 @@ func help() {
 		}, {
 			Verb:    "",
 			Param:   "",
-			Comment: "count all file chinese char with recursive",
+			Comment: "count all file chinese char",
 		}, {
 			Verb:    "-w",
 			Param:   "",
@@ -165,16 +165,15 @@ func help() {
 		}, {
 			Verb:    "-s",
 			Param:   "",
-			Comment: "count all file chinese char with recursive simplify",
+			Comment: "count all file chinese char, show with simplify",
 		}, {
 			Verb:    "-a",
 			Param:   "file redisKey",
 			Comment: "count chinese char for target file, save in redis",
-		},
-		{
+		}, {
 			Verb:    "-all",
 			Param:   "showNum",
-			Comment: "count, calculate rank data then save in redis",
+			Comment: "count, calculate rank data, save in redis",
 		}, {
 			Verb:    "-del",
 			Param:   "",

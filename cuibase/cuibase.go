@@ -49,6 +49,11 @@ func PrintParams(format string, params []ParamInfo) {
 	}
 }
 
+func PrintTitle(command string, description string) {
+	fmt.Printf("  usage: %v %v <verb> %v <param> %v\n\n", command, Green, Yellow, End)
+	fmt.Printf("  %v\n\n", description)
+}
+
 func enoughCount(param []string, count int) bool {
 	return len(param) > count
 }
