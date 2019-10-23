@@ -54,6 +54,20 @@ func PrintTitle(command string, description string) {
 	fmt.Printf("  %v\n\n", description)
 }
 
-func enoughCount(param []string, count int) bool {
-	return len(param) > count
+func RunAction(actions map[string]func(), defaultAction func()) {
+	runAction(os.Args, actions, defaultAction)
+}
+
+func runAction(params []string, actions map[string]func(), defaultAction func()) {
+	verb := params[1]
+	action := actions[verb]
+	if action == nil {
+		defaultAction()
+	} else {
+		action()
+	}
+}
+
+func enoughCount(params []string, count int) bool {
+	return len(params) > count
 }
