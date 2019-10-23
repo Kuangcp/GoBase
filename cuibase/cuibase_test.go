@@ -46,3 +46,56 @@ func Test_enoughCount(t *testing.T) {
 		})
 	}
 }
+
+func TestPrintParam(t *testing.T) {
+	type args struct {
+		verb     string
+		param    string
+		comment  string
+		verbLen  int
+		paramLen int
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "one",
+			args: args{
+				verb:     "-h|h",
+				param:    "",
+				comment:  "help info",
+				verbLen:  -3,
+				paramLen: -12,
+			},
+		},
+	}
+	for _, tt := range tests {
+
+		t.Run(tt.name, func(t *testing.T) {
+			format := BuildFormat(tt.args.verbLen, tt.args.paramLen)
+			PrintParam(format, tt.args.verb, tt.args.param, tt.args.comment)
+		})
+	}
+}
+
+func TestPrintParams(t *testing.T) {
+	type args struct {
+		params []ParamInfo
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "one",
+			args: args{[]ParamInfo{{Verb: "-h", Param: "", Comment: "help"}}},
+		},
+	}
+	for _, tt := range tests {
+		format := BuildFormat(-2, -6)
+		t.Run(tt.name, func(t *testing.T) {
+			PrintParams(format, tt.args.params)
+		})
+	}
+}
