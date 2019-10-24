@@ -43,7 +43,7 @@ func initRedisClient() {
 // 递归遍历目录
 func handlerDir(path string, info os.FileInfo, err error) error {
 	if err != nil {
-		fmt.Println("occur error: ", err)
+		log.Println("occur error: ", err)
 		return nil
 	}
 
@@ -98,7 +98,7 @@ func showChar(CNChar string) {
 }
 
 // 根据字节流  统计中文字符
-func handleFile(fileName string, handleCNChar func(string)) int {
+func handleFile(fileName string, handleChineseChar func(string)) int {
 	bytes := readToBytes(fileName)
 	var totalChar = 0
 	var count = 0
@@ -120,8 +120,8 @@ func handleFile(fileName string, handleCNChar func(string)) int {
 		}
 		// 缓存满了三个字节, 就可以确定为一个汉字了
 		if count == 3 {
-			if handleCNChar != nil {
-				handleCNChar(string(temp[0:3]))
+			if handleChineseChar != nil {
+				handleChineseChar(string(temp[0:3]))
 			}
 			totalChar++
 			count = 0
@@ -133,7 +133,7 @@ func handleFile(fileName string, handleCNChar func(string)) int {
 func showCharRank(start int64, stop int64) {
 	result, e := client.ZRevRangeWithScores(charRankKey, start, stop).Result()
 	if e != nil {
-		println("error: ", e)
+		log.Println("error: ", e)
 		return
 	}
 	for _, a := range result {
@@ -185,7 +185,7 @@ func countWithRedis() {
 	// 递归遍历目录 读取所有文件
 	err := filepath.Walk("./", handlerDir)
 	if err != nil {
-		log.Print(err)
+		log.Println(err)
 	}
 
 	for e := fileList.Front(); e != nil; e = e.Next() {
@@ -202,7 +202,7 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 	}
 	err := filepath.Walk("./", handlerDir)
 	if err != nil {
-		log.Print(err)
+		log.Println(err)
 	}
 	for e := fileList.Front(); e != nil; e = e.Next() {
 		fileName := e.Value.(string)
