@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"github.com/kuangcp/gobase/cuibase"
 	"log"
 	"net"
 	"net/http"
@@ -9,10 +9,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-var green = "\033[0;32m"
-var yellow = "\033[0;33m"
-var end = "\033[0m"
 
 func readPortByParam() string {
 	param := os.Args
@@ -37,12 +33,12 @@ func readPortByParam() string {
 }
 
 func getInternalIp() string {
-	addrs, err := net.InterfaceAddrs()
+	address, err := net.InterfaceAddrs()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	for _, addr := range addrs {
+	for _, addr := range address {
 		if ipnet, ok := addr.(*net.IPNet); ok &&
 			!ipnet.IP.IsLoopback() &&
 			ipnet.IP.To4() != nil &&
@@ -57,16 +53,12 @@ func main() {
 	portStr := readPortByParam()
 	internalIp := getInternalIp()
 
-	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi Mythos !")
-	})
-
 	// 绑定路由到当前目录
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
 	log.Printf("%v Start webserver success on http://127.0.0.1:%v %vhttp://%v:%v %v ",
-		green, portStr, yellow, internalIp, portStr, end)
+		cuibase.Green, portStr, cuibase.Yellow, internalIp, portStr, cuibase.End)
 	err := http.ListenAndServe(":"+portStr, nil)
 	if err != nil {
 		log.Fatal("error: ", err)

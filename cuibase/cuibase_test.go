@@ -103,8 +103,8 @@ func TestPrintParams(t *testing.T) {
 func Test_runAction(t *testing.T) {
 	type args struct {
 		params        []string
-		actions       map[string]func()
-		defaultAction func()
+		actions       map[string]func(params []string)
+		defaultAction func(params []string)
 	}
 	tests := []struct {
 		name string
@@ -114,8 +114,8 @@ func Test_runAction(t *testing.T) {
 			name: "one",
 			args: args{
 				params:        []string{"run.go", "-h"},
-				defaultAction: func() { print("default") },
-				actions:       map[string]func(){"-h": func() { println("help info") }}},
+				defaultAction: func(params []string) { print("default") },
+				actions:       map[string]func(params []string){"-h": func(params []string) { println("help info") }}},
 		},
 	}
 	for _, tt := range tests {

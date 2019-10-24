@@ -14,23 +14,20 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
-// WARN: 只对 采用 UTF-8 编码的文件保证统计正确
-
 var totalFile = 0
-var totalCNChar = 0
+var totalChineseChar = 0
 var fileList = list.New()
 
+var client *redis.Client
 var charRankKey = "total_char_rank"
 
-var ignoreDirList = [...]string{
+var ignoreDirs = [...]string{
 	".git", ".svn", ".vscode", ".idea", ".gradle",
 	"out", "build", "target", "log", "logs", "__pycache__",
 }
-var handleFileList = [...]string{
+var handleFiles = [...]string{
 	".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
 }
-
-var client *redis.Client
 
 func initRedisClient() {
 	client = redis.NewClient(&redis.Options{
@@ -48,7 +45,7 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 	}
 
 	if info.IsDir() {
-		for _, dir := range ignoreDirList {
+		for _, dir := range ignoreDirs {
 			if path == dir {
 				return filepath.SkipDir
 			}
@@ -60,7 +57,7 @@ func handlerDir(path string, info os.FileInfo, err error) error {
 }
 
 func isNeedHandle(filename string) bool {
-	for _, fileType := range handleFileList {
+	for _, fileType := range handleFiles {
 		if strings.HasSuffix(filename, fileType) {
 			return true
 		}
@@ -142,7 +139,7 @@ func showCharRank(start int64, stop int64) {
 }
 
 func help(params []string) {
-	cuibase.PrintTitleDefault("Count chinese char from file that current dir recursive")
+	cuibase.PrintTitleDefault("Count chinese char(UTF8) from file that current dir recursive")
 	format := cuibase.BuildFormat(-5, -15)
 	cuibase.PrintParams(format, []cuibase.ParamInfo{
 		{
@@ -206,17 +203,21 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 	}
 	for e := fileList.Front(); e != nil; e = e.Next() {
 		fileName := e.Value.(string)
-		if isNeedHandle(fileName) {
-			totalFile++
-			var total = 0
-			total = handleFile(fileName, handler)
-			totalCNChar += total
-			if showFileInfo {
-				fmt.Printf("%-3v %-5v %v%-5v %v%v \n", totalFile, totalCNChar, cuibase.Green, total, cuibase.End, fileName)
-			}
+		if !isNeedHandle(fileName) {
+			continue
+		}
+
+		totalFile++
+		var total = 0
+		total = handleFile(fileName, handler)
+		totalChineseChar += total
+		if showFileInfo {
+			fmt.Printf("%-3v %-5v %v%-5v %v%v \n",
+				totalFile, totalChineseChar, cuibase.Green, total, cuibase.End, fileName)
 		}
 	}
-	fmt.Printf("\nTotal characters. files: %v%v%v chars: %v%v%v\n", cuibase.Yellow, totalFile, cuibase.End, cuibase.Yellow, totalCNChar, cuibase.End)
+	fmt.Printf("\nTotal characters. files: %v%v%v chars: %v%v%v\n",
+		cuibase.Yellow, totalFile, cuibase.End, cuibase.Yellow, totalChineseChar, cuibase.End)
 }
 
 func readTargetFile(params []string) {
@@ -225,7 +226,8 @@ func readTargetFile(params []string) {
 	fileName := params[2]
 	charRankKey = params[3]
 
-	log.Printf("%v read file: %v, redis key: %v %v ", cuibase.Green, fileName, charRankKey, cuibase.End)
+	log.Printf("%vread file: %v, redis key: %v%v\n",
+		cuibase.Green, fileName, charRankKey, cuibase.End)
 	initRedisClient()
 	handleFile(fileName, increaseCharNum)
 
