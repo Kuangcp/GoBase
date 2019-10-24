@@ -16,8 +16,6 @@ var Cyan = "\033[0;36m"
 var White = "\033[0;37m"
 var End = "\033[0m"
 
-var Format = ""
-
 // ParamInfo one line struct
 type ParamInfo struct {
 	Verb    string
@@ -49,22 +47,27 @@ func PrintParams(format string, params []ParamInfo) {
 	}
 }
 
+func PrintTitleDefault(description string) {
+	PrintTitle(os.Args[0], description)
+}
+
 func PrintTitle(command string, description string) {
 	fmt.Printf("  usage: %v %v <verb> %v <param> %v\n\n", command, Green, Yellow, End)
 	fmt.Printf("  %v\n\n", description)
 }
 
-func RunAction(actions map[string]func(), defaultAction func()) {
+func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
 	runAction(os.Args, actions, defaultAction)
 }
 
-func runAction(params []string, actions map[string]func(), defaultAction func()) {
+func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
 	verb := params[1]
 	action := actions[verb]
 	if action == nil {
-		defaultAction()
+		fmt.Printf("  %vparam %v not supported.%v\n\n", Red, params[1:], End)
+		defaultAction(os.Args)
 	} else {
-		action()
+		action(os.Args)
 	}
 }
 

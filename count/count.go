@@ -141,8 +141,8 @@ func showCharRank(start int64, stop int64) {
 	}
 }
 
-func help() {
-	cuibase.PrintTitle("count", "Count chinese char from file that current dir recursive")
+func help(params []string) {
+	cuibase.PrintTitleDefault("Count chinese char from file that current dir recursive")
 	format := cuibase.BuildFormat(-5, -15)
 	cuibase.PrintParams(format, []cuibase.ParamInfo{
 		{
@@ -219,27 +219,18 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 	fmt.Printf("\nTotal characters. files: %v%v%v chars: %v%v%v\n", cuibase.Yellow, totalFile, cuibase.End, cuibase.Yellow, totalCNChar, cuibase.End)
 }
 
-func showAllChineseChar() {
-	showChineseChar(showChar, false)
-}
-
-func showAllChineseCharSimplify() {
-	showChineseChar(nil, false)
-}
-
-func readTargetFile() {
-	param := os.Args
+func readTargetFile(params []string) {
 	cuibase.AssertParamCount(3, "Please input param: filename keyName")
 
-	fileName := param[2]
-	charRankKey = param[3]
+	fileName := params[2]
+	charRankKey = params[3]
 
 	log.Printf("%v read file: %v, redis key: %v %v ", cuibase.Green, fileName, charRankKey, cuibase.End)
 	initRedisClient()
 	handleFile(fileName, increaseCharNum)
 
-	if len(param) == 5 {
-		num, err := strconv.ParseInt(param[4], 10, 64)
+	if len(params) == 5 {
+		num, err := strconv.ParseInt(params[4], 10, 64)
 		if err == nil {
 			showCharRank(0, num-1)
 			return
@@ -248,12 +239,11 @@ func readTargetFile() {
 	showCharRank(0, 15)
 }
 
-func readAllSaveIntoRedis() {
-	param := os.Args
+func readAllSaveIntoRedis(params []string) {
 	initRedisClient()
 	countWithRedis()
-	if len(param) == 3 {
-		num, err := strconv.ParseInt(param[2], 10, 64)
+	if len(params) == 3 {
+		num, err := strconv.ParseInt(params[2], 10, 64)
 		if err == nil {
 			showCharRank(0, num-1)
 			return
@@ -263,11 +253,10 @@ func readAllSaveIntoRedis() {
 	showCharRank(0, 10)
 }
 
-func showRank() {
-	param := os.Args
+func showRank(params []string) {
 	cuibase.AssertParamCount(3, "Please input all param: start stop")
-	start, err1 := strconv.ParseInt(param[2], 10, 64)
-	stop, err2 := strconv.ParseInt(param[3], 10, 64)
+	start, err1 := strconv.ParseInt(params[2], 10, 64)
+	stop, err2 := strconv.ParseInt(params[3], 10, 64)
 	if err1 != nil || err2 != nil {
 		log.Fatal("please input correct param: start, stop")
 	}
@@ -275,7 +264,7 @@ func showRank() {
 	showCharRank(start, stop)
 }
 
-func delRank() {
+func delRank(params []string) {
 	initRedisClient()
 	client.Del(charRankKey)
 	log.Printf("del %v%v%v", cuibase.Green, charRankKey, cuibase.End)
@@ -288,13 +277,20 @@ func main() {
 		return
 	}
 
-	cuibase.RunAction(map[string]func(){
-		"-h":    help,
-		"-w":    showAllChineseChar,
-		"-s":    showAllChineseCharSimplify,
+	cuibase.RunAction(map[string]func(params []string){
+		"-h": help,
+		"-w": func(params []string) {
+			showChineseChar(showChar, false)
+		},
+		"-s": func(params []string) {
+			showChineseChar(nil, false)
+		},
 		"-f":    readTargetFile,
 		"-all":  readAllSaveIntoRedis,
 		"-show": showRank,
 		"-del":  delRank,
+		"-v": func(params []string) {
+			println("v1.0.0")
+		},
 	}, help)
 }
