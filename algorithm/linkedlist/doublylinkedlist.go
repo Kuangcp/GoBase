@@ -8,6 +8,7 @@ import (
 type LinkedList struct {
 	head *DoublyLinkedNode
 	tail *DoublyLinkedNode
+	len  int
 }
 
 func NewLinkedList(head *DoublyLinkedNode, tail *DoublyLinkedNode) *LinkedList {
@@ -25,7 +26,7 @@ func NewDoublyLinkedNode(pre *DoublyLinkedNode, data interface{}, next *DoublyLi
 }
 
 func (list *LinkedList) IsEmpty() bool {
-	return list == nil || list.head == nil
+	return list.head == nil
 }
 
 func (list *LinkedList) Add(data interface{}) {
@@ -38,10 +39,11 @@ func (list *LinkedList) Add(data interface{}) {
 		node.pre = list.tail
 		list.tail = node
 	}
+	list.len++
 }
 
 func (list *LinkedList) Find(data interface{}) *DoublyLinkedNode {
-	if list == nil || list.IsEmpty() {
+	if list.IsEmpty() {
 		return nil
 	}
 
@@ -58,8 +60,15 @@ func (list *LinkedList) Find(data interface{}) *DoublyLinkedNode {
 	}
 	return nil
 }
+
+func (list *LinkedList) Clear() {
+	list.head = nil
+	list.tail = nil
+	list.len = 0
+}
+
 func (list *LinkedList) Remove(data interface{}) {
-	if list == nil || list.IsEmpty() {
+	if list.IsEmpty() {
 		return
 	}
 
@@ -74,6 +83,7 @@ func (list *LinkedList) Remove(data interface{}) {
 			if list.head != nil {
 				list.head.pre = nil
 			}
+			list.len--
 			return
 		}
 
@@ -81,27 +91,64 @@ func (list *LinkedList) Remove(data interface{}) {
 		if next == nil {
 			list.tail = pre
 			pre.next = nil
+			list.len--
 			return
 		}
 
 		// remove current node
 		pre.next = next
 		next.pre = pre
+		list.len--
 	}
 }
 
-func (list *LinkedList) Show() {
-	list.ShowWithDetail(false)
+// 单链表反转 三个指针前进
+func (list *LinkedList) ReverseBySingle() *LinkedList {
+	if list.IsEmpty() || list.len == 1 {
+		return list
+	}
+
+	first := list.head
+	second := list.head.next
+
+	if list.len == 2 {
+		list.head = second
+		second.next = first
+		first.next = nil
+		list.tail = first
+		return list
+	}
+
+	first.next = nil
+	list.tail = first
+	third := second.next
+	for {
+		second.next = first
+
+		if third.next == nil {
+			third.next = second
+			list.head = third
+			return list
+		}
+		first = second
+		second = third
+		third = third.next
+	}
 }
-func (list *LinkedList) ShowWithDetail(needDetail bool) {
-	if list == nil || list.IsEmpty() {
+
+func (list *LinkedList) PrintList() {
+	list.PrintListWithDetail(false)
+}
+
+func (list *LinkedList) PrintListWithDetail(needDetail bool) {
+	if list.IsEmpty() {
 		log.Println("list is empty")
 		return
 	}
 
 	node := list.head
 	println()
-	log.Println("head=", list.head, "tail=", list.tail)
+	log.Println("head=", list.head, "tail=", list.tail, "len=", list.len)
 
 	for {
 		if needDetail {

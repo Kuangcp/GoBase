@@ -1,6 +1,7 @@
 package linkedlist
 
 import (
+	"log"
 	"strconv"
 	"testing"
 )
@@ -21,23 +22,38 @@ func (car *Car) String() string {
 }
 
 func TestLinkedList_Add(t *testing.T) {
-	li := NewLinkedList(nil, nil)
+	list := NewLinkedList(nil, nil)
 	for i := 0; i < 4; i++ {
-		li.Add(i)
+		list.Add(i)
 	}
-	//li.Show()
+	node := list.Find(2)
+	re := node.data.(int) + 2
+	log.Println(node.data, re)
 
-	//for i := 0; i < 5; i++ {
-	//	li.Add(NewCar(i, 4, "benz"))
-	//}
-	//li.Show()
+	list.PrintList()
+	list.Remove(3)
+	list.PrintList()
+	list.Clear()
 
-	li.Remove(0)
-	li.Show()
-	li.Remove(1)
-	li.Show()
-	li.Remove(2)
-	li.Show()
-	li.Remove(3)
-	li.Show()
+	for i := 0; i < 5; i++ {
+		list.Add(NewCar(i, 4, "benz"))
+	}
+	list.PrintList()
+
+	car := list.Find(NewCar(1, 4, "benz"))
+	log.Println(car)
+}
+
+func TestLinkedList_Reverse(t *testing.T) {
+	list := NewLinkedList(nil, nil)
+	for i := 0; i < 2; i++ {
+		list.Add(i)
+	}
+	list.ReverseBySingle().PrintList()
+	list.Clear()
+
+	for i := 0; i < 5; i++ {
+		list.Add(i)
+	}
+	list.ReverseBySingle().PrintList()
 }
