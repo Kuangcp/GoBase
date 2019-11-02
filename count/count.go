@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,16 +26,18 @@ var ignoreDirs = [...]string{
 	".git", ".svn", ".vscode", ".idea", ".gradle",
 	"out", "build", "target", "log", "logs", "__pycache__",
 }
+var redisConfigFile = "redis.json"
+
 var handleFiles = [...]string{
 	".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
 }
 
 func initRedisClient() {
-	client = redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6666",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	config := readRedisConfig()
+	if config == nil{
+		log.Fatal("config error")
+	}
+	client = redis.NewClient(config)
 }
 
 // 递归遍历目录
@@ -143,6 +146,10 @@ func help(params []string) {
 	format := cuibase.BuildFormat(-5, -15)
 	cuibase.PrintParams(format, []cuibase.ParamInfo{
 		{
+			Verb:    "-v",
+			Param:   "",
+			Comment: "show version",
+		}, {
 			Verb:    "-h",
 			Param:   "",
 			Comment: "help",
@@ -161,19 +168,19 @@ func help(params []string) {
 		}, {
 			Verb:    "-a",
 			Param:   "file redisKey",
-			Comment: "count chinese char for target file, save in redis",
+			Comment: "count chinese char for target file, save. (redis)",
 		}, {
 			Verb:    "-all",
 			Param:   "showNum",
-			Comment: "count, calculate rank data, save in redis",
+			Comment: "count, calculate rank data, save. (redis)",
 		}, {
 			Verb:    "-del",
 			Param:   "",
-			Comment: "del redis rank data",
+			Comment: "del rank data. (redis)",
 		}, {
 			Verb:    "-show",
 			Param:   "start stop",
-			Comment: "show rank data from redis ",
+			Comment: "show rank data. (redis)",
 		},
 	})
 }
@@ -270,6 +277,22 @@ func delRank(params []string) {
 	initRedisClient()
 	client.Del(charRankKey)
 	log.Printf("del %v%v%v", cuibase.Green, charRankKey, cuibase.End)
+}
+
+func readRedisConfig() *redis.Options{
+	config := redis.Options{}
+	data, e := ioutil.ReadFile(redisConfigFile)
+	if e != nil {
+		log.Fatal("read config file failed")
+		return nil
+	}
+	e = json.Unmarshal(data, &config)
+	if e != nil {
+		log.Fatal("unmarshal config file failed")
+		return nil
+	}
+	log.Println("redis ", config.Addr, config.DB)
+	return &config
 }
 
 func main() {
