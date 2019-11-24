@@ -26,7 +26,7 @@ var ignoreDirs = [...]string{
 	".git", ".svn", ".vscode", ".idea", ".gradle",
 	"out", "build", "target", "log", "logs", "__pycache__",
 }
-var redisConfigFile = "redis.json"
+var redisConfigFile = os.Getenv("HOME") + "/.config/app-conf/count-char/redis.json"
 
 var handleFiles = [...]string{
 	".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
@@ -34,7 +34,7 @@ var handleFiles = [...]string{
 
 func initRedisClient() {
 	config := readRedisConfig()
-	if config == nil{
+	if config == nil {
 		log.Fatal("config error")
 	}
 	client = redis.NewClient(config)
@@ -279,7 +279,7 @@ func delRank(params []string) {
 	log.Printf("del %v%v%v", cuibase.Green, charRankKey, cuibase.End)
 }
 
-func readRedisConfig() *redis.Options{
+func readRedisConfig() *redis.Options {
 	config := redis.Options{}
 	data, e := ioutil.ReadFile(redisConfigFile)
 	if e != nil {
