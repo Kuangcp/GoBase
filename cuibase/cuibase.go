@@ -23,7 +23,7 @@ type ParamInfo struct {
 	Comment string
 }
 
-// AssertParamCount os.Args 参数构成: 0 文件 1 参数 2 参数
+// AssertParamCount os.Args 参数构成: 0 go源文件 1 参数 2 参数
 func AssertParamCount(count int, msg string) {
 	param := os.Args
 	flag := enoughCount(param, count)
@@ -61,10 +61,15 @@ func RunAction(actions map[string]func(params []string), defaultAction func(para
 }
 
 func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
+	if len(params) < 2 {
+		defaultAction(os.Args)
+		return
+	}
+
 	verb := params[1]
 	action := actions[verb]
 	if action == nil {
-		fmt.Printf("  %vparam %v not supported.%v\n\n", Red, params[1:], End)
+		//fmt.Printf("  %vparam %v not supported.%v\n\n", Red, params[1:], End)
 		defaultAction(os.Args)
 	} else {
 		action(os.Args)

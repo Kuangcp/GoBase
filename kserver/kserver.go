@@ -1,17 +1,32 @@
 package main
 
 import (
-	"github.com/kuangcp/gobase/cuibase"
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
+
+	"github.com/kuangcp/gobase/cuibase"
 )
 
-func readPortByParam() string {
-	param := os.Args
+func help(params []string) {
+	cuibase.PrintTitleDefault("Start simple http server on current path")
+	format := cuibase.BuildFormat(-5, -15)
+	cuibase.PrintParams(format, []cuibase.ParamInfo{
+		{
+			Verb:    "-h",
+			Param:   "",
+			Comment: "help",
+		}, {
+			Verb:    "-p",
+			Param:   "port",
+			Comment: "specific port",
+		},
+	})
+}
+
+func readPortByParam(param []string) string {
 	var port = 8099
 	if len(param) > 1 {
 		// so happy error handle
@@ -49,8 +64,15 @@ func getInternalIp() string {
 	return ""
 }
 
-func main() {
-	portStr := readPortByParam()
+func runWithPort(params []string) {
+	portStr := readPortByParam(params[1:])
+	run(portStr)
+}
+func runWithDefaultPort(params []string) {
+	run("8889")
+}
+
+func run(port string) {
 	internalIp := getInternalIp()
 
 	// 绑定路由到当前目录
@@ -58,9 +80,16 @@ func main() {
 	http.Handle("/", http.StripPrefix("/", fs))
 
 	log.Printf("%v Start webserver success on http://127.0.0.1:%v %vhttp://%v:%v %v ",
-		cuibase.Green, portStr, cuibase.Yellow, internalIp, portStr, cuibase.End)
-	err := http.ListenAndServe(":"+portStr, nil)
+		cuibase.Green, port, cuibase.Yellow, internalIp, port, cuibase.End)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
+}
+
+func main() {
+	cuibase.RunAction(map[string]func(params []string){
+		"-h": help,
+		"-p": runWithPort,
+	}, runWithDefaultPort)
 }
