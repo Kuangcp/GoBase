@@ -17,11 +17,20 @@ var White = "\033[0;37m"
 var End = "\033[0m"
 
 // ParamInfo one line struct
-type ParamInfo struct {
-	Verb    string
-	Param   string
-	Comment string
-}
+type (
+	ParamInfo struct {
+		Verb    string
+		Param   string
+		Comment string
+	}
+
+	HelpInfo struct {
+		Description string
+		VerbLen     int
+		ParamLen    int
+		Params      []ParamInfo
+	}
+)
 
 // AssertParamCount os.Args 参数构成: 0 go源文件 1 参数 2 参数
 func AssertParamCount(count int, msg string) {
@@ -58,6 +67,12 @@ func PrintTitle(command string, description string) {
 
 func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
 	runAction(os.Args, actions, defaultAction)
+}
+
+func Help(helpInfo HelpInfo) {
+	PrintTitleDefault(helpInfo.Description)
+	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
+	PrintParams(format, helpInfo.Params)
 }
 
 func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {

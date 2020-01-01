@@ -11,19 +11,22 @@ import (
 )
 
 func help(params []string) {
-	cuibase.PrintTitleDefault("Start simple http server on current path")
-	format := cuibase.BuildFormat(-5, -15)
-	cuibase.PrintParams(format, []cuibase.ParamInfo{
-		{
-			Verb:    "-h",
-			Param:   "",
-			Comment: "help",
-		}, {
-			Verb:    "-p",
-			Param:   "port",
-			Comment: "specific port",
-		},
-	})
+	info := cuibase.HelpInfo{
+		Description: "Start simple http server on current path",
+		VerbLen:     -5,
+		ParamLen:    -5,
+		Params: []cuibase.ParamInfo{
+			{
+				Verb:    "-h",
+				Param:   "",
+				Comment: "help",
+			}, {
+				Verb:    "-p",
+				Param:   "port",
+				Comment: "specific port",
+			},
+		}}
+	cuibase.Help(info)
 }
 
 func readPortByParam(param []string) string {
