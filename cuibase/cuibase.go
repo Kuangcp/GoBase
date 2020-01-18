@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// Color
 var Red = "\033[0;31m"
 var Green = "\033[0;32m"
 var Yellow = "\033[0;33m"
@@ -84,7 +85,6 @@ func runAction(params []string, actions map[string]func(params []string), defaul
 	verb := params[1]
 	action := actions[verb]
 	if action == nil {
-		//fmt.Printf("  %vparam %v not supported.%v\n\n", Red, params[1:], End)
 		defaultAction(os.Args)
 	} else {
 		action(os.Args)
