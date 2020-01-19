@@ -1,6 +1,9 @@
 package db
 
 import (
+	"io/ioutil"
+	"log"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -21,9 +24,19 @@ func TestGetConnectionConfig(t *testing.T) {
 	}
 }
 
-func TestInitDB(t *testing.T) {
-	connection := GetConnection()
+func TestInitTableStructure(t *testing.T) {
+	connection := getConnectionWithConfig(&ConnectionConfig{Path: "/tmp/tests.db", DriverName: "sqlite3"})
 	defer connection.Close()
 
-	connection.DB.Exec("create table account ")
+	file, e := os.Open("../resources/db.sql")
+	if e != nil {
+		log.Fatal(e)
+	}
+	bytes, e := ioutil.ReadAll(file)
+	sql := string(bytes)
+	result, e := connection.DB.Exec(sql)
+	if e != nil {
+		log.Fatal(e)
+	}
+	log.Println(result)
 }
