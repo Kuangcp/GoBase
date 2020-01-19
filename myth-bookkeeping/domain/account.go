@@ -2,13 +2,13 @@ package domain
 
 type (
 	Account struct {
-		Id         int16
+		ID        uint `gorm:"primary_key"`
+		CreatedAt int64
+		UpdatedAt int64
+		DeletedAt int64
+
 		Name       string
 		InitAmount int32
 		Type       int8
-
-		CreateTime int64
-		UpdateTime int64
-		IsDeleted  int8
 	}
 )

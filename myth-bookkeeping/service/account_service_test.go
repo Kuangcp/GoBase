@@ -4,6 +4,7 @@ import (
 	"log"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/kuangcp/gobase/myth-bookkeeping/domain"
 )
@@ -22,6 +23,24 @@ func TestQueryAllAccounts(t *testing.T) {
 			} else {
 				log.Println(got)
 			}
+		})
+	}
+}
+
+func TestInsert(t *testing.T) {
+	type args struct {
+		account *domain.Account
+	}
+	account := &domain.Account{Name: "name", InitAmount: 0, Type: 1, CreatedAt: time.Now().Unix(), UpdatedAt: time.Now().Unix(), DeletedAt: 0}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{name: "", args: args{account: account}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Insert(tt.args.account)
 		})
 	}
 }

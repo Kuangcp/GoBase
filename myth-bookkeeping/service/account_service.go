@@ -3,29 +3,23 @@ package service
 import (
 	"log"
 
-	"github.com/kuangcp/gobase/myth-bookkeeping/db"
+	"github.com/kuangcp/gobase/myth-bookkeeping/data_source"
 	"github.com/kuangcp/gobase/myth-bookkeeping/domain"
 )
 
 func QueryAllAccounts() []domain.Account {
-	connection := db.GetConnection()
-	defer connection.Close()
+	db := data_source.GetDB()
+	defer data_source.Close(db)
+	return nil
+}
 
-	rows, err := connection.DB.Query("select * from account")
-	if err != nil {
-		log.Fatal(err)
-	}
+func Insert(account *domain.Account) {
+	db := data_source.GetDB()
+	defer data_source.Close(db)
 
-	var result []domain.Account
-	for rows.Next() {
-		account := domain.Account{}
-		err := rows.Scan(&account.Id, &account.Name, &account.InitAmount,
-			&account.CreateTime, &account.UpdateTime, &account.IsDeleted)
-		if err != nil {
-			log.Fatal(err)
-		}
+	migrate := db.AutoMigrate(&domain.Account{})
+	log.Println(migrate)
 
-		result = append(result, account)
-	}
-	return result
+	create := db.Create(account)
+	log.Println(create)
 }
