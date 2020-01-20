@@ -10,6 +10,7 @@ import (
 )
 
 var config *conf.ConnectionConfig
+var db *gorm.DB
 
 func GetDBConfig() *conf.ConnectionConfig {
 	conf.LoadConfig()
@@ -29,8 +30,17 @@ func GetDBConfig() *conf.ConnectionConfig {
 	return &conf.ConnectionConfig{Path: path, DriverName: driver}
 }
 
-func GetDB() *gorm.DB {
+func OpenDB() *gorm.DB {
 	return getConnectionWithConfig(GetDBConfig())
+}
+
+func GetDB() *gorm.DB {
+	if db != nil {
+		return db
+	} else {
+		db = OpenDB()
+		return db
+	}
 }
 
 func getConnectionWithConfig(config *conf.ConnectionConfig) *gorm.DB {

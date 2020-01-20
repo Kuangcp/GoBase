@@ -1,37 +1,21 @@
 package service
 
 import (
-	"log"
-	"testing"
-	"time"
-
 	"github.com/kuangcp/gobase/myth-bookkeeping/domain"
+	"testing"
 )
 
 func TestQueryAllAccounts(t *testing.T) {
-	result := QueryAllAccounts()
-	log.Println(result)
-
-	//tests := []struct {
-	//	name string
-	//	want []domain.Account
-	//}{
-	//	{name: "name", want: nil},
-	//}
-	//for _, tt := range tests {
-	//	t.Run(tt.name, func(t *testing.T) {
-	//		if got := QueryAllAccounts(); !reflect.DeepEqual(got, tt.want) {
-	//			t.Errorf("QueryAllAccounts() = %v, want %v", got, tt.want)
-	//		}
-	//	})
-	//}
+	for i := 0; i < 10; i++ {
+	    go QueryAll()
+	}
 }
 
 func TestInsert(t *testing.T) {
 	type args struct {
 		account *domain.Account
 	}
-	account := &domain.Account{Name: "test", InitAmount: 0, Type: 1, CreatedAt: time.Now().Unix(), UpdatedAt: time.Now().Unix(), DeletedAt: 0}
+	account := &domain.Account{Name: "test", InitAmount: 0, TypeId: 1}
 	tests := []struct {
 		name string
 		args args

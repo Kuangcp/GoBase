@@ -21,7 +21,7 @@ var loaded = false
 func LoadConfig() {
 	if !loaded {
 		log.Println("load config file")
-		viper.SetConfigName("app")
+		viper.SetConfigName("bookkeeping")
 		viper.SetConfigType("yaml")
 		viper.AddConfigPath("$HOME/.config")
 		err := viper.ReadInConfig()

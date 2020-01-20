@@ -3,9 +3,13 @@ package domain
 import "github.com/jinzhu/gorm"
 
 type (
-	BookKeeping struct {
+	AccountType struct {
 		gorm.Model
 
 		Name string
 	}
 )
+
+func (AccountType) TableName() string {
+	return "account_type"
+}

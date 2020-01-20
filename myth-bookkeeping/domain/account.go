@@ -1,18 +1,17 @@
 package domain
 
+import "github.com/jinzhu/gorm"
+
 type (
 	Account struct {
-		ID        uint `gorm:"primary_key"`
-		CreatedAt int64
-		UpdatedAt int64
-		DeletedAt int64
+		gorm.Model
 
 		Name       string
 		InitAmount int32
-		Type       int8
+		TypeId     int8
 	}
 )
 
 func (Account) TableName() string {
-	return "currency"
+	return "account"
 }
