@@ -8,3 +8,6 @@ image:
 
 devImage:
 	docker build -t myth-bookkeeping . -f dev.dockerfile
+
+clean:
+	rm bin/${BINARY_NAME}
