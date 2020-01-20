@@ -1,16 +1,18 @@
-package data_source
+package dal
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/kuangcp/gobase/myth-bookkeeping/conf"
 )
 
 func TestGetConnectionConfig(t *testing.T) {
 	tests := []struct {
 		name string
-		want *ConnectionConfig
+		want *conf.ConnectionConfig
 	}{
-		{name: "", want: &ConnectionConfig{Path: "/tmp/test.data_source", DriverName: "sqlite3"}},
+		{name: "", want: &conf.ConnectionConfig{Path: "/tmp/test.db", DriverName: "sqlite3"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

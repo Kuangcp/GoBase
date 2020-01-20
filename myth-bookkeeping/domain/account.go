@@ -12,3 +12,7 @@ type (
 		Type       int8
 	}
 )
+
+func (Account) TableName() string {
+	return "currency"
+}
