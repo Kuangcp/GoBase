@@ -9,4 +9,6 @@ func AutoMigrateAll() {
 	db := dal.GetDB()
 	db.AutoMigrate(&domain.Account{})
 	db.AutoMigrate(&domain.AccountType{})
+	db.AutoMigrate(&domain.Category{})
+	db.AutoMigrate(&domain.Record{})
 }

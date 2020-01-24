@@ -9,3 +9,7 @@ type (
 		Name string
 	}
 )
+
+func (BookKeeping) TableName() string {
+	return "book_keeping"
+}

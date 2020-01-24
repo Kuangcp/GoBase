@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func QueryAll() []domain.Account {
+func ListAccounts() []domain.Account {
 	db := dal.GetDB()
 
 	var accounts []domain.Account
@@ -18,10 +18,14 @@ func QueryAll() []domain.Account {
 	return accounts
 }
 
-func Insert(account *domain.Account) {
+func AddAccount(account *domain.Account) {
 	db := dal.GetDB()
-
 
 	create := db.Create(account)
 	log.Println(create)
+}
+
+func UpdateAccount(account *domain.Account) {
+	db := dal.GetDB()
+	db.Update(account)
 }
