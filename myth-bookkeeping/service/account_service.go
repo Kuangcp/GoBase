@@ -29,3 +29,10 @@ func UpdateAccount(account *domain.Account) {
 	db := dal.GetDB()
 	db.Update(account)
 }
+
+func FindAccountById(id uint) *domain.Account {
+	db := dal.GetDB()
+	var account domain.Account
+	db.Where("id = ?", id).First(&account)
+	return &account
+}

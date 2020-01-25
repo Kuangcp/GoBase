@@ -1,4 +1,5 @@
 package constant
 
-var CategoryHierarchySeparator = ":"
-
+const (
+	CategoryHierarchySeparator = ":"
+)

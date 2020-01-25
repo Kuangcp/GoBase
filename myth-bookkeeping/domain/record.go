@@ -1,18 +1,28 @@
 package domain
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+	"time"
+)
 
 type (
 	Record struct {
 		gorm.Model
 
-		AccountId  int16
-		CategoryId int16
+		AccountId uint
+		// 转账记录id 转账需要
+		TransferId uint
+		Amount     int
+		Comment    string
 
-		//Type 支出 收入 转出 转入 record_type
+		// 交易的分类id
+		CategoryId uint
+
+		//Type 支出 收入 转出 转入
 		Type int8
-		// 转入或转出的对方账户 支出收入时没有值
-		TargetAccount int16
+
+		// 记录发生时刻
+		RecordTime time.Time
 	}
 )
 
