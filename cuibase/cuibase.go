@@ -33,7 +33,7 @@ type (
 	}
 )
 
-// AssertParamCount os.Args 参数构成: 0 go源文件; 1 参数1; 2 参数2; count 参数个数
+// AssertParamCount os.Args 参数构成: 0 go源文件; 1 参数1; 2 参数2; count 必填参数个数
 func AssertParamCount(count int, msg string) {
 	param := os.Args
 	flag := enoughCount(param, count)

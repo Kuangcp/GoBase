@@ -3,10 +3,10 @@ BINARY_NAME=myth-bookkeeping
 build:
 	go build -o bin/${BINARY_NAME}
 
-image:
+dockerImage:
 	docker build -t myth-bookkeeping .
 
-devImage:
+dockerDevImage:
 	docker build -t myth-bookkeeping . -f dev.dockerfile
 
 clean:

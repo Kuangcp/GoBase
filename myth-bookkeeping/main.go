@@ -23,6 +23,14 @@ func help(params []string) {
 				Verb:    "-r",
 				Param:   "AccountId CategoryId Type Amount ",
 				Comment: "create record ",
+			}, {
+				Verb:    "-re",
+				Param:   "AccountId CategoryId Amount ",
+				Comment: "create expense record ",
+			}, {
+				Verb:    "-rt",
+				Param:   "AccountId CategoryId Amount ",
+				Comment: "create transfer record ",
 			},
 		}}
 	cuibase.Help(info)
@@ -35,9 +43,11 @@ func updateDatabaseStructure(params []string) {
 
 func main() {
 	cuibase.RunAction(map[string]func(params []string){
-		"-h": help,
-		"-u": updateDatabaseStructure,
-		"-r": service.CreateRecordByParams,
+		"-h":  help,
+		"-u":  updateDatabaseStructure,
+		"-r":  service.CreateRecordByParams,
+		"-re": service.CreateExpenseRecordByParams,
+		"-rt": service.CreateTransRecordByParams,
 	}, help)
 
 }

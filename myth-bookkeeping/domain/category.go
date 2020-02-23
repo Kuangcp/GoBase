@@ -9,8 +9,10 @@ type (
 		AbsoluteHierarchy string
 		ParentId          int16
 		// 叶节点才参与记账
-		Leaf              bool
-		Name              string
+		Leaf   bool
+		Name   string
+		// AccountType
+		TypeId int8
 	}
 )
 
