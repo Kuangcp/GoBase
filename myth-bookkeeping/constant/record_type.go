@@ -2,20 +2,29 @@ package constant
 
 const (
 	// 支出
-	EXPENSE      int8 = 1
+	RECORD_EXPENSE int8 = 1
 	// 收入
-	INCOME       int8 = 2
-	TRANSFER_IN  int8 = 3
-	TRANSFER_OUT int8 = 4
-	// 借出
-	BORROW       int8 = 5
-	// 归还
-	REVERT       int8 = 6
+	RECORD_INCOME int8 = 2
+	// 转出
+	RECORD_TRANSFER_OUT int8 = 3
+	// 转入
+	RECORD_TRANSFER_IN int8 = 4
 )
 
-func IsValidRecordType(typeValue int8) bool {
-	if typeValue >= EXPENSE && typeValue <= REVERT {
-		return true
+var E_RECORD_EXPENSE  = NewBaseEnum(RECORD_EXPENSE ,"支出")
+var E_RECORD_INCOME  = NewBaseEnum(RECORD_INCOME ,"收入")
+var E_RECORD_TRANSFER_OUT = NewBaseEnum(RECORD_TRANSFER_OUT,"转出")
+var E_RECORD_TRANSFER_IN = NewBaseEnum(RECORD_TRANSFER_IN,"转入")
+
+var recordTypeMap map[int8]*BaseEnum
+
+func GetRecordTypeByIndex(index int8) *BaseEnum {
+	if recordTypeMap == nil {
+		recordTypeMap = MakeMap(E_RECORD_EXPENSE, E_RECORD_INCOME, E_RECORD_TRANSFER_OUT, E_RECORD_TRANSFER_IN)
 	}
-	return false
+	return recordTypeMap[index]
+}
+
+func IsValidRecordType(typeValue int8) bool {
+	return GetRecordTypeByIndex(typeValue) != nil
 }

@@ -7,11 +7,11 @@ type (
 		gorm.Model
 		// id:id 构成的绝对路径
 		AbsoluteHierarchy string
-		ParentId          int16
+		ParentId          uint
 		// 叶节点才参与记账
 		Leaf   bool
 		Name   string
-		// AccountType
+		// CategoryType
 		TypeId int8
 	}
 )

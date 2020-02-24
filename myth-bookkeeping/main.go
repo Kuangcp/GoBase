@@ -21,15 +21,19 @@ func help(params []string) {
 				Comment: "update database structure",
 			}, {
 				Verb:    "-r",
-				Param:   "AccountId CategoryId Type Amount ",
+				Param:   "Type AccountId CategoryId Amount Date",
 				Comment: "create record ",
 			}, {
 				Verb:    "-re",
-				Param:   "AccountId CategoryId Amount ",
+				Param:   "AccountId CategoryId Amount Date",
 				Comment: "create expense record ",
+			},{
+				Verb:    "-ri",
+				Param:   "AccountId CategoryId Amount Date",
+				Comment: "create income record ",
 			}, {
 				Verb:    "-rt",
-				Param:   "AccountId CategoryId Amount ",
+				Param:   "OutAccountId CategoryId Amount Date InAccountId [Comment]",
 				Comment: "create transfer record ",
 			},
 		}}
@@ -47,7 +51,9 @@ func main() {
 		"-u":  updateDatabaseStructure,
 		"-r":  service.CreateRecordByParams,
 		"-re": service.CreateExpenseRecordByParams,
+		"-ri": service.CreateIncomeRecordByParams,
 		"-rt": service.CreateTransRecordByParams,
+		"-pc": service.PrintCategory,
 	}, help)
 
 }

@@ -1,9 +1,12 @@
 package service
 
 import (
+	"fmt"
+	"github.com/kuangcp/gobase/myth-bookkeeping/constant"
 	"github.com/kuangcp/gobase/myth-bookkeeping/dal"
 	"github.com/kuangcp/gobase/myth-bookkeeping/domain"
 	"log"
+	"strconv"
 )
 
 func AddCategory(entity *domain.Category) {
@@ -12,11 +15,29 @@ func AddCategory(entity *domain.Category) {
 }
 
 func SetParentId(name string, id uint) {
-	db := dal.GetDB()
-	var lists []domain.Category
-	db.Select("name=" + name).Find(&lists)
-	log.Println(lists)
+	parent := FindCategoryById(id)
+	if parent == nil {
+		log.Println("parent id not exist")
+		return
+	}
 
+	current := FindCategoryByName(name)
+	if current == nil {
+		log.Println("current not exist")
+		return
+	}
+
+	db := dal.GetDB()
+	current.ParentId = id
+	// TODO update
+	db.Update(current)
+}
+
+func FindCategoryByName(name string) *domain.Category {
+	db := dal.GetDB()
+	var result domain.Category
+	db.Where("name = ?", name).First(&result)
+	return &result
 }
 
 func FindCategoryById(id uint) *domain.Category {
@@ -24,4 +45,39 @@ func FindCategoryById(id uint) *domain.Category {
 	var result domain.Category
 	db.Where("id = ?", id).First(&result)
 	return &result
+}
+
+func PrintCategory(_ []string) {
+	db := dal.GetDB()
+	var lists []domain.Category
+	db.Where("1=1").Find(&lists)
+
+	resultMap := make(map[int8][]domain.Category)
+	for i := range lists {
+		category := lists[i]
+
+		categories := resultMap[category.TypeId]
+		if categories == nil {
+			resultMap[category.TypeId] = []domain.Category{}
+			categories = resultMap[category.TypeId]
+		}
+
+		resultMap[category.TypeId] = append(categories, category)
+	}
+
+	for key := range constant.GetCategoryTypeMap() {
+		enum := constant.GetCategoryTypeByIndex(key)
+		value := ""
+		for i := range resultMap[enum.Index] {
+			category := resultMap[enum.Index][i]
+			nameLen := len(category.Name)
+
+			format := "%2d %s%" + strconv.Itoa(12-nameLen/3*2) + "s"
+			value += fmt.Sprintf(format, category.ID, category.Name, "")
+			if i%10 == 9 {
+				value += "\n"
+			}
+		}
+		fmt.Printf("\n------------------- %v ------------------- \n%v\n", enum.Name, value)
+	}
 }

@@ -95,10 +95,21 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO
 	return vo.Success()
 }
 
-func CreateExpenseRecordByParams(params [] string) {
-	cuibase.AssertParamCount(5, "参数缺失: -re AccountId CategoryId Amount Time [Comment]")
+func CreateIncomeRecordByParams(params [] string) {
+	cuibase.AssertParamCount(5, "参数缺失: -ri AccountId CategoryId Amount Date [Comment]")
 	p := params[2:]
-	p = append([]string{strconv.Itoa(int(constant.EXPENSE))}, p...)
+	p = append([]string{strconv.Itoa(int(constant.RECORD_INCOME))}, p...)
+	record := buildRecordByParams(p)
+	resultVO := CreateRecord(record)
+	if resultVO.IsFailed() {
+		log.Println(resultVO)
+	}
+}
+
+func CreateExpenseRecordByParams(params [] string) {
+	cuibase.AssertParamCount(5, "参数缺失: -re AccountId CategoryId Amount Date [Comment]")
+	p := params[2:]
+	p = append([]string{strconv.Itoa(int(constant.RECORD_EXPENSE))}, p...)
 	record := buildRecordByParams(p)
 	resultVO := CreateRecord(record)
 	if resultVO.IsFailed() {
@@ -107,9 +118,9 @@ func CreateExpenseRecordByParams(params [] string) {
 }
 
 func CreateTransRecordByParams(params [] string) {
-	cuibase.AssertParamCount(6, "参数缺失: -rt AccountId CategoryId Amount Time ToAccountId [Comment]")
+	cuibase.AssertParamCount(6, "参数缺失: -rt OutAccountId CategoryId Amount Date InAccountId [Comment]")
 	p := params[2:6]
-	p = append([]string{strconv.Itoa(int(constant.TRANSFER_IN))}, p...)
+	p = append([]string{strconv.Itoa(int(constant.RECORD_TRANSFER_OUT))}, p...)
 	record := buildRecordByParams(p)
 	if record == nil {
 		return
@@ -126,6 +137,8 @@ func CreateTransRecordByParams(params [] string) {
 	target := new(domain.Record)
 	_ = json.Unmarshal(aj, target)
 	target.AccountId = uint(accountId)
+	target.Type = constant.RECORD_TRANSFER_IN
+
 	checkResult, _, _ := checkParam(target)
 	if checkResult.IsFailed() {
 		return
@@ -138,7 +151,7 @@ func CreateTransRecordByParams(params [] string) {
 }
 
 func CreateRecordByParams(params [] string) {
-	cuibase.AssertParamCount(6, "参数缺失: -r TypeId AccountId CategoryId Amount Time [Comment]")
+	cuibase.AssertParamCount(6, "参数缺失: -r TypeId AccountId CategoryId Amount Date [Comment]")
 	record := buildRecordByParams(params[2:])
 	resultVO := CreateRecord(record)
 	if resultVO.IsFailed() {
@@ -146,7 +159,7 @@ func CreateRecordByParams(params [] string) {
 	}
 }
 
-// params: TypeId AccountId CategoryId Amount Time [Comment]
+// params: TypeId AccountId CategoryId Amount Date [Comment]
 func buildRecordByParams(params []string) *domain.Record {
 	typeId, e := strconv.Atoi(params[0])
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
@@ -170,7 +183,7 @@ func buildRecordByParams(params []string) *domain.Record {
 		return nil
 	}
 
-	recordTime, e := time.Parse("2006-01-02", params[4])
+	recordDate, e := time.Parse("2006-01-02", params[4])
 	if e != nil {
 		log.Println(e)
 		return nil
@@ -181,7 +194,7 @@ func buildRecordByParams(params []string) *domain.Record {
 		CategoryId: uint(categoryId),
 		Type:       int8(typeId),
 		Amount:     amount,
-		RecordTime: recordTime,
+		RecordTime: recordDate,
 	}
 	if len(params) == 6 {
 		record.Comment = params[5]

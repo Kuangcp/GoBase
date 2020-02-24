@@ -6,8 +6,8 @@ import (
 )
 
 func TestGetById(t *testing.T) {
-	online := GetById(ONLINE_TYPE)
-	if online.TypeId != ONLINE_TYPE {
+	online := GetAccountTypeByIndex(ACCOUNT_ONLINE)
+	if online.TypeId != ACCOUNT_ONLINE {
 		assert.Fail(t, "type error")
 	}
 }
