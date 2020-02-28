@@ -2,9 +2,8 @@ package conf
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/spf13/viper"
+	"github.com/wonderivan/logger"
 )
 
 type (
@@ -19,14 +18,16 @@ var DefaultDriver = "sqlite3"
 var loaded = false
 
 func LoadConfig() {
+	logger.SetLogPathTrim("myth-bookkeeping/")
 	if !loaded {
-		log.Println("load config file ~/.config/bookkeeping.yml")
+
+		logger.Info("load config file ~/.config/bookkeeping.yml")
 		viper.SetConfigName("bookkeeping")
 		viper.SetConfigType("yaml")
 		viper.AddConfigPath("$HOME/.config")
 		err := viper.ReadInConfig()
 		if err != nil {
-			log.Println(fmt.Errorf("Fatal error config file: %s \n", err))
+			logger.Error(fmt.Errorf("Fatal error config file: %s \n", err))
 		}
 		loaded = true
 	}

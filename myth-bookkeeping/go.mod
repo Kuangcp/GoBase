@@ -8,6 +8,7 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.2+incompatible
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.2.2
+	github.com/wonderivan/logger v1.0.0
 )
 
 replace github.com/kuangcp/gobase/cuibase => ./../cuibase

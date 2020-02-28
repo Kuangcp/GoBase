@@ -65,8 +65,9 @@ func PrintCategory(_ []string) {
 		resultMap[category.TypeId] = append(categories, category)
 	}
 
-	for key := range constant.GetCategoryTypeMap() {
-		enum := constant.GetCategoryTypeByIndex(key)
+	_, categories := constant.GetCategoryTypeMap()
+	for i := range categories {
+		enum := categories[i]
 		value := ""
 		for i := range resultMap[enum.Index] {
 			category := resultMap[enum.Index][i]
@@ -78,6 +79,8 @@ func PrintCategory(_ []string) {
 				value += "\n"
 			}
 		}
-		fmt.Printf("\n------------------- %v ------------------- \n%v\n", enum.Name, value)
+		if len(resultMap[enum.Index]) != 0 {
+			fmt.Printf("\n------------------- %v ------------------- \n%v\n", enum.Name, value)
+		}
 	}
 }

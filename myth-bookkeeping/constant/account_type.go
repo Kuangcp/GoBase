@@ -17,10 +17,11 @@ var E_ACCOUNT_ONLINE = &BaseEnum{Index: ACCOUNT_ONLINE, Name: "在线支付"}
 var E_ACCOUNT_FINANCE = &BaseEnum{Index: ACCOUNT_FINANCE, Name: "理财"}
 
 var accountTypeMap map[int8]*BaseEnum
+var accountTypeList []*BaseEnum
 
 func GetAccountTypeByIndex(index int8) *BaseEnum {
 	if accountTypeMap == nil {
-		accountTypeMap = MakeMap(E_ACCOUNT_CASH, E_ACCOUNT_DEPOSIT, E_ACCOUNT_CREDIT, E_ACCOUNT_ONLINE, E_ACCOUNT_FINANCE)
+		accountTypeMap, accountTypeList = MakeMap(E_ACCOUNT_CASH, E_ACCOUNT_DEPOSIT, E_ACCOUNT_CREDIT, E_ACCOUNT_ONLINE, E_ACCOUNT_FINANCE)
 	}
 	return accountTypeMap[index]
 }

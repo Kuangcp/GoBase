@@ -14,16 +14,18 @@ var E_CATEGORY_INCOME = NewBaseEnum(CATEGORY_INCOME, "收入")
 var E_CATEGORY_TRANSFER = NewBaseEnum(CATEGORY_TRANSFER, "转账")
 
 var categoryTypeMap map[int8]*BaseEnum
+var categoryTypeList []*BaseEnum
 
-func GetCategoryTypeMap() map[int8]*BaseEnum {
+func GetCategoryTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
 	if categoryTypeMap == nil {
-		categoryTypeMap = MakeMap(E_CATEGORY_EXPENSE, E_CATEGORY_INCOME, E_CATEGORY_TRANSFER)
+		categoryTypeMap, categoryTypeList = MakeMap(E_CATEGORY_EXPENSE, E_CATEGORY_INCOME, E_CATEGORY_TRANSFER)
 	}
-	return categoryTypeMap
+	return categoryTypeMap, categoryTypeList
 }
 
 func GetCategoryTypeByIndex(index int8) *BaseEnum {
-	return GetCategoryTypeMap()[index]
+	maps, _ := GetCategoryTypeMap()
+	return maps[index]
 }
 
 func IsValidCategoryType(typeValue int8) bool {

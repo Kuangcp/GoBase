@@ -1,4 +1,10 @@
-BINARY_NAME=myth-bookkeeping
+BINARY_NAME=bookkeeping
+
+install:
+	go install
+
+clean:
+	rm -f bin/*
 
 build:
 	go build -o bin/${BINARY_NAME}
@@ -8,6 +14,3 @@ dockerImage:
 
 dockerDevImage:
 	docker build -t myth-bookkeeping . -f dev.dockerfile
-
-clean:
-	rm bin/${BINARY_NAME}

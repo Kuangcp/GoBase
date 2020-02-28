@@ -5,11 +5,11 @@ import (
 	"github.com/kuangcp/gobase/myth-bookkeeping/service"
 )
 
-func help(params []string) {
+func help(_ []string) {
 	info := cuibase.HelpInfo{
 		Description: "Myth Bookkeeping",
 		VerbLen:     -4,
-		ParamLen:    -35,
+		ParamLen:    -60,
 		Params: []cuibase.ParamInfo{
 			{
 				Verb:    "-h",
@@ -21,15 +21,15 @@ func help(params []string) {
 				Comment: "update database structure",
 			}, {
 				Verb:    "-r",
-				Param:   "Type AccountId CategoryId Amount Date",
+				Param:   "Type AccountId CategoryId Amount Date [Comment]",
 				Comment: "create record ",
 			}, {
 				Verb:    "-re",
-				Param:   "AccountId CategoryId Amount Date",
+				Param:   "AccountId CategoryId Amount Date [Comment]",
 				Comment: "create expense record ",
-			},{
+			}, {
 				Verb:    "-ri",
-				Param:   "AccountId CategoryId Amount Date",
+				Param:   "AccountId CategoryId Amount Date [Comment]",
 				Comment: "create income record ",
 			}, {
 				Verb:    "-rt",
@@ -40,7 +40,7 @@ func help(params []string) {
 	cuibase.Help(info)
 }
 
-func updateDatabaseStructure(params []string) {
+func updateDatabaseStructure(_ []string) {
 	// 建立数据库结构
 	service.AutoMigrateAll()
 }

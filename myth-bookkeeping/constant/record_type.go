@@ -11,18 +11,23 @@ const (
 	RECORD_TRANSFER_IN int8 = 4
 )
 
-var E_RECORD_EXPENSE  = NewBaseEnum(RECORD_EXPENSE ,"支出")
-var E_RECORD_INCOME  = NewBaseEnum(RECORD_INCOME ,"收入")
-var E_RECORD_TRANSFER_OUT = NewBaseEnum(RECORD_TRANSFER_OUT,"转出")
-var E_RECORD_TRANSFER_IN = NewBaseEnum(RECORD_TRANSFER_IN,"转入")
+var E_RECORD_EXPENSE = NewBaseEnum(RECORD_EXPENSE, "支出")
+var E_RECORD_INCOME = NewBaseEnum(RECORD_INCOME, "收入")
+var E_RECORD_TRANSFER_OUT = NewBaseEnum(RECORD_TRANSFER_OUT, "转出")
+var E_RECORD_TRANSFER_IN = NewBaseEnum(RECORD_TRANSFER_IN, "转入")
 
 var recordTypeMap map[int8]*BaseEnum
+var recordTypeList []*BaseEnum
 
-func GetRecordTypeByIndex(index int8) *BaseEnum {
+func GetRecordTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
 	if recordTypeMap == nil {
-		recordTypeMap = MakeMap(E_RECORD_EXPENSE, E_RECORD_INCOME, E_RECORD_TRANSFER_OUT, E_RECORD_TRANSFER_IN)
+		recordTypeMap, recordTypeList = MakeMap(E_RECORD_EXPENSE, E_RECORD_INCOME, E_RECORD_TRANSFER_OUT, E_RECORD_TRANSFER_IN)
 	}
-	return recordTypeMap[index]
+	return recordTypeMap, recordTypeList
+}
+func GetRecordTypeByIndex(index int8) *BaseEnum {
+	maps, _ := GetRecordTypeMap()
+	return maps[index]
 }
 
 func IsValidRecordType(typeValue int8) bool {
