@@ -5,7 +5,7 @@ import (
 	"github.com/kuangcp/gobase/mybook/constant"
 	"github.com/kuangcp/gobase/mybook/dal"
 	"github.com/kuangcp/gobase/mybook/domain"
-	"log"
+	"github.com/wonderivan/logger"
 	"strconv"
 )
 
@@ -17,13 +17,13 @@ func AddCategory(entity *domain.Category) {
 func SetParentId(name string, id uint) {
 	parent := FindCategoryById(id)
 	if parent == nil {
-		log.Println("parent id not exist")
+		logger.Error("parent id not exist")
 		return
 	}
 
 	current := FindCategoryByName(name)
 	if current == nil {
-		log.Println("current not exist")
+		logger.Error("current not exist")
 		return
 	}
 

@@ -4,7 +4,7 @@ import (
 	"github.com/kuangcp/gobase/mybook/dal"
 	"github.com/kuangcp/gobase/mybook/domain"
 	"github.com/kuangcp/gobase/mybook/util"
-	"log"
+	"github.com/wonderivan/logger"
 )
 
 func ListAccounts() []domain.Account {
@@ -14,7 +14,6 @@ func ListAccounts() []domain.Account {
 	e := db.Find(&accounts).Error
 	util.AssertNoError(e)
 
-	log.Println(len(accounts))
 	return accounts
 }
 
@@ -22,7 +21,7 @@ func AddAccount(account *domain.Account) {
 	db := dal.GetDB()
 
 	create := db.Create(account)
-	log.Println(create)
+	logger.Info(create)
 }
 
 func UpdateAccount(account *domain.Account) {

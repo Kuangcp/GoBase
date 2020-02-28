@@ -7,7 +7,7 @@ import (
 	"github.com/kuangcp/gobase/mybook/dal"
 	"github.com/kuangcp/gobase/mybook/domain"
 	"github.com/kuangcp/gobase/mybook/vo"
-	"log"
+	"github.com/wonderivan/logger"
 	"strconv"
 	"time"
 )
@@ -89,7 +89,7 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO
 
 	e := addBatchRecordsWithTransaction(origin, target)
 	if e != nil {
-		log.Println(e)
+		logger.Error(e)
 		return vo.Failed()
 	}
 	return vo.Success()
@@ -102,7 +102,7 @@ func CreateIncomeRecordByParams(params [] string) {
 	record := buildRecordByParams(p)
 	resultVO := CreateRecord(record)
 	if resultVO.IsFailed() {
-		log.Println(resultVO)
+		logger.Error(resultVO)
 	}
 }
 
@@ -113,7 +113,7 @@ func CreateExpenseRecordByParams(params [] string) {
 	record := buildRecordByParams(p)
 	resultVO := CreateRecord(record)
 	if resultVO.IsFailed() {
-		log.Println(resultVO)
+		logger.Error(resultVO)
 	}
 }
 
@@ -127,7 +127,7 @@ func CreateTransRecordByParams(params [] string) {
 	}
 	accountId, e := strconv.ParseUint(params[6], 10, 64)
 	if e != nil {
-		log.Println(e)
+		logger.Error(e)
 		return
 	}
 
@@ -146,7 +146,7 @@ func CreateTransRecordByParams(params [] string) {
 
 	createResult := createTransRecord(record, target)
 	if createResult.IsFailed() {
-		log.Println(createResult)
+		logger.Error(createResult)
 	}
 }
 
@@ -155,7 +155,7 @@ func CreateRecordByParams(params [] string) {
 	record := buildRecordByParams(params[2:])
 	resultVO := CreateRecord(record)
 	if resultVO.IsFailed() {
-		log.Println(resultVO)
+		logger.Error(resultVO)
 	}
 }
 
@@ -163,29 +163,29 @@ func CreateRecordByParams(params [] string) {
 func buildRecordByParams(params []string) *domain.Record {
 	typeId, e := strconv.Atoi(params[0])
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
-		log.Println(e)
+		logger.Error(e)
 		return nil
 	}
 	accountId, e := strconv.ParseUint(params[1], 10, 64)
 	if e != nil {
-		log.Println(e)
+		logger.Error(e)
 		return nil
 	}
 	categoryId, e := strconv.ParseUint(params[2], 10, 64)
 	if e != nil {
-		log.Println(e)
+		logger.Error(e)
 		return nil
 	}
 
 	amount, e := strconv.Atoi(params[3])
 	if e != nil {
-		log.Println(e)
+		logger.Error(e)
 		return nil
 	}
 
 	recordDate, e := time.Parse("2006-01-02", params[4])
 	if e != nil {
-		log.Println(e)
+		logger.Error(e)
 		return nil
 	}
 
