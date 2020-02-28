@@ -1,4 +1,4 @@
-BINARY_NAME=bookkeeping
+BINARY_NAME=mybook
 
 install:
 	go install

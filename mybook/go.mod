@@ -1,4 +1,4 @@
-module github.com/kuangcp/gobase/myth-bookkeeping
+module github.com/kuangcp/gobase/mybook
 
 go 1.13
 
