@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/myth-bookkeeping/constant"
-	"github.com/kuangcp/gobase/myth-bookkeeping/dal"
-	"github.com/kuangcp/gobase/myth-bookkeeping/domain"
+	"github.com/kuangcp/gobase/mybook/constant"
+	"github.com/kuangcp/gobase/mybook/dal"
+	"github.com/kuangcp/gobase/mybook/domain"
 	"log"
 	"strconv"
 )

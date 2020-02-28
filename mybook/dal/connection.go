@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kuangcp/gobase/myth-bookkeeping/conf"
+	"github.com/kuangcp/gobase/mybook/conf"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )

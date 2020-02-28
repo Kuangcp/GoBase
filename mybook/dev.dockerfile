@@ -8,8 +8,8 @@ RUN addgroup -S app \
     && adduser -S -g app app \
     &&  chown -R app:app /app
 
-COPY ./bin/myth-bookkeeping .
+COPY ./bin/mybook .
 
 USER app
 
-ENTRYPOINT ["/app/myth-bookkeeping"]
+ENTRYPOINT ["/app/mybook"]

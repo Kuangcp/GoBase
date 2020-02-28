@@ -8,8 +8,8 @@ RUN apk add --no-cache ca-certificates tzdata \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && chown -R app:app /app
 
-COPY ./bin/myth-bookkeeping .
+COPY ./bin/mybook .
 
 USER app
 
-ENTRYPOINT ["/app/myth-bookkeeping"]
+ENTRYPOINT ["/app/mybook"]

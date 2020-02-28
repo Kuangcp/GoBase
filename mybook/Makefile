@@ -10,7 +10,7 @@ build:
 	go build -o bin/${BINARY_NAME}
 
 dockerImage:
-	docker build -t myth-bookkeeping .
+	docker build -t mybook .
 
 dockerDevImage:
-	docker build -t myth-bookkeeping . -f dev.dockerfile
+	docker build -t mybook . -f dev.dockerfile

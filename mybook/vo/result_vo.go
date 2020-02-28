@@ -1,6 +1,6 @@
 package vo
 
-import "github.com/kuangcp/gobase/myth-bookkeeping/constant"
+import "github.com/kuangcp/gobase/mybook/constant"
 
 type (
 	ResultVO struct {

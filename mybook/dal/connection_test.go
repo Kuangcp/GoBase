@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kuangcp/gobase/myth-bookkeeping/conf"
+	"github.com/kuangcp/gobase/mybook/conf"
 )
 
 func TestGetConnectionConfig(t *testing.T) {
