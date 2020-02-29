@@ -9,16 +9,19 @@ type (
 	Record struct {
 		gorm.Model
 
+		// 账本id
+		BookId uint
+
 		AccountId uint
 
 		// 转账记录时间戳 联系转入和转出
 		TransferId uint
 
 		// 分为单位
-		Amount     int
+		Amount int
 
 		// 备注
-		Comment    string
+		Comment string
 
 		// 交易的分类id
 		CategoryId uint

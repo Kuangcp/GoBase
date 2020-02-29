@@ -7,6 +7,7 @@ type (
 		gorm.Model
 
 		Name string
+		Comment string
 	}
 )
 

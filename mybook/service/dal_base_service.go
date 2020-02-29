@@ -11,5 +11,4 @@ func AutoMigrateAll() {
 	db.AutoMigrate(&domain.Category{})
 	db.AutoMigrate(&domain.Record{})
 	db.AutoMigrate(&domain.BookKeeping{})
-	db.AutoMigrate(&domain.TransferRecord{})
 }

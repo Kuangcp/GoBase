@@ -2,11 +2,12 @@ package service
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/mybook/constant"
 	"github.com/kuangcp/gobase/mybook/dal"
 	"github.com/kuangcp/gobase/mybook/domain"
+	"github.com/kuangcp/gobase/mybook/util"
 	"github.com/wonderivan/logger"
-	"strconv"
 )
 
 func AddCategory(entity *domain.Category) {
@@ -71,16 +72,15 @@ func PrintCategory(_ []string) {
 		value := ""
 		for i := range resultMap[enum.Index] {
 			category := resultMap[enum.Index][i]
-			nameLen := len(category.Name)
 
-			format := "%2d %s%" + strconv.Itoa(12-nameLen/3*2) + "s"
-			value += fmt.Sprintf(format, category.ID, category.Name, "")
+			chFormat := util.BuildCHCharFormat(10, category.Name)
+			value += fmt.Sprintf("%3d %s"+chFormat, category.ID, category.Name, "")
 			if i%10 == 9 {
 				value += "\n"
 			}
 		}
 		if len(resultMap[enum.Index]) != 0 {
-			fmt.Printf("\n------------------- %v ------------------- \n%v\n", enum.Name, value)
+			fmt.Printf(cuibase.Cyan+"> %v  "+cuibase.End+"\n%v\n\n", enum.Name, value)
 		}
 	}
 }

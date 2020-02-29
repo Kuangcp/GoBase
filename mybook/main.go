@@ -54,6 +54,7 @@ func main() {
 		"-ri": service.CreateIncomeRecordByParams,
 		"-rt": service.CreateTransRecordByParams,
 		"-pc": service.PrintCategory,
+		"-pa": service.PrintAccount,
 	}, help)
 
 }

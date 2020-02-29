@@ -14,30 +14,9 @@ import (
 
 func addRecord(record *domain.Record) {
 	db := dal.GetDB()
+	// TODO support multiple book
+	record.BookId = 1
 	db.Create(record)
-}
-
-func addBatchRecordsWithTransaction(records ...*domain.Record) error {
-	db := dal.GetDB()
-	tx := db.Begin()
-
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	for i := range records {
-		if err := tx.Error; err != nil {
-			return err
-		}
-
-		if err := tx.Create(records[i]).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	return tx.Commit().Error
 }
 
 func checkParam(record *domain.Record) (vo.ResultVO, *domain.Category, *domain.Account) {
@@ -87,7 +66,7 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO
 		return resultVO
 	}
 
-	e := addBatchRecordsWithTransaction(origin, target)
+	e := dal.BatchSaveWithTransaction(origin, target)
 	if e != nil {
 		logger.Error(e)
 		return vo.Failed()
@@ -141,6 +120,7 @@ func CreateTransRecordByParams(params [] string) {
 
 	checkResult, _, _ := checkParam(target)
 	if checkResult.IsFailed() {
+		logger.Error(checkResult)
 		return
 	}
 

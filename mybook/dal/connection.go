@@ -43,13 +43,27 @@ func GetDB() *gorm.DB {
 	}
 }
 
-func getConnectionWithConfig(config *conf.ConnectionConfig) *gorm.DB {
-	db, err := gorm.Open(config.DriverName, config.Path)
-	if err != nil {
-		log.Fatal(err)
-	}
+func BatchSaveWithTransaction(records ...interface{}) error {
+	db := GetDB()
+	tx := db.Begin()
 
-	return db
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	for i := range records {
+		if err := tx.Error; err != nil {
+			return err
+		}
+
+		if err := tx.Create(records[i]).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit().Error
 }
 
 func Close(db *gorm.DB) {
@@ -57,4 +71,13 @@ func Close(db *gorm.DB) {
 	if e != nil {
 		log.Fatal(e)
 	}
+}
+
+func getConnectionWithConfig(config *conf.ConnectionConfig) *gorm.DB {
+	db, err := gorm.Open(config.DriverName, config.Path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return db
 }
