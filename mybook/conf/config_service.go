@@ -24,7 +24,7 @@ func GetAppConfig() *AppConfig {
 	if config != nil {
 		return config
 	}
-	LoadConfig()
+	loadConfig()
 
 	path := viper.GetString("path")
 	if path == "" {
@@ -40,7 +40,7 @@ func GetAppConfig() *AppConfig {
 	return config
 }
 
-func LoadConfig() {
+func loadConfig() {
 	configLogger()
 
 	logger.Info("load config file ~/.config/mybook.yml")
