@@ -13,9 +13,9 @@ func Server(_ []string) {
 	router.GET("/ping", HealthCheck)
 	router.Static("/static", "./web/static")
 
-	router.GET("/mybook/record/typeList", ListRecordType)
-	router.GET("/mybook/record/accountList", ListAccount)
-	router.GET("/mybook/record/categoryList", ListCategory)
+	router.GET("/mybook/category/typeList", ListCategoryType)
+	router.GET("/mybook/category/list", ListCategory)
+	router.GET("/mybook/account/list", ListAccount)
 	router.POST("/mybook/record/create", CreateRecord)
 
 	e := router.Run(":10006")

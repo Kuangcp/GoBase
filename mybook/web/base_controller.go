@@ -24,6 +24,11 @@ func ListRecordType(c *gin.Context) {
 	vo.SuccessForWebWith(c, list)
 }
 
+func ListCategoryType(c *gin.Context) {
+	_, list := constant.GetCategoryTypeMap()
+	vo.SuccessForWebWith(c, list)
+}
+
 func ListCategory(c *gin.Context) {
 	recordType := c.Query("recordType")
 	if recordType == "" {

@@ -1,6 +1,7 @@
 # bookkeeping
 
-SQLite + Golang + RESTful JSON API
+1. 前端：layer jquery
+1. 后端：SQLite Gin Gorm logger viper
 
 - [gorm](gorm.io/zh_CN/)
 - [go-sqlite3](https://github.com/mattn/go-sqlite3)

@@ -10,6 +10,7 @@ import (
 
 // curl -s -F typeId=4 -F accountId=3 -F categoryId=102 -F amount=2000 -F date='2020-02-03' localhost:10006/record | pretty-json
 func CreateRecord(c *gin.Context) {
+	// 实际上是 categoryTypeId
 	typeId := c.PostForm("typeId")
 	accountId := c.PostForm("accountId")
 	targetAccountId := c.PostForm("targetAccountId")
