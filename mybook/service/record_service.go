@@ -204,9 +204,7 @@ func CreateMultipleTypeRecord(recordVO vo.RecordVO) *domain.Record {
 	}
 
 	if recordVO.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
-		// TODO 转账
 		record.Type = constant.RECORD_TRANSFER_OUT
-
 		accountId, e := strconv.ParseUint(recordVO.TargetAccountId, 10, 64)
 		if e != nil {
 			logger.Error(e)
@@ -230,14 +228,18 @@ func CreateMultipleTypeRecord(recordVO vo.RecordVO) *domain.Record {
 			return nil
 		}
 
-		//createResult := createTransRecord(record, target)
-		//if createResult.IsFailed() {
-		//	logger.Error(createResult)
-		//	return nil
-		//}
-		//return record
+		createResult := createTransRecord(record, target)
+		if createResult.IsFailed() {
+			logger.Error(createResult)
+			return nil
+		}
+		return record
 	} else {
+		resultVO := CreateRecord(record)
+		if resultVO.IsFailed() {
+			logger.Error(resultVO)
+			return nil
+		}
 		return record
 	}
-	return nil
 }
