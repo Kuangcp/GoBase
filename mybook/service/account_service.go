@@ -14,7 +14,7 @@ func ListAccounts() []domain.Account {
 
 	var accounts []domain.Account
 	e := db.Find(&accounts).Error
-	util.AssertNoError(e)
+	util.RecordError(e)
 
 	return accounts
 }

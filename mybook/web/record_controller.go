@@ -3,6 +3,7 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/mybook/service"
+	"github.com/kuangcp/gobase/mybook/util"
 	"github.com/kuangcp/gobase/mybook/vo"
 	"github.com/wonderivan/logger"
 )
@@ -11,14 +12,22 @@ import (
 func CreateRecord(c *gin.Context) {
 	typeId := c.PostForm("typeId")
 	accountId := c.PostForm("accountId")
+	targetAccountId := c.PostForm("targetAccountId")
 	categoryId := c.PostForm("categoryId")
 	amount := c.PostForm("amount")
 	date := c.PostForm("date")
 	comment := c.PostForm("comment")
 
-	logger.Debug(typeId, accountId, categoryId, amount, date, comment)
+	recordVO := vo.RecordVO{TypeId: typeId, AccountId: accountId, CategoryId: categoryId,
+		Amount: amount, Date: date, Comment: comment, TargetAccountId: targetAccountId}
 
-	record := service.BuildRecordByField(typeId, accountId, categoryId, amount, date, comment)
-	logger.Debug(record)
-	c.JSON(200, vo.SuccessWith(record))
+	logger.Debug("createRecord: ", util.Json(recordVO))
+
+	record := service.CreateMultipleTypeRecord(recordVO)
+	if record != nil {
+		logger.Debug("createRecord result: ", util.Json(record))
+		c.JSON(200, vo.SuccessWith(record))
+	} else {
+		c.JSON(200, vo.Failed())
+	}
 }

@@ -14,21 +14,27 @@ func HealthCheck(c *gin.Context) {
 	})
 }
 
+func ListAccount(c *gin.Context) {
+	accounts := service.ListAccounts()
+	vo.SuccessForWebWith(c, accounts)
+}
+
 func ListRecordType(c *gin.Context) {
 	_, list := constant.GetRecordTypeMap()
-	c.JSON(200, vo.SuccessWith(list))
+	vo.SuccessForWebWith(c, list)
 }
 
 func ListCategory(c *gin.Context) {
 	recordType := c.Query("recordType")
 	if recordType == "" {
-		c.JSON(200, vo.SuccessWith(service.FindAllCategory()))
+		vo.SuccessForWebWith(c, service.FindAllCategory())
 	}
 	i, _ := strconv.Atoi(recordType)
-	typeEnum := constant.GetCategoryTypeByIndex(int8(i))
+	typeEnum := constant.GetCategoryTypeByRecordTypeIndex(int8(i))
 	if typeEnum != nil {
 		list := service.FindCategoryByTypeId(typeEnum.Index)
-		c.JSON(200, vo.SuccessWith(list))
+		vo.SuccessForWebWith(c, list)
+	} else {
+		vo.FailedForWeb(c)
 	}
-	c.JSON(200, vo.Failed())
 }

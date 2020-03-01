@@ -1,11 +1,11 @@
 package service
 
 import (
-	"encoding/json"
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/mybook/constant"
 	"github.com/kuangcp/gobase/mybook/dal"
 	"github.com/kuangcp/gobase/mybook/domain"
+	"github.com/kuangcp/gobase/mybook/util"
 	"github.com/kuangcp/gobase/mybook/vo"
 	"github.com/wonderivan/logger"
 	"strconv"
@@ -112,9 +112,12 @@ func CreateTransRecordByParams(params [] string) {
 
 	now := time.Now()
 	record.TransferId = uint(now.UnixNano())
-	aj, _ := json.Marshal(record)
-	target := new(domain.Record)
-	_ = json.Unmarshal(aj, target)
+
+	target := util.Copy(record, new(domain.Record)).(*domain.Record)
+	if target == nil {
+		return
+	}
+
 	target.AccountId = uint(accountId)
 	target.Type = constant.RECORD_TRANSFER_IN
 
@@ -141,29 +144,40 @@ func CreateRecordByParams(params [] string) {
 
 // params: TypeId AccountId CategoryId Amount Date [Comment]
 func buildRecordByParams(params []string) *domain.Record {
-	typeId, e := strconv.Atoi(params[0])
+	comment := ""
+	if len(params) == 6 {
+		comment = params[5]
+	}
+
+	recordVO := vo.RecordVO{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
+		Amount: params[3], Date: params[4], Comment: comment}
+	return BuildRecordByField(recordVO)
+}
+
+func BuildRecordByField(recordVO vo.RecordVO) *domain.Record {
+	typeId, e := strconv.Atoi(recordVO.TypeId)
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
 		logger.Error(e)
 		return nil
 	}
-	accountId, e := strconv.ParseUint(params[1], 10, 64)
+	accountId, e := strconv.ParseUint(recordVO.AccountId, 10, 64)
 	if e != nil {
 		logger.Error(e)
 		return nil
 	}
-	categoryId, e := strconv.ParseUint(params[2], 10, 64)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-
-	amount, e := strconv.Atoi(params[3])
+	categoryId, e := strconv.ParseUint(recordVO.CategoryId, 10, 64)
 	if e != nil {
 		logger.Error(e)
 		return nil
 	}
 
-	recordDate, e := time.Parse("2006-01-02", params[4])
+	amount, e := strconv.Atoi(recordVO.Amount)
+	if e != nil {
+		logger.Error(e)
+		return nil
+	}
+
+	recordDate, e := time.Parse("2006-01-02", recordVO.Date)
 	if e != nil {
 		logger.Error(e)
 		return nil
@@ -176,53 +190,54 @@ func buildRecordByParams(params []string) *domain.Record {
 		Amount:     amount,
 		RecordTime: recordDate,
 	}
-	if len(params) == 6 {
-		record.Comment = params[5]
+	if recordVO.Comment != "" {
+		record.Comment = recordVO.Comment
 	}
 
 	return record
 }
 
-func BuildRecordByField(typeIdStr string, accountIdStr string, category string, Amount string,
-	date string, comment string) *domain.Record {
-	typeId, e := strconv.Atoi(typeIdStr)
-	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
-		logger.Error(e)
-		return nil
-	}
-	accountId, e := strconv.ParseUint(accountIdStr, 10, 64)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-	categoryId, e := strconv.ParseUint(category, 10, 64)
-	if e != nil {
-		logger.Error(e)
+func CreateMultipleTypeRecord(recordVO vo.RecordVO) *domain.Record {
+	record := BuildRecordByField(recordVO)
+	if record == nil {
 		return nil
 	}
 
-	amount, e := strconv.Atoi(Amount)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
+	if recordVO.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
+		// TODO 转账
+		record.Type = constant.RECORD_TRANSFER_OUT
 
-	recordDate, e := time.Parse("2006-01-02", date)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
+		accountId, e := strconv.ParseUint(recordVO.TargetAccountId, 10, 64)
+		if e != nil {
+			logger.Error(e)
+			return nil
+		}
 
-	record := &domain.Record{
-		AccountId:  uint(accountId),
-		CategoryId: uint(categoryId),
-		Type:       int8(typeId),
-		Amount:     amount,
-		RecordTime: recordDate,
-	}
-	if comment != "" {
-		record.Comment = comment
-	}
+		now := time.Now()
+		record.TransferId = uint(now.UnixNano())
 
-	return record
+		target := util.Copy(record, new(domain.Record)).(*domain.Record)
+		if target == nil {
+			return nil
+		}
+
+		target.AccountId = uint(accountId)
+		target.Type = constant.RECORD_TRANSFER_IN
+
+		checkResult, _, _ := checkParam(target)
+		if checkResult.IsFailed() {
+			logger.Error(checkResult)
+			return nil
+		}
+
+		//createResult := createTransRecord(record, target)
+		//if createResult.IsFailed() {
+		//	logger.Error(createResult)
+		//	return nil
+		//}
+		//return record
+	} else {
+		return record
+	}
+	return nil
 }

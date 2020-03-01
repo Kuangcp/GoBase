@@ -1,6 +1,10 @@
 package vo
 
-import "github.com/kuangcp/gobase/mybook/constant"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/kuangcp/gobase/mybook/constant"
+	"net/http"
+)
 
 type (
 	ResultVO struct {
@@ -18,11 +22,20 @@ func SuccessWith(data interface{}) ResultVO {
 	return ResultVO{Data: data, Code: constant.SUCCESS, Success: true}
 }
 
+func SuccessForWebWith(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, SuccessWith(data))
+}
+
 func Success() ResultVO {
 	return success
 }
+
 func Failed() ResultVO {
 	return failed
+}
+
+func FailedForWeb(c *gin.Context) {
+	c.JSON(http.StatusOK, failed)
 }
 
 func FailedWithMsg(msg string) ResultVO {

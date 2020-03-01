@@ -33,3 +33,22 @@ func GetCategoryTypeByIndex(index int8) *BaseEnum {
 func IsValidCategoryType(typeValue int8) bool {
 	return GetCategoryTypeByIndex(typeValue) != nil
 }
+
+func GetCategoryTypeByRecordTypeIndex(index int8) *BaseEnum {
+	recordType := GetRecordTypeByIndex(index)
+	if recordType == nil {
+		return nil
+	}
+
+	switch recordType {
+	case E_RECORD_EXPENSE:
+		return E_CATEGORY_EXPENSE
+	case E_RECORD_INCOME:
+		return E_CATEGORY_INCOME
+	case E_RECORD_TRANSFER_IN:
+		return E_CATEGORY_TRANSFER
+	case E_RECORD_TRANSFER_OUT:
+		return E_CATEGORY_TRANSFER
+	}
+	return nil
+}
