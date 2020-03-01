@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/wonderivan/logger"
 )
@@ -40,6 +41,8 @@ func GetAppConfig() *AppConfig {
 }
 
 func LoadConfig() {
+	configLogger()
+
 	logger.Info("load config file ~/.config/mybook.yml")
 	viper.SetConfigName("mybook")
 	viper.SetConfigType("yaml")
@@ -48,7 +51,6 @@ func LoadConfig() {
 	if err != nil {
 		logger.Error("Fatal error config file: %s \n", err)
 	}
-	configLogger()
 }
 
 func configLogger() {
@@ -60,6 +62,7 @@ func configLogger() {
 		jsonPath = "./resources/log-dev.json"
 	} else {
 		jsonPath = "./resources/log.json"
+		gin.SetMode(gin.ReleaseMode)
 	}
 	e := logger.SetLogger(jsonPath)
 	if e != nil {
