@@ -41,11 +41,26 @@ func FindCategoryByName(name string) *domain.Category {
 	return &result
 }
 
+func FindCategoryByTypeId(typeId int8) *[]domain.Category {
+	db := dal.GetDB()
+
+	var lists []domain.Category
+	db.Where("type_id=?", typeId).Find(&lists)
+	return &lists
+}
+
 func FindCategoryById(id uint) *domain.Category {
 	db := dal.GetDB()
 	var result domain.Category
 	db.Where("id = ?", id).First(&result)
 	return &result
+}
+
+func FindAllCategory() *[]domain.Category {
+	db := dal.GetDB()
+	var lists []domain.Category
+	db.Where("1=1").Find(&lists)
+	return &lists
 }
 
 func PrintCategory(_ []string) {

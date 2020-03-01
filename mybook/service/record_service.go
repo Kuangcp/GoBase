@@ -182,3 +182,47 @@ func buildRecordByParams(params []string) *domain.Record {
 
 	return record
 }
+
+func BuildRecordByField(typeIdStr string, accountIdStr string, category string, Amount string,
+	date string, comment string) *domain.Record {
+	typeId, e := strconv.Atoi(typeIdStr)
+	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
+		logger.Error(e)
+		return nil
+	}
+	accountId, e := strconv.ParseUint(accountIdStr, 10, 64)
+	if e != nil {
+		logger.Error(e)
+		return nil
+	}
+	categoryId, e := strconv.ParseUint(category, 10, 64)
+	if e != nil {
+		logger.Error(e)
+		return nil
+	}
+
+	amount, e := strconv.Atoi(Amount)
+	if e != nil {
+		logger.Error(e)
+		return nil
+	}
+
+	recordDate, e := time.Parse("2006-01-02", date)
+	if e != nil {
+		logger.Error(e)
+		return nil
+	}
+
+	record := &domain.Record{
+		AccountId:  uint(accountId),
+		CategoryId: uint(categoryId),
+		Type:       int8(typeId),
+		Amount:     amount,
+		RecordTime: recordDate,
+	}
+	if comment != "" {
+		record.Comment = comment
+	}
+
+	return record
+}

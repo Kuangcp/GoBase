@@ -1,3 +1,4 @@
 bin/
 *.log
 local*
+web/static/

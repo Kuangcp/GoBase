@@ -3,8 +3,10 @@ package constant
 const (
 	// 支出
 	CATEGORY_EXPENSE int8 = 1
+
 	// 收入
 	CATEGORY_INCOME int8 = 2
+
 	// 转账
 	CATEGORY_TRANSFER int8 = 3
 )

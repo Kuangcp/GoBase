@@ -4,17 +4,18 @@ import "github.com/kuangcp/gobase/mybook/constant"
 
 type (
 	ResultVO struct {
-		Data interface{}
-		Code int8
-		Msg  string
+		Data    interface{}
+		Code    int8
+		Success bool
+		Msg     string
 	}
 )
 
-var success = ResultVO{Code: constant.SUCCESS}
-var failed = ResultVO{Code: constant.FAILED}
+var success = ResultVO{Code: constant.SUCCESS, Success: true}
+var failed = ResultVO{Code: constant.FAILED, Success: false}
 
 func SuccessWith(data interface{}) ResultVO {
-	return ResultVO{Data: data, Code: constant.SUCCESS}
+	return ResultVO{Data: data, Code: constant.SUCCESS, Success: true}
 }
 
 func Success() ResultVO {
@@ -25,12 +26,12 @@ func Failed() ResultVO {
 }
 
 func FailedWithMsg(msg string) ResultVO {
-	return ResultVO{Msg: msg, Code: constant.FAILED}
+	return ResultVO{Msg: msg, Code: constant.FAILED, Success: false}
 }
 
-func (this ResultVO) IsSuccess() bool {
-	return this.Code == constant.SUCCESS
+func (result ResultVO) IsSuccess() bool {
+	return result.Code == constant.SUCCESS
 }
-func (this ResultVO) IsFailed() bool {
-	return !this.IsSuccess()
+func (result ResultVO) IsFailed() bool {
+	return !result.IsSuccess()
 }

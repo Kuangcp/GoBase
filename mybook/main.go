@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/mybook/service"
+	"github.com/kuangcp/gobase/mybook/web"
 )
 
 func help(_ []string) {
@@ -41,7 +42,6 @@ func help(_ []string) {
 }
 
 func updateDatabaseStructure(_ []string) {
-	// 建立数据库结构
 	service.AutoMigrateAll()
 }
 
@@ -55,6 +55,6 @@ func main() {
 		"-rt": service.CreateTransRecordByParams,
 		"-pc": service.PrintCategory,
 		"-pa": service.PrintAccount,
+		"-s":  web.Server,
 	}, help)
-
 }
