@@ -2,5 +2,15 @@
   "Console": {
     "level": "INFO",
     "color": true
+  },
+  "File": {
+    "filename": "app.log",
+    "level": "INFO",
+    "daily": true,
+    "maxlines": 1000000,
+    "maxsize": 1,
+    "maxdays": -1,
+    "append": true,
+    "permit": "0660"
   }
 }

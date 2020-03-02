@@ -1,0 +1,4 @@
+db: 
+    file: main.db
+debug: false
+configDir: /home/kcp/.config/app-conf/mybook

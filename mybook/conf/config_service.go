@@ -25,10 +25,14 @@ func GetAppConfig() *AppConfig {
 		return config
 	}
 	loadConfig()
+	configLogger()
 
-	path := viper.GetString("path")
-	if path == "" {
-		path = DefaultPath
+	configDir := viper.GetString("configDir")
+	dbFile := viper.GetString("db.file")
+	if dbFile == "" {
+		dbFile = DefaultPath
+	} else {
+		dbFile = configDir + "/" + dbFile
 	}
 	driver := viper.GetString("driver")
 	if driver == "" {
@@ -36,17 +40,16 @@ func GetAppConfig() *AppConfig {
 	}
 
 	debug := viper.GetBool("debug")
-	config = &AppConfig{Path: path, DriverName: driver, Debug: debug}
+	config = &AppConfig{Path: dbFile, DriverName: driver, Debug: debug}
+
+	logger.Info("load config file ~/.config/app-conf/mybook/mybook.yml")
 	return config
 }
 
 func loadConfig() {
-	configLogger()
-
-	logger.Info("load config file ~/.config/mybook.yml")
 	viper.SetConfigName("mybook")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME/.config")
+	viper.AddConfigPath("$HOME/.config/app-conf/mybook")
 	err := viper.ReadInConfig()
 	if err != nil {
 		logger.Error("Fatal error config file: %s \n", err)
@@ -57,11 +60,12 @@ func configLogger() {
 	logger.SetLogPathTrim("mybook/")
 
 	debug := viper.GetBool("debug")
+	configDir := viper.GetString("configDir")
 	jsonPath := ""
 	if debug {
-		jsonPath = "./resources/log-dev.json"
+		jsonPath = configDir + "/resources/log-dev.json"
 	} else {
-		jsonPath = "./resources/log.json"
+		jsonPath = configDir + "/resources/log.json"
 		gin.SetMode(gin.ReleaseMode)
 	}
 	e := logger.SetLogger(jsonPath)
