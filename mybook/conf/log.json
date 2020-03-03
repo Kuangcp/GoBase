@@ -4,7 +4,7 @@
     "color": true
   },
   "File": {
-    "filename": "app.log",
+    "filename": "data/app.log",
     "level": "INFO",
     "daily": true,
     "maxlines": 1000000,

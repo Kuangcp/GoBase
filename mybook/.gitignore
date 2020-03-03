@@ -1,5 +1,5 @@
 bin/
 *.log
 local*
-resources/static/
+conf/static/
 data/

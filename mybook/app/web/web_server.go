@@ -2,16 +2,16 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/app/conf"
+	"github.com/kuangcp/gobase/mybook/app/config"
 	"github.com/wonderivan/logger"
 )
 
 func Server(_ []string) {
-	conf.GetAppConfig()
+	config.GetAppConfig()
 	router := gin.Default()
 
 	router.GET("/ping", HealthCheck)
-	router.Static("/static", "./resources/static")
+	router.Static("/static", "./conf/static")
 
 	router.GET("/mybook/category/typeList", ListCategoryType)
 	router.GET("/mybook/category/list", ListCategory)

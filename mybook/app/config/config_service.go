@@ -1,4 +1,4 @@
-package conf
+package config
 
 import (
 	"github.com/gin-gonic/gin"
@@ -57,9 +57,9 @@ func configLogger() {
 	debug := viper.GetBool("debug")
 	jsonPath := ""
 	if debug {
-		jsonPath = "./resources/log-dev.json"
+		jsonPath = "./conf/log-dev.json"
 	} else {
-		jsonPath = "./resources/log.json"
+		jsonPath = "./conf/log.json"
 		gin.SetMode(gin.ReleaseMode)
 	}
 	e := logger.SetLogger(jsonPath)

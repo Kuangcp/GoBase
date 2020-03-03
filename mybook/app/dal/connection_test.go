@@ -1,22 +1,21 @@
 package dal
 
 import (
+	"github.com/kuangcp/gobase/mybook/app/config"
 	"reflect"
 	"testing"
-
-	"github.com/kuangcp/gobase/mybook/app/conf"
 )
 
 func TestGetConnectionConfig(t *testing.T) {
 	tests := []struct {
 		name string
-		want *conf.AppConfig
+		want *config.AppConfig
 	}{
-		{name: "", want: &conf.AppConfig{Path: "/tmp/test.db", DriverName: "sqlite3"}},
+		{name: "", want: &config.AppConfig{Path: "/tmp/test.db", DriverName: "sqlite3"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := conf.GetAppConfig(); !reflect.DeepEqual(got, tt.want) {
+			if got := config.GetAppConfig(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetDBConfig() = %v, want %v", got, tt.want)
 			}
 		})

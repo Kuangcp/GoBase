@@ -1,17 +1,17 @@
 package dal
 
 import (
+	"github.com/kuangcp/gobase/mybook/app/config"
 	"log"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kuangcp/gobase/mybook/app/conf"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var db *gorm.DB
 
 func OpenDB() *gorm.DB {
-	return getConnectionWithConfig(conf.GetAppConfig())
+	return getConnectionWithConfig(config.GetAppConfig())
 }
 
 func GetDB() *gorm.DB {
@@ -53,7 +53,7 @@ func Close(db *gorm.DB) {
 	}
 }
 
-func getConnectionWithConfig(config *conf.AppConfig) *gorm.DB {
+func getConnectionWithConfig(config *config.AppConfig) *gorm.DB {
 	db, err := gorm.Open(config.DriverName, config.Path)
 	if err != nil {
 		log.Fatal(err)
