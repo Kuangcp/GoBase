@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/kuangcp/gobase/cuibase"
-	"github.com/kuangcp/gobase/mybook/service"
-	"github.com/kuangcp/gobase/mybook/web"
+	"github.com/kuangcp/gobase/mybook/app/service"
+	"github.com/kuangcp/gobase/mybook/app/web"
 )
 
 func help(_ []string) {

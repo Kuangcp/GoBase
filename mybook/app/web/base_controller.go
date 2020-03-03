@@ -2,9 +2,9 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/constant"
-	"github.com/kuangcp/gobase/mybook/service"
-	"github.com/kuangcp/gobase/mybook/vo"
+	"github.com/kuangcp/gobase/mybook/app/constant"
+	"github.com/kuangcp/gobase/mybook/app/service"
+	"github.com/kuangcp/gobase/mybook/app/vo"
 	"strconv"
 )
 

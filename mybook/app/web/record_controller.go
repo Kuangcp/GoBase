@@ -2,9 +2,9 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/service"
-	"github.com/kuangcp/gobase/mybook/util"
-	"github.com/kuangcp/gobase/mybook/vo"
+	"github.com/kuangcp/gobase/mybook/app/service"
+	"github.com/kuangcp/gobase/mybook/app/util"
+	"github.com/kuangcp/gobase/mybook/app/vo"
 	"github.com/wonderivan/logger"
 )
 

@@ -3,10 +3,10 @@ package service
 import (
 	"fmt"
 	"github.com/kuangcp/gobase/cuibase"
-	"github.com/kuangcp/gobase/mybook/constant"
-	"github.com/kuangcp/gobase/mybook/dal"
-	"github.com/kuangcp/gobase/mybook/domain"
-	"github.com/kuangcp/gobase/mybook/util"
+	"github.com/kuangcp/gobase/mybook/app/constant"
+	"github.com/kuangcp/gobase/mybook/app/dal"
+	"github.com/kuangcp/gobase/mybook/app/domain"
+	"github.com/kuangcp/gobase/mybook/app/util"
 	"github.com/wonderivan/logger"
 )
 

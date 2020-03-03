@@ -2,11 +2,11 @@ package service
 
 import (
 	"github.com/kuangcp/gobase/cuibase"
-	"github.com/kuangcp/gobase/mybook/constant"
-	"github.com/kuangcp/gobase/mybook/dal"
-	"github.com/kuangcp/gobase/mybook/domain"
-	"github.com/kuangcp/gobase/mybook/util"
-	"github.com/kuangcp/gobase/mybook/vo"
+	"github.com/kuangcp/gobase/mybook/app/constant"
+	"github.com/kuangcp/gobase/mybook/app/dal"
+	"github.com/kuangcp/gobase/mybook/app/domain"
+	"github.com/kuangcp/gobase/mybook/app/util"
+	vo2 "github.com/kuangcp/gobase/mybook/app/vo"
 	"github.com/wonderivan/logger"
 	"strconv"
 	"time"
@@ -19,29 +19,29 @@ func addRecord(record *domain.Record) {
 	db.Create(record)
 }
 
-func checkParam(record *domain.Record) (vo.ResultVO, *domain.Category, *domain.Account) {
+func checkParam(record *domain.Record) (vo2.ResultVO, *domain.Category, *domain.Account) {
 	category := FindCategoryById(record.CategoryId)
 	if category == nil || !category.Leaf {
-		return vo.FailedWithMsg("分类id无效"), nil, nil
+		return vo2.FailedWithMsg("分类id无效"), nil, nil
 	}
 
 	account := FindAccountById(record.AccountId)
 	if account == nil {
-		return vo.FailedWithMsg("账户无效"), category, nil
+		return vo2.FailedWithMsg("账户无效"), category, nil
 	}
 
 	if record.Amount <= 0 {
-		return vo.FailedWithMsg("金额无效"), category, account
+		return vo2.FailedWithMsg("金额无效"), category, account
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return vo.FailedWithMsg("类别无效"), category, account
+		return vo2.FailedWithMsg("类别无效"), category, account
 	}
-	return vo.Success(), category, account
+	return vo2.Success(), category, account
 }
 
-func CreateRecord(record *domain.Record) vo.ResultVO {
+func CreateRecord(record *domain.Record) vo2.ResultVO {
 	if nil == record {
-		return vo.Failed()
+		return vo2.Failed()
 	}
 	resultVO, _, _ := checkParam(record)
 	if resultVO.IsFailed() {
@@ -49,12 +49,12 @@ func CreateRecord(record *domain.Record) vo.ResultVO {
 	}
 
 	addRecord(record)
-	return vo.Success()
+	return vo2.Success()
 }
 
-func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO {
+func createTransRecord(origin *domain.Record, target *domain.Record) vo2.ResultVO {
 	if nil == origin || nil == target {
-		return vo.Failed()
+		return vo2.Failed()
 	}
 
 	resultVO, _, _ := checkParam(origin)
@@ -69,9 +69,9 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO
 	e := dal.BatchSaveWithTransaction(origin, target)
 	if e != nil {
 		logger.Error(e)
-		return vo.Failed()
+		return vo2.Failed()
 	}
-	return vo.Success()
+	return vo2.Success()
 }
 
 func CreateIncomeRecordByParams(params [] string) {
@@ -149,12 +149,12 @@ func buildRecordByParams(params []string) *domain.Record {
 		comment = params[5]
 	}
 
-	recordVO := vo.RecordVO{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
+	recordVO := vo2.RecordVO{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
 		Amount: params[3], Date: params[4], Comment: comment}
 	return BuildRecordByField(recordVO)
 }
 
-func BuildRecordByField(recordVO vo.RecordVO) *domain.Record {
+func BuildRecordByField(recordVO vo2.RecordVO) *domain.Record {
 	typeId, e := strconv.Atoi(recordVO.TypeId)
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
 		logger.Error(e)
@@ -197,7 +197,7 @@ func BuildRecordByField(recordVO vo.RecordVO) *domain.Record {
 	return record
 }
 
-func CreateMultipleTypeRecord(recordVO vo.RecordVO) *domain.Record {
+func CreateMultipleTypeRecord(recordVO vo2.RecordVO) *domain.Record {
 	record := BuildRecordByField(recordVO)
 	if record == nil {
 		return nil
