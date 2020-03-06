@@ -1,10 +1,10 @@
 BINARY_NAME=mybook
 
-clean:
-	rm -f bin/*
-
 build:
 	go build -o bin/${BINARY_NAME}
+
+clean:
+	rm -f bin/*
 
 buildAlpine:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/${BINARY_NAME}
