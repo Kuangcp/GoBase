@@ -7,7 +7,10 @@ import (
 )
 
 func Server(_ []string) {
-	config.GetAppConfig()
+	appConfig := config.GetAppConfig()
+	if !appConfig.Debug {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	router := gin.Default()
 
 	router.GET("/ping", HealthCheck)
