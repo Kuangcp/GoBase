@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kuangcp/gobase/cuibase"
+	"github.com/kuangcp/gobase/mybook/app/cui"
 	"github.com/kuangcp/gobase/mybook/app/service"
 	"github.com/kuangcp/gobase/mybook/app/web"
 )
@@ -56,5 +57,6 @@ func main() {
 		"-pc": service.PrintCategory,
 		"-pa": service.PrintAccount,
 		"-s":  web.Server,
+		"-c":  cui.CUIMain,
 	}, help)
 }
