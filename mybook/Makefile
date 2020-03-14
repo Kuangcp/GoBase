@@ -12,6 +12,9 @@ buildAlpine:
 run:
 	go build -o bin/${BINARY_NAME} && ./bin/${BINARY_NAME} -s
 
+cui:
+	go build -o bin/${BINARY_NAME} && ./bin/${BINARY_NAME} -c
+
 dockerImage:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/${BINARY_NAME} && docker build -t mybook .
 
