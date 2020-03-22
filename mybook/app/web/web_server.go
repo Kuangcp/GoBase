@@ -15,6 +15,7 @@ func Server(_ []string) {
 
 	router.GET("/ping", HealthCheck)
 	router.Static("/static", "./conf/static")
+	router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 
 	router.GET("/mybook/category/typeList", ListCategoryType)
 	router.GET("/mybook/category/list", ListCategory)
