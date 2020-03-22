@@ -6,7 +6,8 @@ import (
 	"github.com/kuangcp/gobase/mybook/app/dal"
 	"github.com/kuangcp/gobase/mybook/app/domain"
 	"github.com/kuangcp/gobase/mybook/app/util"
-	vo2 "github.com/kuangcp/gobase/mybook/app/vo"
+	"github.com/kuangcp/gobase/mybook/app/vo"
+	"github.com/kuangcp/gobase/mybook/app/web/dto"
 	"github.com/wonderivan/logger"
 	"strconv"
 	"time"
@@ -19,29 +20,29 @@ func addRecord(record *domain.Record) {
 	db.Create(record)
 }
 
-func checkParam(record *domain.Record) (vo2.ResultVO, *domain.Category, *domain.Account) {
+func checkParam(record *domain.Record) (vo.ResultVO, *domain.Category, *domain.Account) {
 	category := FindCategoryById(record.CategoryId)
 	if category == nil || !category.Leaf {
-		return vo2.FailedWithMsg("分类id无效"), nil, nil
+		return vo.FailedWithMsg("分类id无效"), nil, nil
 	}
 
 	account := FindAccountById(record.AccountId)
 	if account == nil {
-		return vo2.FailedWithMsg("账户无效"), category, nil
+		return vo.FailedWithMsg("账户无效"), category, nil
 	}
 
 	if record.Amount <= 0 {
-		return vo2.FailedWithMsg("金额无效"), category, account
+		return vo.FailedWithMsg("金额无效"), category, account
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return vo2.FailedWithMsg("类别无效"), category, account
+		return vo.FailedWithMsg("类别无效"), category, account
 	}
-	return vo2.Success(), category, account
+	return vo.Success(), category, account
 }
 
-func CreateRecord(record *domain.Record) vo2.ResultVO {
+func CreateRecord(record *domain.Record) vo.ResultVO {
 	if nil == record {
-		return vo2.Failed()
+		return vo.Failed()
 	}
 	resultVO, _, _ := checkParam(record)
 	if resultVO.IsFailed() {
@@ -49,12 +50,12 @@ func CreateRecord(record *domain.Record) vo2.ResultVO {
 	}
 
 	addRecord(record)
-	return vo2.Success()
+	return vo.Success()
 }
 
-func createTransRecord(origin *domain.Record, target *domain.Record) vo2.ResultVO {
+func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO {
 	if nil == origin || nil == target {
-		return vo2.Failed()
+		return vo.Failed()
 	}
 
 	resultVO, _, _ := checkParam(origin)
@@ -69,12 +70,12 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo2.ResultV
 	e := dal.BatchSaveWithTransaction(origin, target)
 	if e != nil {
 		logger.Error(e)
-		return vo2.Failed()
+		return vo.Failed()
 	}
-	return vo2.Success()
+	return vo.Success()
 }
 
-func CreateIncomeRecordByParams(params [] string) {
+func CreateIncomeRecordByParams(params []string) {
 	cuibase.AssertParamCount(5, "参数缺失: -ri AccountId CategoryId Amount Date [Comment]")
 	p := params[2:]
 	p = append([]string{strconv.Itoa(int(constant.RECORD_INCOME))}, p...)
@@ -85,7 +86,7 @@ func CreateIncomeRecordByParams(params [] string) {
 	}
 }
 
-func CreateExpenseRecordByParams(params [] string) {
+func CreateExpenseRecordByParams(params []string) {
 	cuibase.AssertParamCount(5, "参数缺失: -re AccountId CategoryId Amount Date [Comment]")
 	p := params[2:]
 	p = append([]string{strconv.Itoa(int(constant.RECORD_EXPENSE))}, p...)
@@ -96,7 +97,7 @@ func CreateExpenseRecordByParams(params [] string) {
 	}
 }
 
-func CreateTransRecordByParams(params [] string) {
+func CreateTransRecordByParams(params []string) {
 	cuibase.AssertParamCount(6, "参数缺失: -rt OutAccountId CategoryId Amount Date InAccountId [Comment]")
 	p := params[2:6]
 	p = append([]string{strconv.Itoa(int(constant.RECORD_TRANSFER_OUT))}, p...)
@@ -133,7 +134,7 @@ func CreateTransRecordByParams(params [] string) {
 	}
 }
 
-func CreateRecordByParams(params [] string) {
+func CreateRecordByParams(params []string) {
 	cuibase.AssertParamCount(6, "参数缺失: -r TypeId AccountId CategoryId Amount Date [Comment]")
 	record := buildRecordByParams(params[2:])
 	resultVO := CreateRecord(record)
@@ -149,12 +150,12 @@ func buildRecordByParams(params []string) *domain.Record {
 		comment = params[5]
 	}
 
-	recordVO := vo2.RecordVO{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
+	recordVO := vo.CreateRecordVO{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
 		Amount: params[3], Date: params[4], Comment: comment}
 	return BuildRecordByField(recordVO)
 }
 
-func BuildRecordByField(recordVO vo2.RecordVO) *domain.Record {
+func BuildRecordByField(recordVO vo.CreateRecordVO) *domain.Record {
 	typeId, e := strconv.Atoi(recordVO.TypeId)
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
 		logger.Error(e)
@@ -197,7 +198,7 @@ func BuildRecordByField(recordVO vo2.RecordVO) *domain.Record {
 	return record
 }
 
-func CreateMultipleTypeRecord(recordVO vo2.RecordVO) *domain.Record {
+func CreateMultipleTypeRecord(recordVO vo.CreateRecordVO) *domain.Record {
 	record := BuildRecordByField(recordVO)
 	if record == nil {
 		return nil
@@ -242,4 +243,33 @@ func CreateMultipleTypeRecord(recordVO vo2.RecordVO) *domain.Record {
 		}
 		return record
 	}
+}
+
+func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
+	db := dal.GetDB()
+	var lists []domain.Record
+	accountId, _ := strconv.Atoi(vo.AccountId)
+	typeId, _ := strconv.Atoi(vo.TypeId)
+	db.Where(&domain.Record{AccountId: uint(accountId), Type: int8(typeId)}).
+		Where("record_time >= ? and record_time < ?", vo.StartDate, vo.EndDate).
+		Find(&lists).Order("record_time DESC")
+	if len(lists) < 1 {
+		return nil
+	}
+
+	accountMap := ListAccountMap()
+	categoryMap := ListCategoryMap()
+	var result []dto.RecordDTO
+	for i := range lists {
+		record := lists[i]
+		ele := dto.RecordDTO{ID: record.ID,
+			RecordType:     record.Type,
+			AccountName:    accountMap[record.AccountId].Name,
+			CategoryName:   categoryMap[record.CategoryId].Name,
+			RecordTypeName: constant.GetRecordTypeByIndex(record.Type).Name,
+			RecordTime:     record.RecordTime,
+			Amount:         record.Amount}
+		result = append(result, ele)
+	}
+	return &result
 }

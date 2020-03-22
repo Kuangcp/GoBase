@@ -21,6 +21,7 @@ func Server(_ []string) {
 	router.GET("/mybook/category/list", ListCategory)
 	router.GET("/mybook/account/list", ListAccount)
 	router.POST("/mybook/record/create", CreateRecord)
+	router.GET("/mybook/record/list", ListRecord)
 
 	logger.Info("Open http://localhost:10006/static/")
 	e := router.Run(":10006")

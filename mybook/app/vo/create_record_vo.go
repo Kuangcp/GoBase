@@ -1,7 +1,7 @@
 package vo
 
 type (
-	RecordVO struct {
+	CreateRecordVO struct {
 		AccountId       string
 		TargetAccountId string
 		Amount          string

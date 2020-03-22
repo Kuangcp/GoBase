@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+// 简单查询
+
 func HealthCheck(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "pong",
@@ -32,12 +34,14 @@ func ListCategoryType(c *gin.Context) {
 func ListCategory(c *gin.Context) {
 	recordType := c.Query("recordType")
 	if recordType == "" {
-		vo.SuccessForWebWith(c, service.FindAllCategory())
+		vo.SuccessForWebWith(c, service.ListCategories())
+		return
 	}
+
 	i, _ := strconv.Atoi(recordType)
 	typeEnum := constant.GetCategoryTypeByRecordTypeIndex(int8(i))
 	if typeEnum != nil {
-		list := service.FindCategoryByTypeId(typeEnum.Index)
+		list := service.FindLeafCategoryByTypeId(typeEnum.Index)
 		vo.SuccessForWebWith(c, list)
 	} else {
 		vo.FailedForWeb(c)

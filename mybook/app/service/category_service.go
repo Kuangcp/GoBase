@@ -41,11 +41,11 @@ func FindCategoryByName(name string) *domain.Category {
 	return &result
 }
 
-func FindCategoryByTypeId(typeId int8) *[]domain.Category {
+func FindLeafCategoryByTypeId(typeId int8) *[]domain.Category {
 	db := dal.GetDB()
 
 	var lists []domain.Category
-	db.Where("type_id=?", typeId).Find(&lists)
+	db.Where("type_id=? and leaf = true", typeId).Find(&lists)
 	return &lists
 }
 
@@ -56,11 +56,21 @@ func FindCategoryById(id uint) *domain.Category {
 	return &result
 }
 
-func FindAllCategory() *[]domain.Category {
+func ListCategories() []domain.Category {
 	db := dal.GetDB()
 	var lists []domain.Category
 	db.Where("1=1").Find(&lists)
-	return &lists
+	return lists
+}
+
+func ListCategoryMap() map[uint]domain.Category {
+	categories := ListCategories()
+	result := make(map[uint]domain.Category)
+	for i := range categories {
+		category := categories[i]
+		result[category.ID] = category
+	}
+	return result
 }
 
 func PrintCategory(_ []string) {

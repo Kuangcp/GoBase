@@ -19,6 +19,16 @@ func ListAccounts() []domain.Account {
 	return accounts
 }
 
+func ListAccountMap() map[uint]domain.Account {
+	accounts := ListAccounts()
+	result := make(map[uint]domain.Account)
+	for i := range accounts {
+		account := accounts[i]
+		result[account.ID] = account
+	}
+	return result
+}
+
 func AddAccount(account *domain.Account) {
 	db := dal.GetDB()
 
