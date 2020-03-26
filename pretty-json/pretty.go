@@ -9,36 +9,41 @@ import (
 )
 
 var help bool
-var uglyJson string
+var uglyJSON string
 var indent string
 
 func init() {
 	flag.BoolVar(&help, "h", false, "show help")
-	flag.StringVar(&uglyJson, "s", "", "json string")
+	flag.StringVar(&uglyJSON, "s", "", "json string")
 	flag.StringVar(&indent, "i", "\t", "indent string, default tab")
+}
+
+func helpInfo(){
+	fmt.Printf("usage:\n\n")
+	flag.PrintDefaults()
+
+	fmt.Println("\neg:\n 1. echo '{\"id\":1}' | pretty-json")
+	fmt.Println(" 2. pretty-json -s '{\"id\":1}'")
 }
 
 func main() {
 	flag.Parse()
 
 	if help {
-		fmt.Printf("usage:\n\n")
-		flag.PrintDefaults()
-
-		fmt.Println("\neg:\n echo '{\"id\":1}' | pretty_json")
+		helpInfo()
 		return
 	}
 
-	if uglyJson == "" {
+	if uglyJSON == "" {
 		reader := bufio.NewReader(os.Stdin)
 		result, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("read error:", err)
 			return
 		}
-		uglyJson = result
+		uglyJSON = result
 	}
 
 	var Options = &pretty.Options{Width: 80, Prefix: "", Indent: indent, SortKeys: false}
-	fmt.Printf("%s\n", pretty.Color(pretty.PrettyOptions([]byte(uglyJson), Options), pretty.TerminalStyle))
+	fmt.Printf("%s\n", pretty.Color(pretty.PrettyOptions([]byte(uglyJSON), Options), pretty.TerminalStyle))
 }
