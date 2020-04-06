@@ -44,6 +44,7 @@ func GetAppConfig() *AppConfig {
 func loadConfig() {
 	viper.SetConfigName("mybook")
 	viper.SetConfigType("yaml")
+	viper.AddConfigPath("$HOME/.config")
 	viper.AddConfigPath("./data")
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -55,6 +56,7 @@ func configLogger() {
 	logger.SetLogPathTrim("mybook/")
 
 	debug := viper.GetBool("debug")
+	notDev := viper.GetBool("notDev")
 	jsonPath := ""
 	if debug {
 		jsonPath = "./conf/log-dev.json"
@@ -62,7 +64,13 @@ func configLogger() {
 		jsonPath = "./conf/log.json"
 		gin.SetMode(gin.ReleaseMode)
 	}
-	e := logger.SetLogger(jsonPath)
+
+	var e error
+	if !notDev {
+		e = logger.SetLogger()
+	} else {
+		e = logger.SetLogger(jsonPath)
+	}
 	if e != nil {
 		logger.Error(e)
 	}

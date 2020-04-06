@@ -1,25 +1,26 @@
-package service
+package main
 
 import (
 	"github.com/kuangcp/gobase/mybook/app/constant"
 	"github.com/kuangcp/gobase/mybook/app/domain"
+	"github.com/kuangcp/gobase/mybook/app/service"
 	"testing"
 )
 
-func TestInitDBAndTable(t *testing.T) {
-	AutoMigrateAll()
+func TestCreateDBAndTable(t *testing.T) {
+	service.AutoMigrateAll()
 }
 
 func TestInitBook(t *testing.T) {
-	AddBookkeeping(&domain.BookKeeping{Name: "主账本", Comment: ""})
+	service.AddBookkeeping(&domain.BookKeeping{Name: "主账本1", Comment: ""})
 }
 
 func TestInitAccount(t *testing.T) {
-	AddAccount(&domain.Account{TypeId: constant.ACCOUNT_CASH, Name: "现金", InitAmount: 0})
-	AddAccount(&domain.Account{TypeId: constant.ACCOUNT_CREDIT, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
-	AddAccount(&domain.Account{TypeId: constant.ACCOUNT_ONLINE, Name: "支付宝", InitAmount: 0})
-	AddAccount(&domain.Account{TypeId: constant.ACCOUNT_ONLINE, Name: "微信", InitAmount: 0})
-	AddAccount(&domain.Account{TypeId: constant.ACCOUNT_DEPOSIT, Name: "储蓄卡", InitAmount: 0})
+	service.AddAccount(&domain.Account{TypeId: constant.ACCOUNT_CASH, Name: "现金", InitAmount: 0})
+	service.AddAccount(&domain.Account{TypeId: constant.ACCOUNT_CREDIT, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
+	service.AddAccount(&domain.Account{TypeId: constant.ACCOUNT_ONLINE, Name: "支付宝", InitAmount: 0})
+	service.AddAccount(&domain.Account{TypeId: constant.ACCOUNT_ONLINE, Name: "微信", InitAmount: 0})
+	service.AddAccount(&domain.Account{TypeId: constant.ACCOUNT_DEPOSIT, Name: "储蓄卡", InitAmount: 0})
 }
 
 func TestInitCategory(t *testing.T) {
@@ -29,7 +30,7 @@ func TestInitCategory(t *testing.T) {
 		expenseIndex++
 		category := &domain.Category{Name: types[e], Leaf: false, TypeId: constant.CATEGORY_EXPENSE}
 		category.ID = uint(expenseIndex)
-		AddCategory(category)
+		service.AddCategory(category)
 	}
 
 	types = []string{"早餐", "午餐", "晚餐", "餐厅", "零食", "日用品", "室外娱乐", "服饰", "云服务", "水果", "买菜",
@@ -39,7 +40,7 @@ func TestInitCategory(t *testing.T) {
 		expenseIndex++
 		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CATEGORY_EXPENSE}
 		category.ID = uint(expenseIndex)
-		AddCategory(category)
+		service.AddCategory(category)
 	}
 
 	incomeIndex := 200
@@ -49,7 +50,7 @@ func TestInitCategory(t *testing.T) {
 		incomeIndex++
 		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CATEGORY_INCOME}
 		category.ID = uint(incomeIndex)
-		AddCategory(category)
+		service.AddCategory(category)
 	}
 
 	transferIndex := 300
@@ -58,10 +59,10 @@ func TestInitCategory(t *testing.T) {
 		transferIndex++
 		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CATEGORY_TRANSFER}
 		category.ID = uint(transferIndex)
-		AddCategory(category)
+		service.AddCategory(category)
 	}
 }
 
 func TestSetParentId(t *testing.T) {
-	SetParentId("早餐", 1)
+	service.SetParentId("早餐", 1)
 }
