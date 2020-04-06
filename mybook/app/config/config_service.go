@@ -44,8 +44,9 @@ func GetAppConfig() *AppConfig {
 func loadConfig() {
 	viper.SetConfigName("mybook")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME/.config")
+	// 短路式搜索配置文件
 	viper.AddConfigPath("./data")
+	viper.AddConfigPath("$HOME/.config")
 	err := viper.ReadInConfig()
 	if err != nil {
 		logger.Error("Fatal error config file: %s \n", err)

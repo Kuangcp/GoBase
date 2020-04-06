@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCreateDBAndTable(t *testing.T) {
+func TestInitDBAndTable(t *testing.T) {
 	service.AutoMigrateAll()
 }
 

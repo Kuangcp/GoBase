@@ -8,11 +8,18 @@
 
 [日志级别](https://github.com/wonderivan/logger) : TRAC DEBG INFO
 
-## 配置
+## 配置使用
 
-> ~/.config/mybook.yml
-```yml
-db:
-    file: ./data/main.db
-debug: true
-```
+1. `新建目录和配置文件` ./data/mybook.yml
+
+    ```yaml
+        db:
+            file: ./data/main.db
+        debug: true
+    ```
+1. `初始化数据库和表格`: go test -v -test.run TestInit
+1. `启动web`: make run
+
+## IDE开发
+
+IDE内跑单测 需创建 ~/.config/mybook.yml 文件，db.file 为绝对路径
