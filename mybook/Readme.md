@@ -10,14 +10,7 @@
 
 ## 配置使用
 
-1. `新建目录和配置文件` ./data/mybook.yml
-
-    ```yaml
-        db:
-            file: ./data/main.db
-        debug: true
-    ```
-1. `初始化数据库和表格`: go test -v -test.run TestInit
+1. `初始化配置和数据库` make install 
 1. `启动web`: make run
 
 ## IDE开发
