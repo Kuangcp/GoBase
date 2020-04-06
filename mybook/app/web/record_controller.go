@@ -27,10 +27,9 @@ func CreateRecord(c *gin.Context) {
 	record := service.CreateMultipleTypeRecord(recordVO)
 	if record != nil {
 		logger.Debug("createRecord result: ", util.Json(record))
-		c.JSON(200, vo.SuccessWith(record))
-	} else {
-		c.JSON(200, vo.Failed())
 	}
+
+	vo.FillResult(c, record)
 }
 
 func ListRecord(c *gin.Context) {
@@ -41,9 +40,14 @@ func ListRecord(c *gin.Context) {
 
 	query := vo.QueryRecordVO{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
 	result := service.FindRecord(query)
-	if result != nil {
-		c.JSON(200, vo.SuccessWith(result))
-	} else {
-		c.JSON(200, vo.Failed())
-	}
+	vo.FillResult(c, result)
+}
+
+func GroupByMonth(c *gin.Context) {
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
+	typeId := c.Query("typeId")
+
+	result := service.GroupByMonth(startDate, endDate, typeId)
+	vo.FillResult(c, result)
 }

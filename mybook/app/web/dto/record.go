@@ -1,6 +1,8 @@
 package dto
 
-import "time"
+import (
+	"time"
+)
 
 type (
 	RecordDTO struct {
@@ -12,5 +14,14 @@ type (
 		Amount         int
 		Comment        string
 		RecordTime     time.Time
+	}
+
+	MonthCategoryRecordDTO struct {
+		CategoryId     uint
+		Name           string
+		Type           int8
+		RecordTypeName string
+		Amount         string
+		Date           string
 	}
 )

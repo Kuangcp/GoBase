@@ -277,3 +277,31 @@ func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
 	}
 	return &result
 }
+
+// typeId record_type
+func GroupByMonth(startDate string, endDate string, typeId string) *[]dto.MonthCategoryRecordDTO {
+	db := dal.GetDB()
+	var result []dto.MonthCategoryRecordDTO
+	query := db.Table("record").
+		Select("record.category_id, category.name, sum(amount) as amount,type").
+		Joins("left join category on record.category_id = category.id")
+	if len(typeId) != 0 {
+		query = query.Where("record.category_id = category.id and category.type_id =? and record_time between ? and ?", typeId, startDate, endDate)
+	}else{
+		query = query.Where("record.category_id = category.id and record_time between ? and ?", startDate, endDate)
+	}
+	query.
+		Group("category_id").
+		Scan(&result)
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	for i := range result {
+		recordDTO := &result[i]
+		recordDTO.Date = startDate
+		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).Name
+	}
+	return &result
+}

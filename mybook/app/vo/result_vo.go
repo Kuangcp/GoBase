@@ -22,20 +22,12 @@ func SuccessWith(data interface{}) ResultVO {
 	return ResultVO{Data: data, Code: constant.SUCCESS, Success: true}
 }
 
-func SuccessForWebWith(c *gin.Context, data interface{}) {
-	c.JSON(http.StatusOK, SuccessWith(data))
-}
-
 func Success() ResultVO {
 	return success
 }
 
 func Failed() ResultVO {
 	return failed
-}
-
-func FailedForWeb(c *gin.Context) {
-	c.JSON(http.StatusOK, failed)
 }
 
 func FailedWithMsg(msg string) ResultVO {
@@ -47,4 +39,21 @@ func (result ResultVO) IsSuccess() bool {
 }
 func (result ResultVO) IsFailed() bool {
 	return !result.IsSuccess()
+}
+
+// web util
+func FailedForWeb(c *gin.Context) {
+	c.JSON(http.StatusOK, failed)
+}
+
+func SuccessForWebWith(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, SuccessWith(data))
+}
+
+func FillResult(c *gin.Context, result interface{}) {
+	if result != nil {
+		SuccessForWebWith(c, result)
+	} else {
+		FailedForWeb(c)
+	}
 }

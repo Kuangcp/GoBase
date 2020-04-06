@@ -2,5 +2,15 @@
   "Console": {
     "level": "DEBG",
     "color": true
+  },
+  "File": {
+    "filename": "data/app.log",
+    "level": "DEBG",
+    "daily": true,
+    "maxlines": 100000000,
+    "maxsize": 1,
+    "maxdays": -1,
+    "append": true,
+    "permit": "0660"
   }
 }

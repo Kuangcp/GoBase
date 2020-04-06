@@ -66,6 +66,58 @@ function loadRecordType() {
     });
 }
 
+function loadRecordDetail(category) {
+    console.log(category);
+    tip(['700px', '550px'], '单分类明细账单', $("#month_detail_tables").html());
+}
+
+function loadMonthTables() {
+    let start = $("#startDateMonth").val();
+    let end = $("#endDateMonth").val();
+    let typeId = $("#typeIdMonth option:selected").val();
+    let now = new Date();
+    if (!start) {
+        let date = new Date(now - 15 * 24 * 3600 * 1000);
+        start = date.toISOString().slice(0, 10);
+        $("#startDate").val(start);
+    }
+    if (!end) {
+        end = now.toISOString().slice(0, 10);
+        $("#endDate").val(end);
+    }
+
+    url = '/record/month?startDate=' + start + '&endDate=' + end + '&typeId=' + typeId;
+    handleGet(url, function (data) {
+        if (data.Success) {
+            console.log('/record/month', data);
+
+            $("#month_table_body tbody").find('tr').each(function () {
+                $(this).remove();
+            });
+
+            let total = 0;
+            for (i in data.Data) {
+                let record = data.Data[i];
+
+                let line = "<tr>";
+                line += '<td>' + record.CategoryId + '</td>';
+                line += '<td>' + record.RecordTypeName + '</td>';
+                line += '<td style="text-align: right"> ' + record.Name + '</td>';
+                line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
+                line += '<td>' + record.Date + '</td>';
+                line += '<td> <button onclick="loadRecordDetail('+record.CategoryId+')">详情</button></td>';
+
+                line += '</tr>';
+                $('#month_table_body > tbody:last-child').append(line);
+                total += record.Amount;
+            }
+        } else {
+            layer.msg('加载账单失败');
+            console.log(data)
+        }
+    });
+}
+
 function loadRecordTables() {
     let start = $("#startDate").val();
     let end = $("#endDate").val();

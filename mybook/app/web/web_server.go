@@ -17,13 +17,21 @@ func Server(_ []string) {
 	router.Static("/static", "./conf/static")
 	router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 
-	router.GET("/mybook/category/typeList", ListCategoryType)
-	router.GET("/mybook/category/list", ListCategory)
-	router.GET("/mybook/account/list", ListAccount)
-	router.POST("/mybook/record/create", CreateRecord)
-	router.GET("/mybook/record/list", ListRecord)
+	logicRouter(router)
 
 	logger.Info("Open http://localhost:10006/static/")
 	e := router.Run(":10006")
 	logger.Error(e)
+}
+
+func logicRouter(router *gin.Engine) {
+	api := "/mybook"
+	router.GET(api+"/category/typeList", ListCategoryType)
+	router.GET(api+"/category/list", ListCategory)
+
+	router.GET(api+"/account/list", ListAccount)
+
+	router.POST(api+"/record/create", CreateRecord)
+	router.GET(api+"/record/list", ListRecord)
+	router.GET(api+"/record/month", GroupByMonth)
 }
