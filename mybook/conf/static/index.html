@@ -6,6 +6,8 @@
     <script src="js/jquery-3.4.1.min.js"></script>
     <script src="js/layer/layer.js"></script>
     <script src="js/main.js"></script>
+    <link rel="stylesheet" href="css/numPad.css">
+    <script src="js/numKeyBoard.js"></script>
 </head>
 <style>
     .label {
@@ -51,6 +53,9 @@
 <script>
     loadAccount();
     loadRecordType();
+
+    $("#amount").on('click', numPanel);
+
 </script>
 </body>
 </html>

@@ -101,3 +101,18 @@ function createRecord() {
         }
     });
 }
+
+function numPanel(){
+    var numPad= new NumKeyBoard({
+        precision: 2,        //精确度
+        minVal:1,           //允许输入的最小值
+        maxVal:100000          //允许输入的最大值
+    });
+
+    //打开数字键盘弹框,参数为弹框确定按钮的回调函数，回调函数的参数是输入的值
+    numPad.setNumVal($("#amount").val());
+
+    numPad.open(function(val){
+        $("#amount").val(val);
+    });
+}

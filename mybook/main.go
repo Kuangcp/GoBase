@@ -37,6 +37,10 @@ func help(_ []string) {
 				Verb:    "-rt",
 				Param:   "OutAccountId CategoryId Amount Date InAccountId [Comment]",
 				Comment: "create transfer record ",
+			}, {
+				Verb:    "-pc",
+				Param:   "",
+				Comment: "print all category",
 			},
 		}}
 	cuibase.Help(info)
