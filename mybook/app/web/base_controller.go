@@ -4,7 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/mybook/app/constant"
 	"github.com/kuangcp/gobase/mybook/app/service"
+	"github.com/kuangcp/gobase/mybook/app/util"
 	"github.com/kuangcp/gobase/mybook/app/vo"
+	"github.com/kuangcp/gobase/mybook/app/web/dto"
 	"strconv"
 )
 
@@ -18,7 +20,8 @@ func HealthCheck(c *gin.Context) {
 
 func ListAccount(c *gin.Context) {
 	accounts := service.ListAccounts()
-	vo.SuccessForWebWith(c, accounts)
+	result := util.Copy(accounts, new([] dto.AccountDTO)).(*[]dto.AccountDTO)
+	vo.SuccessForWebWith(c, result)
 }
 
 func ListRecordType(c *gin.Context) {

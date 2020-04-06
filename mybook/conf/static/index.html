@@ -13,6 +13,20 @@
     .label {
         color: #1E9FFF;
     }
+
+    body {
+        height: 97%;
+    }
+
+    .record-table td {
+        width: 80px;
+        text-align: center;
+    }
+
+    .record-table th {
+        width: 80px;
+        text-align: center;
+    }
 </style>
 <body>
 <form id="recordForm" action="javascript:createRecord()">
@@ -40,6 +54,7 @@
     <label class="label"> 备注 : </label>
     <input name="comment" style="width: 100px;"/>
     <button id="submitBtn" style="background: #1E9FFF;margin-left: 10px">Submit</button>
+    <button id="recordBtn" type="button">账单</button>
 
     <div style="clear: both"></div>
 
@@ -50,11 +65,65 @@
     </div>
 </form>
 
+<script type="text/html" id="record_tables">
+    <label class="label"> 开始时间 : </label>
+    <input type="date" name="startDate" id="startDate"/>
+    <label class="label"> 结束时间 : </label>
+    <input type="date" name="endDate" id="endDate"/>
+    <select id="typeId">
+        <option >全部</option>
+        <option value="1" selected>支出</option>
+        <option value="2">收入</option>
+        <option value="3">转出</option>
+        <option value="4">转入</option>
+    </select>
+    <select id="accountTypeList"> <option >全部</option></select>
+    <button id="queryRecordsBtn">查询</button>
+    <span id="total"></span>
+
+    <table id="record_table_body" class="record-table">
+        <thead>
+        <tr>
+            <th>id</th>
+            <th>账户</th>
+            <th>类型</th>
+            <th>明细类型</th>
+            <th>金额</th>
+            <th>备注</th>
+            <th>时间</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</script>
+
 <script>
     loadAccount();
     loadRecordType();
 
     $("#amount").on('click', numPanel);
+
+    $("#recordBtn").on('click', function () {
+        tip(['800px', '600px'], '账单', $("#record_tables").html());
+        $("#queryRecordsBtn").on('click', loadRecordTables);
+
+        initDateArea();
+
+        handleGet('/account/list', function (data) {
+            if (data.Success) {
+                console.log('/account/list', data);
+                for (i in data.Data) {
+                    let account = data.Data[i];
+                    $('#accountTypeList').append($("<option></option>").attr("value", account.ID).text(account.Name));
+                }
+            } else {
+                layer.msg('创建失败');
+                console.log(data)
+            }
+        });
+    });
 
 </script>
 </body>

@@ -251,8 +251,8 @@ func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
 	accountId, _ := strconv.Atoi(vo.AccountId)
 	typeId, _ := strconv.Atoi(vo.TypeId)
 	db.Where(&domain.Record{AccountId: uint(accountId), Type: int8(typeId)}).
-		Where("record_time >= ? and record_time < ?", vo.StartDate, vo.EndDate).
-		Find(&lists).Order("record_time DESC")
+		Where("record_time between ? and ?", vo.StartDate, vo.EndDate).
+		Order("record_time DESC", true).Find(&lists)
 	if len(lists) < 1 {
 		return nil
 	}
@@ -262,13 +262,17 @@ func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
 	var result []dto.RecordDTO
 	for i := range lists {
 		record := lists[i]
-		ele := dto.RecordDTO{ID: record.ID,
+		ele := dto.RecordDTO{
+			ID:             record.ID,
 			RecordType:     record.Type,
 			AccountName:    accountMap[record.AccountId].Name,
 			CategoryName:   categoryMap[record.CategoryId].Name,
 			RecordTypeName: constant.GetRecordTypeByIndex(record.Type).Name,
 			RecordTime:     record.RecordTime,
-			Amount:         record.Amount}
+			Amount:         record.Amount,
+			Comment:        record.Comment,
+		}
+
 		result = append(result, ele)
 	}
 	return &result

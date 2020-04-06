@@ -10,4 +10,9 @@
 
 ## 配置
 
-> ~/.config/mybook.yml AppConfig
+> ~/.config/mybook.yml
+```yml
+db:
+    file: ./data/main.db
+debug: true
+```
