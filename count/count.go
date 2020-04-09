@@ -141,7 +141,7 @@ func showCharRank(start int64, stop int64) {
 	}
 }
 
-func help(params []string) {
+func help(_ []string) {
 	cuibase.PrintTitleDefault("Count chinese char(UTF8) from file that current dir recursive")
 	format := cuibase.BuildFormat(-5, -15)
 	cuibase.PrintParams(format, []cuibase.ParamInfo{
