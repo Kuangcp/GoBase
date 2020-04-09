@@ -13,35 +13,32 @@ type (
 		DriverName string
 		// 是否 Debug 模式
 		Debug bool
+		Port  int
 	}
 )
 
 var DefaultPath = "/tmp/bookkeeping.db"
 var DefaultDriver = "sqlite3"
+var DefaultPort = 10006
+
 var config *AppConfig
 
+// GetAppConfig 加载配置文件
 func GetAppConfig() *AppConfig {
 	if config != nil {
 		return config
 	}
-	loadConfig()
+
+	loadConfigFile()
 	configLogger()
+	buildAppConfig()
 
-	dbFile := viper.GetString("db.file")
-	if dbFile == "" {
-		dbFile = DefaultPath
-	}
-	driver := viper.GetString("driver")
-	if driver == "" {
-		driver = DefaultDriver
-	}
-
-	debug := viper.GetBool("debug")
-	config = &AppConfig{Path: dbFile, DriverName: driver, Debug: debug}
+	logger.Info("Final config: %v", config)
 	return config
 }
 
-func loadConfig() {
+func loadConfigFile() {
+	logger.SetLogPathTrim("mybook/app/")
 	viper.SetConfigName("mybook")
 	viper.SetConfigType("yaml")
 	// 短路式搜索配置文件
@@ -49,13 +46,11 @@ func loadConfig() {
 	viper.AddConfigPath("$HOME/.config")
 	err := viper.ReadInConfig()
 	if err != nil {
-		logger.Error("Fatal error config file: %s \n", err)
+		logger.Warn("Use default config. %s", err)
 	}
 }
 
 func configLogger() {
-	logger.SetLogPathTrim("mybook/")
-
 	debug := viper.GetBool("debug")
 	notDev := viper.GetBool("notDev")
 	jsonPath := ""
@@ -75,4 +70,21 @@ func configLogger() {
 	if e != nil {
 		logger.Error(e)
 	}
+}
+
+func buildAppConfig() {
+	dbFile := viper.GetString("db.file")
+	if dbFile == "" {
+		dbFile = DefaultPath
+	}
+	driver := viper.GetString("driver")
+	if driver == "" {
+		driver = DefaultDriver
+	}
+	port := viper.GetInt("port")
+	if port == 0 {
+		port = DefaultPort
+	}
+	debug := viper.GetBool("debug")
+	config = &AppConfig{Path: dbFile, DriverName: driver, Debug: debug, Port: port}
 }

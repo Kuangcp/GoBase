@@ -3,7 +3,9 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/mybook/app/config"
+	"github.com/kuangcp/gobase/mybook/app/service"
 	"github.com/wonderivan/logger"
+	"strconv"
 )
 
 func Server(_ []string) {
@@ -11,6 +13,10 @@ func Server(_ []string) {
 	if !appConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	if appConfig.Path == config.DefaultPath {
+		service.AutoMigrateAll()
+	}
+
 	router := gin.Default()
 
 	router.GET("/ping", HealthCheck)
@@ -20,7 +26,7 @@ func Server(_ []string) {
 	logicRouter(router)
 
 	logger.Info("Open http://localhost:10006/static/")
-	e := router.Run(":10006")
+	e := router.Run(":" + strconv.Itoa(appConfig.Port))
 	logger.Error(e)
 }
 
