@@ -51,3 +51,13 @@ func GroupByMonth(c *gin.Context) {
 	result := service.GroupByMonth(startDate, endDate, typeId)
 	vo.FillResult(c, result)
 }
+
+func GroupByMonthDetail(c *gin.Context) {
+	startDate := c.Query("startDate")
+	endDate := c.Query("endDate")
+	categoryId := c.Query("categoryId")
+
+	//TODO 分类明细查询
+	result := service.GroupByMonth(startDate, endDate, categoryId)
+	vo.FillResult(c, result)
+}
