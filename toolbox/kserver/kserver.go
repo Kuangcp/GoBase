@@ -10,7 +10,7 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
-func help(params []string) {
+func help(_ []string) {
 	info := cuibase.HelpInfo{
 		Description: "Start simple http server on current path",
 		VerbLen:     -5,
