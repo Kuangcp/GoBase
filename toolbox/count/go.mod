@@ -9,4 +9,4 @@ require (
 	github.com/onsi/gomega v1.7.1 // indirect
 )
 
-replace github.com/kuangcp/gobase/cuibase => ./../cuibase
+replace github.com/kuangcp/gobase/cuibase => ./../../cuibase
