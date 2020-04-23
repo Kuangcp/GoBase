@@ -25,7 +25,7 @@ var ignoreDirs = [...]string{
 	"out", "build", "target", "log", "logs", "__pycache__", "ARTS",
 }
 var ignoreFiles = [...]string{
-	"README.md", "Readme.md", "readme.md", "SUMMARY.md", "Process.md",
+	"README.md", "Readme.md", "readme.md", "SUMMARY.md", "Process.md", "License.md",
 }
 var handleSuffix = [...]string{
 	".md", ".markdown", ".txt",
@@ -209,7 +209,7 @@ func refreshCategory(filename string) {
 	}
 
 	if startIdx == -1 || endIdx == -1 {
-		logger.Warn("Not valid markdown", startIdx, endIdx)
+		logger.Warn("Invalid Category: ",filename, startIdx, endIdx)
 		return
 	}
 	//logger.Info("index", startIdx, endIdx, result)
@@ -237,6 +237,7 @@ func printMindMap(filename string) {
 }
 
 func main() {
+	logger.SetLogPathTrim("/toolbox/")
 	cuibase.RunAction(map[string]func(params []string){
 		"-h": help,
 		"-mm": func(params []string) {
