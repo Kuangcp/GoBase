@@ -36,7 +36,7 @@ var deleteChar = [...]string{
 
 func help(_ []string) {
 	info := cuibase.HelpInfo{
-		Description: "Start simple http server on current path",
+		Description: "Format markdown file, generate catalog",
 		VerbLen:     -5,
 		ParamLen:    -5,
 		Params: []cuibase.ParamInfo{
@@ -51,14 +51,14 @@ func help(_ []string) {
 				Comment: "refresh catalog",
 			},
 			{
-				Verb:    "-a",
+				Verb:    "-f",
 				Param:   "file",
-				Comment: "append catalog",
+				Comment: "refresh catalog",
 			},
 			{
-				Verb:    "-at",
-				Param:   "file",
-				Comment: "append title and catalog",
+				Verb:    "-d",
+				Param:   "dir",
+				Comment: "refresh catalog with dir",
 			},
 			{
 				Verb:    "-mm",
@@ -69,7 +69,7 @@ func help(_ []string) {
 	cuibase.Help(info)
 }
 
-func readAllLines(filename string) []string {
+func readFileLines(filename string) []string {
 	return readLines(filename, func(s string) bool {
 		return true
 	}, func(s string) string {
@@ -115,7 +115,7 @@ func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	return result
 }
 
-func isNeedHandle(filename string) bool {
+func isFileNeedHandle(filename string) bool {
 	for _, file := range ignoreFiles {
 		if strings.HasSuffix(filename, file) {
 			return false
@@ -154,9 +154,9 @@ func refreshDirAllFiles(path string) {
 
 	for e := fileList.Front(); e != nil; e = e.Next() {
 		fileName := e.Value.(string)
-		if isNeedHandle(fileName) {
+		if isFileNeedHandle(fileName) {
 			logger.Info(fileName)
-			refreshCategory(fileName)
+			refreshCatalog(fileName)
 		}
 	}
 }
@@ -172,7 +172,7 @@ func normalizeForTitle(title string) string {
 	return title
 }
 
-func generateCategory(filename string) []string {
+func generateCatalog(filename string) []string {
 	return readLines(filename, func(s string) bool {
 		return strings.HasPrefix(s, "#")
 	}, func(s string) string {
@@ -184,9 +184,9 @@ func generateCategory(filename string) []string {
 	})
 }
 
-func refreshCategory(filename string) {
-	titles := generateCategory(filename)
-	lines := readAllLines(filename)
+func refreshCatalog(filename string) {
+	titles := generateCatalog(filename)
+	lines := readFileLines(filename)
 
 	startIdx := -1
 	endIdx := -1
@@ -209,7 +209,7 @@ func refreshCategory(filename string) {
 	}
 
 	if startIdx == -1 || endIdx == -1 {
-		logger.Warn("Invalid Category: ",filename, startIdx, endIdx)
+		logger.Warn("Invalid catalog: ", filename, startIdx, endIdx)
 		return
 	}
 	//logger.Info("index", startIdx, endIdx, result)
@@ -236,6 +236,11 @@ func printMindMap(filename string) {
 	}
 }
 
+func refreshCatalogFromParam(params []string) {
+	cuibase.AssertParamCount(2, "must input filename ")
+	refreshCatalog(params[2])
+}
+
 func main() {
 	logger.SetLogPathTrim("/toolbox/")
 	cuibase.RunAction(map[string]func(params []string){
@@ -246,10 +251,13 @@ func main() {
 		},
 		"-f": func(params []string) {
 			cuibase.AssertParamCount(2, "must input filename ")
-			refreshCategory(params[2])
+			refreshCatalog(params[2])
 		},
 		"-d": func(params []string) {
 			refreshDirAllFiles("./")
 		},
-	}, help)
+	}, func(params []string) {
+		cuibase.AssertParamCount(1, "must input filename ")
+		refreshCatalog(params[1])
+	})
 }
