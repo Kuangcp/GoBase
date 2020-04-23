@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"container/list"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/kuangcp/gobase/cuibase"
@@ -13,6 +16,23 @@ import (
 
 type filterFun = func(string) bool
 type mapFun func(string) string
+
+var startTag = "**目录 start**"
+var endTag = "**目录 end**"
+
+var ignoreDirs = [...]string{
+	".git", ".svn", ".vscode", ".idea", ".gradle",
+	"out", "build", "target", "log", "logs", "__pycache__", "ARTS",
+}
+var ignoreFiles = [...]string{
+	"README.md", "Readme.md", "readme.md", "SUMMARY.md", "Process.md",
+}
+var handleSuffix = [...]string{
+	".md", ".markdown", ".txt",
+}
+var deleteChar = [...]string{
+	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "。", "?", "？",
+}
 
 func help(_ []string) {
 	info := cuibase.HelpInfo{
@@ -49,8 +69,16 @@ func help(_ []string) {
 	cuibase.Help(info)
 }
 
+func readAllLines(filename string) []string {
+	return readLines(filename, func(s string) bool {
+		return true
+	}, func(s string) string {
+		return s
+	})
+}
+
 func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
-	file, err := os.OpenFile(filename, os.O_RDWR, 0666)
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
 	if err != nil {
 		logger.Error("Open file error!", err)
 		return nil
@@ -87,14 +115,65 @@ func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	return result
 }
 
+func isNeedHandle(filename string) bool {
+	for _, file := range ignoreFiles {
+		if strings.HasSuffix(filename, file) {
+			return false
+		}
+	}
+	for _, fileType := range handleSuffix {
+		if strings.HasSuffix(filename, fileType) {
+			return true
+		}
+	}
+	return false
+}
+
+func refreshDirAllFiles(path string) {
+	var fileList = list.New()
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			logger.Error("occur error: ", err)
+			return nil
+		}
+
+		if info.IsDir() {
+			for _, dir := range ignoreDirs {
+				if path == dir {
+					return filepath.SkipDir
+				}
+			}
+			return nil
+		}
+		fileList.PushBack(path)
+		return nil
+	})
+	if err != nil {
+		logger.Error(err)
+	}
+
+	for e := fileList.Front(); e != nil; e = e.Next() {
+		fileName := e.Value.(string)
+		if isNeedHandle(fileName) {
+			logger.Info(fileName)
+			refreshCategory(fileName)
+		}
+	}
+}
+
 func normalizeForTitle(title string) string {
 	title = strings.Replace(title, " ", "-", -1)
 	title = strings.ToLower(title)
+
+	for _, char := range deleteChar {
+		title = strings.Replace(title, char, "", -1)
+	}
+
 	return title
 }
 
-func printCategory(filename string) {
-	lines := readLines(filename, func(s string) bool {
+func generateCategory(filename string) []string {
+	return readLines(filename, func(s string) bool {
 		return strings.HasPrefix(s, "#")
 	}, func(s string) string {
 		title := strings.TrimSpace(strings.Replace(s, "#", "", -1))
@@ -103,11 +182,39 @@ func printCategory(filename string) {
 		level := strings.Replace(temps[0], "#", "    ", -1)
 		return fmt.Sprintf("%s1. [%s](#%s)\n", level, title, normalizeForTitle(title))
 	})
+}
 
-	if lines != nil {
-		for i := range lines {
-			fmt.Print(lines[i])
+func refreshCategory(filename string) {
+	titles := generateCategory(filename)
+	lines := readAllLines(filename)
+
+	startIdx := -1
+	endIdx := -1
+	var result = ""
+	for i, line := range lines {
+		if strings.Contains(line, startTag) {
+			startIdx = i
 		}
+		if strings.Contains(line, endTag) {
+			endIdx = i
+			result += startTag + "\n\n"
+			for t := range titles {
+				result += titles[t]
+			}
+			result += "\n"
+		}
+		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
+			result += line
+		}
+	}
+
+	if startIdx == -1 || endIdx == -1 {
+		logger.Warn("Not valid markdown", startIdx, endIdx)
+		return
+	}
+	//logger.Info("index", startIdx, endIdx, result)
+	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
+		logger.Error("write error")
 	}
 }
 
@@ -138,7 +245,10 @@ func main() {
 		},
 		"-f": func(params []string) {
 			cuibase.AssertParamCount(2, "must input filename ")
-			printCategory(params[2])
+			refreshCategory(params[2])
+		},
+		"-d": func(params []string) {
+			refreshDirAllFiles("./")
 		},
 	}, help)
 }
