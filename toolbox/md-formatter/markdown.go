@@ -3,12 +3,16 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/kuangcp/gobase/cuibase"
-	"github.com/wonderivan/logger"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/kuangcp/gobase/cuibase"
+	"github.com/wonderivan/logger"
 )
+
+type filterFun = func(string) bool
+type mapFun func(string) string
 
 func help(_ []string) {
 	info := cuibase.HelpInfo{
@@ -45,13 +49,12 @@ func help(_ []string) {
 	cuibase.Help(info)
 }
 
-func readLines(filename string, filterFunc func(string) bool, mapFunc func(string) string) []string {
+func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	file, err := os.OpenFile(filename, os.O_RDWR, 0666)
 	if err != nil {
 		logger.Error("Open file error!", err)
 		return nil
 	}
-
 	defer file.Close()
 
 	stat, err := file.Stat()
@@ -59,7 +62,7 @@ func readLines(filename string, filterFunc func(string) bool, mapFunc func(strin
 		panic(err)
 	}
 	if stat.Size() == 0 {
-		logger.Debug("file:%s is empty", filename)
+		logger.Info("file:%s is empty", filename)
 		return nil
 	}
 
@@ -68,7 +71,6 @@ func readLines(filename string, filterFunc func(string) bool, mapFunc func(strin
 	buf := bufio.NewReader(file)
 	for {
 		line, err := buf.ReadString('\n')
-		line = strings.TrimSpace(line)
 		if filterFunc(line) {
 			result = append(result, mapFunc(line))
 		}
@@ -85,28 +87,58 @@ func readLines(filename string, filterFunc func(string) bool, mapFunc func(strin
 	return result
 }
 
-func printMindMapFormat(params []string) {
-	cuibase.AssertParamCount(2, "must input filename ")
+func normalizeForTitle(title string) string {
+	title = strings.Replace(title, " ", "-", -1)
+	title = strings.ToLower(title)
+	return title
+}
 
-	lines := readLines(params[2], func(s string) bool {
+func printCategory(filename string) {
+	lines := readLines(filename, func(s string) bool {
 		return strings.HasPrefix(s, "#")
 	}, func(s string) string {
-		temp := strings.Split(s, " ")
-		prefix := strings.Replace(temp[0], "#", "    ", -1)
-		return prefix + temp[1]
-
+		title := strings.TrimSpace(strings.Replace(s, "#", "", -1))
+		strings.Count(s, "#")
+		temps := strings.Split(s, "# ")
+		level := strings.Replace(temps[0], "#", "    ", -1)
+		return fmt.Sprintf("%s1. [%s](#%s)\n", level, title, normalizeForTitle(title))
 	})
 
 	if lines != nil {
 		for i := range lines {
-			fmt.Println(lines[i])
+			fmt.Print(lines[i])
+		}
+	}
+}
+
+func printMindMap(filename string) {
+	cuibase.AssertParamCount(2, "must input filename ")
+
+	lines := readLines(filename, func(s string) bool {
+		return strings.HasPrefix(s, "#")
+	}, func(s string) string {
+		temp := strings.Split(s, "# ")
+		prefix := strings.Replace(temp[0], "#", "    ", -1)
+		return prefix + temp[1]
+	})
+
+	if lines != nil {
+		for i := range lines {
+			fmt.Print(lines[i])
 		}
 	}
 }
 
 func main() {
 	cuibase.RunAction(map[string]func(params []string){
-		"-h":  help,
-		"-mm": printMindMapFormat,
+		"-h": help,
+		"-mm": func(params []string) {
+			cuibase.AssertParamCount(2, "must input filename ")
+			printMindMap(params[2])
+		},
+		"-f": func(params []string) {
+			cuibase.AssertParamCount(2, "must input filename ")
+			printCategory(params[2])
+		},
 	}, help)
 }
