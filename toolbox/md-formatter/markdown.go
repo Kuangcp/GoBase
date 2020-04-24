@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/wonderivan/logger"
@@ -129,7 +130,7 @@ func isFileNeedHandle(filename string) bool {
 	return false
 }
 
-func refreshDirAllFiles(path string) {
+func RefreshDirAllFiles(path string) {
 	var fileList = list.New()
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -156,7 +157,7 @@ func refreshDirAllFiles(path string) {
 		fileName := e.Value.(string)
 		if isFileNeedHandle(fileName) {
 			logger.Info(fileName)
-			refreshCatalog(fileName)
+			RefreshCatalog(fileName)
 		}
 	}
 }
@@ -184,7 +185,7 @@ func generateCatalog(filename string) []string {
 	})
 }
 
-func refreshCatalog(filename string) {
+func RefreshCatalog(filename string) {
 	titles := generateCatalog(filename)
 	lines := readFileLines(filename)
 
@@ -202,6 +203,8 @@ func refreshCatalog(filename string) {
 				result += titles[t]
 			}
 			result += "\n"
+			result += endTag + "|_" + time.Now().Format("2006-01-02 15:04") + "_|\n"
+			continue
 		}
 		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
 			result += line
@@ -218,7 +221,7 @@ func refreshCatalog(filename string) {
 	}
 }
 
-func printMindMap(filename string) {
+func PrintMindMap(filename string) {
 	cuibase.AssertParamCount(2, "must input filename ")
 
 	lines := readLines(filename, func(s string) bool {
@@ -236,28 +239,23 @@ func printMindMap(filename string) {
 	}
 }
 
-func refreshCatalogFromParam(params []string) {
-	cuibase.AssertParamCount(2, "must input filename ")
-	refreshCatalog(params[2])
-}
-
 func main() {
 	logger.SetLogPathTrim("/toolbox/")
 	cuibase.RunAction(map[string]func(params []string){
 		"-h": help,
 		"-mm": func(params []string) {
 			cuibase.AssertParamCount(2, "must input filename ")
-			printMindMap(params[2])
+			PrintMindMap(params[2])
 		},
 		"-f": func(params []string) {
 			cuibase.AssertParamCount(2, "must input filename ")
-			refreshCatalog(params[2])
+			RefreshCatalog(params[2])
 		},
 		"-d": func(params []string) {
-			refreshDirAllFiles("./")
+			RefreshDirAllFiles("./")
 		},
 	}, func(params []string) {
 		cuibase.AssertParamCount(1, "must input filename ")
-		refreshCatalog(params[1])
+		RefreshCatalog(params[1])
 	})
 }
