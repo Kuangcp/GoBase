@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/wonderivan/logger"
 )
@@ -239,6 +240,26 @@ func PrintMindMap(filename string) {
 	}
 }
 
+func RefreshChangeFile(dir string) {
+	r, err := git.PlainOpen(dir)
+	cuibase.CheckIfError(err)
+	worktree, err := r.Worktree()
+	cuibase.CheckIfError(err)
+	status, err := worktree.Status()
+	cuibase.CheckIfError(err)
+	if status.IsClean() {
+		return
+	}
+
+	for filePath := range status {
+		fileStatus := status.File(filePath)
+		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
+			logger.Info("refresh:", filePath)
+			RefreshCatalog(dir + "/" + filePath)
+		}
+	}
+}
+
 func main() {
 	logger.SetLogPathTrim("/toolbox/")
 	cuibase.RunAction(map[string]func(params []string){
@@ -251,8 +272,12 @@ func main() {
 			cuibase.AssertParamCount(2, "must input filename ")
 			RefreshCatalog(params[2])
 		},
-		"-d": func(params []string) {
+		"-d": func(_ []string) {
 			RefreshDirAllFiles("./")
+		},
+		"-rc": func(params []string) {
+			cuibase.AssertParamCount(2, "must input repo dir ")
+			RefreshChangeFile(params[2])
 		},
 	}, func(params []string) {
 		cuibase.AssertParamCount(1, "must input filename ")

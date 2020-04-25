@@ -8,14 +8,14 @@ import (
 )
 
 // Color
-var Red = "\033[0;31m"
-var Green = "\033[0;32m"
-var Yellow = "\033[0;33m"
-var Blue = "\033[0;34m"
-var Purple = "\033[0;35m"
-var Cyan = "\033[0;36m"
-var White = "\033[0;37m"
-var End = "\033[0m"
+var Red = "\x1b[0;31m"
+var Green = "\x1b[0;32m"
+var Yellow = "\x1b[0;33m"
+var Blue = "\x1b[0;34m"
+var Purple = "\x1b[0;35m"
+var Cyan = "\x1b[0;36m"
+var White = "\x1b[0;37m"
+var End = "\x1b[0m"
 
 // ParamInfo one line struct
 type (
@@ -74,6 +74,15 @@ func Help(helpInfo HelpInfo) {
 	PrintTitleDefault(helpInfo.Description)
 	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
 	PrintParams(format, helpInfo.Params)
+}
+
+func CheckIfError(err error) {
+	if err == nil {
+		return
+	}
+
+	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	os.Exit(1)
 }
 
 func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
