@@ -36,36 +36,40 @@ var deleteChar = [...]string{
 	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "。", "?", "？",
 }
 
-func help(_ []string) {
+func HelpInfo(_ []string) {
 	info := cuibase.HelpInfo{
 		Description: "Format markdown file, generate catalog",
-		VerbLen:     -5,
+		VerbLen:     -3,
 		ParamLen:    -5,
 		Params: []cuibase.ParamInfo{
 			{
 				Verb:    "-h",
 				Param:   "",
-				Comment: "help",
-			},
-			{
+				Comment: "Help info",
+			}, {
 				Verb:    "",
 				Param:   "file",
-				Comment: "refresh catalog",
-			},
-			{
+				Comment: "Refresh catalog for file",
+			}, {
 				Verb:    "-f",
 				Param:   "file",
-				Comment: "refresh catalog",
-			},
-			{
+				Comment: "Refresh catalog for file",
+			}, {
 				Verb:    "-d",
 				Param:   "dir",
-				Comment: "refresh catalog with dir",
-			},
-			{
+				Comment: "Refresh catalog for file that recursive dir",
+			}, {
 				Verb:    "-mm",
 				Param:   "file",
-				Comment: "show mind map",
+				Comment: "Print mind map",
+			}, {
+				Verb:    "-rc",
+				Param:   "dir",
+				Comment: "Refresh git repo dir changed file",
+			}, {
+				Verb:    "-a",
+				Param:   "file",
+				Comment: "Append catalog on file",
 			},
 		}}
 	cuibase.Help(info)
@@ -131,6 +135,7 @@ func isFileNeedHandle(filename string) bool {
 	return false
 }
 
+// 递归更新当前目录下所有文件的目录
 func RefreshDirAllFiles(path string) {
 	var fileList = list.New()
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
@@ -186,6 +191,7 @@ func generateCatalog(filename string) []string {
 	})
 }
 
+// 更新指定文件的目录
 func RefreshCatalog(filename string) {
 	titles := generateCatalog(filename)
 	lines := readFileLines(filename)
@@ -222,6 +228,7 @@ func RefreshCatalog(filename string) {
 	}
 }
 
+// 打印 百度脑图支持的 MindMap 格式
 func PrintMindMap(filename string) {
 	cuibase.AssertParamCount(2, "must input filename ")
 
@@ -240,6 +247,7 @@ func PrintMindMap(filename string) {
 	}
 }
 
+// 更新指定目录的Git仓库里发成变更的文件
 func RefreshChangeFile(dir string) {
 	r, err := git.PlainOpen(dir)
 	cuibase.CheckIfError(err)
@@ -260,10 +268,15 @@ func RefreshChangeFile(dir string) {
 	}
 }
 
+// TODO
+func AppendCatalogAndTitle(filename string) {
+
+}
+
 func main() {
 	logger.SetLogPathTrim("/toolbox/")
 	cuibase.RunAction(map[string]func(params []string){
-		"-h": help,
+		"-h": HelpInfo,
 		"-mm": func(params []string) {
 			cuibase.AssertParamCount(2, "must input filename ")
 			PrintMindMap(params[2])
@@ -278,6 +291,10 @@ func main() {
 		"-rc": func(params []string) {
 			cuibase.AssertParamCount(2, "must input repo dir ")
 			RefreshChangeFile(params[2])
+		},
+		"-a": func(params []string) {
+			cuibase.AssertParamCount(2, "must input filename")
+			AppendCatalogAndTitle(params[2])
 		},
 	}, func(params []string) {
 		cuibase.AssertParamCount(1, "must input filename ")
