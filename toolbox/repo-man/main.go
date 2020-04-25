@@ -10,16 +10,21 @@ import (
 )
 
 type RepoAlias struct {
-	alias string
-	path  string
-	name  string
+	alias  string
+	path   string
+	name   string
+	ignore bool
 }
 
 func (this RepoAlias) String() string {
+	var nameColor = cuibase.Blue
+	if this.ignore {
+		nameColor = cuibase.Red
+	}
 	return fmt.Sprintf("%v%-30s %v%-50s %v%-10v%v",
 		cuibase.Yellow, this.alias,
 		cuibase.Green, this.path,
-		cuibase.Blue, this.name, cuibase.End)
+		nameColor, this.name, cuibase.End)
 }
 
 func HelpInfo(_ []string) {
@@ -100,10 +105,14 @@ func getRepoList() []interface{} {
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
 	return cuibase.ReadFileLines(home+"/.repos.sh", func(s string) bool {
-		return strings.Contains(s, "alias") && !strings.Contains(s, "+")
+		return strings.Contains(s, "alias")
 	}, func(s string) interface{} {
 		temps := strings.Split(s, "'")
-		return RepoAlias{alias: temps[0][5 : len(temps[0])-1], path: temps[1][3:], name: strings.TrimSpace(temps[2][2:])}
+		return RepoAlias{alias: temps[0][5 : len(temps[0])-1],
+			path:   temps[1][3:],
+			name:   strings.TrimSpace(temps[2][2:]),
+			ignore: strings.Contains(s, "+"),
+		}
 	})
 }
 
@@ -111,8 +120,13 @@ func ParallelActionRepo(action func(string, *sync.WaitGroup)) {
 	list := getRepoList()
 	var latch sync.WaitGroup
 	for _, s := range list {
+		repoAlias := s.(RepoAlias)
+		if repoAlias.ignore {
+			continue
+		}
+
 		latch.Add(1)
-		go action(s.(RepoAlias).path, &latch)
+		go action(repoAlias.path, &latch)
 	}
 	latch.Wait()
 }
