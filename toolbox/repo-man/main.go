@@ -49,6 +49,16 @@ func PullRepo(dir string, latch *sync.WaitGroup) {
 	logger.Error(dir, err)
 }
 
+func PushRepo(dir string, latch *sync.WaitGroup) {
+	defer latch.Done()
+
+	r, err := git.PlainOpen(dir)
+	cuibase.CheckIfError(err)
+
+	err = r.Push(&git.PushOptions{})
+	logger.Error(dir, err)
+}
+
 func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
 	defer latch.Done()
 
@@ -97,6 +107,16 @@ func getRepoList() []interface{} {
 	})
 }
 
+func ParallelActionRepo(action func(string, *sync.WaitGroup)) {
+	list := getRepoList()
+	var latch sync.WaitGroup
+	for _, s := range list {
+		latch.Add(1)
+		go action(s.(RepoAlias).path, &latch)
+	}
+	latch.Wait()
+}
+
 func main() {
 	logger.SetLogPathTrim("/toolbox/")
 	cuibase.RunAction(map[string]func(params []string){
@@ -107,22 +127,12 @@ func main() {
 				println(list[i].(RepoAlias).String())
 			}
 		},
-		"pla": func(params []string) {
-			list := getRepoList()
-			var latch sync.WaitGroup
-			for _, s := range list {
-				latch.Add(1)
-				go PullRepo(s.(RepoAlias).path, &latch)
-			}
-			latch.Wait()
+		"pla": func(_ []string) {
+			ParallelActionRepo(PullRepo)
+		}, "pa": func(_ []string) {
+			ParallelActionRepo(PushRepo)
 		},
-	}, func(params []string) {
-		list := getRepoList()
-		var latch sync.WaitGroup
-		for _, s := range list {
-			latch.Add(1)
-			go ShowRepoStatus(s.(RepoAlias).path, &latch)
-		}
-		latch.Wait()
+	}, func(_ []string) {
+		ParallelActionRepo(ShowRepoStatus)
 	})
 }
