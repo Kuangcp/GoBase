@@ -1,10 +1,18 @@
 package cuibase
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
+	"os/user"
+	"runtime"
 	"strconv"
+	"strings"
 )
 
 // Color
@@ -85,6 +93,44 @@ func CheckIfError(err error) {
 	os.Exit(1)
 }
 
+func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(string) interface{}) []interface{} {
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
+	if err != nil {
+		log.Println("Open file error!", err)
+		return nil
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		panic(err)
+	}
+	if stat.Size() == 0 {
+		log.Printf("file:%s is empty", filename)
+		return nil
+	}
+
+	var result []interface{}
+
+	buf := bufio.NewReader(file)
+	for {
+		line, err := buf.ReadString('\n')
+		if filterFunc(line) {
+			result = append(result, mapFunc(line))
+		}
+
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				log.Println("Read file error!", err)
+				return nil
+			}
+		}
+	}
+	return result
+}
+
 func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
 	if len(params) < 2 {
 		defaultAction(os.Args)
@@ -98,6 +144,58 @@ func runAction(params []string, actions map[string]func(params []string), defaul
 	} else {
 		action(os.Args)
 	}
+}
+
+func Home() (string, error) {
+	curUser, err := user.Current()
+	if nil == err {
+		return curUser.HomeDir, nil
+	}
+
+	// cross compile support
+
+	if "windows" == runtime.GOOS {
+		return homeWindows()
+	}
+
+	// Unix-like system, so just assume Unix
+	return homeUnix()
+}
+
+func homeUnix() (string, error) {
+	// First prefer the HOME environmental variable
+	if home := os.Getenv("HOME"); home != "" {
+		return home, nil
+	}
+
+	// If that fails, try the shell
+	var stdout bytes.Buffer
+	cmd := exec.Command("sh", "-c", "eval echo ~$USER")
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	result := strings.TrimSpace(stdout.String())
+	if result == "" {
+		return "", errors.New("blank output when reading home directory")
+	}
+
+	return result, nil
+}
+
+func homeWindows() (string, error) {
+	drive := os.Getenv("HOMEDRIVE")
+	path := os.Getenv("HOMEPATH")
+	home := drive + path
+	if drive == "" || path == "" {
+		home = os.Getenv("USERPROFILE")
+	}
+	if home == "" {
+		return "", errors.New("HOMEDRIVE, HOMEPATH, and USERPROFILE are blank")
+	}
+
+	return home, nil
 }
 
 func enoughCount(params []string, count int) bool {
