@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/wonderivan/logger"
-	"strings"
-	"sync"
 )
 
 type RepoAlias struct {
@@ -78,27 +79,38 @@ func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
 	}
 
 	temps := strings.Split(dir, "/")
-	fmt.Printf("%v %-20v  %v%v %v\n", cuibase.Blue, temps[len(temps)-1],
-		cuibase.Green, dir, cuibase.End)
 
+	content := ""
+	modify := 0
+	add := 0
 	for filePath := range status {
 		fileStatus := status.File(filePath)
 		var color = cuibase.End
 		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
 			color = cuibase.Cyan
+			modify++
 		}
 		if fileStatus.Staging == git.Deleted || fileStatus.Worktree == git.Deleted {
 			color = cuibase.Red
 		}
 		if fileStatus.Staging == git.Added || fileStatus.Worktree == git.Added {
 			color = cuibase.Green
+			add++
 		}
 		if fileStatus.Staging == git.Untracked || fileStatus.Worktree == git.Untracked {
 			color = cuibase.Yellow
+			add++
 		}
-		fmt.Printf("   %v%c%c    %s%s\n", color, fileStatus.Staging, fileStatus.Worktree, filePath, cuibase.End)
+		content += fmt.Sprintf("   %v%c%c    %s%s\n",
+			color, fileStatus.Staging, fileStatus.Worktree, filePath, cuibase.End)
 	}
-	fmt.Println()
+	fmt.Printf("%v▶ %-20v  %v%-50v %vM:%-3vA:%-3v ◀%v\n",
+		cuibase.Blue, temps[len(temps)-1],
+		cuibase.Green, dir,
+		cuibase.Blue, modify, add,
+		cuibase.End)
+
+	fmt.Println(content)
 }
 
 func getRepoList() []interface{} {
@@ -143,7 +155,8 @@ func main() {
 		},
 		"pla": func(_ []string) {
 			ParallelActionRepo(PullRepo)
-		}, "pa": func(_ []string) {
+		},
+		"pa": func(_ []string) {
 			ParallelActionRepo(PushRepo)
 		},
 	}, func(_ []string) {
