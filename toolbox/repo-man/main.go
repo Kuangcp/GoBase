@@ -78,7 +78,7 @@ func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
 	}
 
 	temps := strings.Split(dir, "/")
-	fmt.Printf("%v %-20v  %v%v %v\n", cuibase.Yellow, temps[len(temps)-1],
+	fmt.Printf("%v %-20v  %v%v %v\n", cuibase.Blue, temps[len(temps)-1],
 		cuibase.Green, dir, cuibase.End)
 
 	for filePath := range status {
