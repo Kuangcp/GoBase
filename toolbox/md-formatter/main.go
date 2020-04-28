@@ -33,7 +33,7 @@ var handleSuffix = [...]string{
 	".md", ".markdown", ".txt",
 }
 var deleteChar = [...]string{
-	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*","＊", "。", "?", "？",
+	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "＊", "。", "?", "？",
 }
 
 func HelpInfo(_ []string) {
@@ -69,7 +69,7 @@ func HelpInfo(_ []string) {
 			}, {
 				Verb:    "-a",
 				Param:   "file",
-				Comment: "Append catalog on file",
+				Comment: "Append catalog and title for file",
 			},
 		}}
 	cuibase.Help(info)
@@ -105,8 +105,12 @@ func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	buf := bufio.NewReader(file)
 	for {
 		line, err := buf.ReadString('\n')
-		if filterFunc(line) {
-			result = append(result, mapFunc(line))
+		if filterFunc == nil || filterFunc(line) {
+			var temp = line
+			if mapFunc != nil {
+				temp = mapFunc(line)
+			}
+			result = append(result, temp)
 		}
 
 		if err != nil {
@@ -268,9 +272,20 @@ func RefreshChangeFile(dir string) {
 	}
 }
 
-// TODO
 func AppendCatalogAndTitle(filename string) {
+	lines := readLines(filename, nil, nil)
+	var result = "---\ntitle: " + filename + "\ndate: " +
+		time.Now().Format("2006-01-02 15:04:05") +
+		"\ntags: \ncategories: \n---\n\n**目录 start**\n**目录 end**" +
+		"\n****************************************\n"
+	for i := range lines {
+		result += lines[i]
+	}
 
+	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
+		logger.Error("write error")
+	}
+	RefreshCatalog(filename)
 }
 
 func main() {
