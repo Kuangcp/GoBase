@@ -10,3 +10,8 @@
     - json 高亮 格式化
 1. go get github.com/kuangcp/gobase/mybook
     - 记账工具
+1. go get github.com/kuangcp/gobase/tool-box/keyboard-man
+	- 按键监听 统计
+
+找出可执行文件  find . -type f -exec file {} + | grep "ELF*" | sed 's/^.\///g' | awk '{print $1}' | sed 's/://g'
+
