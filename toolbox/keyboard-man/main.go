@@ -30,6 +30,18 @@ func main() {
 				}
 			}
 		},
+		"-p": func(params []string) {
+			cuibase.AssertParamCount(2, "input device")
+			device, _ := Open("/dev/input/" + params[2])
+			if device == nil {
+				return
+			}
+			defer device.Release()
+
+			fmt.Println(device)
+			fmt.Println("key map:")
+			fmt.Println(device.Capabilities)
+		},
 		"-s": ListenDevice,
 	}, HelpInfo)
 }
@@ -74,17 +86,23 @@ func ListenDevice(params []string) {
 		}
 
 		for _, inputEvent := range inputEvents {
+			if inputEvent.Code == 0 {
+				continue
+			}
+
 			event := NewKeyEvent(&inputEvent)
 			if event.State != KeyDown {
 				continue
 			}
-			//fmt.Printf("%v \n", event)
-			connection.ZIncr(prefix+today,
+			//fmt.Printf("%v           %v\n", event, inputEvent)
+			connection.ZIncr(prefix+today+":rank",
 				redis.Z{Score: 1, Member: event.Scancode})
 			connection.ZIncr(prefix+"total",
 				redis.Z{Score: 1, Member: today})
-			connection.ZAdd(prefix+"detail:"+today,
-				redis.Z{Score: float64(inputEvent.Time.Nano()), Member: event.Scancode})
+
+			// actual store us not ns
+			connection.ZAdd(prefix+today+":detail",
+				redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
 		}
 	}
 }
