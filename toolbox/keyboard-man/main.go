@@ -74,36 +74,34 @@ func ListenDevice(params []string) {
 	}
 	defer device.Release()
 
-	//fmt.Println(device)
-	//fmt.Println(device.Capabilities)
-
-	today := time.Now().Format("2006:01:02")
-
 	for true {
 		inputEvents, err := device.Read()
 		if err != nil || inputEvents == nil || len(inputEvents) == 0 {
 			continue
 		}
 
-		for _, inputEvent := range inputEvents {
-			if inputEvent.Code == 0 {
-				continue
-			}
+		handleEvents(inputEvents, connection)
+	}
+}
 
-			event := NewKeyEvent(&inputEvent)
-			if event.State != KeyDown {
-				continue
-			}
-			//fmt.Printf("%v           %v\n", event, inputEvent)
-			connection.ZIncr(prefix+today+":rank",
-				redis.Z{Score: 1, Member: event.Scancode})
-			connection.ZIncr(prefix+"total",
-				redis.Z{Score: 1, Member: today})
-
-			// actual store us not ns
-			connection.ZAdd(prefix+today+":detail",
-				redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
+func handleEvents(inputEvents []InputEvent, conn *redis.Client) {
+	today := time.Now().Format("2006:01:02")
+	for _, inputEvent := range inputEvents {
+		if inputEvent.Code == 0 {
+			continue
 		}
+
+		event := NewKeyEvent(&inputEvent)
+		if event.State != KeyDown {
+			continue
+		}
+
+		//fmt.Printf("%v           %v\n", event, inputEvent)
+		conn.ZIncr(prefix+today+":rank", redis.Z{Score: 1, Member: event.Scancode})
+		conn.ZIncr(prefix+"total", redis.Z{Score: 1, Member: today})
+
+		// actual store us not ns
+		conn.ZAdd(prefix+today+":detail", redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
 	}
 }
 
