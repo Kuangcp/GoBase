@@ -10,7 +10,8 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
-var lastEvent = "last-event"
+const prefix = "keyboard:"
+const lastEvent = prefix + "last-event"
 
 func main() {
 	cuibase.RunAction(map[string]func(params []string){
@@ -29,18 +30,19 @@ func main() {
 				}
 			}
 		},
-		"-s": func(params []string) {
-			if len(params) > 2 {
-				ListenDevice(params[2])
-			} else {
-				ListenDevice("")
-			}
-		},
+		"-s": ListenDevice,
 	}, HelpInfo)
 }
 
-func ListenDevice(event string) {
+func ListenDevice(params []string) {
+	var event = ""
+	if len(params) > 2 {
+		event = params[2]
+	}
+
 	connection := initConnection()
+	defer connection.Close()
+
 	if event == "" {
 		last := connection.Get(lastEvent)
 		if last == nil {
@@ -53,13 +55,17 @@ func ListenDevice(event string) {
 	if event == "" {
 		return
 	}
+
 	device, _ := Open("/dev/input/" + event)
+	if device == nil {
+		return
+	}
 	defer device.Release()
 
 	//fmt.Println(device)
 	//fmt.Println(device.Capabilities)
 
-	today := time.Now().Format("2006-01-02")
+	today := time.Now().Format("2006:01:02")
 
 	for true {
 		inputEvents, err := device.Read()
@@ -73,9 +79,12 @@ func ListenDevice(event string) {
 				continue
 			}
 			//fmt.Printf("%v \n", event)
-			connection.ZIncr(today, redis.Z{Score: 1, Member: event.Scancode})
-			connection.ZIncr("total", redis.Z{Score: 1, Member: today})
-			connection.ZAdd("detail-"+today, redis.Z{Score: float64(inputEvent.Time.Nano()), Member: event.Scancode})
+			connection.ZIncr(prefix+today,
+				redis.Z{Score: 1, Member: event.Scancode})
+			connection.ZIncr(prefix+"total",
+				redis.Z{Score: 1, Member: today})
+			connection.ZAdd(prefix+"detail:"+today,
+				redis.Z{Score: float64(inputEvent.Time.Nano()), Member: event.Scancode})
 		}
 	}
 }
