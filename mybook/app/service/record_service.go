@@ -11,6 +11,7 @@ import (
 	"github.com/wonderivan/logger"
 	"strconv"
 	"time"
+	"unsafe"
 )
 
 func addRecord(record *domain.Record) {
@@ -250,9 +251,24 @@ func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
 	var lists []domain.Record
 	accountId, _ := strconv.Atoi(vo.AccountId)
 	typeId, _ := strconv.Atoi(vo.TypeId)
-	db.Where(&domain.Record{AccountId: uint(accountId), Type: int8(typeId)}).
-		Where("record_time between ? and ?", vo.StartDate, vo.EndDate).
-		Order("record_time DESC", true).Find(&lists)
+	categoryId, _ := strconv.Atoi(vo.CategoryId)
+
+	query := db.Where("record_time between ? and ?", vo.StartDate, vo.EndDate)
+	record := domain.Record{}
+	if typeId != 0 {
+		record.Type = int8(typeId)
+	}
+	if accountId != 0 {
+		record.AccountId = uint(accountId)
+	}
+	if categoryId != 0 {
+		record.CategoryId = uint(categoryId)
+	}
+
+	if unsafe.Sizeof(record) != 0 {
+		query = query.Where(&record)
+	}
+	query.Order("record_time DESC", true).Find(&lists)
 	if len(lists) < 1 {
 		return nil
 	}
@@ -287,7 +303,7 @@ func GroupByMonth(startDate string, endDate string, typeId string) *[]dto.MonthC
 		Joins("left join category on record.category_id = category.id")
 	if len(typeId) != 0 {
 		query = query.Where("record.category_id = category.id and category.type_id =? and record_time between ? and ?", typeId, startDate, endDate)
-	}else{
+	} else {
 		query = query.Where("record.category_id = category.id and record_time between ? and ?", startDate, endDate)
 	}
 	query.

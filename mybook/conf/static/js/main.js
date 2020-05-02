@@ -1,5 +1,36 @@
 const app = '/mybook';
 
+function numPanel() {
+    var numPad = new NumKeyBoard({
+        precision: 2,        //精确度
+        minVal: 1,           //允许输入的最小值
+        maxVal: 10000000          //允许输入的最大值
+    });
+
+    //打开数字键盘弹框,参数为弹框确定按钮的回调函数，回调函数的参数是输入的值
+    numPad.setNumVal($("#amount").val());
+
+    numPad.open(function (val) {
+        $("#amount").val(val);
+    });
+}
+
+function initDateArea() {
+    let start = $("#startDate").val();
+    let end = $("#endDate").val();
+    let now = new Date();
+    // 获取系统前一周的时间
+    if (!start) {
+        let date = new Date(now - 7 * 24 * 3600 * 1000);
+        start = date.toISOString().slice(0, 10);
+        $("#startDate").val(start);
+    }
+    if (!end) {
+        end = now.toISOString().slice(0, 10);
+        $("#endDate").val(end);
+    }
+}
+
 function tip(area, title, content) {
     layer.open({
         type: 1,
@@ -45,7 +76,7 @@ function loadAccount() {
             }
         } else {
             layer.msg('创建失败');
-            console.log(data)
+            console.log(data);
         }
     });
 }
@@ -66,9 +97,59 @@ function loadRecordType() {
     });
 }
 
-function loadRecordDetail(category) {
-    console.log(category);
+// 月份详情数据
+function loadMonthRecordDetail(category) {
+    console.log("month detail: ", category);
+
     tip(['700px', '550px'], '单分类明细账单', $("#month_detail_tables").html());
+
+    handleGet('/record/monthDetail?' + buildMonthDateStr() + '&categoryId=' + category, function (data) {
+        if (data.Success) {
+            console.log('/record/monthDetail', data);
+
+            appendRecordRow(data, 'month_detail_table_body')
+        } else {
+            layer.msg('创建失败');
+            console.log(data)
+        }
+    });
+}
+
+// 月份数据
+function appendRecordMonth(data) {
+    let total = 0;
+    for (i in data.Data) {
+        let record = data.Data[i];
+
+        let line = "<tr>";
+        line += '<td>' + record.CategoryId + '</td>';
+        line += '<td>' + record.RecordTypeName + '</td>';
+        line += '<td style="text-align: right"> ' + record.Name + '</td>';
+        line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
+        line += '<td>' + record.Date + '</td>';
+        line += '<td> <button onclick="loadMonthRecordDetail(' + record.CategoryId + ')">详情</button></td>';
+
+        line += '</tr>';
+        $('#month_table_body > tbody:last-child').append(line);
+        total += record.Amount;
+    }
+}
+
+function buildMonthDateStr() {
+    let start = $("#startDateMonth").val();
+    let end = $("#endDateMonth").val();
+    let typeId = $("#typeIdMonth option:selected").val();
+    let now = new Date();
+    if (!start) {
+        let date = new Date(now - 15 * 24 * 3600 * 1000);
+        start = date.toISOString().slice(0, 10);
+        $("#startDate").val(start);
+    }
+    if (!end) {
+        end = now.toISOString().slice(0, 10);
+        $("#endDate").val(end);
+    }
+    return 'startDate=' + start + '&endDate=' + end
 }
 
 function loadMonthTables() {
@@ -94,23 +175,7 @@ function loadMonthTables() {
             $("#month_table_body tbody").find('tr').each(function () {
                 $(this).remove();
             });
-
-            let total = 0;
-            for (i in data.Data) {
-                let record = data.Data[i];
-
-                let line = "<tr>";
-                line += '<td>' + record.CategoryId + '</td>';
-                line += '<td>' + record.RecordTypeName + '</td>';
-                line += '<td style="text-align: right"> ' + record.Name + '</td>';
-                line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
-                line += '<td>' + record.Date + '</td>';
-                line += '<td> <button onclick="loadRecordDetail('+record.CategoryId+')">详情</button></td>';
-
-                line += '</tr>';
-                $('#month_table_body > tbody:last-child').append(line);
-                total += record.Amount;
-            }
+            appendRecordMonth(data);
         } else {
             layer.msg('加载账单失败');
             console.log(data)
@@ -144,30 +209,34 @@ function loadRecordTables() {
                 $(this).remove();
             });
 
-            let total = 0;
-            for (i in data.Data) {
-                let record = data.Data[i];
-
-                let line = "<tr>";
-                line += '<td>' + record.ID + '</td>';
-                line += '<td style="text-align: right"> ' + record.AccountName + '</td>';
-                line += '<td>' + record.RecordTypeName + '</td>';
-                line += '<td>' + record.CategoryName + '</td>';
-                line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
-                line += '<td>' + record.Comment + '</td>';
-                line += '<td style="width: 140px">' + record.RecordTime + '</td>';
-
-                line += '</tr>';
-                $('#record_table_body > tbody:last-child').append(line);
-                total += record.Amount;
-            }
-
-            $("#total").html('￥' + total / 100.0)
+            appendRecordRow(data, 'record_table_body');
         } else {
             layer.msg('加载账单失败');
             console.log(data)
         }
     });
+}
+
+function appendRecordRow(data, targetBlock) {
+    let total = 0;
+    for (i in data.Data) {
+        let record = data.Data[i];
+
+        let line = "<tr>";
+        line += '<td>' + record.ID + '</td>';
+        line += '<td style="text-align: right"> ' + record.AccountName + '</td>';
+        line += '<td>' + record.RecordTypeName + '</td>';
+        line += '<td>' + record.CategoryName + '</td>';
+        line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
+        line += '<td>' + record.Comment + '</td>';
+        line += '<td style="width: 140px">' + record.RecordTime + '</td>';
+
+        line += '</tr>';
+        $('#'+targetBlock+' > tbody:last-child').append(line);
+        total += record.Amount;
+    }
+
+    $("#total").html('￥' + total / 100.0)
 }
 
 function loadCategory() {
@@ -204,7 +273,7 @@ function loadCategory() {
 function createRecord() {
     let typeId = $('input:radio[name="typeId"]:checked').val();
     let targetAccountId = $('input:radio[name="targetAccountId"]:checked').val();
-    if (typeId == 3) {
+    if (typeId === 3) {
         if (targetAccountId === undefined || targetAccountId === null) {
             layer.msg('目标账户必填');
             return
@@ -219,35 +288,4 @@ function createRecord() {
             console.log(data)
         }
     });
-}
-
-function numPanel() {
-    var numPad = new NumKeyBoard({
-        precision: 2,        //精确度
-        minVal: 1,           //允许输入的最小值
-        maxVal: 10000000          //允许输入的最大值
-    });
-
-    //打开数字键盘弹框,参数为弹框确定按钮的回调函数，回调函数的参数是输入的值
-    numPad.setNumVal($("#amount").val());
-
-    numPad.open(function (val) {
-        $("#amount").val(val);
-    });
-}
-
-function initDateArea() {
-    let start = $("#startDate").val();
-    let end = $("#endDate").val();
-    let now = new Date();
-    // 获取系统前一周的时间
-    if (!start) {
-        let date = new Date(now - 7 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
 }
