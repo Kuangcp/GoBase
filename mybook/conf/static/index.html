@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <script src="js/jquery-3.4.1.min.js"></script>
     <script src="js/layer/layer.js"></script>
+    <script src="js/customLib.js"></script>
     <script src="js/main.js"></script>
     <link rel="stylesheet" href="css/numPad.css">
     <script src="js/numKeyBoard.js"></script>
@@ -65,11 +66,12 @@
     </div>
 </form>
 
-<script type="text/html" id="record_tables">
+<!--明细数据-->
+<script type="text/html" id="record_tab">
     <label class="label"> 开始时间 : </label>
-    <input type="date" name="startDate" id="startDate"/>
+    <input type="date" id="startDate"/>
     <label class="label"> 结束时间 : </label>
-    <input type="date" name="endDate" id="endDate"/>
+    <input type="date" id="endDate"/>
     <select id="typeId">
         <option>全部</option>
         <option value="1" selected>支出</option>
@@ -101,7 +103,8 @@
     </table>
 </script>
 
-<script type="text/html" id="month_tables">
+<!--分类数据-->
+<script type="text/html" id="month_tab">
     <label class="label"> 开始时间 : </label>
     <input type="date" id="startDateMonth"/>
     <label class="label"> 结束时间 : </label>
@@ -134,6 +137,7 @@
     </table>
 </script>
 
+<!--分类后数据-->
 <script type="text/html" id="month_detail_tables">
     <table id="month_detail_table_body" class="record-table">
         <thead>
@@ -158,43 +162,7 @@
     loadRecordType();
 
     $("#amount").on('click', numPanel);
-
-    $("#recordBtn").on('click', function () {
-        //tab层
-        layer.tab({
-            area: ['800px', '600px'],
-            tab: [{
-                title: '账单',
-                content: $("#record_tables").html()
-            }, {
-                title: '月度',
-                content: $("#month_tables").html()
-            }, {
-                title: 'TAB3',
-                content: '内容3'
-            }]
-        });
-
-
-        $("#queryRecordsBtn").on('click', loadRecordTables);
-        $("#queryMonthRecordsBtn").on('click', loadMonthTables);
-
-        initDateArea();
-
-        handleGet('/account/list', function (data) {
-            if (data.Success) {
-                console.log('/account/list', data);
-                for (i in data.Data) {
-                    let account = data.Data[i];
-                    $('#accountTypeList').append($("<option></option>").attr("value", account.ID).text(account.Name));
-                }
-            } else {
-                layer.msg('创建失败');
-                console.log(data)
-            }
-        });
-    });
-
+    $("#recordBtn").on('click', recordPanel);
 </script>
 </body>
 </html>

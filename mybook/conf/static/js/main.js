@@ -1,35 +1,5 @@
 const app = '/mybook';
 
-function numPanel() {
-    var numPad = new NumKeyBoard({
-        precision: 2,        //精确度
-        minVal: 1,           //允许输入的最小值
-        maxVal: 10000000          //允许输入的最大值
-    });
-
-    //打开数字键盘弹框,参数为弹框确定按钮的回调函数，回调函数的参数是输入的值
-    numPad.setNumVal($("#amount").val());
-
-    numPad.open(function (val) {
-        $("#amount").val(val);
-    });
-}
-
-function initDateArea() {
-    let start = $("#startDate").val();
-    let end = $("#endDate").val();
-    let now = new Date();
-    // 获取系统前一周的时间
-    if (!start) {
-        let date = new Date(now - 7 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
-}
 
 function tip(area, title, content) {
     layer.open({
@@ -232,7 +202,7 @@ function appendRecordRow(data, targetBlock) {
         line += '<td style="width: 140px">' + record.RecordTime + '</td>';
 
         line += '</tr>';
-        $('#'+targetBlock+' > tbody:last-child').append(line);
+        $('#' + targetBlock + ' > tbody:last-child').append(line);
         total += record.Amount;
     }
 
