@@ -61,7 +61,7 @@ function loadRecordType() {
                     + typeEnum.Index + '" onclick="loadCategory()" required> ' + typeEnum.Name + ' </label>');
             }
         } else {
-            layer.msg('创建失败');
+            layer.msg('加载记录类型失败');
             console.log(data)
         }
     });
@@ -69,9 +69,7 @@ function loadRecordType() {
 
 // 月份详情数据
 function loadMonthRecordDetail(category) {
-    console.log("month detail: ", category);
-
-    tip(['700px', '550px'], '单分类明细账单', $("#month_detail_tables").html());
+    tip(['750px', '420px'], '单分类明细账单', $("#month_detail_tables").html());
 
     handleGet('/record/monthDetail?' + buildMonthDateStr() + '&categoryId=' + category, function (data) {
         if (data.Success) {
@@ -79,7 +77,7 @@ function loadMonthRecordDetail(category) {
 
             appendRecordRow(data, 'month_detail_table_body')
         } else {
-            layer.msg('创建失败');
+            layer.msg('加载分类明细失败');
             console.log(data)
         }
     });
@@ -94,10 +92,10 @@ function appendRecordMonth(data) {
         let line = "<tr>";
         line += '<td>' + record.CategoryId + '</td>';
         line += '<td>' + record.RecordTypeName + '</td>';
-        line += '<td style="text-align: right"> ' + record.Name + '</td>';
-        line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
-        line += '<td>' + record.Date + '</td>';
-        line += '<td> <button onclick="loadMonthRecordDetail(' + record.CategoryId + ')">详情</button></td>';
+        line += '<td style="text-align: right;width: 30px;"> ' + record.Name + '</td>';
+        line += '<td style="text-align: right;width: 30px;">' + record.Amount / 100.0 + ' </td>';
+        line += '<td style="text-align: right;width: 120px;">' + record.Date + '</td>';
+        line += '<td style="width: 50px;"> <button onclick="loadMonthRecordDetail(' + record.CategoryId + ')">详情</button></td>';
 
         line += '</tr>';
         $('#month_table_body > tbody:last-child').append(line);
@@ -123,21 +121,9 @@ function buildMonthDateStr() {
 }
 
 function loadMonthTables() {
-    let start = $("#startDateMonth").val();
-    let end = $("#endDateMonth").val();
     let typeId = $("#typeIdMonth option:selected").val();
-    let now = new Date();
-    if (!start) {
-        let date = new Date(now - 15 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
 
-    url = '/record/month?startDate=' + start + '&endDate=' + end + '&typeId=' + typeId;
+    url = '/record/month?' + buildMonthDateStr() + '&typeId=' + typeId;
     handleGet(url, function (data) {
         if (data.Success) {
             console.log('/record/month', data);

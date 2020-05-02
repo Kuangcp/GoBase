@@ -23,10 +23,14 @@ function initDateArea() {
         let date = new Date(now - 7 * 24 * 3600 * 1000);
         start = date.toISOString().slice(0, 10);
         $("#startDate").val(start);
+        date = new Date(now - 30 * 24 * 3600 * 1000);
+        start = date.toISOString().slice(0, 10);
+        $("#startDateMonth").val(start);
     }
     if (!end) {
         end = now.toISOString().slice(0, 10);
         $("#endDate").val(end);
+        $("#endDateMonth").val(end);
     }
 }
 
