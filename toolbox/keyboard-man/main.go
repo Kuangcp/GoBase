@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -10,8 +9,8 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
-const prefix = "keyboard:"
-const lastEvent = prefix + "last-event"
+const Prefix = "keyboard:"
+const LastInputEvent = Prefix + "last-event"
 
 func main() {
 	cuibase.RunAction(map[string]func(params []string){
@@ -25,9 +24,7 @@ func main() {
 		"-l": func(_ []string) {
 			devices, _ := ListInputDevices()
 			for _, dev := range devices {
-				if strings.Contains(dev.Name, "Keyboard") {
-					fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
-				}
+				printKeyDevice(dev)
 			}
 		},
 		"-p": func(params []string) {
@@ -46,6 +43,17 @@ func main() {
 	}, HelpInfo)
 }
 
+func printKeyDevice(dev *InputDevice) {
+	for _, codes := range dev.Capabilities {
+		for _, code := range codes {
+			if code.Name == "KEY_F" {
+				fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
+				return
+			}
+		}
+	}
+}
+
 func ListenDevice(params []string) {
 	var event = ""
 	if len(params) > 2 {
@@ -56,13 +64,13 @@ func ListenDevice(params []string) {
 	defer connection.Close()
 
 	if event == "" {
-		last := connection.Get(lastEvent)
+		last := connection.Get(LastInputEvent)
 		if last == nil {
 			return
 		}
 		event = last.Val()
 	} else {
-		connection.GetSet(lastEvent, event)
+		connection.GetSet(LastInputEvent, event)
 	}
 	if event == "" {
 		return
@@ -97,11 +105,11 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) {
 		}
 
 		//fmt.Printf("%v           %v\n", event, inputEvent)
-		conn.ZIncr(prefix+today+":rank", redis.Z{Score: 1, Member: event.Scancode})
-		conn.ZIncr(prefix+"total", redis.Z{Score: 1, Member: today})
+		conn.ZIncr(Prefix+today+":rank", redis.Z{Score: 1, Member: event.Scancode})
+		conn.ZIncr(Prefix+"total", redis.Z{Score: 1, Member: today})
 
 		// actual store us not ns
-		conn.ZAdd(prefix+today+":detail", redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
+		conn.ZAdd(Prefix+today+":detail", redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
 	}
 }
 
