@@ -294,7 +294,7 @@ func FindRecord(param vo.QueryRecordParam) *[]dto.RecordDTO {
 	return &result
 }
 
-// typeId record_type
+// 帐目按类型分组 typeId record_type
 func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.MonthCategoryRecordDTO {
 	db := dal.GetDB()
 	var result []dto.MonthCategoryRecordDTO
@@ -305,9 +305,9 @@ func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.Mont
 		query = query.Where("record.type =?", typeId)
 	}
 
-	query = query.Where("record_time between ? and ?", startDate, endDate)
-	query.Where("record.deleted_at is null").Group("category_id").Scan(&result)
-	logger.Info(query.QueryExpr())
+	query = query.Where("record_time between ? and ?", startDate, endDate).
+		Where("record.deleted_at is null").
+		Group("category_id").Scan(&result)
 	if len(result) == 0 {
 		return nil
 	}
@@ -320,34 +320,62 @@ func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.Mont
 	return &result
 }
 
-func WeekCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekVO {
+func WeekCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
 	records := FindRecord(param)
 	if records == nil {
 		return nil
 	}
-
-	var result []vo.RecordWeekVO
-
-	var temp *vo.RecordWeekVO = nil
-	var lastAdded *vo.RecordWeekVO = nil
 	endDateObj, err := time.Parse("2006-01-02", param.EndDate)
 	if err != nil {
 		return nil
 	}
 
-	var lastCachedWeek = util.WeekByDate(endDateObj)
+	builder := func(recordDTO dto.RecordDTO) *vo.RecordWeekOrMonthVO {
+		recordTime := recordDTO.RecordTime
+		return &vo.RecordWeekOrMonthVO{
+			StartDate: recordTime.AddDate(0, 0, -int(recordTime.Weekday()-time.Sunday)).
+				Format("2006-01-02"),
+			EndDate: recordTime.AddDate(0, 0, int(time.Saturday-recordTime.Weekday())).
+				Format("2006-01-02"),
+			Amount: recordDTO.Amount,
+		}
+	}
+	return buildCommonWeekOrMonthVO(endDateObj, records, util.WeekByDate, builder)
+}
+
+func MonthCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
+	records := FindRecord(param)
+	if records == nil {
+		return nil
+	}
+	endDateObj, err := time.Parse("2006-01-02", param.EndDate)
+	if err != nil {
+		return nil
+	}
+
+	builder := func(recordDTO dto.RecordDTO) *vo.RecordWeekOrMonthVO {
+		recordTime := recordDTO.RecordTime
+		return &vo.RecordWeekOrMonthVO{
+			StartDate: recordTime.AddDate(0, 0, -recordTime.Day()+1).
+				Format("2006-01-02"),
+			Amount: recordDTO.Amount,
+		}
+	}
+	return buildCommonWeekOrMonthVO(endDateObj, records, util.MonthByDate, builder)
+}
+
+func buildCommonWeekOrMonthVO(endDateObj time.Time, records *[]dto.RecordDTO,
+	timeFun func(time.Time) int, builder func(dto.RecordDTO) *vo.RecordWeekOrMonthVO) *[]vo.RecordWeekOrMonthVO {
+	var result []vo.RecordWeekOrMonthVO
+	var temp *vo.RecordWeekOrMonthVO = nil
+	var lastAdded *vo.RecordWeekOrMonthVO = nil
+	var lastCachedWeek = timeFun(endDateObj)
 	for _, recordDTO := range *records {
 		recordTime := recordDTO.RecordTime
-		curWeek := util.WeekByDate(recordTime)
+		curWeek := timeFun(recordTime)
 		if curWeek == lastCachedWeek {
 			if temp == nil {
-				temp = &vo.RecordWeekVO{
-					StartDate: recordTime.AddDate(0, 0, -int(recordTime.Weekday()-time.Sunday)).
-						Format("2006-01-02"),
-					EndDate: recordTime.AddDate(0, 0, int(time.Saturday-recordTime.Weekday())).
-						Format("2006-01-02"),
-					Amount: recordDTO.Amount,
-				}
+				temp = builder(recordDTO)
 				result = append(result, *temp)
 				logger.Info(recordTime.Format("2006-01-02"), curWeek)
 			} else {
@@ -359,68 +387,8 @@ func WeekCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekVO {
 				result = append(result, *temp)
 				lastAdded = temp
 			}
-			temp = &vo.RecordWeekVO{
-				StartDate: recordTime.AddDate(0, 0, -int(recordTime.Weekday()-time.Sunday)).
-					Format("2006-01-02"),
-				EndDate: recordTime.AddDate(0, 0, int(time.Saturday-recordTime.Weekday())).
-					Format("2006-01-02"),
-				Amount: recordDTO.Amount,
-			}
+			temp = builder(recordDTO)
 			logger.Info(recordTime.Format("2006-01-02"), curWeek)
-		}
-	}
-	if temp != nil && lastAdded != temp {
-		result = append(result, *temp)
-	}
-	if len(result) == 0 {
-		return nil
-	}
-	return &result
-}
-
-func MonthCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekVO {
-	records := FindRecord(param)
-	if records == nil {
-		return nil
-	}
-
-	var result []vo.RecordWeekVO
-
-	var temp *vo.RecordWeekVO = nil
-	var lastAdded *vo.RecordWeekVO = nil
-	endDateObj, err := time.Parse("2006-01-02", param.EndDate)
-	if err != nil {
-		return nil
-	}
-
-	var lastCachedMonth = util.MonthByDate(endDateObj)
-	for _, recordDTO := range *records {
-		recordTime := recordDTO.RecordTime
-		curMonth := util.MonthByDate(recordTime)
-		if curMonth == lastCachedMonth {
-			if temp == nil {
-				temp = &vo.RecordWeekVO{
-					StartDate: recordTime.AddDate(0, 0, -recordTime.Day()+1).
-						Format("2006-01-02"),
-					Amount: recordDTO.Amount,
-				}
-				result = append(result, *temp)
-				logger.Debug(recordTime.Format("2006-01-02"), curMonth)
-			} else {
-				temp.Amount += recordDTO.Amount
-			}
-		} else {
-			lastCachedMonth = curMonth
-			if temp != nil {
-				result = append(result, *temp)
-				lastAdded = temp
-			}
-			temp = &vo.RecordWeekVO{
-				StartDate: recordTime.AddDate(0, 0, -recordTime.Day()+1).
-					Format("2006-01-02"),
-				Amount: recordDTO.Amount,
-			}
-			logger.Debug(recordTime.Format("2006-01-02"), curMonth)
 		}
 	}
 	if temp != nil && lastAdded != temp {

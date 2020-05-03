@@ -1,7 +1,7 @@
 package vo
 
 type (
-	RecordWeekVO struct {
+	RecordWeekOrMonthVO struct {
 		StartDate    string
 		EndDate      string
 		Amount       int
