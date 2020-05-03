@@ -5,8 +5,12 @@
     <meta charset="UTF-8">
     <script src="js/jquery-3.4.1.min.js"></script>
     <script src="js/layer/layer.js"></script>
-    <script src="js/customLib.js"></script>
+
     <script src="js/main.js"></script>
+    <script src="js/customLib.js"></script>
+    <script src="js/categoryTab.js"></script>
+    <script src="js/recordTab.js"></script>
+
     <link rel="stylesheet" href="css/numPad.css">
     <script src="js/numKeyBoard.js"></script>
 </head>
@@ -158,7 +162,7 @@
 </script>
 
 <script>
-    loadAccount();
+    loadAccount(handleMainPageAccount);
     loadRecordType();
 
     $("#amount").on('click', numPanel);

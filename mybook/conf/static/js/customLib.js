@@ -34,7 +34,23 @@ function initDateArea() {
     }
 }
 
-function recordPanel () {
+function loadAccount(handleAccount) {
+    handleGet('/account/list', function (data) {
+        if (!data.Success) {
+            layer.msg('加载帐户列表失败');
+            console.log(data);
+            return;
+        }
+
+        console.log('/account/list', data);
+        for (i in data.Data) {
+            handleAccount(data.Data[i])
+        }
+    });
+}
+
+// 账单多Tab面板
+function recordPanel() {
     layer.tab({
         area: ['800px', '600px'],
         tab: [{
@@ -47,20 +63,11 @@ function recordPanel () {
     });
 
     $("#queryRecordsBtn").on('click', loadRecordTables);
-    $("#queryMonthRecordsBtn").on('click', loadMonthTables);
+    $("#queryMonthRecordsBtn").on('click', loadCategoryTables);
 
     initDateArea();
 
-    handleGet('/account/list', function (data) {
-        if (data.Success) {
-            console.log('/account/list', data);
-            for (i in data.Data) {
-                let account = data.Data[i];
-                $('#accountTypeList').append($("<option></option>").attr("value", account.ID).text(account.Name));
-            }
-        } else {
-            layer.msg('创建失败');
-            console.log(data)
-        }
-    });
+    loadAccount(function (account) {
+        $('#accountTypeList').append($("<option></option>").attr("value", account.ID).text(account.Name));
+    })
 }

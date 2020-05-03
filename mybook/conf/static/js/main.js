@@ -30,176 +30,37 @@ function failed(data) {
     console.log(data)
 }
 
-function loadAccount() {
-    handleGet('/account/list', function (data) {
-        if (data.Success) {
-            console.log('/account/list', data);
-            for (i in data.Data) {
-                let accont = data.Data[i];
-                $('#accountArea').append('<label> <input type="radio" name="accountId" value="'
-                    + accont.ID + '" required> ' + accont.Name + ' </label><br/>');
-                $('#targetAccountArea').append('<label> <input type="radio" name="targetAccountId" value="'
-                    + accont.ID + '"> ' + accont.Name + ' </label><br/>');
+function handleMainPageAccount(account) {
+    $('#accountArea').append('<label> <input type="radio" name="accountId" value="'
+        + account.ID + '" required> ' + account.Name + ' </label><br/>');
+    $('#targetAccountArea').append('<label> <input type="radio" name="targetAccountId" value="'
+        + account.ID + '"> ' + account.Name + ' </label><br/>');
 
-                $('#accountTypeList').append($("<option></option>").attr("value", accont.ID).text(accont.Name));
-                // .append("<option value='"+accont.ID+"'>"+accont.Name+"</option>");
-            }
-        } else {
-            layer.msg('创建失败');
-            console.log(data);
-        }
-    });
+    $('#accountTypeList').append($("<option></option>").attr("value", account.ID).text(account.Name));
 }
 
 function loadRecordType() {
     handleGet('/category/typeList', function (data) {
-        if (data.Success) {
-            console.log('/category/typeList', data);
-            for (i in data.Data) {
-                let typeEnum = data.Data[i];
-                $('#typeArea').append('<label> <input type="radio" name="typeId" value="'
-                    + typeEnum.Index + '" onclick="loadCategory()" required> ' + typeEnum.Name + ' </label>');
-            }
-        } else {
+        if (!data.Success) {
             layer.msg('加载记录类型失败');
-            console.log(data)
+            console.log(data);
+            return;
+        }
+
+        console.log('/category/typeList', data);
+        for (i in data.Data) {
+            let typeEnum = data.Data[i];
+            $('#typeArea').append('<label> <input type="radio" name="typeId" value="' + typeEnum.Index + '" ' +
+                'onclick="loadCategoryByRecordType()" required> ' + typeEnum.Name + ' </label>');
         }
     });
 }
 
-// 月份详情数据
-function loadMonthRecordDetail(category) {
-    tip(['750px', '420px'], '单分类明细账单', $("#month_detail_tables").html());
-
-    handleGet('/record/monthDetail?' + buildMonthDateStr() + '&categoryId=' + category, function (data) {
-        if (data.Success) {
-            console.log('/record/monthDetail', data);
-
-            appendRecordRow(data, 'month_detail_table_body')
-        } else {
-            layer.msg('加载分类明细失败');
-            console.log(data)
-        }
-    });
-}
-
-// 月份数据
-function appendRecordMonth(data) {
-    let total = 0;
-    for (i in data.Data) {
-        let record = data.Data[i];
-
-        let line = "<tr>";
-        line += '<td>' + record.CategoryId + '</td>';
-        line += '<td>' + record.RecordTypeName + '</td>';
-        line += '<td style="text-align: right;width: 30px;"> ' + record.Name + '</td>';
-        line += '<td style="text-align: right;width: 30px;">' + record.Amount / 100.0 + ' </td>';
-        line += '<td style="text-align: right;width: 120px;">' + record.Date + '</td>';
-        line += '<td style="width: 50px;"> <button onclick="loadMonthRecordDetail(' + record.CategoryId + ')">详情</button></td>';
-
-        line += '</tr>';
-        $('#month_table_body > tbody:last-child').append(line);
-        total += record.Amount;
-    }
-}
-
-function buildMonthDateStr() {
-    let start = $("#startDateMonth").val();
-    let end = $("#endDateMonth").val();
-    let typeId = $("#typeIdMonth option:selected").val();
-    let now = new Date();
-    if (!start) {
-        let date = new Date(now - 15 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
-    return 'startDate=' + start + '&endDate=' + end
-}
-
-function loadMonthTables() {
-    let typeId = $("#typeIdMonth option:selected").val();
-
-    url = '/record/month?' + buildMonthDateStr() + '&typeId=' + typeId;
-    handleGet(url, function (data) {
-        if (data.Success) {
-            console.log('/record/month', data);
-
-            $("#month_table_body tbody").find('tr').each(function () {
-                $(this).remove();
-            });
-            appendRecordMonth(data);
-        } else {
-            layer.msg('加载账单失败');
-            console.log(data)
-        }
-    });
-}
-
-function loadRecordTables() {
-    let start = $("#startDate").val();
-    let end = $("#endDate").val();
-    let typeId = $("#typeId option:selected").val();
-    let accountType = $("#accountTypeList option:selected").val();
-
-    let now = new Date();
-    // 获取系统前一周的时间
-    if (!start) {
-        let date = new Date(now - 7 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
-    url = '/record/list?startDate=' + start + '&endDate=' + end + '&typeId=' + typeId + '&accountId=' + accountType;
-    handleGet(url, function (data) {
-        if (data.Success) {
-            // console.log('/category/typeList', data);
-
-            $("#record_table_body tbody").find('tr').each(function () {
-                $(this).remove();
-            });
-
-            appendRecordRow(data, 'record_table_body');
-        } else {
-            layer.msg('加载账单失败');
-            console.log(data)
-        }
-    });
-}
-
-function appendRecordRow(data, targetBlock) {
-    let total = 0;
-    for (i in data.Data) {
-        let record = data.Data[i];
-
-        let line = "<tr>";
-        line += '<td>' + record.ID + '</td>';
-        line += '<td style="text-align: right"> ' + record.AccountName + '</td>';
-        line += '<td>' + record.RecordTypeName + '</td>';
-        line += '<td>' + record.CategoryName + '</td>';
-        line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
-        line += '<td>' + record.Comment + '</td>';
-        line += '<td style="width: 140px">' + record.RecordTime + '</td>';
-
-        line += '</tr>';
-        $('#' + targetBlock + ' > tbody:last-child').append(line);
-        total += record.Amount;
-    }
-
-    $("#total").html('￥' + total / 100.0)
-}
-
-function loadCategory() {
+function loadCategoryByRecordType() {
     $('#categoryArea').html('');
 
     let typeId = $('input:radio[name="typeId"]:checked').val();
-    if (typeId == 3) {
+    if (typeId === '3') {
         $("#targetAccountBlock").css("display", "block")
     } else {
         $("#targetAccountBlock").css("display", "none")
@@ -207,21 +68,22 @@ function loadCategory() {
 
     let col = 16;
     handleGet('/category/list?recordType=' + typeId, function (data) {
-        if (data.Success) {
-            for (i in data.Data) {
-                let typeEnum = data.Data[i];
-                if (i % col === 0) {
-                    $('#categoryArea').append("<tr>");
-                }
-                $('#categoryArea').append('<td><label> <input type="radio" name="categoryId" value="'
-                    + typeEnum.ID + '" required> ' + typeEnum.Name + ' </label></td>');
-                if (i % col === col - 1) {
-                    $('#categoryArea').append("</tr>");
-                }
-            }
-        } else {
+        if (!data.Success) {
             layer.msg('加载帐单分类失败');
-            console.log(data)
+            console.log(data);
+            return;
+        }
+
+        for (i in data.Data) {
+            let typeEnum = data.Data[i];
+            if (i % col === 0) {
+                $('#categoryArea').append("<tr>");
+            }
+            $('#categoryArea').append('<td><label> <input type="radio" name="categoryId" value="'
+                + typeEnum.ID + '" required> ' + typeEnum.Name + ' </label></td>');
+            if (i % col === col - 1) {
+                $('#categoryArea').append("</tr>");
+            }
         }
     });
 }
@@ -238,9 +100,9 @@ function createRecord() {
 
     $.post("/mybook/record/create", $("#recordForm").serialize(), function (data) {
         if (data.Success) {
-            layer.msg('创建成功');
+            layer.msg('记账成功');
         } else {
-            layer.msg('创建失败');
+            layer.msg('记账失败');
             console.log(data)
         }
     });
