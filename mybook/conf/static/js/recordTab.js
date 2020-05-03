@@ -13,11 +13,11 @@ function loadRecordTables() {
         }
 
         console.log('/category/typeList', data);
-        $("#record_table_body tbody").find('tr').each(function () {
+        $("#record_table tbody").find('tr').each(function () {
             $(this).remove();
         });
 
-        appendRecordRow(data, 'record_table_body');
+        appendRecordRow(data, 'record_table');
     });
 }
 

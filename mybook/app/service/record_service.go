@@ -151,35 +151,35 @@ func buildRecordByParams(params []string) *domain.Record {
 		comment = params[5]
 	}
 
-	recordVO := vo.CreateRecordVO{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
+	recordVO := vo.CreateRecordParam{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
 		Amount: params[3], Date: params[4], Comment: comment}
 	return BuildRecordByField(recordVO)
 }
 
-func BuildRecordByField(recordVO vo.CreateRecordVO) *domain.Record {
-	typeId, e := strconv.Atoi(recordVO.TypeId)
+func BuildRecordByField(param vo.CreateRecordParam) *domain.Record {
+	typeId, e := strconv.Atoi(param.TypeId)
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
 		logger.Error(e)
 		return nil
 	}
-	accountId, e := strconv.ParseUint(recordVO.AccountId, 10, 64)
+	accountId, e := strconv.ParseUint(param.AccountId, 10, 64)
 	if e != nil {
 		logger.Error(e)
 		return nil
 	}
-	categoryId, e := strconv.ParseUint(recordVO.CategoryId, 10, 64)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-
-	amount, e := strconv.Atoi(recordVO.Amount)
+	categoryId, e := strconv.ParseUint(param.CategoryId, 10, 64)
 	if e != nil {
 		logger.Error(e)
 		return nil
 	}
 
-	recordDate, e := time.Parse("2006-01-02", recordVO.Date)
+	amount, e := strconv.Atoi(param.Amount)
+	if e != nil {
+		logger.Error(e)
+		return nil
+	}
+
+	recordDate, e := time.Parse("2006-01-02", param.Date)
 	if e != nil {
 		logger.Error(e)
 		return nil
@@ -192,22 +192,22 @@ func BuildRecordByField(recordVO vo.CreateRecordVO) *domain.Record {
 		Amount:     amount,
 		RecordTime: recordDate,
 	}
-	if recordVO.Comment != "" {
-		record.Comment = recordVO.Comment
+	if param.Comment != "" {
+		record.Comment = param.Comment
 	}
 
 	return record
 }
 
-func CreateMultipleTypeRecord(recordVO vo.CreateRecordVO) *domain.Record {
-	record := BuildRecordByField(recordVO)
+func CreateMultipleTypeRecord(param vo.CreateRecordParam) *domain.Record {
+	record := BuildRecordByField(param)
 	if record == nil {
 		return nil
 	}
 
-	if recordVO.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
+	if param.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
 		record.Type = constant.RECORD_TRANSFER_OUT
-		accountId, e := strconv.ParseUint(recordVO.TargetAccountId, 10, 64)
+		accountId, e := strconv.ParseUint(param.TargetAccountId, 10, 64)
 		if e != nil {
 			logger.Error(e)
 			return nil
@@ -246,14 +246,14 @@ func CreateMultipleTypeRecord(recordVO vo.CreateRecordVO) *domain.Record {
 	}
 }
 
-func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
+func FindRecord(param vo.QueryRecordParam) *[]dto.RecordDTO {
 	db := dal.GetDB()
 	var lists []domain.Record
-	accountId, _ := strconv.Atoi(vo.AccountId)
-	typeId, _ := strconv.Atoi(vo.TypeId)
-	categoryId, _ := strconv.Atoi(vo.CategoryId)
+	accountId, _ := strconv.Atoi(param.AccountId)
+	typeId, _ := strconv.Atoi(param.TypeId)
+	categoryId, _ := strconv.Atoi(param.CategoryId)
 
-	query := db.Where("record_time between ? and ?", vo.StartDate, vo.EndDate)
+	query := db.Where("deleted_at is null and record_time between ? and ?", param.StartDate, param.EndDate)
 	record := domain.Record{}
 	if typeId != 0 {
 		record.Type = int8(typeId)
@@ -295,21 +295,19 @@ func FindRecord(vo vo.QueryRecordVO) *[]dto.RecordDTO {
 }
 
 // typeId record_type
-func GroupByMonth(startDate string, endDate string, typeId string) *[]dto.MonthCategoryRecordDTO {
+func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.MonthCategoryRecordDTO {
 	db := dal.GetDB()
 	var result []dto.MonthCategoryRecordDTO
 	query := db.Table("record").
 		Select("record.category_id, category.name, sum(amount) as amount,type").
 		Joins("left join category on record.category_id = category.id")
 	if len(typeId) != 0 {
-		query = query.Where("record.category_id = category.id and category.type_id =? and record_time between ? and ?", typeId, startDate, endDate)
-	} else {
-		query = query.Where("record.category_id = category.id and record_time between ? and ?", startDate, endDate)
+		query = query.Where("record.type =?", typeId)
 	}
-	query.
-		Group("category_id").
-		Scan(&result)
 
+	query = query.Where("record_time between ? and ?", startDate, endDate)
+	query.Where("record.deleted_at is null").Group("category_id").Scan(&result)
+	logger.Info(query.QueryExpr())
 	if len(result) == 0 {
 		return nil
 	}
@@ -318,6 +316,118 @@ func GroupByMonth(startDate string, endDate string, typeId string) *[]dto.MonthC
 		recordDTO := &result[i]
 		recordDTO.Date = startDate
 		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).Name
+	}
+	return &result
+}
+
+func WeekCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekVO {
+	records := FindRecord(param)
+	if records == nil {
+		return nil
+	}
+
+	var result []vo.RecordWeekVO
+
+	var temp *vo.RecordWeekVO = nil
+	var lastAdded *vo.RecordWeekVO = nil
+	endDateObj, err := time.Parse("2006-01-02", param.EndDate)
+	if err != nil {
+		return nil
+	}
+
+	var lastCachedWeek = util.WeekByDate(endDateObj)
+	for _, recordDTO := range *records {
+		recordTime := recordDTO.RecordTime
+		curWeek := util.WeekByDate(recordTime)
+		if curWeek == lastCachedWeek {
+			if temp == nil {
+				temp = &vo.RecordWeekVO{
+					StartDate: recordTime.AddDate(0, 0, -int(recordTime.Weekday()-time.Sunday)).
+						Format("2006-01-02"),
+					EndDate: recordTime.AddDate(0, 0, int(time.Saturday-recordTime.Weekday())).
+						Format("2006-01-02"),
+					Amount: recordDTO.Amount,
+				}
+				result = append(result, *temp)
+				logger.Info(recordTime.Format("2006-01-02"), curWeek)
+			} else {
+				temp.Amount += recordDTO.Amount
+			}
+		} else {
+			lastCachedWeek = curWeek
+			if temp != nil {
+				result = append(result, *temp)
+				lastAdded = temp
+			}
+			temp = &vo.RecordWeekVO{
+				StartDate: recordTime.AddDate(0, 0, -int(recordTime.Weekday()-time.Sunday)).
+					Format("2006-01-02"),
+				EndDate: recordTime.AddDate(0, 0, int(time.Saturday-recordTime.Weekday())).
+					Format("2006-01-02"),
+				Amount: recordDTO.Amount,
+			}
+			logger.Info(recordTime.Format("2006-01-02"), curWeek)
+		}
+	}
+	if temp != nil && lastAdded != temp {
+		result = append(result, *temp)
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return &result
+}
+
+func MonthCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekVO {
+	records := FindRecord(param)
+	if records == nil {
+		return nil
+	}
+
+	var result []vo.RecordWeekVO
+
+	var temp *vo.RecordWeekVO = nil
+	var lastAdded *vo.RecordWeekVO = nil
+	endDateObj, err := time.Parse("2006-01-02", param.EndDate)
+	if err != nil {
+		return nil
+	}
+
+	var lastCachedMonth = util.MonthByDate(endDateObj)
+	for _, recordDTO := range *records {
+		recordTime := recordDTO.RecordTime
+		curMonth := util.MonthByDate(recordTime)
+		if curMonth == lastCachedMonth {
+			if temp == nil {
+				temp = &vo.RecordWeekVO{
+					StartDate: recordTime.AddDate(0, 0, -recordTime.Day()+1).
+						Format("2006-01-02"),
+					Amount: recordDTO.Amount,
+				}
+				result = append(result, *temp)
+				logger.Debug(recordTime.Format("2006-01-02"), curMonth)
+			} else {
+				temp.Amount += recordDTO.Amount
+			}
+		} else {
+			lastCachedMonth = curMonth
+			if temp != nil {
+				result = append(result, *temp)
+				lastAdded = temp
+			}
+			temp = &vo.RecordWeekVO{
+				StartDate: recordTime.AddDate(0, 0, -recordTime.Day()+1).
+					Format("2006-01-02"),
+				Amount: recordDTO.Amount,
+			}
+			logger.Debug(recordTime.Format("2006-01-02"), curMonth)
+		}
+	}
+	if temp != nil && lastAdded != temp {
+		result = append(result, *temp)
+	}
+	if len(result) == 0 {
+		return nil
 	}
 	return &result
 }

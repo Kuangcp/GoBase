@@ -1,7 +1,7 @@
 package vo
 
 type (
-	QueryRecordVO struct {
+	QueryRecordParam struct {
 		AccountId  string
 		CategoryId string
 		// record_type

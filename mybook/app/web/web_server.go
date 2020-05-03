@@ -39,6 +39,10 @@ func logicRouter(router *gin.Engine) {
 
 	router.POST(api+"/record/create", CreateRecord)
 	router.GET(api+"/record/list", ListRecord)
-	router.GET(api+"/record/month", GroupByMonth)
-	router.GET(api+"/record/monthDetail", GroupByMonthDetail)
+
+	router.GET(api+"/record/category", CategoryRecord)
+
+	router.GET(api+"/record/categoryDetail", CategoryDetailRecord)
+	router.GET(api+"/record/categoryWeekDetail", WeekCategoryDetailRecord)
+	router.GET(api+"/record/categoryMonthDetail", MonthCategoryDetailRecord)
 }

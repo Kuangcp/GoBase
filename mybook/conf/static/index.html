@@ -89,7 +89,7 @@
     <button id="queryRecordsBtn">查询</button>
     <span id="total"></span>
 
-    <table id="record_table_body" class="record-table">
+    <table id="record_table" class="record-table">
         <thead>
         <tr>
             <th>id</th>
@@ -124,7 +124,7 @@
 
     <button id="queryMonthRecordsBtn">查询</button>
 
-    <table id="month_table_body" class="record-table">
+    <table id="category_tables" class="record-table">
         <thead>
         <tr>
             <th>id</th>
@@ -141,9 +141,9 @@
     </table>
 </script>
 
-<!--分类后数据-->
-<script type="text/html" id="month_detail_tables">
-    <table id="month_detail_table_body" class="record-table">
+<!--分类后明细数据-->
+<script type="text/html" id="category_detail_tables">
+    <table id="category_detail_table" class="record-table">
         <thead>
         <tr>
             <th>id</th>
@@ -153,6 +153,21 @@
             <th>金额</th>
             <th>备注</th>
             <th>时间</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</script>
+
+<script type="text/html" id="category_week_detail_tables">
+    <table id="category_week_detail_table_body" class="record-table">
+        <thead>
+        <tr>
+            <th>开始时间</th>
+            <th>结束时间</th>
+            <th>金额</th>
         </tr>
         </thead>
         <tbody>

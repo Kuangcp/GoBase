@@ -19,7 +19,7 @@ func CreateRecord(c *gin.Context) {
 	date := c.PostForm("date")
 	comment := c.PostForm("comment")
 
-	recordVO := vo.CreateRecordVO{TypeId: typeId, AccountId: accountId, CategoryId: categoryId,
+	recordVO := vo.CreateRecordParam{TypeId: typeId, AccountId: accountId, CategoryId: categoryId,
 		Amount: amount, Date: date, Comment: comment, TargetAccountId: targetAccountId}
 
 	logger.Debug("createRecord: ", util.Json(recordVO))
@@ -38,26 +38,40 @@ func ListRecord(c *gin.Context) {
 	endDate := c.Query("endDate")
 	typeId := c.Query("typeId")
 
-	query := vo.QueryRecordVO{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
+	query := vo.QueryRecordParam{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
 	result := service.FindRecord(query)
 	vo.FillResult(c, result)
 }
 
-func GroupByMonth(c *gin.Context) {
+func CategoryRecord(c *gin.Context) {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
 	typeId := c.Query("typeId")
 
-	result := service.GroupByMonth(startDate, endDate, typeId)
+	result := service.CategoryRecord(startDate, endDate, typeId)
 	vo.FillResult(c, result)
 }
 
-func GroupByMonthDetail(c *gin.Context) {
+func CategoryDetailRecord(c *gin.Context) {
+	result := service.FindRecord(buildCategoryQueryParam(c))
+	vo.FillResult(c, result)
+}
+
+func WeekCategoryDetailRecord(c *gin.Context) {
+	result := service.WeekCategoryRecord(buildCategoryQueryParam(c))
+	vo.FillResult(c, result)
+}
+
+func MonthCategoryDetailRecord(c *gin.Context) {
+	result := service.MonthCategoryRecord(buildCategoryQueryParam(c))
+	vo.FillResult(c, result)
+}
+
+func buildCategoryQueryParam(c *gin.Context) vo.QueryRecordParam {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
 	categoryId := c.Query("categoryId")
+	typeId := c.Query("typeId")
 
-	recordVO := vo.QueryRecordVO{StartDate: startDate, EndDate: endDate, CategoryId: categoryId}
-	result := service.FindRecord(recordVO)
-	vo.FillResult(c, result)
+	return vo.QueryRecordParam{StartDate: startDate, EndDate: endDate, CategoryId: categoryId, TypeId: typeId}
 }
