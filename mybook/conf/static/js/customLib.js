@@ -14,24 +14,28 @@ function numPanel() {
 }
 
 
-function initDateArea() {
-    let start = $("#startDate").val();
-    let end = $("#endDate").val();
+function buildWithDefaultDate(startStr, endStr, preDay) {
+    let startEle = $("#" + startStr);
+    let endEle = $("#" + endStr);
+
+    let start = startEle.val();
+    let end = endEle.val();
     let now = new Date();
-    // 获取系统前一周的时间
     if (!start) {
-        let date = new Date(now - 7 * 24 * 3600 * 1000);
+        let date = new Date(now - preDay * 24 * 3600 * 1000);
         start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-        date = new Date(now - 30 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDateMonth").val(start);
+        startEle.val(start);
     }
     if (!end) {
         end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-        $("#endDateMonth").val(end);
+        endEle.val(end);
     }
+    return 'startDate=' + start + '&endDate=' + end
+}
+
+function initDateArea() {
+    buildWithDefaultDate('startDate', 'endDate', 14);
+    buildWithDefaultDate('startDateMonth', 'endDateMonth', 30);
 }
 
 function loadAccount(handleAccount) {

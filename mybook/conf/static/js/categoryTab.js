@@ -1,7 +1,7 @@
 function loadCategoryTables() {
     let typeId = $("#typeIdMonth option:selected").val();
 
-    url = '/record/month?' + buildCategoryDateStr() + '&typeId=' + typeId;
+    url = '/record/month?' + buildWithDefaultDate('startDateMonth', 'endDateMonth', 7) + '&typeId=' + typeId;
     handleGet(url, function (data) {
         if (!data.Success) {
             layer.msg('加载账单失败');
@@ -17,22 +17,6 @@ function loadCategoryTables() {
     });
 }
 
-function buildCategoryDateStr() {
-    let start = $("#startDateMonth").val();
-    let end = $("#endDateMonth").val();
-    let typeId = $("#typeIdMonth option:selected").val();
-    let now = new Date();
-    if (!start) {
-        let date = new Date(now - 15 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
-    return 'startDate=' + start + '&endDate=' + end
-}
 // 分类数据
 function appendCategoryRecord(data) {
     let total = 0;
@@ -46,7 +30,7 @@ function appendCategoryRecord(data) {
         line += '<td style="text-align: right;width: 30px;">' + record.Amount / 100.0 + ' </td>';
         line += '<td style="text-align: right;width: 120px;">' + record.Date + '</td>';
         line += '<td style="width: 50px;"> <button onclick="loadCategoryRecordDetail(' + record.CategoryId + ')">详情</button></td>';
-        line += '<td style="width: 50px;"> <button onclick="loadCategoryRecordWeek(' + record.CategoryId + ')">周统计</button></td>';
+        line += '<td style="width: 80px;"> <button onclick="loadCategoryRecordWeek(' + record.CategoryId + ')">周统计</button></td>';
 
         line += '</tr>';
         $('#month_table_body > tbody:last-child').append(line);
@@ -58,7 +42,8 @@ function appendCategoryRecord(data) {
 function loadCategoryRecordDetail(category) {
     tip(['750px', '420px'], '单分类明细账单', $("#month_detail_tables").html());
 
-    handleGet('/record/monthDetail?' + buildCategoryDateStr() + '&categoryId=' + category, function (data) {
+    let dateQuery = buildWithDefaultDate('startDateMonth', 'endDateMonth', 7);
+    handleGet('/record/monthDetail?' + dateQuery + '&categoryId=' + category, function (data) {
         if (data.Success) {
             console.log('/record/monthDetail', data);
 
@@ -72,9 +57,9 @@ function loadCategoryRecordDetail(category) {
 
 // 分类详情周统计数据
 function loadCategoryRecordWeek(category) {
-    tip(['750px', '420px'], '单分类明细账单', $("#month_detail_tables").html());
-
-    handleGet('/record/monthDetail?' + buildCategoryDateStr() + '&categoryId=' + category, function (data) {
+    tip(['750px', '420px'], '分类周明细账单', $("#month_detail_tables").html());
+    let dateQuery = buildWithDefaultDate('startDateMonth', 'endDateMonth', 7);
+    handleGet('/record/monthDetail?' + dateQuery + '&categoryId=' + category, function (data) {
         if (data.Success) {
             console.log('/record/monthDetail', data);
 

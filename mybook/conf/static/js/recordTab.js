@@ -1,21 +1,10 @@
 function loadRecordTables() {
-    let start = $("#startDate").val();
-    let end = $("#endDate").val();
     let typeId = $("#typeId option:selected").val();
     let accountType = $("#accountTypeList option:selected").val();
 
-    let now = new Date();
-    // 获取系统前一周的时间
-    if (!start) {
-        let date = new Date(now - 7 * 24 * 3600 * 1000);
-        start = date.toISOString().slice(0, 10);
-        $("#startDate").val(start);
-    }
-    if (!end) {
-        end = now.toISOString().slice(0, 10);
-        $("#endDate").val(end);
-    }
-    url = '/record/list?startDate=' + start + '&endDate=' + end + '&typeId=' + typeId + '&accountId=' + accountType;
+    let dateQuery = buildWithDefaultDate('startDate', 'endDate', 7);
+
+    url = '/record/list?' + dateQuery + '&typeId=' + typeId + '&accountId=' + accountType;
     handleGet(url, function (data) {
         if (!data.Success) {
             layer.msg('加载账单失败');
