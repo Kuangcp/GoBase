@@ -369,26 +369,24 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time, records *[]dto.RecordDTO,
 	var result []vo.RecordWeekOrMonthVO
 	var temp *vo.RecordWeekOrMonthVO = nil
 	var lastAdded *vo.RecordWeekOrMonthVO = nil
-	var lastCachedWeek = timeFun(endDateObj)
+
+	var lastCachedIndex = timeFun(endDateObj)
 	for _, recordDTO := range *records {
-		recordTime := recordDTO.RecordTime
-		curWeek := timeFun(recordTime)
-		if curWeek == lastCachedWeek {
+		curIndex := timeFun(recordDTO.RecordTime)
+		if curIndex == lastCachedIndex {
 			if temp == nil {
 				temp = builder(recordDTO)
-				result = append(result, *temp)
-				logger.Info(recordTime.Format("2006-01-02"), curWeek)
 			} else {
 				temp.Amount += recordDTO.Amount
 			}
 		} else {
-			lastCachedWeek = curWeek
+			lastCachedIndex = curIndex
 			if temp != nil {
 				result = append(result, *temp)
 				lastAdded = temp
+				logger.Info(recordDTO.RecordTime.Format("2006-01-02"), curIndex)
 			}
 			temp = builder(recordDTO)
-			logger.Info(recordTime.Format("2006-01-02"), curWeek)
 		}
 	}
 	if temp != nil && lastAdded != temp {
