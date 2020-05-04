@@ -267,7 +267,9 @@ func RefreshChangeFile(dir string) {
 		fileStatus := status.File(filePath)
 		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
 			logger.Info("refresh:", filePath)
-			RefreshCatalog(dir + "/" + filePath)
+			if isFileNeedHandle(dir + filePath) {
+				RefreshCatalog(dir + filePath)
+			}
 		}
 	}
 }
