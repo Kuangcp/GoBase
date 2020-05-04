@@ -82,18 +82,24 @@ func ListenDevice(params []string) {
 	}
 	defer device.Release()
 
+	success := false
 	for true {
 		inputEvents, err := device.Read()
 		if err != nil || inputEvents == nil || len(inputEvents) == 0 {
 			continue
 		}
 
-		handleEvents(inputEvents, connection)
+		handleResult := handleEvents(inputEvents, connection)
+		if !success && handleResult {
+			success = handleResult
+			fmt.Printf("%s  listen success. %s \n", cuibase.Green, cuibase.End)
+		}
 	}
 }
 
-func handleEvents(inputEvents []InputEvent, conn *redis.Client) {
+func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	today := time.Now().Format("2006:01:02")
+	flag := false
 	for _, inputEvent := range inputEvents {
 		if inputEvent.Code == 0 {
 			continue
@@ -104,6 +110,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) {
 			continue
 		}
 
+		flag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
 		conn.ZIncr(Prefix+today+":rank", redis.Z{Score: 1, Member: event.Scancode})
 		conn.ZIncr(Prefix+"total", redis.Z{Score: 1, Member: today})
@@ -111,6 +118,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) {
 		// actual store us not ns
 		conn.ZAdd(Prefix+today+":detail", redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
 	}
+	return flag
 }
 
 func HelpInfo(_ []string) {
