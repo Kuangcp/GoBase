@@ -100,7 +100,7 @@ func TestPrintParams(t *testing.T) {
 	}
 }
 
-func Test_runAction(t *testing.T) {
+func TestRunAction(t *testing.T) {
 	type args struct {
 		params        []string
 		actions       map[string]func(params []string)
@@ -123,4 +123,8 @@ func Test_runAction(t *testing.T) {
 			runAction(tt.args.params, tt.args.actions, tt.args.defaultAction)
 		})
 	}
+}
+
+func TestColor(t *testing.T) {
+	PrintWithColorful()
 }

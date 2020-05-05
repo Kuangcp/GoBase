@@ -13,6 +13,7 @@ import (
 func help(_ []string) {
 	info := cuibase.HelpInfo{
 		Description: "Start simple http server on current path",
+		Version:     "1.0.0",
 		VerbLen:     -5,
 		ParamLen:    -5,
 		Params: []cuibase.ParamInfo{
@@ -57,11 +58,11 @@ func getInternalIp() string {
 	}
 
 	for _, addr := range address {
-		if ipnet, ok := addr.(*net.IPNet); ok &&
-			!ipnet.IP.IsLoopback() &&
-			ipnet.IP.To4() != nil &&
-			strings.HasPrefix(ipnet.IP.String(), "192") {
-			return ipnet.IP.String()
+		if ipNet, ok := addr.(*net.IPNet); ok &&
+			!ipNet.IP.IsLoopback() &&
+			ipNet.IP.To4() != nil &&
+			strings.HasPrefix(ipNet.IP.String(), "192") {
+			return ipNet.IP.String()
 		}
 	}
 	return ""

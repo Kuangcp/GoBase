@@ -66,10 +66,6 @@ func PrintParams(format string, params []ParamInfo) {
 	}
 }
 
-func printTitleDefault(description string) {
-	PrintTitle(os.Args[0], description)
-}
-
 func PrintTitle(command string, description string) {
 	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", Cyan, End, command, Green, Yellow, End)
 	fmt.Printf("%sDescription:%s\n\n  %v\n\n", Cyan, End, description)
@@ -135,21 +131,6 @@ func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(s
 	return result
 }
 
-func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
-	if len(params) < 2 {
-		defaultAction(os.Args)
-		return
-	}
-
-	verb := params[1]
-	action := actions[verb]
-	if action == nil {
-		defaultAction(os.Args)
-	} else {
-		action(os.Args)
-	}
-}
-
 func Home() (string, error) {
 	curUser, err := user.Current()
 	if nil == err {
@@ -164,6 +145,34 @@ func Home() (string, error) {
 
 	// Unix-like system, so just assume Unix
 	return homeUnix()
+}
+
+func PrintWithColorful() {
+	for i := 0; i < 255; i++ {
+		fmt.Printf("\x1b[48;5;%dm%3d\u001B[0m", i, i)
+		if i == 15 || (i > 15 && ((i-15)%6 == 0)) {
+			println()
+		}
+	}
+}
+
+func printTitleDefault(description string) {
+	PrintTitle(os.Args[0], description)
+}
+
+func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
+	if len(params) < 2 {
+		defaultAction(os.Args)
+		return
+	}
+
+	verb := params[1]
+	action := actions[verb]
+	if action == nil {
+		defaultAction(os.Args)
+	} else {
+		action(os.Args)
+	}
 }
 
 func homeUnix() (string, error) {
