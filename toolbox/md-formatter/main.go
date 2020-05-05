@@ -39,6 +39,7 @@ var deleteChar = [...]string{
 func HelpInfo(_ []string) {
 	info := cuibase.HelpInfo{
 		Description: "Format markdown file, generate catalog",
+		Version: "1.0.0",
 		VerbLen:     -3,
 		ParamLen:    -5,
 		Params: []cuibase.ParamInfo{

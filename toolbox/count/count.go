@@ -141,48 +141,52 @@ func showCharRank(start int64, stop int64) {
 	}
 }
 
-func help(_ []string) {
-	cuibase.PrintTitleDefault("Count chinese char(UTF8) from file that current dir recursive")
-	format := cuibase.BuildFormat(-5, -15)
-	cuibase.PrintParams(format, []cuibase.ParamInfo{
-		{
-			Verb:    "-v",
-			Param:   "",
-			Comment: "show version",
-		}, {
-			Verb:    "-h",
-			Param:   "",
-			Comment: "help",
-		}, {
-			Verb:    "",
-			Param:   "",
-			Comment: "count all file chinese char",
-		}, {
-			Verb:    "-w",
-			Param:   "",
-			Comment: "print all chinese char",
-		}, {
-			Verb:    "-s",
-			Param:   "",
-			Comment: "count all file chinese char, show with simplify",
-		}, {
-			Verb:    "-a",
-			Param:   "file redisKey",
-			Comment: "count chinese char for target file, save. (redis)",
-		}, {
-			Verb:    "-all",
-			Param:   "showNum",
-			Comment: "count, calculate rank data, save. (redis)",
-		}, {
-			Verb:    "-del",
-			Param:   "",
-			Comment: "del rank data. (redis)",
-		}, {
-			Verb:    "-show",
-			Param:   "start stop",
-			Comment: "show rank data. (redis)",
-		},
-	})
+func HelpInfo(_ []string) {
+	info := cuibase.HelpInfo{
+		Description: "Count chinese char(UTF8) from file that current dir recursive",
+		Version: "1.0.0",
+		VerbLen:     -5,
+		ParamLen:    -15,
+		Params: []cuibase.ParamInfo{
+			{
+				Verb:    "-v",
+				Param:   "",
+				Comment: "show version",
+			}, {
+				Verb:    "-h",
+				Param:   "",
+				Comment: "help",
+			}, {
+				Verb:    "",
+				Param:   "",
+				Comment: "count all file chinese char",
+			}, {
+				Verb:    "-w",
+				Param:   "",
+				Comment: "print all chinese char",
+			}, {
+				Verb:    "-s",
+				Param:   "",
+				Comment: "count all file chinese char, show with simplify",
+			}, {
+				Verb:    "-a",
+				Param:   "file redisKey",
+				Comment: "count chinese char for target file, save. (redis)",
+			}, {
+				Verb:    "-all",
+				Param:   "showNum",
+				Comment: "count, calculate rank data, save. (redis)",
+			}, {
+				Verb:    "-del",
+				Param:   "",
+				Comment: "del rank data. (redis)",
+			}, {
+				Verb:    "-show",
+				Param:   "start stop",
+				Comment: "show rank data. (redis)",
+			},
+		}}
+	cuibase.Help(info)
 }
 
 func countWithRedis() {
@@ -303,7 +307,7 @@ func main() {
 	}
 
 	cuibase.RunAction(map[string]func(params []string){
-		"-h": help,
+		"-h": HelpInfo,
 		"-w": func(params []string) {
 			showChineseChar(showChar, false)
 		},
@@ -317,5 +321,5 @@ func main() {
 		"-v": func(params []string) {
 			println("v1.0.0")
 		},
-	}, help)
+	}, HelpInfo)
 }

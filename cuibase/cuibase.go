@@ -66,7 +66,7 @@ func PrintParams(format string, params []ParamInfo) {
 	}
 }
 
-func PrintTitleDefault(description string) {
+func printTitleDefault(description string) {
 	PrintTitle(os.Args[0], description)
 }
 
@@ -80,7 +80,7 @@ func RunAction(actions map[string]func(params []string), defaultAction func(para
 }
 
 func Help(helpInfo HelpInfo) {
-	PrintTitleDefault(helpInfo.Description)
+	printTitleDefault(helpInfo.Description)
 	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
 	PrintParams(format, helpInfo.Params)
 	if helpInfo.Version != "" {
