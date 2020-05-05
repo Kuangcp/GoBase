@@ -34,6 +34,7 @@ type (
 	}
 
 	HelpInfo struct {
+		Version     string
 		Description string
 		VerbLen     int
 		ParamLen    int
@@ -70,8 +71,8 @@ func PrintTitleDefault(description string) {
 }
 
 func PrintTitle(command string, description string) {
-	fmt.Printf("  usage: %v %v <verb> %v <param> %v\n\n", command, Green, Yellow, End)
-	fmt.Printf("  %v\n\n", description)
+	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", Cyan, End, command, Green, Yellow, End)
+	fmt.Printf("%sDescription:%s\n\n  %v\n\n", Cyan, End, description)
 }
 
 func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
@@ -82,6 +83,9 @@ func Help(helpInfo HelpInfo) {
 	PrintTitleDefault(helpInfo.Description)
 	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
 	PrintParams(format, helpInfo.Params)
+	if helpInfo.Version != "" {
+		fmt.Printf("\n%sVersion:%s  %v\n\n", Cyan, End, helpInfo.Version)
+	}
 }
 
 func CheckIfError(err error) {
