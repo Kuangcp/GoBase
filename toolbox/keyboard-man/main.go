@@ -33,7 +33,6 @@ func main() {
 			if device == nil {
 				return
 			}
-			defer device.Release()
 
 			fmt.Println(device)
 			fmt.Println("key map:")
@@ -61,7 +60,7 @@ func ListenDevice(params []string) {
 	}
 
 	connection := initConnection()
-	defer connection.Close()
+	defer closeConnection(connection)
 
 	if event == "" {
 		last := connection.Get(LastInputEvent)
@@ -80,7 +79,7 @@ func ListenDevice(params []string) {
 	if device == nil {
 		return
 	}
-	defer device.Release()
+	defer closeDevice(device)
 
 	success := false
 	for true {
@@ -116,7 +115,8 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 		conn.ZIncr(Prefix+"total", redis.Z{Score: 1, Member: today})
 
 		// actual store us not ns
-		conn.ZAdd(Prefix+today+":detail", redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano()})
+		conn.ZAdd(Prefix+today+":detail",
+			redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000})
 	}
 	return flag
 }
@@ -155,4 +155,18 @@ func initConnection() *redis.Client {
 		DB:       5,
 	})
 	return target
+}
+
+func closeDevice(device *InputDevice) {
+	err := device.Release()
+	if err != nil {
+		fmt.Println("release device error: ", err)
+	}
+}
+
+func closeConnection(client *redis.Client) {
+	err := client.Close()
+	if err != nil {
+		fmt.Println("close redis connection error: ", err)
+	}
 }
