@@ -144,15 +144,11 @@ func showCharRank(start int64, stop int64) {
 func HelpInfo(_ []string) {
 	info := cuibase.HelpInfo{
 		Description: "Count chinese char(UTF8) from file that current dir recursive",
-		Version: "1.0.0",
+		Version:     "1.0.0",
 		VerbLen:     -5,
 		ParamLen:    -15,
 		Params: []cuibase.ParamInfo{
 			{
-				Verb:    "-v",
-				Param:   "",
-				Comment: "show version",
-			}, {
 				Verb:    "-h",
 				Param:   "",
 				Comment: "help",
@@ -308,18 +304,15 @@ func main() {
 
 	cuibase.RunAction(map[string]func(params []string){
 		"-h": HelpInfo,
-		"-w": func(params []string) {
+		"-w": func(_ []string) {
 			showChineseChar(showChar, false)
 		},
-		"-s": func(params []string) {
+		"-s": func(_ []string) {
 			showChineseChar(nil, false)
 		},
 		"-f":    readTargetFile,
 		"-all":  readAllSaveIntoRedis,
 		"-show": showRank,
 		"-del":  delRank,
-		"-v": func(params []string) {
-			println("v1.0.0")
-		},
 	}, HelpInfo)
 }

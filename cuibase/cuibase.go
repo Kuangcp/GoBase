@@ -16,14 +16,23 @@ import (
 )
 
 // Color
-var Red = "\x1b[0;31m"
-var Green = "\x1b[0;32m"
-var Yellow = "\x1b[0;33m"
-var Blue = "\x1b[0;34m"
-var Purple = "\x1b[0;35m"
-var Cyan = "\x1b[0;36m"
-var White = "\x1b[0;37m"
-var End = "\x1b[0m"
+var Red = "\033[0;31m"
+var Green = "\033[0;32m"
+var Yellow = "\033[0;33m"
+var Blue = "\033[0;34m"
+var Purple = "\033[0;35m"
+var Cyan = "\033[0;36m"
+var White = "\033[0;37m"
+var End = "\033[0m"
+
+var LightRed = "\033[0;91m"
+var LightGreen = "\033[0;92m"
+var LightYellow = "\033[0;93m"
+var LightBlue = "\033[0;94m"
+var LightPurple = "\033[0;95m"
+var LightCyan = "\033[0;96m"
+var LightWhite = "\033[0;97m"
+
 
 // ParamInfo one line struct
 type (
@@ -67,8 +76,8 @@ func PrintParams(format string, params []ParamInfo) {
 }
 
 func PrintTitle(command string, description string) {
-	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", Cyan, End, command, Green, Yellow, End)
-	fmt.Printf("%sDescription:%s\n\n  %v\n\n", Cyan, End, description)
+	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", LightGreen, End, command, Green, Yellow, End)
+	fmt.Printf("%sDescription:%s\n\n  %v\n\n", LightGreen, End, description)
 }
 
 func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
@@ -80,7 +89,7 @@ func Help(helpInfo HelpInfo) {
 	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
 	PrintParams(format, helpInfo.Params)
 	if helpInfo.Version != "" {
-		fmt.Printf("\n%sVersion:%s  %v\n\n", Cyan, End, helpInfo.Version)
+		fmt.Printf("\n%sVersion:%s  %v\n\n", LightGreen, End, helpInfo.Version)
 	}
 }
 
