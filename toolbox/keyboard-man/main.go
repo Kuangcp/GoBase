@@ -146,7 +146,7 @@ func HelpInfo(_ []string) {
 				Comment: "List all device",
 			},
 		}}
-	cuibase.Help(info)
+	info.PrintHelp()
 }
 
 func initConnection() *redis.Client {

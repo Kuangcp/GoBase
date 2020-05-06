@@ -43,7 +43,7 @@ func help(_ []string) {
 				Comment: "print all category",
 			},
 		}}
-	cuibase.Help(info)
+	info.PrintHelp()
 }
 
 func updateDatabaseStructure(_ []string) {

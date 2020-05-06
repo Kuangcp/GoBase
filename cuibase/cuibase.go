@@ -15,39 +15,12 @@ import (
 	"strings"
 )
 
-// Color
-var Red = "\033[0;31m"
-var Green = "\033[0;32m"
-var Yellow = "\033[0;33m"
-var Blue = "\033[0;34m"
-var Purple = "\033[0;35m"
-var Cyan = "\033[0;36m"
-var White = "\033[0;37m"
-var End = "\033[0m"
-
-var LightRed = "\033[0;91m"
-var LightGreen = "\033[0;92m"
-var LightYellow = "\033[0;93m"
-var LightBlue = "\033[0;94m"
-var LightPurple = "\033[0;95m"
-var LightCyan = "\033[0;96m"
-var LightWhite = "\033[0;97m"
-
-
 // ParamInfo one line struct
 type (
 	ParamInfo struct {
 		Verb    string
 		Param   string
 		Comment string
-	}
-
-	HelpInfo struct {
-		Version     string
-		Description string
-		VerbLen     int
-		ParamLen    int
-		Params      []ParamInfo
 	}
 )
 
@@ -82,15 +55,6 @@ func PrintTitle(command string, description string) {
 
 func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
 	runAction(os.Args, actions, defaultAction)
-}
-
-func Help(helpInfo HelpInfo) {
-	printTitleDefault(helpInfo.Description)
-	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
-	PrintParams(format, helpInfo.Params)
-	if helpInfo.Version != "" {
-		fmt.Printf("\n%sVersion:%s  %v\n\n", LightGreen, End, helpInfo.Version)
-	}
 }
 
 func CheckIfError(err error) {

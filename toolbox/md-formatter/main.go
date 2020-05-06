@@ -73,7 +73,7 @@ func HelpInfo(_ []string) {
 				Comment: "Append catalog and title for file",
 			},
 		}}
-	cuibase.Help(info)
+	info.PrintHelp()
 }
 
 func readFileLines(filename string) []string {

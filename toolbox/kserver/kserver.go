@@ -27,7 +27,7 @@ func help(_ []string) {
 				Comment: "specific port",
 			},
 		}}
-	cuibase.Help(info)
+	info.PrintHelp()
 }
 
 func readPortByParam(param []string) string {

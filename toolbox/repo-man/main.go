@@ -40,7 +40,7 @@ func HelpInfo(_ []string) {
 				Comment: "Help info",
 			},
 		}}
-	cuibase.Help(info)
+	info.PrintHelp()
 }
 func PullRepo(dir string, latch *sync.WaitGroup) {
 	defer latch.Done()

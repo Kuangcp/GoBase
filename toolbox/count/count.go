@@ -182,7 +182,7 @@ func HelpInfo(_ []string) {
 				Comment: "show rank data. (redis)",
 			},
 		}}
-	cuibase.Help(info)
+	info.PrintHelp()
 }
 
 func countWithRedis() {
