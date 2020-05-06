@@ -28,14 +28,31 @@ func main() {
 			}
 		},
 		"-p": func(params []string) {
-			cuibase.AssertParamCount(2, "input device")
-			device, _ := Open("/dev/input/" + params[2])
+			connection := initConnection()
+			defer closeConnection(connection)
+
+			event := ""
+			if len(params) < 3 {
+				last := connection.Get(LastInputEvent)
+				if last == nil {
+					return
+				}
+				event = last.Val()
+			} else {
+				event = params[2]
+			}
+			if event == "" {
+				fmt.Printf("%vPlease select inputDevice %v\n", cuibase.Red, cuibase.End)
+				return
+			}
+
+			device, _ := Open("/dev/input/" + event)
 			if device == nil {
 				return
 			}
 
 			fmt.Println(device)
-			fmt.Println("key map:")
+			fmt.Printf("\n%vkey map:  %v", cuibase.LightGreen, cuibase.End)
 			fmt.Println(device.Capabilities)
 		},
 		"-s": ListenDevice,
@@ -126,7 +143,7 @@ func HelpInfo(_ []string) {
 		Description: "Format markdown file, generate catalog",
 		Version:     "1.0.0",
 		VerbLen:     -3,
-		ParamLen:    -5,
+		ParamLen:    -9,
 		Params: []cuibase.ParamInfo{
 			{
 				Verb:    "-h",
@@ -144,6 +161,10 @@ func HelpInfo(_ []string) {
 				Verb:    "-ld",
 				Param:   "",
 				Comment: "List all device",
+			}, {
+				Verb:    "-p",
+				Param:   "",
+				Comment: "Print key map",
 			},
 		}}
 	info.PrintHelp()
