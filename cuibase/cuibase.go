@@ -21,6 +21,7 @@ type (
 		Verb    string
 		Param   string
 		Comment string
+		Handler func(params []string)
 	}
 )
 
@@ -51,6 +52,36 @@ func PrintParams(format string, params []ParamInfo) {
 func PrintTitle(command string, description string) {
 	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", LightGreen, End, command, Green, Yellow, End)
 	fmt.Printf("%sDescription:%s\n\n  %v\n\n", LightGreen, End, description)
+}
+
+func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
+	if len(info.Params) == 0 {
+		return
+	}
+	params := os.Args
+	if len(params) < 2 {
+		info.PrintHelp()
+		return
+	}
+
+	verb := params[1]
+	for _, param := range info.Params {
+		if verb != param.Verb {
+			continue
+		}
+		if param.Handler != nil {
+			param.Handler(params)
+			return
+		} else {
+			if defaultAction != nil {
+				defaultAction(params)
+				return
+			} else {
+				info.PrintHelp()
+				return
+			}
+		}
+	}
 }
 
 func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
@@ -141,10 +172,12 @@ func runAction(params []string, actions map[string]func(params []string), defaul
 
 	verb := params[1]
 	action := actions[verb]
-	if action == nil {
-		defaultAction(os.Args)
-	} else {
+	if action != nil {
 		action(os.Args)
+		return
+	}
+	if defaultAction != nil {
+		defaultAction(os.Args)
 	}
 }
 
