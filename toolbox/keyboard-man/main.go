@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -22,7 +23,6 @@ var info = cuibase.HelpInfo{
 			Verb:    "-h",
 			Param:   "",
 			Comment: "Help info",
-			Handler: nil,
 		}, {
 			Verb:    "-s",
 			Param:   "<device>",
@@ -53,11 +53,32 @@ var info = cuibase.HelpInfo{
 			Param:   "",
 			Comment: "Print key map",
 			Handler: PrintKeyMap,
+		}, {
+			Verb:    "-d",
+			Param:   "day",
+			Comment: "Print total",
+			Handler: PrintTotalByDay,
 		},
 	}}
 
 func main() {
 	cuibase.RunActionFromInfo(info, nil)
+}
+
+func PrintTotalByDay(params []string) {
+	connection := initConnection()
+	defer closeConnection(connection)
+
+	now := time.Now()
+	if len(params) > 2 {
+		day, err := strconv.Atoi(params[2])
+		cuibase.CheckIfError(err)
+		now = now.AddDate(0, 0, - day)
+	}
+
+	today := now.Format("2006:01:02")
+	score := connection.ZScore(Prefix+"total", today)
+	println(int64(score.Val()))
 }
 
 func PrintKeyMap(params []string) {
