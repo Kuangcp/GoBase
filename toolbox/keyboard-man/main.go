@@ -12,6 +12,7 @@ import (
 
 const Prefix = "keyboard:"
 const LastInputEvent = Prefix + "last-event"
+const TotalCount = Prefix + "total"
 
 var info = cuibase.HelpInfo{
 	Description: "Format markdown file, generate catalog",
@@ -55,8 +56,8 @@ var info = cuibase.HelpInfo{
 			Handler: PrintKeyMap,
 		}, {
 			Verb:    "-d",
-			Param:   "day",
-			Comment: "Print total",
+			Param:   "<x> <duration>",
+			Comment: "Print daily total by before x day ago  and duration",
 			Handler: PrintTotalByDay,
 		},
 	}}
@@ -70,15 +71,27 @@ func PrintTotalByDay(params []string) {
 	defer closeConnection(connection)
 
 	now := time.Now()
-	if len(params) > 2 {
+	if len(params) == 3 {
 		day, err := strconv.Atoi(params[2])
 		cuibase.CheckIfError(err)
 		now = now.AddDate(0, 0, - day)
+	} else if len(params) == 4 {
+		indexDay, err := strconv.Atoi(params[2])
+		cuibase.CheckIfError(err)
+		durationDay, err := strconv.Atoi(params[3])
+		cuibase.CheckIfError(err)
+		for i := 0; i < durationDay; i++ {
+			printTotalByDate(now.AddDate(0, 0, -indexDay+i), connection)
+		}
+		return
 	}
+	printTotalByDate(now, connection)
+}
 
-	today := now.Format("2006:01:02")
-	score := connection.ZScore(Prefix+"total", today)
-	println(int64(score.Val()))
+func printTotalByDate(time time.Time, conn *redis.Client) {
+	today := time.Format("2006:01:02")
+	score := conn.ZScore(TotalCount, today)
+	fmt.Printf("%s%-9s%s %s %v\n", cuibase.Green, time.Weekday(),cuibase.End, today, int64(score.Val()))
 }
 
 func PrintKeyMap(params []string) {
@@ -180,7 +193,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 		flag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
 		conn.ZIncr(Prefix+today+":rank", redis.Z{Score: 1, Member: event.Scancode})
-		conn.ZIncr(Prefix+"total", redis.Z{Score: 1, Member: today})
+		conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: today})
 
 		// actual store us not ns
 		conn.ZAdd(Prefix+today+":detail",
