@@ -10,25 +10,23 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
-func help(_ []string) {
-	info := cuibase.HelpInfo{
-		Description: "Start simple http server on current path",
-		Version:     "1.0.0",
-		VerbLen:     -5,
-		ParamLen:    -5,
-		Params: []cuibase.ParamInfo{
-			{
-				Verb:    "-h",
-				Param:   "",
-				Comment: "help",
-			}, {
-				Verb:    "-p",
-				Param:   "port",
-				Comment: "specific port",
-			},
-		}}
-	info.PrintHelp()
-}
+var info = cuibase.HelpInfo{
+	Description: "Start simple http server on current path",
+	Version:     "1.0.1",
+	VerbLen:     -5,
+	ParamLen:    -5,
+	Params: []cuibase.ParamInfo{
+		{
+			Verb:    "-h",
+			Param:   "",
+			Comment: "help",
+		}, {
+			Verb:    "-p",
+			Param:   "port",
+			Comment: "specific port",
+			Handler: RunWithPort,
+		},
+	}}
 
 func readPortByParam(param []string) string {
 	var port = 8099
@@ -68,11 +66,11 @@ func getInternalIp() string {
 	return ""
 }
 
-func runWithPort(params []string) {
+func RunWithPort(params []string) {
 	portStr := readPortByParam(params[1:])
 	run(portStr)
 }
-func runWithDefaultPort(params []string) {
+func RunWithDefaultPort(params []string) {
 	run("8889")
 }
 
@@ -92,8 +90,5 @@ func run(port string) {
 }
 
 func main() {
-	cuibase.RunAction(map[string]func(params []string){
-		"-h": help,
-		"-p": runWithPort,
-	}, runWithDefaultPort)
+	cuibase.RunActionFromInfo(info, RunWithDefaultPort)
 }

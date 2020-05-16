@@ -18,7 +18,7 @@ func init() {
 	flag.StringVar(&indent, "i", "\t", "indent string, default tab")
 }
 
-func helpInfo(){
+func helpInfo() {
 	fmt.Printf("usage:\n\n")
 	flag.PrintDefaults()
 

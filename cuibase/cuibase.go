@@ -60,7 +60,11 @@ func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 	}
 	params := os.Args
 	if len(params) < 2 {
-		info.PrintHelp()
+		if defaultAction != nil {
+			defaultAction(params)
+		} else {
+			info.PrintHelp()
+		}
 		return
 	}
 
@@ -69,17 +73,12 @@ func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 		if verb != param.Verb {
 			continue
 		}
+
 		if param.Handler != nil {
 			param.Handler(params)
 			return
 		} else {
-			if defaultAction != nil {
-				defaultAction(params)
-				return
-			} else {
-				info.PrintHelp()
-				return
-			}
+			info.PrintHelp()
 		}
 	}
 }
