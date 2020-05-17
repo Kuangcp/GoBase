@@ -29,10 +29,10 @@ type (
 )
 
 var info = cuibase.HelpInfo{
-	Description: "Format markdown file, generate catalog",
-	Version:     "1.0.0",
+	Description: "Translation between Chinese and English By Baidu API",
+	Version:     "1.0.1",
 	VerbLen:     -3,
-	ParamLen:    -5,
+	ParamLen:    -21,
 	Params: []cuibase.ParamInfo{
 		{
 			Verb:    "-h",
