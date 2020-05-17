@@ -15,7 +15,7 @@ var indent string
 func init() {
 	flag.BoolVar(&help, "h", false, "show help")
 	flag.StringVar(&uglyJSON, "s", "", "json string")
-	flag.StringVar(&indent, "i", "\t", "indent string, default tab")
+	flag.StringVar(&indent, "i", "    ", "indent string")
 }
 
 func helpInfo() {
