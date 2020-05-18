@@ -32,6 +32,61 @@ var handleFiles = [...]string{
 	".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
 }
 
+var info = cuibase.HelpInfo{
+	Description: "Count chinese char(UTF8) from file that current dir recursive",
+	Version:     "1.0.0",
+	VerbLen:     -5,
+	ParamLen:    -15,
+	Params: []cuibase.ParamInfo{
+		{
+			Verb:    "-h",
+			Param:   "",
+			Comment: "Help",
+		}, {
+			Verb:    "",
+			Param:   "",
+			Comment: "Count all file chinese char",
+		}, {
+			Verb:    "-w",
+			Param:   "",
+			Comment: "Print all chinese char",
+			Handler: func(_ []string) {
+				showChineseChar(showChar, false)
+			},
+		}, {
+			Verb:    "-f",
+			Param:   "",
+			Comment: "Read target file",
+			Handler: readTargetFile,
+		}, {
+			Verb:    "-s",
+			Param:   "",
+			Comment: "Count all file chinese char, show with simplify",
+			Handler: func(_ []string) {
+				showChineseChar(nil, false)
+			},
+		}, {
+			Verb:    "-a",
+			Param:   "file redisKey",
+			Comment: "Count chinese char for target file, save. (redis)",
+		}, {
+			Verb:    "-all",
+			Param:   "showNum",
+			Comment: "Count, calculate rank data, save. (redis)",
+			Handler: readAllSaveIntoRedis,
+		}, {
+			Verb:    "-del",
+			Param:   "",
+			Comment: "Del rank data. (redis)",
+			Handler: delRank,
+		}, {
+			Verb:    "-show",
+			Param:   "start stop",
+			Comment: "Show rank data. (redis)",
+			Handler: showRank,
+		},
+	}}
+
 func initRedisClient() {
 	config := readRedisConfig()
 	if config == nil {
@@ -141,50 +196,6 @@ func showCharRank(start int64, stop int64) {
 	}
 }
 
-func HelpInfo(_ []string) {
-	info := cuibase.HelpInfo{
-		Description: "Count chinese char(UTF8) from file that current dir recursive",
-		Version:     "1.0.0",
-		VerbLen:     -5,
-		ParamLen:    -15,
-		Params: []cuibase.ParamInfo{
-			{
-				Verb:    "-h",
-				Param:   "",
-				Comment: "help",
-			}, {
-				Verb:    "",
-				Param:   "",
-				Comment: "count all file chinese char",
-			}, {
-				Verb:    "-w",
-				Param:   "",
-				Comment: "print all chinese char",
-			}, {
-				Verb:    "-s",
-				Param:   "",
-				Comment: "count all file chinese char, show with simplify",
-			}, {
-				Verb:    "-a",
-				Param:   "file redisKey",
-				Comment: "count chinese char for target file, save. (redis)",
-			}, {
-				Verb:    "-all",
-				Param:   "showNum",
-				Comment: "count, calculate rank data, save. (redis)",
-			}, {
-				Verb:    "-del",
-				Param:   "",
-				Comment: "del rank data. (redis)",
-			}, {
-				Verb:    "-show",
-				Param:   "start stop",
-				Comment: "show rank data. (redis)",
-			},
-		}}
-	info.PrintHelp()
-}
-
 func countWithRedis() {
 	// 递归遍历目录 读取所有文件
 	err := filepath.Walk("./", handlerDir)
@@ -223,7 +234,7 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 				totalFile, totalChineseChar, cuibase.Green, total, cuibase.End, fileName)
 		}
 	}
-	fmt.Printf("\nTotal characters. files: %v%v%v chars: %v%v%v\n",
+	fmt.Printf("\nTotal characters: %v%v%v files  %v%v%v chars \n",
 		cuibase.Yellow, totalFile, cuibase.End, cuibase.Yellow, totalChineseChar, cuibase.End)
 }
 
@@ -273,7 +284,7 @@ func showRank(params []string) {
 	showCharRank(start, stop)
 }
 
-func delRank(params []string) {
+func delRank(_ []string) {
 	initRedisClient()
 	client.Del(charRankKey)
 	log.Printf("del %v%v%v", cuibase.Green, charRankKey, cuibase.End)
@@ -302,17 +313,5 @@ func main() {
 		return
 	}
 
-	cuibase.RunAction(map[string]func(params []string){
-		"-h": HelpInfo,
-		"-w": func(_ []string) {
-			showChineseChar(showChar, false)
-		},
-		"-s": func(_ []string) {
-			showChineseChar(nil, false)
-		},
-		"-f":    readTargetFile,
-		"-all":  readAllSaveIntoRedis,
-		"-show": showRank,
-		"-del":  delRank,
-	}, HelpInfo)
+	cuibase.RunActionFromInfo(info, nil)
 }

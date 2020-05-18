@@ -54,6 +54,7 @@ func PrintTitle(command string, description string) {
 	fmt.Printf("%sDescription:%s\n\n  %v\n\n", LightGreen, End, description)
 }
 
+// RunActionFromInfo defaultAction 为空时默认PrintHelp
 func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 	if len(info.Params) == 0 {
 		return
