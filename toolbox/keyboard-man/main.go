@@ -10,10 +10,6 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
-const Prefix = "keyboard:"
-const LastInputEvent = Prefix + "last-event"
-const TotalCount = Prefix + "total"
-
 var info = cuibase.HelpInfo{
 	Description: "Format markdown file, generate catalog",
 	Version:     "1.0.0",
@@ -55,10 +51,24 @@ var info = cuibase.HelpInfo{
 			Comment: "Print key map",
 			Handler: PrintKeyMap,
 		}, {
+			Verb:    "-ca",
+			Param:   "",
+			Comment: "Cache key map",
+			Handler: CacheKeyMap,
+		}, {
 			Verb:    "-d",
 			Param:   "<x> <duration>",
-			Comment: "Print daily total by before x day ago  and duration",
-			Handler: PrintTotalByDay,
+			Comment: "Print daily total by before x day ago and duration",
+			Handler: func(params []string) {
+				printAnyByDay(params, printTotalByDate)
+			},
+		}, {
+			Verb:    "-dr",
+			Param:   "<x> <duration>",
+			Comment: "Print daily rank by before x day ago and duration",
+			Handler: func(params []string) {
+				printAnyByDay(params, printRankByDate)
+			},
 		},
 	}}
 
@@ -66,7 +76,7 @@ func main() {
 	cuibase.RunActionFromInfo(info, nil)
 }
 
-func PrintTotalByDay(params []string) {
+func printAnyByDay(params []string, action func(time time.Time, conn *redis.Client)) {
 	connection := initConnection()
 	defer closeConnection(connection)
 
@@ -81,39 +91,59 @@ func PrintTotalByDay(params []string) {
 		durationDay, err := strconv.Atoi(params[3])
 		cuibase.CheckIfError(err)
 		for i := 0; i < durationDay; i++ {
-			printTotalByDate(now.AddDate(0, 0, -indexDay+i), connection)
+			action(now.AddDate(0, 0, -indexDay+i), connection)
 		}
 		return
 	}
-	printTotalByDate(now, connection)
+	action(now, connection)
+}
+
+func printRankByDate(time time.Time, conn *redis.Client) {
+	today := time.Format("2006:01:02")
+
+	all := conn.HGetAll(KeyMap)
+	var keyMap map[string]string
+	if all != nil {
+		keyMap = all.Val()
+	}
+	fmt.Printf("%s%-9s%s %s\n", cuibase.Green, time.Weekday(), cuibase.End, today)
+	score := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
+	if len(keyMap) != 0 {
+		for _, v := range score.Val() {
+			fmt.Printf("%4v %v\n", v.Score, keyMap[v.Member.(string)])
+		}
+	} else {
+		for _, v := range score.Val() {
+			fmt.Printf("%4v %v\n", v.Score, v.Member)
+		}
+	}
 }
 
 func printTotalByDate(time time.Time, conn *redis.Client) {
 	today := time.Format("2006:01:02")
 	score := conn.ZScore(TotalCount, today)
-	fmt.Printf("%s%-9s%s %s %v\n", cuibase.Green, time.Weekday(),cuibase.End, today, int64(score.Val()))
+	fmt.Printf("%s%-9s%s %s %v\n", cuibase.Green, time.Weekday(), cuibase.End, today, int64(score.Val()))
+}
+
+func CacheKeyMap(params []string) {
+	device := getDevice(params)
+	if device == nil {
+		return
+	}
+	_, codes := findActualBoardMap(device)
+	if codes == nil {
+		return
+	}
+	conn := initConnection()
+	defer closeConnection(conn)
+	for _, code := range codes {
+		conn.HSet(KeyMap, strconv.Itoa(code.Code), code.Name)
+		fmt.Printf("%v -> %v \n", code.Code, code.Name)
+	}
 }
 
 func PrintKeyMap(params []string) {
-	connection := initConnection()
-	defer closeConnection(connection)
-
-	event := ""
-	if len(params) < 3 {
-		last := connection.Get(LastInputEvent)
-		if last == nil {
-			return
-		}
-		event = last.Val()
-	} else {
-		event = params[2]
-	}
-	if event == "" {
-		fmt.Printf("%vPlease select inputDevice %v\n", cuibase.Red, cuibase.End)
-		return
-	}
-
-	device, _ := Open("/dev/input/" + event)
+	device := getDevice(params)
 	if device == nil {
 		return
 	}
@@ -123,14 +153,48 @@ func PrintKeyMap(params []string) {
 	fmt.Println(device.Capabilities)
 }
 
-func printKeyDevice(dev *InputDevice) {
+func getDevice(params []string) *InputDevice {
+	connection := initConnection()
+	defer closeConnection(connection)
+
+	event := ""
+	if len(params) < 3 {
+		last := connection.Get(LastInputEvent)
+		if last == nil {
+			return nil
+		}
+		event = last.Val()
+	} else {
+		event = params[2]
+	}
+	if event == "" {
+		fmt.Printf("%vPlease select inputDevice %v\n", cuibase.Red, cuibase.End)
+		return nil
+	}
+
+	device, _ := Open("/dev/input/" + event)
+	if device == nil {
+		return nil
+	}
+
+	return device
+}
+
+func findActualBoardMap(dev *InputDevice) (*InputDevice, []CapabilityCode) {
 	for _, codes := range dev.Capabilities {
 		for _, code := range codes {
-			if code.Name == "KEY_F" {
-				fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
-				return
+			if code.Name == "KEY_ESC" {
+				return dev, codes
 			}
 		}
+	}
+	return nil, nil
+}
+
+func printKeyDevice(dev *InputDevice) {
+	device, _ := findActualBoardMap(dev)
+	if device != nil {
+		fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
 	}
 }
 
@@ -178,7 +242,8 @@ func ListenDevice(params []string) {
 }
 
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
-	today := time.Now().Format("2006:01:02")
+	today := time.Now()
+	todayStr := today.Format("2006:01:02")
 	flag := false
 	for _, inputEvent := range inputEvents {
 		if inputEvent.Code == 0 {
@@ -192,12 +257,11 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 
 		flag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
-		conn.ZIncr(Prefix+today+":rank", redis.Z{Score: 1, Member: event.Scancode})
-		conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: today})
+		conn.ZIncr(GetRankKey(today), redis.Z{Score: 1, Member: event.Scancode})
+		conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: todayStr})
 
 		// actual store us not ns
-		conn.ZAdd(Prefix+today+":detail",
-			redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000})
+		conn.ZAdd(GetDetailKey(today), redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000})
 	}
 	return flag
 }
