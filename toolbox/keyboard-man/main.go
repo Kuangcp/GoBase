@@ -11,10 +11,10 @@ import (
 )
 
 var info = cuibase.HelpInfo{
-	Description: "Format markdown file, generate catalog",
+	Description: "Record key input, show rank",
 	Version:     "1.0.0",
 	VerbLen:     -3,
-	ParamLen:    -9,
+	ParamLen:    -14,
 	Params: []cuibase.ParamInfo{
 		{
 			Verb:    "-h",
@@ -23,12 +23,12 @@ var info = cuibase.HelpInfo{
 		}, {
 			Verb:    "-s",
 			Param:   "<device>",
-			Comment: "Listen keyboard with last device or specific device",
+			Comment: "[root] Listen keyboard with last device or specific device",
 			Handler: ListenDevice,
 		}, {
 			Verb:    "-l",
 			Param:   "",
-			Comment: "List keyboard device",
+			Comment: "[root] List keyboard device",
 			Handler: func(_ []string) {
 				devices, _ := ListInputDevices()
 				for _, dev := range devices {
@@ -38,7 +38,7 @@ var info = cuibase.HelpInfo{
 		}, {
 			Verb:    "-ld",
 			Param:   "",
-			Comment: "List all device",
+			Comment: "[root] List all device",
 			Handler: func(_ []string) {
 				devices, _ := ListInputDevices()
 				for _, dev := range devices {
@@ -48,12 +48,12 @@ var info = cuibase.HelpInfo{
 		}, {
 			Verb:    "-p",
 			Param:   "",
-			Comment: "Print key map",
+			Comment: "[root] Print key map",
 			Handler: PrintKeyMap,
 		}, {
 			Verb:    "-ca",
 			Param:   "",
-			Comment: "Cache key map",
+			Comment: "[root] Cache key map",
 			Handler: CacheKeyMap,
 		}, {
 			Verb:    "-d",
