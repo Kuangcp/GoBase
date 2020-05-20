@@ -112,7 +112,7 @@ func printRankByDate(time time.Time, conn *redis.Client) {
 	score := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
 	if len(keyMap) != 0 {
 		for _, v := range score.Val() {
-			fmt.Printf("%4v %v\n", v.Score, keyMap[v.Member.(string)][4:])
+			fmt.Printf("%4v - %v%v%v\n", v.Score, cuibase.LightGreen, keyMap[v.Member.(string)], cuibase.End)
 		}
 	} else {
 		for _, v := range score.Val() {
@@ -139,7 +139,7 @@ func CacheKeyMap(params []string) {
 	conn := initConnection()
 	defer closeConnection(conn)
 	for _, code := range codes {
-		conn.HSet(KeyMap, strconv.Itoa(code.Code), code.Name)
+		conn.HSet(KeyMap, strconv.Itoa(code.Code), code.Name[4:])
 		fmt.Printf("%v -> %v \n", code.Code, code.Name)
 	}
 }
