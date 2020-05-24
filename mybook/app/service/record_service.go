@@ -2,12 +2,13 @@ package service
 
 import (
 	"github.com/kuangcp/gobase/cuibase"
-	"github.com/kuangcp/gobase/mybook/app/constant"
-	"github.com/kuangcp/gobase/mybook/app/dal"
+	"github.com/kuangcp/gobase/mybook/app/common/constant"
+	"github.com/kuangcp/gobase/mybook/app/common/dal"
 	"github.com/kuangcp/gobase/mybook/app/domain"
+	"github.com/kuangcp/gobase/mybook/app/dto"
+	"github.com/kuangcp/gobase/mybook/app/param"
 	"github.com/kuangcp/gobase/mybook/app/util"
 	"github.com/kuangcp/gobase/mybook/app/vo"
-	"github.com/kuangcp/gobase/mybook/app/web/dto"
 	"github.com/wonderivan/logger"
 	"strconv"
 	"time"
@@ -151,12 +152,12 @@ func buildRecordByParams(params []string) *domain.Record {
 		comment = params[5]
 	}
 
-	recordVO := vo.CreateRecordParam{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
+	recordVO := param.CreateRecordParam{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
 		Amount: params[3], Date: params[4], Comment: comment}
 	return BuildRecordByField(recordVO)
 }
 
-func BuildRecordByField(param vo.CreateRecordParam) *domain.Record {
+func BuildRecordByField(param param.CreateRecordParam) *domain.Record {
 	typeId, e := strconv.Atoi(param.TypeId)
 	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
 		logger.Error(e)
@@ -199,7 +200,7 @@ func BuildRecordByField(param vo.CreateRecordParam) *domain.Record {
 	return record
 }
 
-func CreateMultipleTypeRecord(param vo.CreateRecordParam) *domain.Record {
+func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
 	record := BuildRecordByField(param)
 	if record == nil {
 		return nil
@@ -246,7 +247,7 @@ func CreateMultipleTypeRecord(param vo.CreateRecordParam) *domain.Record {
 	}
 }
 
-func FindRecord(param vo.QueryRecordParam) *[]dto.RecordDTO {
+func FindRecord(param param.QueryRecordParam) *[]dto.RecordDTO {
 	db := dal.GetDB()
 	var lists []domain.Record
 	accountId, _ := strconv.Atoi(param.AccountId)
@@ -320,7 +321,7 @@ func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.Mont
 	return &result
 }
 
-func WeekCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
+func WeekCategoryRecord(param param.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
 	records := FindRecord(param)
 	if records == nil {
 		return nil
@@ -343,7 +344,7 @@ func WeekCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
 	return buildCommonWeekOrMonthVO(endDateObj, records, util.WeekByDate, builder)
 }
 
-func MonthCategoryRecord(param vo.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
+func MonthCategoryRecord(param param.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {
 	records := FindRecord(param)
 	if records == nil {
 		return nil

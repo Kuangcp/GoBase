@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/dal"
+	"github.com/kuangcp/gobase/mybook/app/common/dal"
 	"github.com/kuangcp/gobase/mybook/app/domain"
 )
 

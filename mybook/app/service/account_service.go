@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/mybook/app/constant"
-	"github.com/kuangcp/gobase/mybook/app/dal"
+	"github.com/kuangcp/gobase/mybook/app/common/constant"
+	"github.com/kuangcp/gobase/mybook/app/common/dal"
 	"github.com/kuangcp/gobase/mybook/app/domain"
 	"github.com/kuangcp/gobase/mybook/app/util"
 	"github.com/wonderivan/logger"
@@ -58,4 +58,8 @@ func PrintAccount(_ []string) {
 		fmt.Printf("  %d  %s "+chFormat+" %s\n", account.ID, account.Name, "",
 			constant.GetAccountTypeByIndex(account.TypeId).Name)
 	}
+}
+
+func AccountBalance(){
+
 }

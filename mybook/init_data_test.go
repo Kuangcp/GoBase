@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/constant"
+	"github.com/kuangcp/gobase/mybook/app/common/constant"
 	"github.com/kuangcp/gobase/mybook/app/domain"
 	"github.com/kuangcp/gobase/mybook/app/service"
 	"testing"

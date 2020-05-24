@@ -1,4 +1,4 @@
-package vo
+package param
 
 type (
 	QueryRecordParam struct {

@@ -1,7 +1,8 @@
-package web
+package controller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/kuangcp/gobase/mybook/app/param"
 	"github.com/kuangcp/gobase/mybook/app/service"
 	"github.com/kuangcp/gobase/mybook/app/util"
 	"github.com/kuangcp/gobase/mybook/app/vo"
@@ -19,7 +20,7 @@ func CreateRecord(c *gin.Context) {
 	date := c.PostForm("date")
 	comment := c.PostForm("comment")
 
-	recordVO := vo.CreateRecordParam{TypeId: typeId, AccountId: accountId, CategoryId: categoryId,
+	recordVO := param.CreateRecordParam{TypeId: typeId, AccountId: accountId, CategoryId: categoryId,
 		Amount: amount, Date: date, Comment: comment, TargetAccountId: targetAccountId}
 
 	logger.Debug("createRecord: ", util.Json(recordVO))
@@ -38,7 +39,7 @@ func ListRecord(c *gin.Context) {
 	endDate := c.Query("endDate")
 	typeId := c.Query("typeId")
 
-	query := vo.QueryRecordParam{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
+	query := param.QueryRecordParam{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
 	result := service.FindRecord(query)
 	vo.FillResult(c, result)
 }
@@ -67,11 +68,11 @@ func MonthCategoryDetailRecord(c *gin.Context) {
 	vo.FillResult(c, result)
 }
 
-func buildCategoryQueryParam(c *gin.Context) vo.QueryRecordParam {
+func buildCategoryQueryParam(c *gin.Context) param.QueryRecordParam {
 	startDate := c.Query("startDate")
 	endDate := c.Query("endDate")
 	categoryId := c.Query("categoryId")
 	typeId := c.Query("typeId")
 
-	return vo.QueryRecordParam{StartDate: startDate, EndDate: endDate, CategoryId: categoryId, TypeId: typeId}
+	return param.QueryRecordParam{StartDate: startDate, EndDate: endDate, CategoryId: categoryId, TypeId: typeId}
 }
