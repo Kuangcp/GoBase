@@ -5,8 +5,8 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/mybook/app/common/constant"
 	"github.com/kuangcp/gobase/mybook/app/common/dal"
+	"github.com/kuangcp/gobase/mybook/app/common/util"
 	"github.com/kuangcp/gobase/mybook/app/domain"
-	"github.com/kuangcp/gobase/mybook/app/util"
 	"github.com/wonderivan/logger"
 )
 
