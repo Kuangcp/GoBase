@@ -35,26 +35,31 @@ func AssertParamCount(count int, msg string) {
 	}
 }
 
+// BuildFormat 
 func BuildFormat(verbLen int, paramLen int) string {
 	return "    %v %" + strconv.Itoa(verbLen) + "v %v %" + strconv.Itoa(paramLen) + "v %v %v\n"
 }
 
+// PrintParam 
 func PrintParam(format string, verb string, param string, comment string) {
 	fmt.Printf(format, Green, verb, Yellow, param, End, comment)
 }
 
+// PrintParams 
 func PrintParams(format string, params []ParamInfo) {
 	for _, param := range params {
 		PrintParam(format, param.Verb, param.Param, param.Comment)
 	}
 }
 
+// PrintTitle 
 func PrintTitle(command string, description string) {
 	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", LightGreen, End, command, Green, Yellow, End)
 	fmt.Printf("%sDescription:%s\n\n  %v\n\n", LightGreen, End, description)
 }
 
 // RunActionFromInfo defaultAction 为空时默认PrintHelp
+// RunActionFromInfo 
 func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 	if len(info.Params) == 0 {
 		return
@@ -84,10 +89,12 @@ func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 	}
 }
 
+// RunAction actions map
 func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
 	runAction(os.Args, actions, defaultAction)
 }
 
+// CheckIfError assert err is nil
 func CheckIfError(err error) {
 	if err == nil {
 		return
@@ -97,6 +104,7 @@ func CheckIfError(err error) {
 	os.Exit(1)
 }
 
+// ReadFileLines
 func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(string) interface{}) []interface{} {
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
 	if err != nil {
@@ -135,6 +143,7 @@ func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(s
 	return result
 }
 
+// Home 
 func Home() (string, error) {
 	curUser, err := user.Current()
 	if nil == err {
@@ -151,6 +160,7 @@ func Home() (string, error) {
 	return homeUnix()
 }
 
+// PrintWithColorful 
 func PrintWithColorful() {
 	for i := 0; i < 255; i++ {
 		fmt.Printf("\x1b[48;5;%dm%3d\u001B[0m", i, i)

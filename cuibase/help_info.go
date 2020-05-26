@@ -3,6 +3,7 @@ package cuibase
 import "fmt"
 
 type (
+	// HelpInfo data
 	HelpInfo struct {
 		Version     string
 		Description string
@@ -12,6 +13,7 @@ type (
 	}
 )
 
+// PrintHelp info msg
 func (helpInfo HelpInfo) PrintHelp() {
 	printTitleDefault(helpInfo.Description)
 	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)

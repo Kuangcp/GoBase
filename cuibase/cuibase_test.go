@@ -125,6 +125,15 @@ func TestRunAction(t *testing.T) {
 	}
 }
 
+func TestHelpInfo_PrintHelp(t *testing.T) {
+	info := HelpInfo{
+		Version:     "",
+		Description: "",
+	}
+	info.PrintHelp()
+}
+
 func TestColor(t *testing.T) {
-	PrintWithColorful()
+	//PrintWithColorful()
+	print(Red.Print("ddd"))
 }
