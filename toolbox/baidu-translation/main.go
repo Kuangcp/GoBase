@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/kuangcp/gobase/cuibase"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -12,6 +11,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/kuangcp/gobase/cuibase"
 )
 
 const BaiduApi = "https://fanyi-api.baidu.com/api/trans/vip/translate"
@@ -59,7 +60,7 @@ var info = cuibase.HelpInfo{
 
 func query(query string, fromLang string, toLang string, appId string, secretKey string) {
 	if len(query) == 0 || len(appId) == 0 || len(secretKey) == 0 || len(fromLang) == 0 || len(toLang) == 0 {
-		log.Fatalf("%v Param error %v", cuibase.Red, cuibase.End)
+		log.Fatalln(cuibase.Red.Println(" Param error "))
 	}
 
 	urls := BaiduApi + "?from=" + fromLang + "&to=" + toLang

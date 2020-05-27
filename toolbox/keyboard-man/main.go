@@ -170,7 +170,7 @@ func getDevice(params []string) *InputDevice {
 		event = params[2]
 	}
 	if event == "" {
-		fmt.Printf("%vPlease select inputDevice %v\n", cuibase.Red, cuibase.End)
+		fmt.Println(cuibase.Red.Print("Please select inputDevice"))
 		return nil
 	}
 
@@ -238,7 +238,7 @@ func ListenDevice(params []string) {
 		handleResult := handleEvents(inputEvents, connection)
 		if !success && handleResult {
 			success = handleResult
-			fmt.Printf("%s  listen success. %s \n", cuibase.Green, cuibase.End)
+			fmt.Println(cuibase.Green.Println("  listen success. "))
 		}
 	}
 }

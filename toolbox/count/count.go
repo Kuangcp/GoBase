@@ -192,7 +192,7 @@ func showCharRank(start int64, stop int64) {
 		return
 	}
 	for _, a := range result {
-		fmt.Printf("%-6v %v->%v %v \n", a.Score, cuibase.Green, cuibase.End, a.Member)
+		fmt.Printf("%-6v %s %v \n", a.Score, cuibase.Green.Print("->"), a.Member)
 	}
 }
 
@@ -230,8 +230,8 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 		total = handleFile(fileName, handler)
 		totalChineseChar += total
 		if showFileInfo {
-			fmt.Printf("%-3v %-5v %v%-5v %v%v \n",
-				totalFile, totalChineseChar, cuibase.Green, total, cuibase.End, fileName)
+			fmt.Printf("%-3v %-5v %s %v \n",
+				totalFile, totalChineseChar, cuibase.Green.Printf("%-5v", total), fileName)
 		}
 	}
 	fmt.Printf("\nTotal characters: %v%v%v files  %v%v%v chars \n",

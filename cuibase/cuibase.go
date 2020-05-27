@@ -54,8 +54,9 @@ func PrintParams(format string, params []ParamInfo) {
 
 // PrintTitle 
 func PrintTitle(command string, description string) {
-	fmt.Printf("%sUsage:%s\n\n  %v %v <verb> %v <param> %v\n\n", LightGreen, End, command, Green, Yellow, End)
-	fmt.Printf("%sDescription:%s\n\n  %v\n\n", LightGreen, End, description)
+	fmt.Printf("%s\n\n  %v %v %v \n\n", LightGreen.Print("Usage:"),
+		command, Green.PrintNoEnd("<verb>"), Yellow.Print("<param>"))
+	fmt.Printf("%s\n\n  %v\n\n", LightGreen.Print("Description:"), description)
 }
 
 // RunActionFromInfo defaultAction 为空时默认PrintHelp

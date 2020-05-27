@@ -19,6 +19,6 @@ func (helpInfo HelpInfo) PrintHelp() {
 	format := BuildFormat(helpInfo.VerbLen, helpInfo.ParamLen)
 	PrintParams(format, helpInfo.Params)
 	if helpInfo.Version != "" {
-		fmt.Printf("\n%sVersion:%s  %v\n\n", LightGreen, End, helpInfo.Version)
+		fmt.Printf("\n%s  %v\n\n", LightGreen.Print("Version:"), helpInfo.Version)
 	}
 }

@@ -2,8 +2,6 @@ package cuibase
 
 import "fmt"
 
-var End = "\033[0m"
-
 type Color string
 
 const (
@@ -21,14 +19,25 @@ const (
 	LightPurple Color = "\033[0;95m"
 	LightCyan   Color = "\033[0;96m"
 	LightWhite  Color = "\033[0;97m"
+	End         Color = "\033[0m"
 )
 
 // Print content with color
 func (t Color) Print(content string) string {
-	return string(t) + content + End
+	return string(t) + content + string(End)
+}
+
+// Print content with color no end
+func (t Color) PrintNoEnd(content string) string {
+	return string(t) + content
+}
+
+// Print content with color
+func (t Color) Println(content string) string {
+	return string(t) + content + string(End) + "\n"
 }
 
 // Printf content with color and format
-func (t Color) Printf(format string, content string) string {
-	return string(t) + fmt.Sprintf(format, content) + End
+func (t Color) Printf(format string, a ...interface{}) string {
+	return string(t) + fmt.Sprintf(format, a...) + string(End)
 }

@@ -17,15 +17,15 @@ type RepoAlias struct {
 	ignore bool
 }
 
-func (this RepoAlias) String() string {
+func (r RepoAlias) String() string {
 	var nameColor = cuibase.Blue
-	if this.ignore {
+	if r.ignore {
 		nameColor = cuibase.Red
 	}
-	return fmt.Sprintf("%v%-30s %v%-50s %v%-10v%v",
-		cuibase.Yellow, this.alias,
-		cuibase.Green, this.path,
-		nameColor, this.name, cuibase.End)
+	return fmt.Sprintf("%-30s %-50s %-10s",
+		cuibase.Yellow.PrintNoEnd(r.alias),
+		cuibase.Green.PrintNoEnd(r.path),
+		nameColor.Print(r.name))
 }
 
 func HelpInfo(_ []string) {
@@ -101,14 +101,12 @@ func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
 			color = cuibase.Yellow
 			add++
 		}
-		content += fmt.Sprintf("   %v%c%c    %s%s\n",
-			color, fileStatus.Staging, fileStatus.Worktree, filePath, cuibase.End)
+		content += color.Printf("%c%c    %s\n", fileStatus.Staging, fileStatus.Worktree, filePath)
 	}
-	fmt.Printf("%v▶ %-20v  %v%-50v %vM:%-3vA:%-3v ◀%v\n",
-		cuibase.Blue, temps[len(temps)-1],
-		cuibase.Green, dir,
-		cuibase.Blue, modify, add,
-		cuibase.End)
+	fmt.Printf("▶ %-20s  %-50s %s ◀\n",
+		cuibase.Blue.PrintNoEnd(temps[len(temps)-1]),
+		cuibase.Green.PrintNoEnd(dir),
+		cuibase.Blue.Printf("M:%-3vA:%-3v", modify, add))
 
 	fmt.Println(content)
 }
