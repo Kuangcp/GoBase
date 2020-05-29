@@ -116,7 +116,7 @@ func printRankByDate(time time.Time, conn *redis.Client) {
 		var page []string
 		for index, v := range score.Val() {
 			var d = index % 47
-			element := fmt.Sprintf("%4v - %-26v", v.Score, cuibase.LightGreen.Print(keyMap[v.Member.(string)]))
+			element := fmt.Sprintf("%4v → %-26v", v.Score, cuibase.LightGreen.Print(keyMap[v.Member.(string)]))
 
 			if len(page) <= d {
 				page = append(page, element)
