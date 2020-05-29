@@ -108,11 +108,25 @@ func printRankByDate(time time.Time, conn *redis.Client) {
 	}
 	totalScore := conn.ZScore(TotalCount, today)
 
-	fmt.Printf("%s%-9s%s | %s | Total: %v\n", cuibase.Green, time.Weekday(), cuibase.End, today, int64(totalScore.Val()))
+	fmt.Printf("%s | %s | Total: %v\n", cuibase.Green.Printf("%-8s", time.Weekday()),
+		today, cuibase.Yellow.Printf("%d", int64(totalScore.Val())))
+
 	score := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
 	if len(keyMap) != 0 {
-		for _, v := range score.Val() {
-			fmt.Printf("%4v - %v%v%v\n", v.Score, cuibase.LightGreen, keyMap[v.Member.(string)], cuibase.End)
+		var page []string
+		for index, v := range score.Val() {
+			var d = index % 47
+			element := fmt.Sprintf("%4v - %-26v", v.Score, cuibase.LightGreen.Print(keyMap[v.Member.(string)]))
+
+			if len(page) <= d {
+				page = append(page, element)
+			} else {
+				page[d] = page[d] + element
+			}
+		}
+		fmt.Println()
+		for _, s := range page {
+			fmt.Println(s)
 		}
 	} else {
 		for _, v := range score.Val() {
@@ -127,6 +141,7 @@ func printTotalByDate(time time.Time, conn *redis.Client) {
 	fmt.Printf("%s%-9s%s %s %v\n", cuibase.Green, time.Weekday(), cuibase.End, today, int64(score.Val()))
 }
 
+//CacheKeyMap to redis
 func CacheKeyMap(params []string) {
 	device := getDevice(params)
 	if device == nil {
@@ -144,6 +159,7 @@ func CacheKeyMap(params []string) {
 	}
 }
 
+//PrintKeyMap show
 func PrintKeyMap(params []string) {
 	device := getDevice(params)
 	if device == nil {
@@ -200,6 +216,7 @@ func printKeyDevice(dev *InputDevice) {
 	}
 }
 
+// ListenDevice listen and record
 func ListenDevice(params []string) {
 	var event = ""
 	if len(params) > 2 {
