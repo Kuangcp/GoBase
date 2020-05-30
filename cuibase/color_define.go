@@ -41,3 +41,7 @@ func (t Color) Println(content string) string {
 func (t Color) Printf(format string, a ...interface{}) string {
 	return string(t) + fmt.Sprintf(format, a...) + string(End)
 }
+
+func (t Color) String() string {
+	return string(t)
+}
