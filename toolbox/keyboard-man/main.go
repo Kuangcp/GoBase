@@ -111,11 +111,12 @@ func printRankByDate(time time.Time, conn *redis.Client) {
 	fmt.Printf("%s | %s | Total: %v\n", cuibase.Green.Printf("%-8s", time.Weekday()),
 		today, cuibase.Yellow.Printf("%d", int64(totalScore.Val())))
 
-	score := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
+	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
 	if len(keyMap) != 0 {
 		var page []string
-		for index, v := range score.Val() {
-			var d = index % 47
+		row := len(keyRank.Val()) / 2 + 1
+		for index, v := range keyRank.Val() {
+			var d = index % row
 			element := fmt.Sprintf("%4v → %-26v", v.Score, cuibase.LightGreen.Print(keyMap[v.Member.(string)]))
 
 			if len(page) <= d {
@@ -129,7 +130,7 @@ func printRankByDate(time time.Time, conn *redis.Client) {
 			fmt.Println(s)
 		}
 	} else {
-		for _, v := range score.Val() {
+		for _, v := range keyRank.Val() {
 			fmt.Printf("%4v %v\n", v.Score, v.Member)
 		}
 	}
