@@ -66,7 +66,7 @@ func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 		return
 	}
 	params := os.Args
-	if len(params) < 2 {
+	if len(params) <= 2 {
 		if defaultAction != nil {
 			defaultAction(params)
 		} else {
