@@ -36,55 +36,77 @@ var deleteChar = [...]string{
 	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "＊", "。", "?", "？",
 }
 
-func HelpInfo(_ []string) {
-	info := cuibase.HelpInfo{
-		Description: "Format markdown file, generate catalog",
-		Version: "1.0.0",
-		VerbLen:     -3,
-		ParamLen:    -5,
-		Params: []cuibase.ParamInfo{
-			{
-				Verb:    "-h",
-				Param:   "",
-				Comment: "Help info",
-			}, {
-				Verb:    "",
-				Param:   "file",
-				Comment: "Refresh catalog for file",
-			}, {
-				Verb:    "-f",
-				Param:   "file",
-				Comment: "Refresh catalog for file",
-			}, {
-				Verb:    "-d",
-				Param:   "dir",
-				Comment: "Refresh catalog for file that recursive dir",
-			}, {
-				Verb:    "-mm",
-				Param:   "file",
-				Comment: "Print mind map",
-			}, {
-				Verb:    "-rc",
-				Param:   "dir",
-				Comment: "Refresh git repo dir changed file",
-			}, {
-				Verb:    "-a",
-				Param:   "file",
-				Comment: "Append catalog and title for file",
+var info = cuibase.HelpInfo{
+	Description: "Format markdown file, generate catalog",
+	Version:     "1.0.1",
+	VerbLen:     -3,
+	ParamLen:    -5,
+	Params: []cuibase.ParamInfo{
+		{
+			Verb:    "-h",
+			Param:   "",
+			Comment: "Help info",
+		}, {
+			Verb:    "",
+			Param:   "file",
+			Comment: "Refresh catalog for file",
+			Handler: func(params []string) {
+				cuibase.AssertParamCount(1, "must input filename ")
+				refreshCatalog(params[1])
 			},
-		}}
-	info.PrintHelp()
-}
+		}, {
+			Verb:    "-f",
+			Param:   "file",
+			Comment: "Refresh catalog for file",
+			Handler: func(params []string) {
+				cuibase.AssertParamCount(2, "must input filename ")
+				refreshCatalog(params[2])
+			},
+		}, {
+			Verb:    "-d",
+			Param:   "dir",
+			Comment: "Refresh catalog for file that recursive dir",
+			Handler: func(_ []string) {
+				refreshDirAllFiles("./")
+			},
+		}, {
+			Verb:    "-mm",
+			Param:   "file",
+			Comment: "Print mind map",
+			Handler: func(params []string) {
+				cuibase.AssertParamCount(2, "must input filename ")
+				printMindMap(params[2])
+			},
+		}, {
+			Verb:    "-rc",
+			Param:   "dir",
+			Comment: "Refresh git repo dir changed file",
+			Handler: func(params []string) {
+				cuibase.AssertParamCount(2, "must input repo dir ")
+				refreshChangeFile(params[2])
+			},
+		}, {
+			Verb:    "-a",
+			Param:   "file",
+			Comment: "Append catalog and title for file",
+			Handler: func(params []string) {
+				cuibase.AssertParamCount(2, "must input filename")
+				appendCatalogAndTitle(params[2])
+			},
+		},
+	}}
 
 func readFileLines(filename string) []string {
-	return readLines(filename, func(s string) bool {
-		return true
-	}, func(s string) string {
-		return s
-	})
+	return readLinesWithFunc(filename,
+		func(s string) bool {
+			return true
+		},
+		func(s string) string {
+			return s
+		})
 }
 
-func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
+func readLinesWithFunc(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
 	if err != nil {
 		logger.Error("Open file error!", err)
@@ -102,31 +124,31 @@ func readLines(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	}
 
 	var result []string
-
 	buf := bufio.NewReader(file)
 	for {
 		line, err := buf.ReadString('\n')
 		if filterFunc == nil || filterFunc(line) {
-			var temp = line
 			if mapFunc != nil {
-				temp = mapFunc(line)
+				result = append(result, mapFunc(line))
+			} else {
+				result = append(result, line)
 			}
-			result = append(result, temp)
 		}
 
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				logger.Error("Read file error!", err)
-				return nil
-			}
+		if err == nil {
+			continue
 		}
+		if err == io.EOF {
+			break
+		}
+
+		logger.Error("Read file error!", err)
+		return nil
 	}
 	return result
 }
 
-func isFileNeedHandle(filename string) bool {
+func isNeedHandleFile(filename string) bool {
 	for _, file := range ignoreFiles {
 		if strings.HasSuffix(filename, file) {
 			return false
@@ -141,12 +163,12 @@ func isFileNeedHandle(filename string) bool {
 }
 
 // 递归更新当前目录下所有文件的目录
-func RefreshDirAllFiles(path string) {
+func refreshDirAllFiles(path string) {
 	var fileList = list.New()
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			logger.Error("occur error: ", err)
-			return nil
+			return err
 		}
 
 		if info.IsDir() {
@@ -162,13 +184,13 @@ func RefreshDirAllFiles(path string) {
 	})
 	if err != nil {
 		logger.Error(err)
+		return
 	}
 
 	for e := fileList.Front(); e != nil; e = e.Next() {
 		fileName := e.Value.(string)
-		if isFileNeedHandle(fileName) {
-			logger.Info(fileName)
-			RefreshCatalog(fileName)
+		if isNeedHandleFile(fileName) {
+			refreshCatalog(fileName)
 		}
 	}
 }
@@ -185,37 +207,43 @@ func normalizeForTitle(title string) string {
 }
 
 func generateCatalog(filename string) []string {
-	return readLines(filename, func(s string) bool {
-		return strings.HasPrefix(s, "#")
-	}, func(s string) string {
-		title := strings.TrimSpace(strings.Replace(s, "#", "", -1))
-		strings.Count(s, "#")
-		temps := strings.Split(s, "# ")
-		level := strings.Replace(temps[0], "#", "    ", -1)
-		return fmt.Sprintf("%s1. [%s](#%s)\n", level, title, normalizeForTitle(title))
-	})
+	return readLinesWithFunc(filename,
+		func(s string) bool {
+			return strings.HasPrefix(s, "#")
+		},
+		func(s string) string {
+			title := strings.TrimSpace(strings.Replace(s, "#", "", -1))
+			strings.Count(s, "#")
+			temps := strings.Split(s, "# ")
+			level := strings.Replace(temps[0], "#", "    ", -1)
+			return fmt.Sprintf("%s1. [%s](#%s)\n", level, title, normalizeForTitle(title))
+		})
 }
 
 // 更新指定文件的目录
-func RefreshCatalog(filename string) {
+func refreshCatalog(filename string) {
+	logger.Info("refresh:", filename)
+
+	titleBlock := ""
 	titles := generateCatalog(filename)
-	lines := readFileLines(filename)
+	for t := range titles {
+		titleBlock += titles[t]
+	}
 
 	startIdx := -1
 	endIdx := -1
 	var result = ""
+
+	// replace title block
+	lines := readFileLines(filename)
 	for i, line := range lines {
 		if strings.Contains(line, startTag) {
 			startIdx = i
 		}
 		if strings.Contains(line, endTag) {
 			endIdx = i
-			result += startTag + "\n\n"
-			for t := range titles {
-				result += titles[t]
-			}
-			result += "\n"
-			result += endTag + "|_" + time.Now().Format("2006-01-02 15:04") + "_|\n"
+			timeStr := time.Now().Format("2006-01-02 15:04")
+			result += startTag + "\n\n" + titleBlock + "\n" + endTag + "|_" + timeStr + "_|\n"
 			continue
 		}
 		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
@@ -229,31 +257,34 @@ func RefreshCatalog(filename string) {
 	}
 	//logger.Info("index", startIdx, endIdx, result)
 	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
-		logger.Error("write error")
+		logger.Error("write error", filename)
 	}
 }
 
 // 打印 百度脑图支持的 MindMap 格式
-func PrintMindMap(filename string) {
+func printMindMap(filename string) {
 	cuibase.AssertParamCount(2, "must input filename ")
 
-	lines := readLines(filename, func(s string) bool {
-		return strings.HasPrefix(s, "#")
-	}, func(s string) string {
-		temp := strings.Split(s, "# ")
-		prefix := strings.Replace(temp[0], "#", "    ", -1)
-		return prefix + temp[1]
-	})
+	lines := readLinesWithFunc(filename,
+		func(s string) bool {
+			return strings.HasPrefix(s, "#")
+		},
+		func(s string) string {
+			temp := strings.Split(s, "# ")
+			prefix := strings.Replace(temp[0], "#", "    ", -1)
+			return prefix + temp[1]
+		})
 
-	if lines != nil {
-		for i := range lines {
-			fmt.Print(lines[i])
-		}
+	if lines == nil {
+		return
+	}
+	for i := range lines {
+		fmt.Print(lines[i])
 	}
 }
 
 // 更新指定目录的Git仓库里发成变更的文件
-func RefreshChangeFile(dir string) {
+func refreshChangeFile(dir string) {
 	r, err := git.PlainOpen(dir)
 	cuibase.CheckIfError(err)
 	worktree, err := r.Worktree()
@@ -267,55 +298,30 @@ func RefreshChangeFile(dir string) {
 	for filePath := range status {
 		fileStatus := status.File(filePath)
 		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
-			if isFileNeedHandle(dir + filePath) {
-				logger.Info("refresh:", filePath)
-				RefreshCatalog(dir + filePath)
+			if isNeedHandleFile(dir + filePath) {
+				refreshCatalog(dir + filePath)
 			}
 		}
 	}
 }
 
-func AppendCatalogAndTitle(filename string) {
-	lines := readLines(filename, nil, nil)
+func appendCatalogAndTitle(filename string) {
+	lines := readLinesWithFunc(filename, nil, nil)
 	var result = "---\ntitle: " + filename + "\ndate: " +
 		time.Now().Format("2006-01-02 15:04:05") +
-		"\ntags: \ncategories: \n---\n\n**目录 start**\n**目录 end**" +
+		"\ntags: \ncategories: \n---\n\n" + startTag + "\n" + endTag +
 		"\n****************************************\n"
 	for i := range lines {
 		result += lines[i]
 	}
 
 	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
-		logger.Error("write error")
+		logger.Error("write error", filename)
 	}
-	RefreshCatalog(filename)
+	refreshCatalog(filename)
 }
 
 func main() {
 	logger.SetLogPathTrim("/toolbox/")
-	cuibase.RunAction(map[string]func(params []string){
-		"-h": HelpInfo,
-		"-mm": func(params []string) {
-			cuibase.AssertParamCount(2, "must input filename ")
-			PrintMindMap(params[2])
-		},
-		"-f": func(params []string) {
-			cuibase.AssertParamCount(2, "must input filename ")
-			RefreshCatalog(params[2])
-		},
-		"-d": func(_ []string) {
-			RefreshDirAllFiles("./")
-		},
-		"-rc": func(params []string) {
-			cuibase.AssertParamCount(2, "must input repo dir ")
-			RefreshChangeFile(params[2])
-		},
-		"-a": func(params []string) {
-			cuibase.AssertParamCount(2, "must input filename")
-			AppendCatalogAndTitle(params[2])
-		},
-	}, func(params []string) {
-		cuibase.AssertParamCount(1, "must input filename ")
-		RefreshCatalog(params[1])
-	})
+	cuibase.RunActionFromInfo(info, nil)
 }

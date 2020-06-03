@@ -59,14 +59,13 @@ func PrintTitle(command string, description string) {
 	fmt.Printf("%s\n\n  %v\n\n", LightGreen.Print("Description:"), description)
 }
 
-// RunActionFromInfo defaultAction 为空时默认PrintHelp
-// RunActionFromInfo 
+// RunActionFromInfo 当 defaultAction 为空时默认PrintHelp, 当一个参数时优先寻找空参数方法
 func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 	if len(info.Params) == 0 {
 		return
 	}
 	params := os.Args
-	if len(params) <= 2 {
+	if len(params) < 2 {
 		if defaultAction != nil {
 			defaultAction(params)
 		} else {
@@ -77,6 +76,10 @@ func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
 
 	verb := params[1]
 	for _, param := range info.Params {
+		if len(params) == 2 && param.Verb == "" {
+			param.Handler(params)
+			return
+		}
 		if verb != param.Verb {
 			continue
 		}
