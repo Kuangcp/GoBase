@@ -86,8 +86,8 @@ func printAnyByDay(params []string, action func(time time.Time, conn *redis.Clie
 	if len(params) == 3 {
 		day, err := strconv.Atoi(params[2])
 		cuibase.CheckIfError(err)
-		indexDay = day
-		durationDay = day + 1
+		indexDay = day - 1
+		durationDay = day
 	} else if len(params) == 4 {
 		day, err := strconv.Atoi(params[2])
 		cuibase.CheckIfError(err)
