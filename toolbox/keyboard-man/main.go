@@ -81,21 +81,24 @@ func printAnyByDay(params []string, action func(time time.Time, conn *redis.Clie
 	defer closeConnection(connection)
 
 	now := time.Now()
+	indexDay := 0
+	durationDay := 1
 	if len(params) == 3 {
 		day, err := strconv.Atoi(params[2])
 		cuibase.CheckIfError(err)
-		now = now.AddDate(0, 0, - day)
+		indexDay = day
+		durationDay = day + 1
 	} else if len(params) == 4 {
-		indexDay, err := strconv.Atoi(params[2])
+		day, err := strconv.Atoi(params[2])
 		cuibase.CheckIfError(err)
-		durationDay, err := strconv.Atoi(params[3])
+		indexDay = day
+
+		durationDay, err = strconv.Atoi(params[3])
 		cuibase.CheckIfError(err)
-		for i := 0; i < durationDay; i++ {
-			action(now.AddDate(0, 0, -indexDay+i), connection)
-		}
-		return
 	}
-	action(now, connection)
+	for i := 0; i < durationDay; i++ {
+		action(now.AddDate(0, 0, -indexDay+i), connection)
+	}
 }
 
 func printRankByDate(time time.Time, conn *redis.Client) {
@@ -114,7 +117,7 @@ func printRankByDate(time time.Time, conn *redis.Client) {
 	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
 	if len(keyMap) != 0 {
 		var page []string
-		row := len(keyRank.Val()) / 2 + 1
+		row := len(keyRank.Val())/2 + 1
 		for index, v := range keyRank.Val() {
 			var d = index % row
 			element := fmt.Sprintf("%4v → %-26v", v.Score, cuibase.LightGreen.Print(keyMap[v.Member.(string)]))
