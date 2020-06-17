@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/mybook/app/common/constant"
 	"github.com/kuangcp/gobase/mybook/app/common/dal"
@@ -105,7 +106,7 @@ func PrintCategory(_ []string) {
 			}
 		}
 		if len(resultMap[enum.Index]) != 0 {
-			fmt.Printf(cuibase.Cyan+"> %v  "+cuibase.End+"\n%v\n\n", enum.Name, value)
+			fmt.Printf(cuibase.Cyan.String()+"> %v  "+cuibase.End.String()+"\n%v\n\n", enum.Name, value)
 		}
 	}
 }

@@ -3,6 +3,9 @@ BINARY_NAME=mybook
 build:
 	go build -o bin/${BINARY_NAME}
 
+buildFinal:
+	statik -f -src=/home/kcp/Code/go/GoBase/mybook/conf/static/ -dest app/common/ && go build -o bin/${BINARY_NAME}
+
 clean:
 	rm -f bin/*
 

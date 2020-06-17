@@ -1,13 +1,19 @@
 package web
 
 import (
+	"log"
+	"net/http"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/mybook/app/common"
 	"github.com/kuangcp/gobase/mybook/app/common/config"
 	record "github.com/kuangcp/gobase/mybook/app/controller"
 	"github.com/kuangcp/gobase/mybook/app/service"
+	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
-	"strconv"
+
+	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
 )
 
 func Server(_ []string) {
@@ -20,19 +26,31 @@ func Server(_ []string) {
 	}
 
 	router := gin.Default()
-
 	router.GET("/ping", common.HealthCheck)
-	router.Static("/static", "./conf/static")
-	router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 
-	logicRouter(router)
+	// static file mapping
+	fileSystem, err := fs.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	router.StaticFS("/static", fileSystem)
 
-	logger.Info("Open http://localhost:10006/static/")
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "static/")
+	})
+	router.GET("/favicon.ico", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
+	})
+
+	// backend logic router
+	backendRouter(router)
+
+	logger.Info("Open http://localhost:10006")
 	e := router.Run(":" + strconv.Itoa(appConfig.Port))
 	logger.Error(e)
 }
 
-func logicRouter(router *gin.Engine) {
+func backendRouter(router *gin.Engine) {
 	api := "/mybook"
 	router.GET(api+"/category/typeList", common.ListCategoryType)
 	router.GET(api+"/category/list", common.ListCategory)
