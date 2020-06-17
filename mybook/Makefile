@@ -3,8 +3,12 @@ BINARY_NAME=mybook
 build:
 	go build -o bin/${BINARY_NAME}
 
-buildFinal:
+buildSingle:
 	statik -f -src=/home/kcp/Code/go/GoBase/mybook/conf/static/ -dest app/common/ && go build -o bin/${BINARY_NAME}
+
+buildSingleWin:
+	statik -f -src=/home/kcp/Code/go/GoBase/mybook/conf/static/ -dest app/common/ && CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}.exe
+#  -a -ldflags "-linkmode external -extldflags '-static' -s -w"
 
 clean:
 	rm -f bin/*

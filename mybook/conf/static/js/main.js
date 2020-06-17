@@ -1,4 +1,4 @@
-const app = '/mybook';
+const app = '/api';
 
 
 function tip(area, title, content) {
@@ -98,7 +98,7 @@ function createRecord() {
         }
     }
 
-    $.post("/mybook/record/create", $("#recordForm").serialize(), function (data) {
+    $.post(app + "/record/create", $("#recordForm").serialize(), function (data) {
         if (data.Success) {
             layer.msg('记账成功');
         } else {

@@ -59,6 +59,12 @@ var info = cuibase.HelpInfo{
 			Comment: "start web service",
 			Handler: web.Server,
 		},
+		{
+			Verb:    "-sd",
+			Param:   "",
+			Comment: "start debug web service",
+			Handler: web.DebugServer,
+		},
 	}}
 
 func main() {

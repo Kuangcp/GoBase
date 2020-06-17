@@ -17,6 +17,14 @@ import (
 )
 
 func Server(_ []string) {
+	server(false)
+}
+
+func DebugServer(_ []string) {
+	server(true)
+}
+
+func server(staticDebug bool) {
 	appConfig := config.GetAppConfig()
 	if !appConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
@@ -28,18 +36,23 @@ func Server(_ []string) {
 	router := gin.Default()
 	router.GET("/ping", common.HealthCheck)
 
-	// static file mapping
-	fileSystem, err := fs.New()
-	if err != nil {
-		log.Fatal(err)
+	if staticDebug {
+		router.Static("/static", "./conf/static")
+		router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
+	} else {
+		// static file mapping
+		fileSystem, err := fs.New()
+		if err != nil {
+			log.Fatal(err)
+		}
+		router.StaticFS("/static", fileSystem)
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
+		})
 	}
-	router.StaticFS("/static", fileSystem)
 
 	router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "static/")
-	})
-	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
 	})
 
 	// backend logic router
@@ -51,7 +64,7 @@ func Server(_ []string) {
 }
 
 func backendRouter(router *gin.Engine) {
-	api := "/mybook"
+	api := "/api"
 	router.GET(api+"/category/typeList", common.ListCategoryType)
 	router.GET(api+"/category/list", common.ListCategory)
 
