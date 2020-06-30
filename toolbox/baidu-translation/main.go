@@ -58,19 +58,33 @@ var info = cuibase.HelpInfo{
 		},
 	}}
 
+func anyEmpty(value ...string) bool {
+	if len(value) == 0 {
+		return true
+	}
+	for _, s := range value {
+		if len(s) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func query(query string, fromLang string, toLang string, appId string, secretKey string) {
-	if len(query) == 0 || len(appId) == 0 || len(secretKey) == 0 || len(fromLang) == 0 || len(toLang) == 0 {
+	if anyEmpty(query, fromLang, toLang, appId, secretKey) {
 		log.Fatalln(cuibase.Red.Println(" Param error "))
 	}
 
-	urls := BaiduApi + "?from=" + fromLang + "&to=" + toLang
-	urls += "&appid=" + appId
-	urls += "&q=" + url.QueryEscape(query)
 	salt := strconv.Itoa(rand.Intn(65535))
-	urls += "&salt=" + salt
-	urls += "&sign=" + fmt.Sprintf("%x", md5.Sum([]byte(appId+query+salt+secretKey)))
 
-	resp, err := http.Get(urls)
+	queryStr := "?from=" + fromLang
+	queryStr += "&to=" + toLang
+	queryStr += "&appid=" + appId
+	queryStr += "&q=" + url.QueryEscape(query)
+	queryStr += "&salt=" + salt
+	queryStr += "&sign=" + fmt.Sprintf("%x", md5.Sum([]byte(appId+query+salt+secretKey)))
+
+	resp, err := http.Get(BaiduApi + queryStr)
 	cuibase.CheckIfError(err)
 	defer resp.Body.Close()
 

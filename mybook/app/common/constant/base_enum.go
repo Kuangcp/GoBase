@@ -7,8 +7,6 @@ type (
 	}
 )
 
-// var E_$1 = NewBaseEnum($1,"")
-
 func NewBaseEnum(index int8, name string) *BaseEnum {
 	return &BaseEnum{Index: index, Name: name}
 }

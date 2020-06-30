@@ -19,7 +19,7 @@ type (
 
 var DefaultPath = "/tmp/bookkeeping.db"
 var DefaultDriver = "sqlite3"
-var DefaultPort = 10006
+var DefaultPort = 9096
 
 var config *AppConfig
 
