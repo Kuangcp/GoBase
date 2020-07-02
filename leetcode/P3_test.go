@@ -3,26 +3,14 @@ package leetcode
 import "testing"
 
 func Test_lengthOfLongestSubstring(t *testing.T) {
-	type args struct {
-		s string
-	}
-	tests := []struct {
-		name string
-		args args
-		want int
-	}{
-		{name: "", args: args{s: "uiuiui"}, want: 2},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := lengthOfLongestSubstring(tt.args.s); got != tt.want {
-				t.Errorf("lengthOfLongestSubstring() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	testFunc(t, lengthOfLongestSubstring)
 }
 
 func Test_lengthOfLongestSubstring2(t *testing.T) {
+	testFunc(t, lengthOfLongestSubstring2)
+}
+
+func testFunc(t *testing.T, method func(string) int) {
 	type args struct {
 		s string
 	}
@@ -31,11 +19,12 @@ func Test_lengthOfLongestSubstring2(t *testing.T) {
 		args args
 		want int
 	}{
-		{name: "", args: args{s: "uiuiui"}, want: 2},
+		{args: args{s: "longlongago"}, want: 5},
+		{args: args{s: "uiu"}, want: 2},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := lengthOfLongestSubstring2(tt.args.s); got != tt.want {
+			if got := method(tt.args.s); got != tt.want {
 				t.Errorf("lengthOfLongestSubstring_2() = %v, want %v", got, tt.want)
 			}
 		})

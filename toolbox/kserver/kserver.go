@@ -70,7 +70,8 @@ func RunWithPort(params []string) {
 	portStr := readPortByParam(params[1:])
 	run(portStr)
 }
-func RunWithDefaultPort(params []string) {
+
+func RunWithDefaultPort(_ []string) {
 	run("8889")
 }
 
