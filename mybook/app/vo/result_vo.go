@@ -42,18 +42,18 @@ func (result ResultVO) IsFailed() bool {
 }
 
 // web util
-func FailedForWeb(c *gin.Context) {
+func GinFailed(c *gin.Context) {
 	c.JSON(http.StatusOK, failed)
 }
 
-func SuccessForWebWith(c *gin.Context, data interface{}) {
+func GinSuccessWith(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, SuccessWith(data))
 }
 
-func FillResult(c *gin.Context, result interface{}) {
+func GinResult(c *gin.Context, result interface{}) {
 	if result != nil {
-		SuccessForWebWith(c, result)
+		GinSuccessWith(c, result)
 	} else {
-		FailedForWeb(c)
+		GinFailed(c)
 	}
 }

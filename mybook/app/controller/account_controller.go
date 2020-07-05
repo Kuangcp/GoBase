@@ -11,9 +11,9 @@ import (
 func ListAccount(c *gin.Context) {
 	accounts := service.ListAccounts()
 	result := util.Copy(accounts, new([]dto.AccountDTO)).(*[]dto.AccountDTO)
-	vo.SuccessForWebWith(c, result)
+	vo.GinSuccessWith(c, result)
 }
 
 func CalculateAccountBalance(c *gin.Context) {
-	vo.SuccessForWebWith(c, service.CalculateAccountBalance())
+	vo.GinSuccessWith(c, service.CalculateAccountBalance())
 }

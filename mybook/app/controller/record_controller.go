@@ -20,17 +20,26 @@ func CreateRecord(c *gin.Context) {
 	date := c.PostForm("date")
 	comment := c.PostForm("comment")
 
-	recordVO := param.CreateRecordParam{TypeId: typeId, AccountId: accountId, CategoryId: categoryId,
-		Amount: amount, Date: date, Comment: comment, TargetAccountId: targetAccountId}
+	recordVO := param.CreateRecordParam{
+		TypeId:          typeId,
+		AccountId:       accountId,
+		CategoryId:      categoryId,
+		Amount:          amount,
+		Date:            date,
+		Comment:         comment,
+		TargetAccountId: targetAccountId,
+	}
 
 	logger.Debug("createRecord: ", util.Json(recordVO))
 
 	record := service.CreateMultipleTypeRecord(recordVO)
 	if record != nil {
 		logger.Debug("createRecord result: ", util.Json(record))
+		vo.GinFailed(c)
+		return
 	}
 
-	vo.FillResult(c, record)
+	vo.GinResult(c, record)
 }
 
 func ListRecord(c *gin.Context) {
@@ -41,7 +50,7 @@ func ListRecord(c *gin.Context) {
 
 	query := param.QueryRecordParam{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
 	result := service.FindRecord(query)
-	vo.FillResult(c, result)
+	vo.GinResult(c, result)
 }
 
 func CategoryRecord(c *gin.Context) {
@@ -50,22 +59,22 @@ func CategoryRecord(c *gin.Context) {
 	typeId := c.Query("typeId")
 
 	result := service.CategoryRecord(startDate, endDate, typeId)
-	vo.FillResult(c, result)
+	vo.GinResult(c, result)
 }
 
 func CategoryDetailRecord(c *gin.Context) {
 	result := service.FindRecord(buildCategoryQueryParam(c))
-	vo.FillResult(c, result)
+	vo.GinResult(c, result)
 }
 
 func WeekCategoryDetailRecord(c *gin.Context) {
 	result := service.WeekCategoryRecord(buildCategoryQueryParam(c))
-	vo.FillResult(c, result)
+	vo.GinResult(c, result)
 }
 
 func MonthCategoryDetailRecord(c *gin.Context) {
 	result := service.MonthCategoryRecord(buildCategoryQueryParam(c))
-	vo.FillResult(c, result)
+	vo.GinResult(c, result)
 }
 
 func buildCategoryQueryParam(c *gin.Context) param.QueryRecordParam {

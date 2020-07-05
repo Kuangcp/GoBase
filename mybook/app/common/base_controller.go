@@ -18,18 +18,18 @@ func HealthCheck(c *gin.Context) {
 
 func ListRecordType(c *gin.Context) {
 	_, list := constant.GetRecordTypeMap()
-	vo.SuccessForWebWith(c, list)
+	vo.GinSuccessWith(c, list)
 }
 
 func ListCategoryType(c *gin.Context) {
 	_, list := constant.GetCategoryTypeMap()
-	vo.SuccessForWebWith(c, list)
+	vo.GinSuccessWith(c, list)
 }
 
 func ListCategory(c *gin.Context) {
 	recordType := c.Query("recordType")
 	if recordType == "" {
-		vo.SuccessForWebWith(c, service.ListCategories())
+		vo.GinSuccessWith(c, service.ListCategories())
 		return
 	}
 
@@ -37,8 +37,8 @@ func ListCategory(c *gin.Context) {
 	typeEnum := constant.GetCategoryTypeByRecordTypeIndex(int8(i))
 	if typeEnum != nil {
 		list := service.FindLeafCategoryByTypeId(typeEnum.Index)
-		vo.SuccessForWebWith(c, list)
+		vo.GinSuccessWith(c, list)
 	} else {
-		vo.FailedForWeb(c)
+		vo.GinFailed(c)
 	}
 }
