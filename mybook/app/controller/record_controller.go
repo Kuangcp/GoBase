@@ -30,13 +30,11 @@ func CreateRecord(c *gin.Context) {
 		TargetAccountId: targetAccountId,
 	}
 
-	logger.Debug("createRecord: ", util.Json(recordVO))
+	logger.Debug("createRecord param: ", util.Json(recordVO))
 
 	record := service.CreateMultipleTypeRecord(recordVO)
 	if record != nil {
-		logger.Debug("createRecord result: ", util.Json(record))
-		vo.GinFailed(c)
-		return
+		logger.Debug("createRecord success: ", util.Json(record))
 	}
 
 	vo.GinResult(c, record)

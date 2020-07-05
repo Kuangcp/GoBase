@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/mybook/app/common/constant"
 	"net/http"
+	"reflect"
 )
 
 type (
@@ -50,10 +51,11 @@ func GinSuccessWith(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, SuccessWith(data))
 }
 
+// https://stackoverflow.com/questions/13476349/check-for-nil-and-nil-interface-in-go
 func GinResult(c *gin.Context, result interface{}) {
-	if result != nil {
-		GinSuccessWith(c, result)
-	} else {
+	if result == nil || (reflect.ValueOf(result).Kind() == reflect.Ptr && reflect.ValueOf(result).IsNil()) {
 		GinFailed(c)
+	} else {
+		GinSuccessWith(c, result)
 	}
 }
