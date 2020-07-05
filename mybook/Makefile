@@ -14,7 +14,7 @@ clean:
 	rm -f bin/*
 
 run:
-	go build -o bin/${BINARY_NAME} && ./bin/${BINARY_NAME} -s
+	go build -o bin/${BINARY_NAME} && ./bin/${BINARY_NAME} -d -s
 
 buildAlpine:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/${BINARY_NAME}

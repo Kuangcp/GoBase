@@ -2,25 +2,25 @@ package constant
 
 const (
 	// 支出
-	CATEGORY_EXPENSE int8 = 1
+	CategoryExpense int8 = 1
 
 	// 收入
-	CATEGORY_INCOME int8 = 2
+	CategoryIncome int8 = 2
 
 	// 转账
-	CATEGORY_TRANSFER int8 = 3
+	CategoryTransfer int8 = 3
 )
 
-var E_CATEGORY_EXPENSE = NewBaseEnum(CATEGORY_EXPENSE, "支出")
-var E_CATEGORY_INCOME = NewBaseEnum(CATEGORY_INCOME, "收入")
-var E_CATEGORY_TRANSFER = NewBaseEnum(CATEGORY_TRANSFER, "转账")
+var ECategoryExpense = NewBaseEnum(CategoryExpense, "支出")
+var ECategoryIncome = NewBaseEnum(CategoryIncome, "收入")
+var ECategoryTransfer = NewBaseEnum(CategoryTransfer, "转账")
 
 var categoryTypeMap map[int8]*BaseEnum
 var categoryTypeList []*BaseEnum
 
 func GetCategoryTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
 	if categoryTypeMap == nil {
-		categoryTypeMap, categoryTypeList = MakeMap(E_CATEGORY_EXPENSE, E_CATEGORY_INCOME, E_CATEGORY_TRANSFER)
+		categoryTypeMap, categoryTypeList = MakeMap(ECategoryExpense, ECategoryIncome, ECategoryTransfer)
 	}
 	return categoryTypeMap, categoryTypeList
 }
@@ -42,13 +42,13 @@ func GetCategoryTypeByRecordTypeIndex(index int8) *BaseEnum {
 
 	switch recordType {
 	case ERecordExpense:
-		return E_CATEGORY_EXPENSE
+		return ECategoryExpense
 	case ERecordIncome:
-		return E_CATEGORY_INCOME
+		return ECategoryIncome
 	case ERecordTransferIn:
-		return E_CATEGORY_TRANSFER
+		return ECategoryTransfer
 	case ERecordTransferOut:
-		return E_CATEGORY_TRANSFER
+		return ECategoryTransfer
 	}
 	return nil
 }

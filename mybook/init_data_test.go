@@ -28,7 +28,7 @@ func TestInitCategory(t *testing.T) {
 	var types = []string{"日常餐", "文娱", "日常开支", "交通"}
 	for e := range types {
 		expenseIndex++
-		category := &domain.Category{Name: types[e], Leaf: false, TypeId: constant.CATEGORY_EXPENSE}
+		category := &domain.Category{Name: types[e], Leaf: false, TypeId: constant.CategoryExpense}
 		category.ID = uint(expenseIndex)
 		service.AddCategory(category)
 	}
@@ -38,7 +38,7 @@ func TestInitCategory(t *testing.T) {
 		"景点门票", "会员", "水电煤", "美容美发", "快递", "投资亏损", "电影", "保险", "打赏", "还贷", "己方借出"}
 	for e := range types {
 		expenseIndex++
-		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CATEGORY_EXPENSE}
+		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryExpense}
 		category.ID = uint(expenseIndex)
 		service.AddCategory(category)
 	}
@@ -48,7 +48,7 @@ func TestInitCategory(t *testing.T) {
 		"报销流入", "其他收入", "退款", "问题", "借贷", "对方归还"}
 	for e := range types {
 		incomeIndex++
-		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CATEGORY_INCOME}
+		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryIncome}
 		category.ID = uint(incomeIndex)
 		service.AddCategory(category)
 	}
@@ -57,7 +57,7 @@ func TestInitCategory(t *testing.T) {
 	types = []string{"转账", "加仓", "平仓"}
 	for e := range types {
 		transferIndex++
-		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CATEGORY_TRANSFER}
+		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryTransfer}
 		category.ID = uint(transferIndex)
 		service.AddCategory(category)
 	}
