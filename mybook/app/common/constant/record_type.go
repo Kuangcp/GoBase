@@ -2,26 +2,27 @@ package constant
 
 const (
 	// 支出
-	RECORD_EXPENSE int8 = 1
+	RecordExpense int8 = 1
 	// 收入
-	RECORD_INCOME int8 = 2
+	RecordIncome int8 = 2
 	// 转出
-	RECORD_TRANSFER_OUT int8 = 3
+	RecordTransferOut int8 = 3
 	// 转入
-	RECORD_TRANSFER_IN int8 = 4
+	RecordTransferIn int8 = 4
 )
 
-var E_RECORD_EXPENSE = NewBaseEnum(RECORD_EXPENSE, "支出")
-var E_RECORD_INCOME = NewBaseEnum(RECORD_INCOME, "收入")
-var E_RECORD_TRANSFER_OUT = NewBaseEnum(RECORD_TRANSFER_OUT, "转出")
-var E_RECORD_TRANSFER_IN = NewBaseEnum(RECORD_TRANSFER_IN, "转入")
+var ERecordExpense = NewBaseEnum(RecordExpense, "支出")
+var ERecordIncome = NewBaseEnum(RecordIncome, "收入")
+var ERecordTransferOut = NewBaseEnum(RecordTransferOut, "转出")
+var ERecordTransferIn = NewBaseEnum(RecordTransferIn, "转入")
 
 var recordTypeMap map[int8]*BaseEnum
 var recordTypeList []*BaseEnum
 
 func GetRecordTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
 	if recordTypeMap == nil {
-		recordTypeMap, recordTypeList = MakeMap(E_RECORD_EXPENSE, E_RECORD_INCOME, E_RECORD_TRANSFER_OUT, E_RECORD_TRANSFER_IN)
+		recordTypeMap, recordTypeList = MakeMap(ERecordExpense, ERecordIncome,
+			ERecordTransferOut, ERecordTransferIn)
 	}
 	return recordTypeMap, recordTypeList
 }
@@ -37,5 +38,9 @@ func IsValidRecordType(typeValue int8) bool {
 
 func IsTransferRecordType(typeValue int8) bool {
 	typeEnum := GetRecordTypeByIndex(typeValue)
-	return typeEnum != nil && (typeEnum == E_RECORD_TRANSFER_OUT || typeEnum == E_RECORD_TRANSFER_IN)
+	return typeEnum != nil && (typeEnum == ERecordTransferOut || typeEnum == ERecordTransferIn)
+}
+
+func IsExpense(index int8) bool {
+	return index == RecordExpense || index == RecordTransferOut
 }

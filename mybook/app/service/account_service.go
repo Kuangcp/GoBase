@@ -9,19 +9,19 @@ import (
 	"github.com/wonderivan/logger"
 )
 
-func ListAccounts() []domain.Account {
+func ListAccounts() []*domain.Account {
 	db := dal.GetDB()
 
-	var accounts []domain.Account
+	var accounts []*domain.Account
 	e := db.Find(&accounts).Error
 	util.RecordError(e)
 
 	return accounts
 }
 
-func ListAccountMap() map[uint]domain.Account {
+func ListAccountMap() map[uint]*domain.Account {
 	accounts := ListAccounts()
-	result := make(map[uint]domain.Account)
+	result := make(map[uint]*domain.Account)
 	for i := range accounts {
 		account := accounts[i]
 		result[account.ID] = account
@@ -58,8 +58,4 @@ func PrintAccount() {
 		fmt.Printf("  %d  %s "+chFormat+" %s\n", account.ID, account.Name, "",
 			constant.GetAccountTypeByIndex(account.TypeId).Name)
 	}
-}
-
-func AccountBalance(){
-
 }

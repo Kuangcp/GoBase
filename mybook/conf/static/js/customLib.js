@@ -53,21 +53,29 @@ function loadAccount(handleAccount) {
     });
 }
 
-// 账单多Tab面板
+// 账单 多Tab面板
 function recordPanel() {
     layer.tab({
         area: ['800px', '600px'],
-        tab: [{
-            title: '账单',
-            content: $("#record_tab").html()
-        }, {
-            title: '分类',
-            content: $("#month_tab").html()
-        }]
+        tab: [
+            {
+                title: '账单',
+                content: $("#record_tab").html()
+            }, {
+                title: '类别',
+                content: $("#category_tab").html()
+            }, {
+                title: '余额',
+                content: $("#account_balance").html()
+            },
+        ]
     });
 
     $("#queryRecordsBtn").on('click', loadRecordTables);
+
     $("#queryMonthRecordsBtn").on('click', loadCategoryTables);
+
+    $("#calculateAccountBalanceBtn").on('click', calculateAccountBalance);
 
     initDateArea();
 

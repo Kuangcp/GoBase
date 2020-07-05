@@ -14,6 +14,6 @@ func ListAccount(c *gin.Context) {
 	vo.SuccessForWebWith(c, result)
 }
 
-func AccountBalance(c *gin.Context) {
-	vo.FillResult(c, nil)
+func CalculateAccountBalance(c *gin.Context) {
+	vo.SuccessForWebWith(c, service.CalculateAccountBalance())
 }

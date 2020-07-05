@@ -41,13 +41,13 @@ func GetCategoryTypeByRecordTypeIndex(index int8) *BaseEnum {
 	}
 
 	switch recordType {
-	case E_RECORD_EXPENSE:
+	case ERecordExpense:
 		return E_CATEGORY_EXPENSE
-	case E_RECORD_INCOME:
+	case ERecordIncome:
 		return E_CATEGORY_INCOME
-	case E_RECORD_TRANSFER_IN:
+	case ERecordTransferIn:
 		return E_CATEGORY_TRANSFER
-	case E_RECORD_TRANSFER_OUT:
+	case ERecordTransferOut:
 		return E_CATEGORY_TRANSFER
 	}
 	return nil

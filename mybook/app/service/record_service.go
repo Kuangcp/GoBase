@@ -126,7 +126,7 @@ func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
 	}
 
 	if param.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
-		record.Type = constant.RECORD_TRANSFER_OUT
+		record.Type = constant.RecordTransferOut
 		accountId, e := strconv.ParseUint(param.TargetAccountId, 10, 64)
 		if e != nil {
 			logger.Error(e)
@@ -142,7 +142,7 @@ func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
 		}
 
 		target.AccountId = uint(accountId)
-		target.Type = constant.RECORD_TRANSFER_IN
+		target.Type = constant.RecordTransferIn
 
 		checkResult, _, _ := checkParam(target)
 		if checkResult.IsFailed() {
@@ -284,8 +284,11 @@ func MonthCategoryRecord(param param.QueryRecordParam) *[]vo.RecordWeekOrMonthVO
 	return buildCommonWeekOrMonthVO(endDateObj, records, util.MonthByDate, builder)
 }
 
-func buildCommonWeekOrMonthVO(endDateObj time.Time, records *[]dto.RecordDTO,
-	timeFun func(time.Time) int, builder func(dto.RecordDTO) *vo.RecordWeekOrMonthVO) *[]vo.RecordWeekOrMonthVO {
+func buildCommonWeekOrMonthVO(endDateObj time.Time,
+	records *[]dto.RecordDTO,
+	timeFun func(time.Time) int,
+	builder func(dto.RecordDTO) *vo.RecordWeekOrMonthVO) *[]vo.RecordWeekOrMonthVO {
+
 	var result []vo.RecordWeekOrMonthVO
 	var temp *vo.RecordWeekOrMonthVO = nil
 	var lastAdded *vo.RecordWeekOrMonthVO = nil
@@ -316,4 +319,35 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time, records *[]dto.RecordDTO,
 		return nil
 	}
 	return &result
+}
+
+func CalculateAccountBalance() []*domain.Account {
+	db := dal.GetDB()
+	var list []domain.Record
+
+	accountMap := ListAccountMap()
+	db.Where("1=1").Find(&list)
+	for _, account := range accountMap {
+		account.CurrentAmount = 0
+	}
+
+	for _, record := range list {
+		account := accountMap[record.AccountId]
+		if constant.IsExpense(record.Type) {
+			account.CurrentAmount -= record.Amount
+		} else {
+			account.CurrentAmount += record.Amount
+		}
+	}
+
+	for _, account := range accountMap {
+		affected := db.Model(&account).
+			Select("current_amount").
+			Updates(map[string]interface{}{
+				"current_amount": account.CurrentAmount,
+			}).RowsAffected
+		logger.Debug(account.Name, account.CurrentAmount, affected)
+	}
+
+	return ListAccounts()
 }

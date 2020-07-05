@@ -99,7 +99,6 @@ function categoryRecordGroupData() {
                 total += record.Amount;
                 $('#category_week_detail_table_body > tbody:last-child').append(line);
             }
-            console.log(total)
         } else {
             layer.msg('加载分类明细失败');
             console.log(data)

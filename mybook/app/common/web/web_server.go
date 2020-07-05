@@ -28,7 +28,7 @@ func Server(debug bool) {
 	router := gin.Default()
 	router.GET("/ping", common.HealthCheck)
 
-	// static file not package in
+	// 是否读取 statik 打包后的静态文件
 	if debug {
 		router.Static("/static", "./conf/static")
 		router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
@@ -63,7 +63,7 @@ func backendRouter(router *gin.Engine) {
 	router.GET(api+"/category/list", common.ListCategory)
 
 	router.GET(api+"/account/list", record.ListAccount)
-	router.GET(api+"/account/balance", record.AccountBalance)
+	router.GET(api+"/account/balance", record.CalculateAccountBalance)
 
 	router.POST(api+"/record/create", record.CreateRecord)
 	router.GET(api+"/record/list", record.ListRecord)

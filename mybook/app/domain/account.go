@@ -7,14 +7,14 @@ type (
 		gorm.Model
 
 		Name          string
-		InitAmount    int32
-		CurrentAmount int32
+		InitAmount    int
+		CurrentAmount int
 		TypeId        int8
 		// 账本id
 		BookId int
 
 		// 信用卡 最大额度
-		MaxAmount int32
+		MaxAmount int
 
 		// 信用卡 账单日
 		BillDay int8

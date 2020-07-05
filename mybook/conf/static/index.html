@@ -10,6 +10,7 @@
     <script src="js/customLib.js"></script>
     <script src="js/categoryTab.js"></script>
     <script src="js/recordTab.js"></script>
+    <script src="js/accountBalanceTab.js"></script>
 
     <link rel="stylesheet" href="css/numPad.css">
     <script src="js/numKeyBoard.js"></script>
@@ -32,8 +33,14 @@
         width: 80px;
         text-align: center;
     }
+
+    .account-balance th, td {
+        width: 180px;
+        text-align: center;
+    }
 </style>
 <body>
+
 <form id="recordForm" action="javascript:createRecord()">
     <div id="accountBlock" style="float: left; padding-right: 40px;">
         <label class="label">操作账户</label>
@@ -108,7 +115,7 @@
 </script>
 
 <!--分类数据-->
-<script type="text/html" id="month_tab">
+<script type="text/html" id="category_tab">
     <label class="label"> 开始时间 : </label>
     <input type="date" id="startDateMonth"/>
     <label class="label"> 结束时间 : </label>
@@ -133,6 +140,25 @@
             <th>金额</th>
             <th>时间</th>
             <th>明细数据</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</script>
+
+<script type="text/html" id="account_balance">
+    <table id="account_balance_table" class="account-balance">
+        <thead>
+        <tr>
+            <th>id</th>
+            <th>账户</th>
+            <th>初始金额</th>
+            <th>余额</th>
+            <th>
+                <button id="calculateAccountBalanceBtn">查询</button>
+            </th>
         </tr>
         </thead>
         <tbody>
