@@ -16,15 +16,7 @@ import (
 	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
 )
 
-func Server(_ []string) {
-	server(false)
-}
-
-func DebugServer(_ []string) {
-	server(true)
-}
-
-func server(staticDebug bool) {
+func Server(debug bool) {
 	appConfig := config.GetAppConfig()
 	if !appConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
@@ -36,7 +28,8 @@ func server(staticDebug bool) {
 	router := gin.Default()
 	router.GET("/ping", common.HealthCheck)
 
-	if staticDebug {
+	// static file not package in
+	if debug {
 		router.Static("/static", "./conf/static")
 		router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 	} else {
@@ -58,8 +51,9 @@ func server(staticDebug bool) {
 	// backend logic router
 	backendRouter(router)
 
-	logger.Info("Open http://localhost:10006")
-	e := router.Run(":" + strconv.Itoa(appConfig.Port))
+	port := strconv.Itoa(appConfig.Port)
+	logger.Info("Open http://localhost:" + port)
+	e := router.Run(":" + port)
 	logger.Error(e)
 }
 

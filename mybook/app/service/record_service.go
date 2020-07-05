@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/mybook/app/common/constant"
 	"github.com/kuangcp/gobase/mybook/app/common/dal"
 	"github.com/kuangcp/gobase/mybook/app/common/util"
@@ -75,86 +74,6 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO
 		return vo.Failed()
 	}
 	return vo.Success()
-}
-
-func CreateIncomeRecordByParams(params []string) {
-	cuibase.AssertParamCount(5, "参数缺失: -ri AccountId CategoryId Amount Date [Comment]")
-	p := params[2:]
-	p = append([]string{strconv.Itoa(int(constant.RECORD_INCOME))}, p...)
-	record := buildRecordByParams(p)
-	resultVO := CreateRecord(record)
-	if resultVO.IsFailed() {
-		logger.Error(resultVO)
-	}
-}
-
-func CreateExpenseRecordByParams(params []string) {
-	cuibase.AssertParamCount(5, "参数缺失: -re AccountId CategoryId Amount Date [Comment]")
-	p := params[2:]
-	p = append([]string{strconv.Itoa(int(constant.RECORD_EXPENSE))}, p...)
-	record := buildRecordByParams(p)
-	resultVO := CreateRecord(record)
-	if resultVO.IsFailed() {
-		logger.Error(resultVO)
-	}
-}
-
-func CreateTransRecordByParams(params []string) {
-	cuibase.AssertParamCount(6, "参数缺失: -rt OutAccountId CategoryId Amount Date InAccountId [Comment]")
-	p := params[2:6]
-	p = append([]string{strconv.Itoa(int(constant.RECORD_TRANSFER_OUT))}, p...)
-	record := buildRecordByParams(p)
-	if record == nil {
-		return
-	}
-	accountId, e := strconv.ParseUint(params[6], 10, 64)
-	if e != nil {
-		logger.Error(e)
-		return
-	}
-
-	now := time.Now()
-	record.TransferId = uint(now.UnixNano())
-
-	target := util.Copy(record, new(domain.Record)).(*domain.Record)
-	if target == nil {
-		return
-	}
-
-	target.AccountId = uint(accountId)
-	target.Type = constant.RECORD_TRANSFER_IN
-
-	checkResult, _, _ := checkParam(target)
-	if checkResult.IsFailed() {
-		logger.Error(checkResult)
-		return
-	}
-
-	createResult := createTransRecord(record, target)
-	if createResult.IsFailed() {
-		logger.Error(createResult)
-	}
-}
-
-func CreateRecordByParams(params []string) {
-	cuibase.AssertParamCount(6, "参数缺失: -r TypeId AccountId CategoryId Amount Date [Comment]")
-	record := buildRecordByParams(params[2:])
-	resultVO := CreateRecord(record)
-	if resultVO.IsFailed() {
-		logger.Error(resultVO)
-	}
-}
-
-// params: TypeId AccountId CategoryId Amount Date [Comment]
-func buildRecordByParams(params []string) *domain.Record {
-	comment := ""
-	if len(params) == 6 {
-		comment = params[5]
-	}
-
-	recordVO := param.CreateRecordParam{TypeId: params[0], AccountId: params[1], CategoryId: params[2],
-		Amount: params[3], Date: params[4], Comment: comment}
-	return BuildRecordByField(recordVO)
 }
 
 func BuildRecordByField(param param.CreateRecordParam) *domain.Record {

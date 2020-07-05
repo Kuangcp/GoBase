@@ -74,7 +74,7 @@ func ListCategoryMap() map[uint]domain.Category {
 	return result
 }
 
-func PrintCategory(_ []string) {
+func PrintCategory() {
 	db := dal.GetDB()
 	var lists []domain.Category
 	db.Where("1=1").Find(&lists)

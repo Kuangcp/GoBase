@@ -48,7 +48,7 @@ func FindAccountById(id uint) *domain.Account {
 	return &account
 }
 
-func PrintAccount(_ []string) {
+func PrintAccount() {
 	db := dal.GetDB()
 	var lists []domain.Account
 	db.Where("1=1").Order("id", false).Find(&lists)
