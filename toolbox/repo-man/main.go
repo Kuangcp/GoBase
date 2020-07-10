@@ -103,11 +103,10 @@ func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
 		}
 		content += color.Printf("%c%c    %s\n", fileStatus.Staging, fileStatus.Worktree, filePath)
 	}
-	fmt.Printf("▶ %-20s  %-50s %s ◀\n",
-		cuibase.Blue.PrintNoEnd(temps[len(temps)-1]),
-		cuibase.Green.PrintNoEnd(dir),
-		cuibase.Blue.Printf("M:%-3vA:%-3v", modify, add))
 
+	fmt.Println("▶ " + cuibase.Blue.Printf("%-17s", temps[len(temps)-1]) +
+		cuibase.Green.Printf("%-45s", dir) +
+		cuibase.Blue.Printf("M:%-3vA:%-3v", modify, add) + " ◀\n")
 	fmt.Println(content)
 }
 

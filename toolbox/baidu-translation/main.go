@@ -18,6 +18,13 @@ import (
 const BaiduApi = "https://fanyi-api.baidu.com/api/trans/vip/translate"
 
 type (
+	QueryParam struct {
+		Query     string
+		From      string
+		To        string
+		App       string
+		SecretKey string
+	}
 	ResultVO struct {
 		From        string     `json:"from"`
 		To          string     `json:"to"`
@@ -28,6 +35,10 @@ type (
 		Dst string `json:"dst"`
 	}
 )
+
+func (t *QueryParam) buildMD5(salt string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(t.App+t.Query+salt+t.SecretKey)))
+}
 
 var info = cuibase.HelpInfo{
 	Description: "Translation between Chinese and English By Baidu API",
@@ -45,7 +56,14 @@ var info = cuibase.HelpInfo{
 			Comment: "Translate en to zh",
 			Handler: func(params []string) {
 				cuibase.AssertParamCount(4, "param less")
-				query(fmt.Sprintf("%v", params[4:]), "en", "zh", params[2], params[3])
+				param := QueryParam{
+					Query:     fmt.Sprintf("%v", params[4:]),
+					From:      "en",
+					To:        "zh",
+					App:       params[2],
+					SecretKey: params[3],
+				}
+				query(param)
 			},
 		}, {
 			Verb:    "-ze",
@@ -53,7 +71,14 @@ var info = cuibase.HelpInfo{
 			Comment: "Translate zh to en",
 			Handler: func(params []string) {
 				cuibase.AssertParamCount(4, "param less")
-				query(fmt.Sprintf("%v", params[4:]), "zh", "en", params[2], params[3])
+				param := QueryParam{
+					Query:     fmt.Sprintf("%v", params[4:]),
+					From:      "zh",
+					To:        "en",
+					App:       params[2],
+					SecretKey: params[3],
+				}
+				query(param)
 			},
 		},
 	}}
@@ -70,19 +95,19 @@ func anyEmpty(value ...string) bool {
 	return false
 }
 
-func query(query string, fromLang string, toLang string, appId string, secretKey string) {
-	if anyEmpty(query, fromLang, toLang, appId, secretKey) {
+func query(param QueryParam) {
+	if anyEmpty(param.Query, param.From, param.To, param.App, param.SecretKey) {
 		log.Fatalln(cuibase.Red.Println(" Param error "))
 	}
 
 	salt := strconv.Itoa(rand.Intn(65535))
 
-	queryStr := "?from=" + fromLang
-	queryStr += "&to=" + toLang
-	queryStr += "&appid=" + appId
-	queryStr += "&q=" + url.QueryEscape(query)
+	queryStr := "?from=" + param.From
+	queryStr += "&to=" + param.To
+	queryStr += "&appid=" + param.App
+	queryStr += "&q=" + url.QueryEscape(param.Query)
 	queryStr += "&salt=" + salt
-	queryStr += "&sign=" + fmt.Sprintf("%x", md5.Sum([]byte(appId+query+salt+secretKey)))
+	queryStr += "&sign=" + param.buildMD5(salt)
 
 	resp, err := http.Get(BaiduApi + queryStr)
 	cuibase.CheckIfError(err)
