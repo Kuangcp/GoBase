@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -244,6 +245,9 @@ func ListenDevice(params []string) {
 		return
 	}
 
+	if !strings.Contains(event, "event") {
+		event = "event" + event
+	}
 	device, _ := Open("/dev/input/" + event)
 	if device == nil {
 		return
