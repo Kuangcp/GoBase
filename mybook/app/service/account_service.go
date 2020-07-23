@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+
 	"github.com/kuangcp/gobase/mybook/app/common/constant"
 	"github.com/kuangcp/gobase/mybook/app/common/dal"
 	"github.com/kuangcp/gobase/mybook/app/common/util"
@@ -55,7 +56,7 @@ func PrintAccount() {
 	for i := range lists {
 		account := lists[i]
 		chFormat := util.BuildCHCharFormat(12, account.Name)
-		fmt.Printf("  %d  %s "+chFormat+" %s\n", account.ID, account.Name, "",
-			constant.GetAccountTypeByIndex(account.TypeId).Name)
+		fmt.Printf("  %d  %s "+chFormat+" %-7d %s \n", account.ID, account.Name, "",
+			account.CurrentAmount, constant.GetAccountTypeByIndex(account.TypeId).Name)
 	}
 }
