@@ -16,5 +16,5 @@
 
 - Tips 
 
-> 找出可执行文件 加入 .gitignore `find . -type f -exec file {} + | grep "ELF*" | sed 's/^.\///g' | awk '{print $1}' | sed 's/://g'`
+> 找出可执行文件 加入 .gitignore `find . -type f -exec file {} + | grep " ELF " | sed 's/^.\///g' | awk '{print $1}' | sed 's/://g'`
 

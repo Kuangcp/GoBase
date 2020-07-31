@@ -86,5 +86,10 @@ func buildAppConfig() {
 		port = DefaultPort
 	}
 	debug := viper.GetBool("debug")
-	config = &AppConfig{Path: dbFile, DriverName: driver, Debug: debug, Port: port}
+	config = &AppConfig{
+		Path:       dbFile,
+		DriverName: driver,
+		Debug:      debug,
+		Port:       port,
+	}
 }
