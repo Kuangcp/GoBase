@@ -1,4 +1,4 @@
-module baidu-translation
+module github.com/kuangcp/gobase/toolbox/baidu-translation
 
 go 1.14
 

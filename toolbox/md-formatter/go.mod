@@ -1,4 +1,4 @@
-module md-formatter
+module github.com/kuangcp/gobase/toolbox/md-formatter
 
 go 1.14
 

@@ -1,4 +1,4 @@
-module pretty-json
+module github.com/kuangcp/gobase/toolbox/pretty-json
 
 go 1.13
 

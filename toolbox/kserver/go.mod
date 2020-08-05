@@ -1,4 +1,4 @@
-module kserver
+module github.com/kuangcp/gobase/toolbox/kserver
 
 go 1.13
 

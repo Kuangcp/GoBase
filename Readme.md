@@ -5,12 +5,12 @@
 
 | 安装 | 简介 |
 |:----|:----|
-| go get github.com/kuangcp/gobase/tool-box/kserver |  静态文件 web服务器
-| go get github.com/kuangcp/gobase/tool-box/count | 统计汉字工具
-| go get github.com/kuangcp/gobase/tool-box/pretty-json | json 高亮 格式化
+| go get github.com/kuangcp/gobase/toolbox/kserver |  静态文件 web服务器
+| go get github.com/kuangcp/gobase/toolbox/count | 统计汉字工具
+| go get github.com/kuangcp/gobase/toolbox/pretty-json | json 高亮 格式化
 | go get github.com/kuangcp/gobase/mybook | 记账工具
-| go get github.com/kuangcp/gobase/tool-box/keyboard-man | 按键监听 统计
-| go get github.com/kuangcp/gobase/tool-box/baidu-translation | 命令行 百度翻译
+| go get github.com/kuangcp/gobase/toolbox/keyboard-man | 按键监听 统计
+| go get github.com/kuangcp/gobase/toolbox/baidu-translation | 命令行 百度翻译
 
 ************************
 

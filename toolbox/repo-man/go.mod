@@ -1,4 +1,4 @@
-module repo-man
+module github.com/kuangcp/gobase/toolbox/repo-man
 
 go 1.14
 
