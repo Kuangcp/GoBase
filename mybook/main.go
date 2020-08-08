@@ -6,25 +6,38 @@ import (
 	"github.com/kuangcp/gobase/mybook/app/service"
 )
 
-func main() {
-	update := flag.Bool("u", true, "generate or update database structure")
-	printCategory := flag.Bool("pc", false, "print all category")
-	printAccount := flag.Bool("pa", false, "print all account")
-	webServer := flag.Bool("s", false, "start web server")
-	debug := flag.Bool("d", false, "debug with static file")
+var (
+	updateDb      bool
+	printCategory bool
+	printAccount  bool
+	webServer     bool
+	debugStatic   bool
+)
 
+func init() {
+	flag.BoolVar(&updateDb, "u", true, "create or update database table")
+	flag.BoolVar(&printCategory, "pc", false, "print all category")
+	flag.BoolVar(&printAccount, "pa", false, "print all account")
+	flag.BoolVar(&webServer, "s", false, "start web server")
+	flag.BoolVar(&debugStatic, "d", false, "debug for static file")
+}
+
+func main() {
 	flag.Parse()
 
-	if *update {
+	if updateDb {
 		service.AutoMigrateAll()
 	}
-	if *printCategory {
+
+	if printCategory {
 		service.PrintCategory()
 	}
-	if *printAccount {
+
+	if printAccount {
 		service.PrintAccount()
 	}
-	if *webServer {
-		web.Server(*debug)
+
+	if webServer {
+		web.Server(debugStatic)
 	}
 }

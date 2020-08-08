@@ -55,6 +55,7 @@ function appendCategoryRecord(data) {
         $('#category_tables > tbody:last-child').append(line);
         total += record.Amount;
     }
+    $('#categoryTotal').html('￥' + buildFormatPrice(total))
 }
 
 // 分类详情数据
