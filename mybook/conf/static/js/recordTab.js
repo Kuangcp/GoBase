@@ -31,7 +31,7 @@ function appendRecordRow(data, targetBlock) {
         line += '<td style="text-align: right"> ' + record.AccountName + '</td>';
         line += '<td>' + record.RecordTypeName + '</td>';
         line += '<td>' + record.CategoryName + '</td>';
-        line += '<td style="text-align: right">' + record.Amount / 100.0 + ' </td>';
+        line += '<td style="text-align: right">' + buildFormatPrice(record.Amount)+ ' </td>';
         line += '<td>' + record.Comment + '</td>';
         line += '<td style="width: 140px">' + record.RecordTime + '</td>';
 
@@ -40,5 +40,5 @@ function appendRecordRow(data, targetBlock) {
         total += record.Amount;
     }
 
-    $("#total").html('￥' + total / 100.0)
+    $("#total").html('￥' + buildFormatPrice(total))
 }

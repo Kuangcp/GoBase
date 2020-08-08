@@ -17,6 +17,22 @@ function loadCategoryTables() {
     });
 }
 
+function buildFormatPrice(amount) {
+    first = parseInt(amount / 100)
+    secon = amount % 100
+    if (secon < 0) {
+        secon *= -1
+    }
+    if (secon === 0) {
+        secon = '00';
+    } else if (secon < 10) {
+        secon += '0';
+    }
+
+
+    return first + '.' + secon
+}
+
 // 分类数据
 function appendCategoryRecord(data) {
     let total = 0;
@@ -27,7 +43,7 @@ function appendCategoryRecord(data) {
         line += '<td>' + record.CategoryId + '</td>';
         line += '<td>' + record.RecordTypeName + '</td>';
         line += '<td style="text-align: right;width: 30px;"> ' + record.Name + '</td>';
-        line += '<td style="text-align: right;width: 30px;">' + record.Amount / 100.0 + ' </td>';
+        line += '<td style="text-align: right;width: 30px;">' + buildFormatPrice(record.Amount) + ' </td>';
         line += '<td style="text-align: right;width: 120px;">' + record.Date + '</td>';
         line += '<td style="width: 50px;"> <button onclick="loadCategoryRecordDetail('
             + record.CategoryId + ', \'' + record.Name + '\')">详情</button></td>';
@@ -93,7 +109,7 @@ function categoryRecordGroupData() {
                 let line = "<tr>";
                 line += '<td style="text-align: center;width: 110px;">' + record.StartDate + '</td>';
                 line += '<td style="text-align: center;width: 110px;">' + record.EndDate + '</td>';
-                line += '<td style="text-align: right;width: 30px;">' + record.Amount / 100.0 + '</td>';
+                line += '<td style="text-align: right;width: 30px;">' + buildFormatPrice(record.Amount) + '</td>';
                 line += '</tr>';
 
                 total += record.Amount;

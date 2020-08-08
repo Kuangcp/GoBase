@@ -215,7 +215,7 @@ func FindRecord(param param.QueryRecordParam) *[]dto.RecordDTO {
 }
 
 // 帐目按类型分组 typeId record_type
-func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.MonthCategoryRecordDTO {
+func CategoryRecord(startDate string, endDate string, typeId string) *[]interface{} {
 	db := dal.GetDB()
 	var result []dto.MonthCategoryRecordDTO
 	query := db.Table("record").
@@ -232,12 +232,25 @@ func CategoryRecord(startDate string, endDate string, typeId string) *[]dto.Mont
 		return nil
 	}
 
+	var temp []interface{}
 	for i := range result {
 		recordDTO := &result[i]
+
 		recordDTO.Date = startDate
 		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).Name
+
+		temp = append(temp, recordDTO)
 	}
-	return &result
+
+	util.Sort(util.SortWrapper{
+		Data: temp,
+		CompareLessFunc: func(a interface{}, b interface{}) bool {
+			return a.(*dto.MonthCategoryRecordDTO).Amount < b.(*dto.MonthCategoryRecordDTO).Amount
+		},
+		Reverse: true,
+	})
+
+	return &temp
 }
 
 func WeekCategoryRecord(param param.QueryRecordParam) *[]vo.RecordWeekOrMonthVO {

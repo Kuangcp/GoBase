@@ -21,7 +21,7 @@ type (
 		Name           string
 		Type           int8
 		RecordTypeName string
-		Amount         string
+		Amount         int
 		Date           string
 	}
 )
