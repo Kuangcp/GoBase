@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/kuangcp/gobase/mybook/app/common/config"
 	"github.com/kuangcp/gobase/mybook/app/common/web"
 	"github.com/kuangcp/gobase/mybook/app/service"
 )
@@ -12,6 +13,7 @@ var (
 	printAccount  bool
 	webServer     bool
 	debugStatic   bool
+	port          int
 )
 
 func init() {
@@ -20,6 +22,7 @@ func init() {
 	flag.BoolVar(&printAccount, "pa", false, "print all account")
 	flag.BoolVar(&webServer, "s", false, "start web server")
 	flag.BoolVar(&debugStatic, "d", false, "debug for static file")
+	flag.IntVar(&port, "p", config.DefaultPort, "web server port")
 }
 
 func main() {
@@ -38,6 +41,6 @@ func main() {
 	}
 
 	if webServer {
-		web.Server(debugStatic)
+		web.Server(debugStatic, port)
 	}
 }

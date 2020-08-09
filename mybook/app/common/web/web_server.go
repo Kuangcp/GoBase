@@ -16,12 +16,12 @@ import (
 	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
 )
 
-func Server(debug bool) {
+func Server(debug bool, port int) {
 	appConfig := config.GetAppConfig()
 	if !appConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	if appConfig.Path == config.DefaultPath {
+	if appConfig.Path == config.DefaultDBPath {
 		service.AutoMigrateAll()
 	}
 
@@ -49,28 +49,37 @@ func Server(debug bool) {
 	})
 
 	// backend logic router
-	backendRouter(router)
+	registerRouter(router)
 
-	port := strconv.Itoa(appConfig.Port)
-	logger.Info("Open http://localhost:" + port)
-	e := router.Run(":" + port)
+	// start web server by specific port
+	var finalPort string
+	if port == config.DefaultPort {
+		finalPort = strconv.Itoa(appConfig.Port)
+	} else {
+		finalPort = strconv.Itoa(port)
+	}
+	logger.Info("Open http://localhost:" + finalPort)
+	e := router.Run(":" + finalPort)
 	logger.Error(e)
 }
 
-func backendRouter(router *gin.Engine) {
-	api := "/api"
-	router.GET(api+"/category/typeList", common.ListCategoryType)
-	router.GET(api+"/category/list", common.ListCategory)
+func registerRouter(router *gin.Engine) {
+	router.GET(buildApi("/category/typeList"), common.ListCategoryType)
+	router.GET(buildApi("/category/list"), common.ListCategory)
 
-	router.GET(api+"/account/list", record.ListAccount)
-	router.GET(api+"/account/balance", record.CalculateAccountBalance)
+	router.GET(buildApi("/account/list"), record.ListAccount)
+	router.GET(buildApi("/account/balance"), record.CalculateAccountBalance)
 
-	router.POST(api+"/record/create", record.CreateRecord)
-	router.GET(api+"/record/list", record.ListRecord)
+	router.POST(buildApi("/record/create"), record.CreateRecord)
+	router.GET(buildApi("/record/list"), record.ListRecord)
 
-	router.GET(api+"/record/category", record.CategoryRecord)
+	router.GET(buildApi("/record/category"), record.CategoryRecord)
 
-	router.GET(api+"/record/categoryDetail", record.CategoryDetailRecord)
-	router.GET(api+"/record/categoryWeekDetail", record.WeekCategoryDetailRecord)
-	router.GET(api+"/record/categoryMonthDetail", record.MonthCategoryDetailRecord)
+	router.GET(buildApi("/record/categoryDetail"), record.CategoryDetailRecord)
+	router.GET(buildApi("/record/categoryWeekDetail"), record.WeekCategoryDetailRecord)
+	router.GET(buildApi("/record/categoryMonthDetail"), record.MonthCategoryDetailRecord)
+}
+
+func buildApi(path string) string {
+	return config.DefaultUrlPath + path
 }

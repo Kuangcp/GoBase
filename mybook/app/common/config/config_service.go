@@ -17,9 +17,10 @@ type (
 	}
 )
 
-var DefaultPath = "/tmp/bookkeeping.db"
+var DefaultDBPath = "/tmp/bookkeeping.db"
 var DefaultDriver = "sqlite3"
-var DefaultPort = 9096
+var DefaultPort = 9090
+var DefaultUrlPath = "/api"
 
 var config *AppConfig
 
@@ -75,7 +76,7 @@ func configLogger() {
 func buildAppConfig() {
 	dbFile := viper.GetString("db.file")
 	if dbFile == "" {
-		dbFile = DefaultPath
+		dbFile = DefaultDBPath
 	}
 	driver := viper.GetString("driver")
 	if driver == "" {
