@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,7 +14,7 @@ import (
 
 var info = cuibase.HelpInfo{
 	Description: "Record key input, show rank",
-	Version:     "1.0.0",
+	Version:     "1.0.2",
 	VerbLen:     -3,
 	ParamLen:    -14,
 	Params: []cuibase.ParamInfo{
@@ -22,79 +23,144 @@ var info = cuibase.HelpInfo{
 			Param:   "",
 			Comment: "Help info",
 		}, {
-			Verb:    "-s",
-			Param:   "<device>",
-			Comment: "[root] Listen keyboard with last device or specific device",
-			Handler: ListenDevice,
-		}, {
 			Verb:    "-l",
 			Param:   "",
 			Comment: "[root] List keyboard device",
-			Handler: func(_ []string) {
-				devices, _ := ListInputDevices()
-				for _, dev := range devices {
-					printKeyDevice(dev)
-				}
-			},
 		}, {
 			Verb:    "-ld",
 			Param:   "",
 			Comment: "[root] List all device",
-			Handler: func(_ []string) {
-				devices, _ := ListInputDevices()
-				for _, dev := range devices {
-					fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
-				}
-			},
 		}, {
 			Verb:    "-p",
 			Param:   "",
 			Comment: "[root] Print key map",
-			Handler: PrintKeyMap,
 		}, {
 			Verb:    "-ca",
 			Param:   "",
 			Comment: "[root] Cache key map",
-			Handler: CacheKeyMap,
+		}, {
+			Verb:    "-s",
+			Param:   "",
+			Comment: "[root] Listen keyboard with last device or specific device",
 		}, {
 			Verb:    "-d",
-			Param:   "<x> <duration>",
+			Param:   "",
 			Comment: "Print daily total by before x day ago and duration",
-			Handler: func(params []string) {
-				printAnyByDay(params, printTotalByDate)
-			},
 		}, {
 			Verb:    "-dr",
-			Param:   "<x> <duration>",
+			Param:   "",
 			Comment: "Print daily rank by before x day ago and duration",
-			Handler: func(params []string) {
-				printAnyByDay(params, printRankByDate)
-			},
+		}, {
+			Verb:    "-t",
+			Param:   "<x>,<duration>",
+			Comment: "Before x day ago and duration. For -d and -dr",
+		}, {
+			Verb:    "-e",
+			Param:   "device",
+			Comment: "Device. For -p -ca -s",
 		},
 	}}
 
-func main() {
-	cuibase.RunActionFromInfo(info, nil)
+var (
+	help               bool
+	printKeyMap        bool
+	cacheKeyMap        bool
+	listKeyboardDevice bool
+	listAllDevice      bool
+	listenDevice       bool
+	day                bool
+	dayRank            bool
+
+	targetDevice string
+	timePair     string
+)
+
+func init() {
+	flag.BoolVar(&help, "h", false, "")
+	flag.BoolVar(&printKeyMap, "p", false, "")
+	flag.StringVar(&targetDevice, "e", "", "specific device")
+	flag.BoolVar(&cacheKeyMap, "ca", false, "")
+	flag.BoolVar(&listKeyboardDevice, "l", false, "")
+	flag.BoolVar(&listAllDevice, "la", false, "")
+	flag.BoolVar(&listenDevice, "s", false, "")
+	flag.BoolVar(&day, "d", false, "")
+	flag.BoolVar(&dayRank, "dr", false, "")
+	flag.StringVar(&timePair, "t", "1", "")
 }
 
-func printAnyByDay(params []string, action func(time time.Time, conn *redis.Client)) {
+func main() {
+	flag.Parse()
+
+	targetDevice = formatEvent(targetDevice)
+
+	if help {
+		info.PrintHelp()
+		return
+	}
+
+	if listKeyboardDevice {
+		devices, _ := ListInputDevices()
+		for _, dev := range devices {
+			printKeyDevice(dev)
+		}
+		return
+	}
+
+	if listAllDevice {
+		devices, _ := ListInputDevices()
+		for _, dev := range devices {
+			fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
+		}
+		return
+	}
+
+	if cacheKeyMap {
+		CacheKeyMap(targetDevice)
+		return
+	}
+
+	if listenDevice {
+		ListenDevice(targetDevice)
+	}
+
+	// simple query info
+
+	if printKeyMap {
+		PrintKeyMap(targetDevice)
+	}
+
+	if day {
+		printDayInfoByDay(timePair, printTotalByDate)
+	}
+
+	if dayRank {
+		printDayInfoByDay(timePair, printRankByDate)
+	}
+}
+
+func printDayInfoByDay(timeSegment string, action func(time time.Time, conn *redis.Client)) {
+	timePairs := strings.Split(timeSegment, ",")
+
 	connection := initConnection()
+	if connection == nil {
+		return
+	}
 	defer closeConnection(connection)
 
 	now := time.Now()
 	indexDay := 0
 	durationDay := 1
-	if len(params) == 3 {
-		day, err := strconv.Atoi(params[2])
+	if len(timePairs) == 1 {
+		day, err := strconv.Atoi(timePairs[0])
 		cuibase.CheckIfError(err)
 		indexDay = day - 1
 		durationDay = day
-	} else if len(params) == 4 {
-		day, err := strconv.Atoi(params[2])
+	} else if len(timePairs) == 2 {
+		day, err := strconv.Atoi(timePairs[0])
 		cuibase.CheckIfError(err)
 		indexDay = day
 
-		durationDay, err = strconv.Atoi(params[3])
+		durationDay, err = strconv.Atoi(timePairs[1])
 		cuibase.CheckIfError(err)
 	}
 	for i := 0; i < durationDay; i++ {
@@ -148,8 +214,8 @@ func printTotalByDate(time time.Time, conn *redis.Client) {
 }
 
 //CacheKeyMap to redis
-func CacheKeyMap(params []string) {
-	device := getDevice(params)
+func CacheKeyMap(targetDevice string) {
+	device := getDevice(targetDevice)
 	if device == nil {
 		return
 	}
@@ -158,6 +224,9 @@ func CacheKeyMap(params []string) {
 		return
 	}
 	conn := initConnection()
+	if conn == nil {
+		return
+	}
 	defer closeConnection(conn)
 	for _, code := range codes {
 		conn.HSet(KeyMap, strconv.Itoa(code.Code), code.Name[4:])
@@ -166,8 +235,8 @@ func CacheKeyMap(params []string) {
 }
 
 //PrintKeyMap show
-func PrintKeyMap(params []string) {
-	device := getDevice(params)
+func PrintKeyMap(targetDevice string) {
+	device := getDevice(targetDevice)
 	if device == nil {
 		return
 	}
@@ -177,19 +246,26 @@ func PrintKeyMap(params []string) {
 	fmt.Println(device.Capabilities)
 }
 
-func getDevice(params []string) *InputDevice {
+func getDevice(targetDevice string) *InputDevice {
 	connection := initConnection()
+	if connection == nil {
+		return nil
+	}
 	defer closeConnection(connection)
 
 	event := ""
-	if len(params) < 3 {
+	if targetDevice == "" {
 		last := connection.Get(LastInputEvent)
 		if last == nil {
 			return nil
 		}
-		event = last.Val()
+		if !strings.Contains(last.Val(), "event") {
+			event = "event" + last.Val()
+		} else {
+			event = last.Val()
+		}
 	} else {
-		event = params[2]
+		event = targetDevice
 	}
 	if event == "" {
 		fmt.Println(cuibase.Red.Print("Please select inputDevice"))
@@ -222,33 +298,37 @@ func printKeyDevice(dev *InputDevice) {
 	}
 }
 
-// ListenDevice listen and record
-func ListenDevice(params []string) {
-	var event = ""
-	if len(params) > 2 {
-		event = params[2]
+func formatEvent(input string) string {
+	if !strings.Contains(input, "event") {
+		return "event" + input
 	}
+	return input
+}
 
+// ListenDevice listen and record
+func ListenDevice(targetDevice string) {
 	connection := initConnection()
+	if connection == nil {
+		return
+	}
 	defer closeConnection(connection)
 
-	if event == "" {
+	if targetDevice == "" {
 		last := connection.Get(LastInputEvent)
 		if last == nil {
 			return
 		}
-		event = last.Val()
+		targetDevice = last.Val()
 	} else {
-		connection.GetSet(LastInputEvent, event)
+		connection.GetSet(LastInputEvent, targetDevice)
 	}
-	if event == "" {
+	if targetDevice == "" {
 		return
 	}
 
-	if !strings.Contains(event, "event") {
-		event = "event" + event
-	}
-	device, _ := Open("/dev/input/" + event)
+	targetDevice = formatEvent(targetDevice)
+
+	device, _ := Open("/dev/input/" + targetDevice)
 	if device == nil {
 		return
 	}
@@ -272,7 +352,7 @@ func ListenDevice(params []string) {
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	today := time.Now()
 	todayStr := today.Format("2006:01:02")
-	flag := false
+	matchFlag := false
 	for _, inputEvent := range inputEvents {
 		if inputEvent.Code == 0 {
 			continue
@@ -283,7 +363,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			continue
 		}
 
-		flag = true
+		matchFlag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
 		conn.ZIncr(GetRankKey(today), redis.Z{Score: 1, Member: event.Scancode})
 		conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: todayStr})
@@ -291,16 +371,23 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 		// actual store us not ns
 		conn.ZAdd(GetDetailKey(today), redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000})
 	}
-	return flag
+	return matchFlag
 }
 
 func initConnection() *redis.Client {
-	target := redis.NewClient(&redis.Options{
+	conn := redis.NewClient(&redis.Options{
 		Addr:     "127.0.0.1:6667",
 		Password: "",
 		DB:       5,
 	})
-	return target
+
+	result, err := conn.Ping().Result()
+	if err != nil {
+		fmt.Println(result, err)
+		return nil
+	}
+
+	return conn
 }
 
 func closeDevice(device *InputDevice) {
