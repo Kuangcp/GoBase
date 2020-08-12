@@ -35,7 +35,7 @@
     }
 
     .account-balance th, td {
-        width: 180px;
+        width: 160px;
         text-align: center;
     }
 </style>
@@ -79,9 +79,8 @@
 
 <!--明细数据 Tab-->
 <script type="text/html" id="record_tab">
-    <label class="label"> 开始时间 : </label>
     <input type="date" id="startDate"/>
-    <label class="label"> 结束时间 : </label>
+    <label class="label"> >>> </label>
     <input type="date" id="endDate"/>
     <select id="typeId">
         <option>全部</option>
@@ -116,9 +115,8 @@
 
 <!--分类数据 Tab-->
 <script type="text/html" id="category_tab">
-    <label class="label"> 开始时间 : </label>
     <input type="date" id="startDateMonth"/>
-    <label class="label"> 结束时间 : </label>
+    <label class="label"> >>> </label>
     <input type="date" id="endDateMonth"/>
 
     <select id="typeIdMonth">
@@ -144,12 +142,14 @@
         </tr>
         </thead>
         <tbody>
-
         </tbody>
     </table>
 </script>
 
 <script type="text/html" id="account_balance">
+    <button id="calculateAccountBalanceBtn">计算余额</button>
+    <span id="totalBalance"></span>
+
     <table id="account_balance_table" class="account-balance">
         <thead>
         <tr>
@@ -157,9 +157,6 @@
             <th>账户</th>
             <th>初始金额</th>
             <th>余额</th>
-            <th>
-                <button id="calculateAccountBalanceBtn">查询</button>
-            </th>
         </tr>
         </thead>
         <tbody>
@@ -210,5 +207,7 @@
     $("#amount").on('click', numPanel);
     $("#recordBtn").on('click', recordPanel);
 </script>
+
+<div id="recordResult"></div>
 </body>
 </html>

@@ -341,7 +341,7 @@ func CalculateAccountBalance() []*domain.Account {
 	accountMap := ListAccountMap()
 	db.Where("1=1").Find(&list)
 	for _, account := range accountMap {
-		account.CurrentAmount = 0
+		account.CurrentAmount = account.InitAmount
 	}
 
 	for _, record := range list {

@@ -11,10 +11,14 @@ function calculateAccountBalance() {
         }
 
         console.log('/account/balance', data);
+        let total = 0
         for (i in data.Data) {
             // handleAccount(data.Data[i])
-            appendAccountRecordRow(data.Data[i], 'account_balance_table');
+            let record = data.Data[i];
+            total += record.CurrentAmount
+            appendAccountRecordRow(record, 'account_balance_table');
         }
+        $("#totalBalance").html('￥' + buildFormatPrice(total))
     });
 }
 

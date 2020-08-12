@@ -21,6 +21,7 @@ func TestInitAccount(t *testing.T) {
 	service.AddAccount(&domain.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0})
 	service.AddAccount(&domain.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0})
 	service.AddAccount(&domain.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0})
+	service.AddAccount(&domain.Account{TypeId: constant.AccountDeposit, Name: "应收款", InitAmount: 0})
 }
 
 func TestInitCategory(t *testing.T) {

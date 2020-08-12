@@ -101,6 +101,7 @@ function createRecord() {
     $.post(app + "/record/create", $("#recordForm").serialize(), function (data) {
         if (data.Success) {
             layer.msg('记账成功');
+            $("#recordResult").append($("#recordForm").serialize()+"<br/>")
         } else {
             layer.msg('记账失败');
             console.log(data)
