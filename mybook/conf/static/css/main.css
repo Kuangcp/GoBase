@@ -1,0 +1,22 @@
+.label {
+    color: #1E9FFF;
+}
+
+body {
+    height: 97%;
+}
+
+.record-table td {
+    width: 80px;
+    text-align: center;
+}
+
+.record-table th {
+    width: 80px;
+    text-align: center;
+}
+
+.account-balance th, td {
+    width: 160px;
+    text-align: center;
+}

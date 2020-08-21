@@ -12,35 +12,14 @@
     <script src="js/recordTab.js"></script>
     <script src="js/accountBalanceTab.js"></script>
 
+    <link rel="stylesheet" href="css/main.css">
+
     <link rel="stylesheet" href="css/numPad.css">
     <script src="js/numKeyBoard.js"></script>
 </head>
-<style>
-    .label {
-        color: #1E9FFF;
-    }
-
-    body {
-        height: 97%;
-    }
-
-    .record-table td {
-        width: 80px;
-        text-align: center;
-    }
-
-    .record-table th {
-        width: 80px;
-        text-align: center;
-    }
-
-    .account-balance th, td {
-        width: 160px;
-        text-align: center;
-    }
-</style>
 <body>
 
+<!--记录账单-->
 <form id="recordForm" action="javascript:createRecord()">
     <div id="accountBlock" style="float: left; padding-right: 40px;">
         <label class="label">操作账户</label>
@@ -79,6 +58,14 @@
 
 <!--明细数据 Tab-->
 <script type="text/html" id="record_tab">
+    <div>
+        <span><button onclick="setDate('startDate', 'endDate', 7)">周</button></span>
+        <span><button onclick="setDate('startDate', 'endDate', 30)">月</button></span>
+    </div>
+
+    <button onclick="setDate('startDate', 'endDate', 90)">季</button>
+    <button onclick="setDate('startDate', 'endDate', 180)">半</button>
+
     <input type="date" id="startDate"/>
     <label class="label"> >>> </label>
     <input type="date" id="endDate"/>
@@ -115,6 +102,14 @@
 
 <!--分类数据 Tab-->
 <script type="text/html" id="category_tab">
+    <div>
+        <span><button onclick="setDate('startDateMonth', 'endDateMonth', 7)">周</button></span>
+        <span><button onclick="setDate('startDateMonth', 'endDateMonth', 30)">月</button></span>
+    </div>
+
+    <button onclick="setDate('startDateMonth', 'endDateMonth', 90)">季</button>
+    <button onclick="setDate('startDateMonth', 'endDateMonth', 180)">半</button>
+
     <input type="date" id="startDateMonth"/>
     <label class="label"> >>> </label>
     <input type="date" id="endDateMonth"/>

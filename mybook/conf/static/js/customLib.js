@@ -13,6 +13,15 @@ function numPanel() {
     });
 }
 
+function setDate(startStr, endStr, preDay) {
+    let startEle = $("#" + startStr);
+    let endEle = $("#" + endStr);
+
+    let now = new Date();
+    let date = new Date(now - preDay * 24 * 3600 * 1000);
+    startEle.val(date.toISOString().slice(0, 10));
+    endEle.val(now.toISOString().slice(0, 10));
+}
 
 function buildWithDefaultDate(startStr, endStr, preDay) {
     let startEle = $("#" + startStr);
