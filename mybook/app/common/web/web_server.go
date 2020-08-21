@@ -16,7 +16,7 @@ import (
 	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
 )
 
-func Server(debug bool, port int) {
+func Server(debugStatic bool, port int) {
 	appConfig := config.GetAppConfig()
 	if !appConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
@@ -29,7 +29,7 @@ func Server(debug bool, port int) {
 	router.GET("/ping", common.HealthCheck)
 
 	// 是否读取 statik 打包后的静态文件
-	if debug {
+	if debugStatic {
 		router.Static("/static", "./conf/static")
 		router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 	} else {
