@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 	"net/http"
@@ -10,10 +11,14 @@ import (
 	"github.com/kuangcp/gobase/cuibase"
 )
 
+var (
+	help bool
+	port int
+)
 var info = cuibase.HelpInfo{
 	Description: "Start simple http server on current path",
-	Version:     "1.0.1",
-	VerbLen:     -5,
+	Version:     "1.0.3",
+	VerbLen:     -3,
 	ParamLen:    -5,
 	Params: []cuibase.ParamInfo{
 		{
@@ -23,30 +28,13 @@ var info = cuibase.HelpInfo{
 		}, {
 			Verb:    "-p",
 			Param:   "port",
-			Comment: "specific port",
-			Handler: RunWithPort,
+			Comment: "web server port",
 		},
 	}}
 
-func readPortByParam(param []string) string {
-	var port = 8099
-	if len(param) > 1 {
-		// so happy error handle
-		temp, err := strconv.Atoi(param[1])
-		if err != nil {
-			log.Print("Please input correct port [1, 65535].")
-			log.Fatal("input:"+param[1]+". ", err)
-		}
-		port = temp
-	}
-	portStr := strconv.Itoa(port)
-	if port > 65535 || port == 0 {
-		log.Fatal("Please input correct port [1, 65535]. input:" + portStr)
-	}
-	if port < 1024 {
-		log.Print("Please run by root ")
-	}
-	return portStr
+func init() {
+	flag.BoolVar(&help, "h", false, "")
+	flag.IntVar(&port, "p", 8989, "")
 }
 
 func getInternalIp() string {
@@ -66,30 +54,34 @@ func getInternalIp() string {
 	return ""
 }
 
-func RunWithPort(params []string) {
-	portStr := readPortByParam(params[1:])
-	run(portStr)
-}
-
-func RunWithDefaultPort(_ []string) {
-	run("8889")
-}
-
-func run(port string) {
+func startWebServer(port int) {
 	internalIp := getInternalIp()
 
 	// 绑定路由到当前目录
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	log.Printf("%v Start webserver success on http://127.0.0.1:%v %vhttp://%v:%v %v ",
+	log.Printf("Start webserver success. %vhttp://127.0.0.1:%v %vhttp://%v:%v %v ",
 		cuibase.Green, port, cuibase.Yellow, internalIp, port, cuibase.End)
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
 }
 
 func main() {
-	cuibase.RunActionFromInfo(info, RunWithDefaultPort)
+	flag.Parse()
+	if help {
+		info.PrintHelp()
+		return
+	}
+
+	if port > 65535 || port == 0 {
+		log.Fatalf("Please input correct port [1, 65535]. input:%v", port)
+	}
+	if port < 1024 {
+		log.Print("Please run by root.")
+	}
+
+	startWebServer(port)
 }
