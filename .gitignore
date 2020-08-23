@@ -1,9 +1,4 @@
-*
-
-!*.*
-!*/
 !.gitignore
-
 
 .vscode/
 
@@ -25,3 +20,8 @@
 *.out
 *.log
 statik.go
+
+## binaray
+mybook/mybook
+kserver/kserver
+recycle-bin/recycle-bin
