@@ -14,7 +14,7 @@ clean:
 	rm -f bin/mybook
 
 run:
-	statik -f -src=conf/static/ -dest app/common/ && go build -o bin/${BINARY_NAME} && ./bin/${BINARY_NAME} -s
+	sh run.sh
 
 buildAlpine:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/${BINARY_NAME}

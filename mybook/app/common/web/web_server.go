@@ -1,19 +1,23 @@
 package web
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/mybook/app/common"
 	"github.com/kuangcp/gobase/mybook/app/common/config"
-	record "github.com/kuangcp/gobase/mybook/app/controller"
+	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
+	"github.com/kuangcp/gobase/mybook/app/controller"
 	"github.com/kuangcp/gobase/mybook/app/service"
 	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
-
-	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
 )
 
 func Server(debugStatic bool, port int) {
@@ -58,26 +62,59 @@ func Server(debugStatic bool, port int) {
 	} else {
 		finalPort = strconv.Itoa(port)
 	}
-	logger.Info("Open http://localhost:" + finalPort)
-	e := router.Run(":" + finalPort)
-	logger.Error(e)
+
+	srv := &http.Server{
+		Addr:    ":" + finalPort,
+		Handler: router,
+	}
+
+	// Initializing the server in a goroutine so that
+	// it won't block the graceful shutdown handling below
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 5 seconds.
+	quit := make(chan os.Signal)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be catch, so don't need add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Warn("Shutting down server...")
+
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
+	logger.Warn("Server exiting")
 }
 
 func registerRouter(router *gin.Engine) {
+	// 分类
 	router.GET(buildApi("/category/typeList"), common.ListCategoryType)
 	router.GET(buildApi("/category/list"), common.ListCategory)
 
-	router.GET(buildApi("/account/list"), record.ListAccount)
-	router.GET(buildApi("/account/balance"), record.CalculateAccountBalance)
+	// 账户
+	router.GET(buildApi("/account/list"), controller.ListAccount)
+	router.GET(buildApi("/account/balance"), controller.CalculateAccountBalance)
 
-	router.POST(buildApi("/record/create"), record.CreateRecord)
-	router.GET(buildApi("/record/list"), record.ListRecord)
+	// 账单
+	router.POST(buildApi("/record/create"), controller.CreateRecord)
+	router.GET(buildApi("/record/list"), controller.ListRecord)
 
-	router.GET(buildApi("/record/category"), record.CategoryRecord)
+	router.GET(buildApi("/record/category"), controller.CategoryRecord)
 
-	router.GET(buildApi("/record/categoryDetail"), record.CategoryDetailRecord)
-	router.GET(buildApi("/record/categoryWeekDetail"), record.WeekCategoryDetailRecord)
-	router.GET(buildApi("/record/categoryMonthDetail"), record.MonthCategoryDetailRecord)
+	router.GET(buildApi("/record/categoryDetail"), controller.CategoryDetailRecord)
+	router.GET(buildApi("/record/categoryWeekDetail"), controller.WeekCategoryDetailRecord)
+	router.GET(buildApi("/record/categoryMonthDetail"), controller.MonthCategoryDetailRecord)
 }
 
 func buildApi(path string) string {
