@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,12 @@ var (
 
 	targetDevice string
 	timePair     string
+
+	// redis
+	host string
+	port string
+	pwd  string
+	db   int
 )
 
 func init() {
@@ -86,13 +93,17 @@ func init() {
 	flag.BoolVar(&day, "d", false, "")
 	flag.BoolVar(&dayRank, "dr", false, "")
 	flag.StringVar(&timePair, "t", "1", "")
+
+	flag.StringVar(&host, "host", "127.0.0.1", "")
+	flag.StringVar(&port, "port", "6667", "")
+	flag.StringVar(&pwd, "pwd", "", "")
+	flag.IntVar(&db, "db", 5, "")
 }
 
 func main() {
 	flag.Parse()
 
 	targetDevice = formatEvent(targetDevice)
-
 	if help {
 		info.PrintHelp()
 		return
@@ -121,6 +132,7 @@ func main() {
 
 	if listenDevice {
 		ListenDevice(targetDevice)
+		return
 	}
 
 	// simple query info
@@ -299,7 +311,7 @@ func printKeyDevice(dev *InputDevice) {
 }
 
 func formatEvent(input string) string {
-	if !strings.Contains(input, "event") {
+	if input != "" && !strings.Contains(input, "event") {
 		return "event" + input
 	}
 	return input
@@ -326,6 +338,7 @@ func ListenDevice(targetDevice string) {
 		return
 	}
 
+	fmt.Println("try listen", targetDevice)
 	targetDevice = formatEvent(targetDevice)
 
 	device, _ := Open("/dev/input/" + targetDevice)
@@ -344,7 +357,7 @@ func ListenDevice(targetDevice string) {
 		handleResult := handleEvents(inputEvents, connection)
 		if !success && handleResult {
 			success = handleResult
-			fmt.Println(cuibase.Green.Println("  listen success. "))
+			fmt.Println(cuibase.Green.Println("listen success. "))
 		}
 	}
 }
@@ -365,20 +378,35 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 
 		matchFlag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
-		conn.ZIncr(GetRankKey(today), redis.Z{Score: 1, Member: event.Scancode})
-		conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: todayStr})
-
+		result, err := conn.ZIncr(GetRankKey(today), redis.Z{Score: 1, Member: event.Scancode}).Result()
+		if err != nil {
+			fmt.Println("zincr: ", result, err)
+			closeConnection(conn)
+			os.Exit(1)
+		}
+		result, err = conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: todayStr}).Result()
+		if err != nil {
+			fmt.Println("zincr: ", result, err)
+			closeConnection(conn)
+			os.Exit(1)
+		}
 		// actual store us not ns
-		conn.ZAdd(GetDetailKey(today), redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000})
+		var num int64 = 0
+		num, err = conn.ZAdd(GetDetailKey(today), redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000}).Result()
+		if err != nil {
+			fmt.Println("zadd: ", num, err)
+			closeConnection(conn)
+			os.Exit(1)
+		}
 	}
 	return matchFlag
 }
 
 func initConnection() *redis.Client {
 	conn := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6667",
-		Password: "",
-		DB:       5,
+		Addr:     host + ":" + port,
+		Password: pwd,
+		DB:       db,
 	})
 
 	result, err := conn.Ping().Result()

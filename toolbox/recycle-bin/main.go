@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -117,7 +119,9 @@ func deleteFiles(files ...string) {
 			return
 		}
 
-		cmd := exec.Command("mv", filepath, trashDir+"/"+filepath)
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		logger.Info(filepath, trashDir+"/"+filepath)
+		cmd := exec.Command("mv", filepath, trashDir+"/"+filepath+"."+timestamp)
 		var out bytes.Buffer
 
 		cmd.Stdout = &out
