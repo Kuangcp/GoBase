@@ -11,7 +11,7 @@ import (
 var info = cuibase.HelpInfo{
 	Description: "Record key input, show rank",
 	Version:     "1.0.2",
-	VerbLen:     -3,
+	VerbLen:     -5,
 	ParamLen:    -14,
 	Params: []cuibase.ParamInfo{
 		{
@@ -21,23 +21,23 @@ var info = cuibase.HelpInfo{
 		}, {
 			Verb:    "-l",
 			Param:   "",
-			Comment: "[root] List keyboard device",
+			Comment: cuibase.Red.Print("root") + " List keyboard device",
 		}, {
 			Verb:    "-ld",
 			Param:   "",
-			Comment: "[root] List all device",
+			Comment: cuibase.Red.Print("root") + " List all device",
 		}, {
 			Verb:    "-p",
 			Param:   "",
-			Comment: "[root] Print key map",
+			Comment: cuibase.Red.Print("root") + " Print key map",
 		}, {
 			Verb:    "-ca",
 			Param:   "",
-			Comment: "[root] Cache key map",
+			Comment: cuibase.Red.Print("root") + " Cache key map",
 		}, {
 			Verb:    "-s",
 			Param:   "",
-			Comment: "[root] Listen keyboard with last device or specific device",
+			Comment: cuibase.Red.Print("root") + " Listen keyboard with last device or specific device",
 		}, {
 			Verb:    "-d",
 			Param:   "",
@@ -54,6 +54,30 @@ var info = cuibase.HelpInfo{
 			Verb:    "-e",
 			Param:   "device",
 			Comment: "Device. For -p -ca -s",
+		}, {
+			Verb:    "-host",
+			Param:   "",
+			Comment: "Redis host",
+		}, {
+			Verb:    "-port",
+			Param:   "",
+			Comment: "Redis port",
+		}, {
+			Verb:    "-pwd",
+			Param:   "",
+			Comment: "Redis pwd",
+		}, {
+			Verb:    "-db",
+			Param:   "",
+			Comment: "Redis db",
+		}, {
+			Verb:    "-ws",
+			Param:   "",
+			Comment: "Start Web Server",
+		}, {
+			Verb:    "-wp",
+			Param:   "port",
+			Comment: "Web Server port. default 9902",
 		},
 	}}
 
@@ -97,7 +121,7 @@ func init() {
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
 
-	flag.StringVar(&webPort, "webPort", "9902", "")
+	flag.StringVar(&webPort, "wp", "9902", "")
 	flag.BoolVar(&webServer, "ws", false, "")
 }
 
