@@ -75,6 +75,9 @@ var (
 	port string
 	pwd  string
 	db   int
+
+	webPort   string
+	webServer bool
 )
 
 func init() {
@@ -93,6 +96,9 @@ func init() {
 	flag.StringVar(&port, "port", "6667", "")
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
+
+	flag.StringVar(&webPort, "webPort", "9902", "")
+	flag.BoolVar(&webServer, "ws", false, "")
 }
 
 func main() {
@@ -106,11 +112,15 @@ func main() {
 	app.InitConnection(options)
 	defer app.CloseConnection()
 
-	targetDevice = app.FormatEvent(targetDevice)
 	if help {
 		info.PrintHelp()
 		return
+	} else if webServer {
+		app.Server(true, webPort)
+		return
 	}
+
+	targetDevice = app.FormatEvent(targetDevice)
 
 	if listKeyboardDevice {
 		app.ListAllKeyBoardDevice()
