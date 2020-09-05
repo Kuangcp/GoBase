@@ -2,112 +2,109 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8">
-	<title>分析按键</title>
+    <meta charset="UTF-8">
+    <title>分析按键</title>
 
-	<script src="/static/js/lib/jquery.v3.3.1.min.js"></script>
-	<script src="/static/js/config.js"></script>
-	<script src="/static/js/lib/echart.v4.0.4.min.js"></script>
-	<script src="/static/js/layer/layer.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/4.8.0/echarts.min.js"></script>
 
-	<style>
+    <!-- <script src="/static/js/lib/jquery.v3.3.1.min.js"></script>  -->
+    <!--  <script src="/static/js/lib/echart.v4.0.4.min.js"></script> -->
+
+    <script src="/static/js/config.js"></script>
+
+    <style>
         .line-chart {
             width: 100%;
-            height: 500px;
-            top: 50px;
-			overflow: hidden;
+            height: 900px;
+            top: 2px;
+            overflow: hidden;
         }
 
         .nav {
             text-align: center;
-            top: 30px;
         }
 
         .nav input {
             width: 50px;
         }
-	</style>
+    </style>
 </head>
 <body>
 <div class="nav">
-	周期:&nbsp;&nbsp;<input id="period" value="112" type="number" min="0"/>
-	偏移:&nbsp;&nbsp;<input id="offset" value="111" type="number" min="0"/>
-	top:&nbsp;&nbsp;<input id="top" value="111" type="number" min="0"/>
-	<button onclick="generate()">生成图表</button>
-	<br>
-	将每天的 top 取并集, 绘制图表
+    向前偏移N天，绘制天数M的图表 (键：将每天的最多键P个取并集)<br>
+    天数:&nbsp;&nbsp;<input id="period" value="122" type="number" min="0"/>
+    偏移:&nbsp;&nbsp;<input id="offset" value="120" type="number" min="0"/>
+    top:&nbsp;&nbsp;<input id="top" value="111" type="number" min="0"/>
+    Type:&nbsp;&nbsp;<select id="chartType">
+        <option value="bar">柱</option>
+        <option value="line">线</option>
+    </select>
+    <button onclick="generate()">生成图表</button>
 </div>
 
 <div id="main" class="line-chart"></div>
 <script type="text/javascript">
-    const chart = echarts.init(document.getElementById('main'));
+    let chart = echarts.init(document.getElementById('main'));
 
-    option = {
-        title: {
-            text: ''
-        },
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'cross',
-                label: {
-                    backgroundColor: '#6a7985'
+    function generate() {
+        chart.dispose()
+        chart = echarts.init(document.getElementById('main'));
+        let option = {
+            title: {
+                text: ''
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    label: {
+                        backgroundColor: '#6a7985'
+                    }
                 }
-            }
-        },
-        legend: {
-            data: []
-        },
-        toolbox: {
-            feature: {
-                saveAsImage: {}
-            }
-        },
-        grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true
-        },
-        xAxis: [{
-            type: 'category',
-            boundaryGap: false,
-            data: []
-        }],
-        yAxis: [{
-            type: 'value'
-        }],
-        series: []
-    };
-
-    chart.setOption(option);
-
-    function  generate() {
-        chart.clear()
-        chart.setOption({
-            xAxis: {
-                data: []
             },
             legend: {
                 data: []
             },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: [{
+                type: 'category',
+                boundaryGap: false,
+                data: []
+            }],
+            yAxis: [{
+                type: 'value'
+            }],
             series: []
-        });
+        };
+
+        chart.setOption(option);
 
         let period = $("#period").val();
         let offset = $("#offset").val();
         let top = $("#top").val();
+        let chartType = $("#chartType").val();
 
-        let queryStr = '?length=' + period + '&offset=' + offset + '&top=' + top
-        handleGet('/recentDay' + queryStr, function (recentDayResult) {
-            handleGet('/hotKey' + queryStr, function (hotKey) {
+        let queryStr = '?length=' + period + '&offset=' + offset + '&top=' + top + "&type=" + chartType
+        handleGet('/recentDay' + queryStr, function (recentDay) {
+            handleGet('/hotKey' + queryStr, function (hotKeyName) {
                 handleGet('/hotKeyWithNum' + queryStr, function (hotKeyData) {
                     chart.setOption({
                         xAxis: {
-                            data: recentDayResult.Data
+                            data: recentDay.Data
                         },
                         legend: {
-                            data: hotKey.Data
+                            data: hotKeyName.Data
                         },
                         series: hotKeyData.Data
                     });

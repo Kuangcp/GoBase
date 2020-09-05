@@ -28,6 +28,13 @@ type (
 		Stack string `json:"stack"`
 		Data  []int  `json:"data"`
 	}
+
+	QueryParam struct {
+		Length    int
+		Offset    int
+		Top       int64
+		ChartType string
+	}
 )
 
 func Server(debugStatic bool, port string) {
@@ -94,11 +101,11 @@ func buildPath(path string) string {
 }
 
 func HotKey(c *gin.Context) {
-	lengthInt, offsetInt, topInt := parseParam(c)
+	param := parseParam(c)
 
-	dayList := buildDayList(lengthInt, offsetInt)
+	dayList := buildDayList(param.Length, param.Offset)
 
-	hotKey := hotKey(dayList, topInt)
+	hotKey := hotKey(dayList, param.Top)
 
 	nameMap := keyNameMap(hotKey)
 	var result []string
@@ -110,10 +117,10 @@ func HotKey(c *gin.Context) {
 }
 
 func RecentDay(c *gin.Context) {
-	lengthInt, offsetInt, _ := parseParam(c)
+	param := parseParam(c)
 
 	var result []string
-	dayList := buildDayList(lengthInt, offsetInt)
+	dayList := buildDayList(param.Length, param.Offset)
 	for _, day := range dayList {
 		score, err := GetConnection().ZScore(TotalCount, day).Result()
 		if err != nil {
@@ -127,12 +134,12 @@ func RecentDay(c *gin.Context) {
 }
 
 func HotKeyWithNum(c *gin.Context) {
-	lengthInt, offsetInt, topInt := parseParam(c)
+	param := parseParam(c)
 
-	dayList := buildDayList(lengthInt, offsetInt)
+	dayList := buildDayList(param.Length, param.Offset)
 	//logger.Info(dayList)
 
-	hotKey := hotKey(dayList, topInt)
+	hotKey := hotKey(dayList, param.Top)
 	//logger.Info(hotKey)
 
 	nameMap := keyNameMap(hotKey)
@@ -147,7 +154,7 @@ func HotKeyWithNum(c *gin.Context) {
 			}
 			hitPreDay = append(hitPreDay, int(result))
 		}
-		vo := LineVO{Type: ChartsType, Stack: "all", Name: nameMap[key], Data: hitPreDay}
+		vo := LineVO{Type: param.ChartType, Stack: "all", Name: nameMap[key], Data: hitPreDay}
 		lines = append(lines, vo)
 	}
 	//logger.Info(lines)
@@ -155,10 +162,11 @@ func HotKeyWithNum(c *gin.Context) {
 	GinSuccessWith(c, lines)
 }
 
-func parseParam(c *gin.Context) (int, int, int64) {
+func parseParam(c *gin.Context) QueryParam {
 	length := c.Query("length")
 	offset := c.Query("offset")
 	top := c.Query("top")
+	chartType := c.Query("type")
 
 	if length == "" {
 		length = "7"
@@ -176,7 +184,16 @@ func parseParam(c *gin.Context) (int, int, int64) {
 	cuibase.CheckIfError(err)
 	topInt, err := strconv.ParseInt(top, 10, 64)
 	cuibase.CheckIfError(err)
-	return lengthInt, offsetInt, topInt
+
+	if chartType == "" {
+		chartType = "bar"
+	}
+	return QueryParam{
+		Length:    lengthInt,
+		Offset:    offsetInt,
+		Top:       topInt,
+		ChartType: chartType,
+	}
 }
 
 func keyNameMap(keyCode map[string]bool) map[string]string {

@@ -8,16 +8,6 @@ function handleGet(url, success, fail) {
     request.fail(fail);
 }
 
-function handlePost(url, data, success, fail) {
-    const request = $.post({
-        url: app + '' + url,
-        contentType: "application/json",
-        data: JSON.stringify(data)
-    });
-    request.done(success);
-    request.fail(fail);
-}
-
 function tip(area, title, content){
     layer.open({
         type: 1,
