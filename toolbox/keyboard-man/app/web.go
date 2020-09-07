@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/cuibase"
+	_ "github.com/kuangcp/gobase/keyboard-man/app/statik"
 	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
 )

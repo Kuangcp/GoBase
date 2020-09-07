@@ -152,7 +152,7 @@ func main() {
 		info.PrintHelp()
 		return
 	} else if webServer {
-		app.Server(true, webPort)
+		app.Server(debug, webPort)
 		return
 	}
 
