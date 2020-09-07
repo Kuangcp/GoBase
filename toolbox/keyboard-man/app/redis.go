@@ -24,14 +24,21 @@ var connection *redis.Client
 
 //GetRankKey by time
 func GetRankKey(time time.Time) string {
-	today := time.Format("2006:01:02")
-	return Prefix + today + ":rank"
+	return GetRankKeyByString(time.Format("2006:01:02"))
+}
+
+//GetRankKeyByString
+func GetRankKeyByString(time string) string {
+	return Prefix + time + ":rank"
 }
 
 //GetDetailKey by time
 func GetDetailKey(time time.Time) string {
-	today := time.Format("2006:01:02")
-	return Prefix + today + ":detail"
+	return GetDetailKeyByString(time.Format("2006:01:02"))
+}
+
+func GetDetailKeyByString(time string) string {
+	return Prefix + time + ":detail"
 }
 
 func GetConnection() *redis.Client {

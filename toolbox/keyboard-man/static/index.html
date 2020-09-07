@@ -11,8 +11,6 @@
 	<!-- <script src="/static/js/lib/jquery.v3.3.1.min.js"></script>  -->
 	<!--  <script src="/static/js/lib/echart.v4.0.4.min.js"></script> -->
 
-	<script src="/static/js/config.js"></script>
-
 	<style>
         .line-chart {
             width: 100%;
@@ -33,22 +31,43 @@
 <body>
 <div class="nav">
 	向前偏移X天，绘制天数Y的图表 (键：将每天的最多键并集运算得到最终参与展示的键值)<br>
-	天数:&nbsp;&nbsp;<input id="period" value="122" type="number" min="0"/>
-	偏移:&nbsp;&nbsp;<input id="offset" value="120" type="number" min="0"/>
-	top:&nbsp;&nbsp;<input id="top" value="111" type="number" min="0"/>
-	Type:&nbsp;&nbsp;<select id="chartType">
+
+	<label for="period">天数:</label>
+	<input id="period" value="122" type="number" min="0"/>
+
+	<label for="offset">偏移: </label>
+	<input id="offset" value="120" type="number" min="0"/>
+
+	<label for="top">top:</label>
+	<input id="top" value="111" type="number" min="0"/>
+
+	<label for="chartType">Type:</label>
+	<select id="chartType">
 		<option value="bar">柱</option>
 		<option value="line">线</option>
 	</select>
+
 	<button onclick="generate()">生成图表</button>
 </div>
 
 <div id="main" class="line-chart"></div>
 <script type="text/javascript">
-    let chart = echarts.init(document.getElementById('main'));
+    const app = '/api/v1.0';
+
+    function handleGet(url, success, fail) {
+        const request = $.get({
+            url: app + '' + url,
+        });
+        request.done(success);
+        request.fail(fail);
+    }
+
+    let chart = null
 
     function generate() {
-        chart.dispose()
+        if (chart !== null) {
+            chart.dispose()
+        }
         chart = echarts.init(document.getElementById('main'));
         let option = {
             title: {

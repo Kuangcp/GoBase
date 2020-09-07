@@ -11,5 +11,3 @@
 	- value: 时间戳(微秒) score: keyCode
 - **zset** `keyboard:年:月:日:rank`
 	- value: keyCode score: 当日按键数
-
-- [ ] web 可视化

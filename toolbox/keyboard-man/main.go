@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/cuibase"
@@ -102,6 +104,8 @@ var (
 
 	webPort   string
 	webServer bool
+
+	debug bool
 )
 
 func init() {
@@ -123,6 +127,7 @@ func init() {
 
 	flag.StringVar(&webPort, "wp", "9902", "")
 	flag.BoolVar(&webServer, "ws", false, "")
+	flag.BoolVar(&debug, "debug", false, "")
 }
 
 func main() {
@@ -135,6 +140,13 @@ func main() {
 	}
 	app.InitConnection(options)
 	defer app.CloseConnection()
+
+	debugPort := "8891"
+	if debug {
+		go func() {
+			http.ListenAndServe("0.0.0.0:"+debugPort, nil)
+		}()
+	}
 
 	if help {
 		info.PrintHelp()

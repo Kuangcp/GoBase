@@ -17,16 +17,13 @@ import (
 	"github.com/wonderivan/logger"
 )
 
-var (
-	ChartsType = "bar"
-)
-
 type (
 	LineVO struct {
-		Type  string `json:"type"`
-		Name  string `json:"name"`
-		Stack string `json:"stack"`
-		Data  []int  `json:"data"`
+		Type      string `json:"type"`
+		Name      string `json:"name"`
+		Stack     string `json:"stack"`
+		Data      []int  `json:"data"`
+		AreaStyle string `json:"areaStyle"`
 	}
 
 	QueryParam struct {
@@ -158,14 +155,19 @@ func HotKeyWithNum(c *gin.Context) {
 	for _, key := range sortHotKeys {
 		var hitPreDay []int
 		for _, day := range dayList {
-			result, err := GetConnection().ZScore(Prefix+day+":rank", key).Result()
+			result, err := GetConnection().ZScore(GetRankKeyByString(day), key).Result()
 			if err != nil {
 				result = 0
 			}
 			hitPreDay = append(hitPreDay, int(result))
 		}
-		vo := LineVO{Type: param.ChartType, Stack: "all", Name: nameMap[key], Data: hitPreDay}
-		lines = append(lines, vo)
+		lines = append(lines, LineVO{
+			Type:      param.ChartType,
+			Name:      nameMap[key],
+			Data:      hitPreDay,
+			Stack:     "all",
+			AreaStyle: "{normal: {}}",
+		})
 	}
 	//logger.Info(lines)
 
@@ -208,7 +210,7 @@ func parseParam(c *gin.Context) QueryParam {
 
 func keyNameMap(keyCode map[string]bool) map[string]string {
 	result := make(map[string]string)
-	for k, _ := range keyCode {
+	for k := range keyCode {
 		name, err := GetConnection().HGet(KeyMap, k).Result()
 		cuibase.CheckIfError(err)
 		result[k] = name
@@ -219,8 +221,12 @@ func keyNameMap(keyCode map[string]bool) map[string]string {
 func hotKey(dayList []string, top int64) map[string]bool {
 	keyCodeMap := make(map[string]bool)
 	for i := range dayList {
-		result, err := GetConnection().ZRevRange(Prefix+dayList[i]+":rank", 0, top).Result()
-		cuibase.CheckIfError(err)
+		result, err := GetConnection().ZRevRange(GetRankKeyByString(dayList[i]), 0, top).Result()
+		if err != nil {
+			logger.Warn("get hot key error", err)
+			continue
+		}
+
 		for _, s := range result {
 			keyCodeMap[s] = true
 		}
