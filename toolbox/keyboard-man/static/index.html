@@ -2,18 +2,18 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>分析按键</title>
+	<meta charset="UTF-8">
+	<title>分析按键</title>
 
-    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/4.8.0/echarts.min.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/echarts/4.8.0/echarts.min.js"></script>
 
-    <!-- <script src="/static/js/lib/jquery.v3.3.1.min.js"></script>  -->
-    <!--  <script src="/static/js/lib/echart.v4.0.4.min.js"></script> -->
+	<!-- <script src="/static/js/lib/jquery.v3.3.1.min.js"></script>  -->
+	<!--  <script src="/static/js/lib/echart.v4.0.4.min.js"></script> -->
 
-    <script src="/static/js/config.js"></script>
+	<script src="/static/js/config.js"></script>
 
-    <style>
+	<style>
         .line-chart {
             width: 100%;
             height: 900px;
@@ -28,19 +28,19 @@
         .nav input {
             width: 50px;
         }
-    </style>
+	</style>
 </head>
 <body>
 <div class="nav">
-    向前偏移N天，绘制天数M的图表 (键：将每天的最多键P个取并集)<br>
-    天数:&nbsp;&nbsp;<input id="period" value="122" type="number" min="0"/>
-    偏移:&nbsp;&nbsp;<input id="offset" value="120" type="number" min="0"/>
-    top:&nbsp;&nbsp;<input id="top" value="111" type="number" min="0"/>
-    Type:&nbsp;&nbsp;<select id="chartType">
-        <option value="bar">柱</option>
-        <option value="line">线</option>
-    </select>
-    <button onclick="generate()">生成图表</button>
+	向前偏移X天，绘制天数Y的图表 (键：将每天的最多键并集运算得到最终参与展示的键值)<br>
+	天数:&nbsp;&nbsp;<input id="period" value="122" type="number" min="0"/>
+	偏移:&nbsp;&nbsp;<input id="offset" value="120" type="number" min="0"/>
+	top:&nbsp;&nbsp;<input id="top" value="111" type="number" min="0"/>
+	Type:&nbsp;&nbsp;<select id="chartType">
+		<option value="bar">柱</option>
+		<option value="line">线</option>
+	</select>
+	<button onclick="generate()">生成图表</button>
 </div>
 
 <div id="main" class="line-chart"></div>

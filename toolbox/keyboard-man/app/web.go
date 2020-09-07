@@ -133,6 +133,15 @@ func RecentDay(c *gin.Context) {
 	GinSuccessWith(c, result)
 }
 
+func getKeys(m map[string]bool) []string {
+	// 数组默认长度为map长度,后面append时,不需要重新申请内存和拷贝,效率较高
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func HotKeyWithNum(c *gin.Context) {
 	param := parseParam(c)
 
@@ -143,9 +152,10 @@ func HotKeyWithNum(c *gin.Context) {
 	//logger.Info(hotKey)
 
 	nameMap := keyNameMap(hotKey)
-
+	sortHotKeys := getKeys(hotKey)
+	sort.Strings(sortHotKeys)
 	var lines []LineVO
-	for key, _ := range hotKey {
+	for _, key := range sortHotKeys {
 		var hitPreDay []int
 		for _, day := range dayList {
 			result, err := GetConnection().ZScore(Prefix+day+":rank", key).Result()
