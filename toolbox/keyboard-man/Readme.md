@@ -1,5 +1,11 @@
 # 按键记录
 
+> 柱状图 每天按键数据
+![](https://img-blog.csdnimg.cn/20200908173215731.png)
+
+> 热力图 一周每小时数据
+![](https://img-blog.csdnimg.cn/20200908173215775.png)
+
 ## Redis
 > 全局
 - **string** `keyboard:last-event`
