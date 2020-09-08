@@ -1,7 +1,5 @@
 # 按键记录
 
-- `statik -f -src=static/ -dest app/`
-
 ## Redis
 > 全局
 - **string** `keyboard:last-event`

@@ -27,7 +27,15 @@ type (
 		AreaStyle string `json:"areaStyle"`
 		Color     string `json:"color"`
 	}
+	HeatMapVO struct {
+		Data [168][3]int `json:"data"`
+		Max  int         `json:"max"`
+	}
 
+	DayBO struct {
+		Day     string
+		WeekDay string
+	}
 	QueryParam struct {
 		Length    int
 		Offset    int
@@ -115,6 +123,7 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildPath("/hotKeyWithCount"), HotKeyWithNum)
 	router.GET(buildPath("/recentDay"), RecentDay)
 	router.GET(buildPath("/hotKeyName"), HotKey)
+	router.GET(buildPath("/heatMap"), HeatMap)
 }
 
 func buildPath(path string) string {
@@ -141,17 +150,73 @@ func RecentDay(c *gin.Context) {
 	param := parseParam(c)
 
 	var result []string
-	dayList := buildDayList(param.Length, param.Offset)
+	dayList := buildDayWithWeekdayList(param.Length, param.Offset)
 	for _, day := range dayList {
-		score, err := GetConnection().ZScore(TotalCount, day).Result()
+		score, err := GetConnection().ZScore(TotalCount, day.Day).Result()
 		if err != nil {
-			result = append(result, day+"#0")
+			result = append(result, day.Day+"#"+day.WeekDay+"#0")
 		} else {
-			result = append(result, day+"#"+strconv.Itoa(int(score)))
+			result = append(result, day.Day+"#"+day.WeekDay+"#"+strconv.Itoa(int(score)))
 		}
 	}
 
 	GinSuccessWith(c, result)
+}
+
+//HeatMap 热力图
+func HeatMap(c *gin.Context) {
+	param := parseParam(c)
+	dayList := buildDayList(param.Length, param.Offset)
+
+	// [weekday, hour, count]
+	var result [168][3]int
+
+	totalMap := make(map[int]map[int]int)
+	for _, day := range dayList {
+		var lastCursor uint64 = 0
+		first := true
+
+		totalCount := 0
+		for lastCursor != 0 || first {
+			result, cursor, err := GetConnection().ZScan(GetDetailKeyByString(day), lastCursor, "", 2000).Result()
+			cuibase.CheckIfError(err)
+			lastCursor = cursor
+			first = false
+			for i := range result {
+				if i%2 == 1 {
+					continue
+				}
+				//logger.Info(result[i], result[i+1])
+
+				parseInt, err := strconv.ParseInt(result[i], 0, 64)
+				cuibase.CheckIfError(err)
+
+				cur := time.Unix(parseInt/1000000, 0)
+				dayMap := totalMap[int(cur.Weekday())]
+				if dayMap == nil {
+					dayMap = make(map[int]int)
+					totalMap[int(cur.Weekday())] = dayMap
+				}
+				dayMap[cur.Hour()] += 1
+			}
+			totalCount += len(result)
+		}
+		//logger.Info(day, totalCount/2)
+	}
+	max := 0
+	for weekday, v := range totalMap {
+		for hour, count := range v {
+			//logger.Info(weekday, hour)
+			if count > max {
+				max = count
+			}
+			result[(weekday*24)+hour] = [...]int{
+				weekday, hour, count,
+			}
+		}
+	}
+
+	GinSuccessWith(c, HeatMapVO{Data: result, Max: max})
 }
 
 func getKeys(m map[string]bool) []string {
@@ -277,4 +342,38 @@ func buildDayList(length int, offset int) []string {
 		result = append(result, day)
 	}
 	return result
+}
+
+func buildDayWithWeekdayList(length int, offset int) []DayBO {
+	now := time.Now()
+
+	var result []DayBO
+	start := now.AddDate(0, 0, -offset)
+	for i := 0; i < length; i++ {
+		date := start.AddDate(0, 0, i)
+		day := date.Format("2006:01:02")
+		result = append(result, DayBO{Day: day, WeekDay: buildWeekDay(date.Weekday())})
+	}
+	return result
+}
+
+// 一 二 三 四  五 六 七
+func buildWeekDay(weekday time.Weekday) string {
+	switch weekday {
+	case time.Monday:
+		return "一"
+	case time.Tuesday:
+		return "二"
+	case time.Wednesday:
+		return "三"
+	case time.Thursday:
+		return "四"
+	case time.Friday:
+		return "五"
+	case time.Saturday:
+		return "六"
+	case time.Sunday:
+		return "七"
+	}
+	return ""
 }

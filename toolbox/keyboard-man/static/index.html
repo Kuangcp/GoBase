@@ -48,6 +48,7 @@
 	</select>
 
 	<button onclick="generate()">生成图表</button>
+	<button onclick="heatmap()">热力图</button>
 </div>
 
 <div id="main" class="line-chart"></div>
@@ -63,6 +64,15 @@
     }
 
     let chart = null
+
+    function buildQueryStr() {
+        let period = $("#period").val();
+        let offset = $("#offset").val();
+        let top = $("#top").val();
+        let chartType = $("#chartType").val();
+
+        return '?length=' + period + '&offset=' + offset + '&top=' + top + "&type=" + chartType;
+    }
 
     function generate() {
         if (chart !== null) {
@@ -108,13 +118,7 @@
         };
 
         chart.setOption(option);
-
-        let period = $("#period").val();
-        let offset = $("#offset").val();
-        let top = $("#top").val();
-        let chartType = $("#chartType").val();
-
-        let queryStr = '?length=' + period + '&offset=' + offset + '&top=' + top + "&type=" + chartType
+        let queryStr = buildQueryStr();
         handleGet('/recentDay' + queryStr, function (recentDay) {
             handleGet('/hotKeyName' + queryStr, function (hotKeyName) {
                 handleGet('/hotKeyWithCount' + queryStr, function (hotKeyData) {
@@ -131,6 +135,73 @@
             }, null)
         }, function (data) {
             alert('连接失败' + data.responseText)
+        });
+    }
+
+    function heatmap() {
+        if (chart !== null) {
+            chart.dispose()
+        }
+        chart = echarts.init(document.getElementById('main'));
+
+        const hours = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
+        const days = ['Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday', 'Sunday'];
+
+        let queryStr = buildQueryStr();
+        handleGet('/heatMap' + queryStr, function (heatMap) {
+            // weekday, hour, count
+            let data = heatMap.Data.data.map(function (item) {
+                return [item[1], item[0], item[2] || '-'];
+            });
+
+            let option = {
+                tooltip: {
+                    position: 'top'
+                },
+                animation: false,
+                grid: {
+                    height: '50%',
+                    top: '10%'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: hours,
+                    splitArea: {
+                        show: true
+                    }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: days,
+                    splitArea: {
+                        show: true
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: heatMap.Data.max,
+                    calculable: true,
+                    orient: 'horizontal',
+                    left: 'center',
+                    bottom: '15%'
+                },
+                series: [{
+                    name: 'Punch Card',
+                    type: 'heatmap',
+                    data: data,
+                    label: {
+                        show: true
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
         });
     }
 </script>
