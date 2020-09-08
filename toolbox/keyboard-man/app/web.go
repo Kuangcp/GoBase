@@ -25,6 +25,7 @@ type (
 		Stack     string `json:"stack"`
 		Data      []int  `json:"data"`
 		AreaStyle string `json:"areaStyle"`
+		Color     string `json:"color"`
 	}
 
 	QueryParam struct {
@@ -35,9 +36,26 @@ type (
 	}
 )
 
+var colorSet = [...]string{
+	"#c23531",
+	"#2f4554",
+	"#61a0a8",
+	"#d48265",
+	"#91c7ae",
+	"#749f83",
+	"#ca8622",
+	"#bda29a",
+	"#6e7074",
+	"#546570",
+	"#c4ccd3",
+}
+
 func Server(debugStatic bool, port string) {
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	//router.GET("/ping", common.HealthCheck)
+	router.GET("/ping", func(c *gin.Context) {
+		GinSuccessWith(c, "ok")
+	})
 
 	// 是否读取 statik 打包后的静态文件
 	if debugStatic {
@@ -50,6 +68,9 @@ func Server(debugStatic bool, port string) {
 		}
 		router.StaticFS("/static", fileSystem)
 	}
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "static/")
+	})
 
 	// backend logic router
 	registerRouter(router)
@@ -59,11 +80,13 @@ func Server(debugStatic bool, port string) {
 		Handler: router,
 	}
 
+	logger.Info("http://localhost" + srv.Addr)
+
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			log.Fatalf("Error: %s\n", err)
 		}
 	}()
 
@@ -89,9 +112,9 @@ func Server(debugStatic bool, port string) {
 }
 
 func registerRouter(router *gin.Engine) {
-	router.GET(buildPath("/hotKeyWithNum"), HotKeyWithNum)
+	router.GET(buildPath("/hotKeyWithCount"), HotKeyWithNum)
 	router.GET(buildPath("/recentDay"), RecentDay)
-	router.GET(buildPath("/hotKey"), HotKey)
+	router.GET(buildPath("/hotKeyName"), HotKey)
 }
 
 func buildPath(path string) string {
@@ -162,12 +185,16 @@ func HotKeyWithNum(c *gin.Context) {
 			}
 			hitPreDay = append(hitPreDay, int(result))
 		}
+
+		keyCode, err := strconv.Atoi(key)
+		cuibase.CheckIfError(err)
 		lines = append(lines, LineVO{
 			Type:      param.ChartType,
 			Name:      nameMap[key],
 			Data:      hitPreDay,
 			Stack:     "all",
 			AreaStyle: "{normal: {}}",
+			Color:     colorSet[keyCode%len(colorSet)],
 		})
 	}
 	//logger.Info(lines)
@@ -188,7 +215,7 @@ func parseParam(c *gin.Context) QueryParam {
 		offset = "0"
 	}
 	if top == "" {
-		top = "3"
+		top = "2"
 	}
 
 	lengthInt, err := strconv.Atoi(length)
@@ -200,6 +227,11 @@ func parseParam(c *gin.Context) QueryParam {
 
 	if chartType == "" {
 		chartType = "bar"
+	}
+
+	topInt -= 1
+	if topInt < 0 {
+		topInt = 0
 	}
 	return QueryParam{
 		Length:    lengthInt,

@@ -39,7 +39,7 @@
 	<input id="offset" value="120" type="number" min="0"/>
 
 	<label for="top">top:</label>
-	<input id="top" value="111" type="number" min="0"/>
+	<input id="top" value="111" type="number" min="1"/>
 
 	<label for="chartType">Type:</label>
 	<select id="chartType">
@@ -116,8 +116,8 @@
 
         let queryStr = '?length=' + period + '&offset=' + offset + '&top=' + top + "&type=" + chartType
         handleGet('/recentDay' + queryStr, function (recentDay) {
-            handleGet('/hotKey' + queryStr, function (hotKeyName) {
-                handleGet('/hotKeyWithNum' + queryStr, function (hotKeyData) {
+            handleGet('/hotKeyName' + queryStr, function (hotKeyName) {
+                handleGet('/hotKeyWithCount' + queryStr, function (hotKeyData) {
                     chart.setOption({
                         xAxis: {
                             data: recentDay.Data
