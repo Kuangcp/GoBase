@@ -47,13 +47,15 @@
 		<option value="line">线</option>
 	</select>
 
-	<button onclick="generate()">生成图表</button>
-	<button onclick="heatmap()">热力图</button>
+	<button onclick="lineChart()">生成图表</button>
+	<button onclick="heatmapChart()">热力图</button>
 </div>
 
 <div id="main" class="line-chart"></div>
 <script type="text/javascript">
     const app = '/api/v1.0';
+    const hours = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
+    const days = ['Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday', 'Sunday'];
 
     function handleGet(url, success, fail) {
         const request = $.get({
@@ -74,7 +76,7 @@
         return '?length=' + period + '&offset=' + offset + '&top=' + top + "&type=" + chartType;
     }
 
-    function generate() {
+    function lineChart() {
         if (chart !== null) {
             chart.dispose()
         }
@@ -138,14 +140,11 @@
         });
     }
 
-    function heatmap() {
+    function heatmapChart() {
         if (chart !== null) {
             chart.dispose()
         }
         chart = echarts.init(document.getElementById('main'));
-
-        const hours = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
-        const days = ['Saturday', 'Friday', 'Thursday', 'Wednesday', 'Tuesday', 'Monday', 'Sunday'];
 
         let queryStr = buildQueryStr();
         handleGet('/heatMap' + queryStr, function (heatMap) {
@@ -160,8 +159,8 @@
                 },
                 animation: false,
                 grid: {
-                    height: '50%',
-                    top: '10%'
+                    height: '70%',
+                    top: '8%'
                 },
                 xAxis: {
                     type: 'category',
@@ -186,7 +185,7 @@
                     bottom: '15%'
                 },
                 series: [{
-                    name: 'Punch Card',
+                    name: 'Hit Count',
                     type: 'heatmap',
                     data: data,
                     label: {
