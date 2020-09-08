@@ -49,6 +49,7 @@
 
 	<button onclick="lineChart()">生成图表</button>
 	<button onclick="heatmapChart()">热力图</button>
+	<div id="tipTitle"></div>
 </div>
 
 <div id="main" class="line-chart"></div>
@@ -77,6 +78,7 @@
     }
 
     function lineChart() {
+        $("#tipTitle").html('')
         if (chart !== null) {
             chart.dispose()
         }
@@ -153,6 +155,7 @@
                 return [item[1], item[0], item[2] || '-'];
             });
 
+            $("#tipTitle").html(heatMap.Data.start + " => " + heatMap.Data.end)
             let option = {
                 tooltip: {
                     position: 'top'

@@ -28,8 +28,10 @@ type (
 		Color     string `json:"color"`
 	}
 	HeatMapVO struct {
-		Data [168][3]int `json:"data"`
-		Max  int         `json:"max"`
+		Data  [168][3]int `json:"data"`
+		Max   int         `json:"max"`
+		Start string      `json:"start"`
+		End   string      `json:"end"`
 	}
 
 	DayBO struct {
@@ -216,7 +218,7 @@ func HeatMap(c *gin.Context) {
 		}
 	}
 
-	GinSuccessWith(c, HeatMapVO{Data: result, Max: max})
+	GinSuccessWith(c, HeatMapVO{Data: result, Max: max, Start: dayList[0], End: dayList[len(dayList)-1]})
 }
 
 func getKeys(m map[string]bool) []string {
