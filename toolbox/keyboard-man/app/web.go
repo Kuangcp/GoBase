@@ -26,12 +26,18 @@ type (
 	}
 
 	LineVO struct {
-		Type      string `json:"type"`
-		Name      string `json:"name"`
-		Stack     string `json:"stack"`
-		Data      []int  `json:"data"`
-		AreaStyle string `json:"areaStyle"`
-		Color     string `json:"color"`
+		Type  string `json:"type"`
+		Name  string `json:"name"`
+		Stack string `json:"stack"`
+		Data  []int  `json:"data"`
+		Color string `json:"color"`
+
+		AreaStyle string  `json:"areaStyle"`
+		Label     LabelVO `json:"label"`
+	}
+	LabelVO struct {
+		Show     bool   `json:"show"`
+		Position string `json:"position"`
 	}
 
 	HeatMapVO struct {
@@ -66,6 +72,8 @@ var colorSet = [...]string{
 	"#546570",
 	"#c4ccd3",
 }
+var commonLabel = LabelVO{Show: true, Position: "insideRight"}
+var lastShow bool
 
 func Server(debugStatic bool, port string) {
 	gin.SetMode(gin.ReleaseMode)
@@ -243,6 +251,8 @@ func LineMap(c *gin.Context) {
 	sortHotKeys := getKeys(hotKey)
 	sort.Strings(sortHotKeys)
 	var lines []LineVO
+	commonLabel.Show = lastShow
+	lastShow = !lastShow
 	for _, key := range sortHotKeys {
 		var hitPreDay []int
 		for _, day := range dayList {
@@ -261,6 +271,7 @@ func LineMap(c *gin.Context) {
 			Data:      hitPreDay,
 			Stack:     "all",
 			AreaStyle: "{normal: {}}",
+			Label:     commonLabel,
 			Color:     colorSet[keyCode%len(colorSet)],
 		})
 	}
