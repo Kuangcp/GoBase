@@ -75,11 +75,17 @@
     }
 
     function barChart() {
+        let queryStr = buildQueryStr() + "&type=bar";
+        let url = '/lineMap' + queryStr
+        barChartApi(url, 'main')
+    }
+
+    function barChartApi(url, elementId) {
         $("#tipTitle").html('')
         if (chart !== null) {
             chart.dispose()
         }
-        chart = echarts.init(document.getElementById('main'));
+        chart = echarts.init(document.getElementById(elementId));
         let option = {
             tooltip: {
                 trigger: 'axis',
@@ -110,15 +116,21 @@
         };
 
         chart.setOption(option);
-        fillData("bar");
+        fillDataByURL(url);
     }
 
     function lineChart() {
+        let queryStr = buildQueryStr() + "&type=line";
+        let url = '/lineMap' + queryStr
+        lineChartApi(url, 'main')
+    }
+
+    function lineChartApi(url, elementId) {
         $("#tipTitle").html('')
         if (chart !== null) {
             chart.dispose()
         }
-        chart = echarts.init(document.getElementById('main'));
+        chart = echarts.init(document.getElementById(elementId));
         let option = {
             title: {
                 text: ''
@@ -159,9 +171,10 @@
 
         chart.setOption(option);
 
-        fillData("line");
+        fillDataByURL(url);
     }
 
+    // TODO 多周横向对比
     function heatmapChart() {
         if (chart !== null) {
             chart.dispose()
@@ -227,9 +240,8 @@
         });
     }
 
-    function fillData(type) {
-        let queryStr = buildQueryStr() + "&type=" + type;
-        handleGet('/lineMap' + queryStr, function (response) {
+    function fillDataByURL(url) {
+        handleGet(url, function (response) {
             chart.setOption({
                 xAxis: {
                     data: response.Data.days
@@ -237,14 +249,14 @@
                 legend: {
                     data: response.Data.keyNames
                 },
-                series: calculateSum(type, response.Data.lines)
+                series: calculateSum(response.Data.lines)
             });
         }, function (data) {
             alert('连接失败' + data.responseText)
         });
     }
 
-    function calculateSum(type, lines) {
+    function calculateSum(lines) {
         let sumData = []
         let first = lines[0];
         for (let i = 0; i < first.data.length; i++) {
