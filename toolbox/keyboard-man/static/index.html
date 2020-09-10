@@ -41,13 +41,8 @@
 	<label for="top">top:</label>
 	<input id="top" value="111" type="number" min="1"/>
 
-	<label for="chartType">Type:</label>
-	<select id="chartType">
-		<option value="bar">柱</option>
-		<option value="line">线</option>
-	</select>
-
-	<button onclick="lineChart()">生成图表</button>
+	<button onclick="lineChart()">xian</button>
+	<button onclick="barChart()">zhu</button>
 	<button onclick="heatmapChart()">热力图</button>
 	<div id="tipTitle"></div>
 </div>
@@ -72,9 +67,48 @@
         let period = $("#period").val();
         let offset = $("#offset").val();
         let top = $("#top").val();
-        let chartType = $("#chartType").val();
 
-        return '?length=' + period + '&offset=' + offset + '&top=' + top + "&type=" + chartType;
+        return '?length=' + period + '&offset=' + offset + '&top=' + top;
+    }
+
+    function barChart() {
+        $("#tipTitle").html('')
+        if (chart !== null) {
+            chart.dispose()
+        }
+        chart = echarts.init(document.getElementById('main'));
+        let option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            legend: {
+                data: []
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: []
+            }
+            ,
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: []
+        };
+
+        chart.setOption(option);
+        let queryStr = buildQueryStr() + "&type=bar";
+        fillData(queryStr);
     }
 
     function lineChart() {
@@ -122,24 +156,8 @@
         };
 
         chart.setOption(option);
-        let queryStr = buildQueryStr();
-        handleGet('/recentDay' + queryStr, function (recentDay) {
-            handleGet('/hotKeyName' + queryStr, function (hotKeyName) {
-                handleGet('/hotKeyWithCount' + queryStr, function (hotKeyData) {
-                    chart.setOption({
-                        xAxis: {
-                            data: recentDay.Data
-                        },
-                        legend: {
-                            data: hotKeyName.Data
-                        },
-                        series: hotKeyData.Data
-                    });
-                }, null)
-            }, null)
-        }, function (data) {
-            alert('连接失败' + data.responseText)
-        });
+        let queryStr = buildQueryStr() + "&type=line";
+        fillData(queryStr);
     }
 
     function heatmapChart() {
@@ -204,6 +222,26 @@
             };
 
             chart.setOption(option);
+        });
+    }
+
+    function fillData(queryStr) {
+        handleGet('/recentDay' + queryStr, function (recentDay) {
+            handleGet('/hotKeyName' + queryStr, function (hotKeyName) {
+                handleGet('/hotKeyWithCount' + queryStr, function (hotKeyData) {
+                    chart.setOption({
+                        xAxis: {
+                            data: recentDay.Data
+                        },
+                        legend: {
+                            data: hotKeyName.Data
+                        },
+                        series: hotKeyData.Data
+                    });
+                }, null)
+            }, null)
+        }, function (data) {
+            alert('连接失败' + data.responseText)
         });
     }
 </script>
