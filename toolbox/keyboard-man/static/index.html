@@ -107,8 +107,7 @@
         };
 
         chart.setOption(option);
-        let queryStr = buildQueryStr() + "&type=bar";
-        fillData(queryStr);
+        fillData("bar");
     }
 
     function lineChart() {
@@ -156,8 +155,8 @@
         };
 
         chart.setOption(option);
-        let queryStr = buildQueryStr() + "&type=line";
-        fillData(queryStr);
+
+        fillData("line");
     }
 
     function heatmapChart() {
@@ -225,21 +224,18 @@
         });
     }
 
-    function fillData(queryStr) {
-        handleGet('/recentDay' + queryStr, function (recentDay) {
-            handleGet('/hotKeyName' + queryStr, function (hotKeyName) {
-                handleGet('/hotKeyWithCount' + queryStr, function (hotKeyData) {
-                    chart.setOption({
-                        xAxis: {
-                            data: recentDay.Data
-                        },
-                        legend: {
-                            data: hotKeyName.Data
-                        },
-                        series: hotKeyData.Data
-                    });
-                }, null)
-            }, null)
+    function fillData(type) {
+        let queryStr = buildQueryStr() + "&type=" + type;
+        handleGet('/lineMap' + queryStr, function (response) {
+            chart.setOption({
+                xAxis: {
+                    data: response.Data.days
+                },
+                legend: {
+                    data: response.Data.keyNames
+                },
+                series: response.Data.lines
+            });
         }, function (data) {
             alert('连接失败' + data.responseText)
         });

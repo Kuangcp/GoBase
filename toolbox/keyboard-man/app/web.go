@@ -19,6 +19,12 @@ import (
 )
 
 type (
+	LineChartVO struct {
+		Lines    []LineVO `json:"lines"`
+		Days     []string `json:"days"`
+		KeyNames []string `json:"keyNames"`
+	}
+
 	LineVO struct {
 		Type      string `json:"type"`
 		Name      string `json:"name"`
@@ -27,6 +33,7 @@ type (
 		AreaStyle string `json:"areaStyle"`
 		Color     string `json:"color"`
 	}
+
 	HeatMapVO struct {
 		Data  [168][3]int `json:"data"`
 		Max   int         `json:"max"`
@@ -92,6 +99,10 @@ func Server(debugStatic bool, port string) {
 
 	logger.Info("http://localhost" + srv.Addr)
 
+	gracefulExit(srv)
+}
+
+func gracefulExit(srv *http.Server) {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
@@ -122,47 +133,12 @@ func Server(debugStatic bool, port string) {
 }
 
 func registerRouter(router *gin.Engine) {
-	router.GET(buildPath("/hotKeyWithCount"), HotKeyWithNum)
-	router.GET(buildPath("/recentDay"), RecentDay)
-	router.GET(buildPath("/hotKeyName"), HotKey)
+	router.GET(buildPath("/lineMap"), LineMap)
 	router.GET(buildPath("/heatMap"), HeatMap)
 }
 
 func buildPath(path string) string {
 	return "/api/v1.0" + path
-}
-
-func HotKey(c *gin.Context) {
-	param := parseParam(c)
-
-	dayList := buildDayList(param.Length, param.Offset)
-
-	hotKey := hotKey(dayList, param.Top)
-
-	nameMap := keyNameMap(hotKey)
-	var result []string
-	for _, v := range nameMap {
-		result = append(result, v)
-	}
-	sort.Strings(result)
-	GinSuccessWith(c, result)
-}
-
-func RecentDay(c *gin.Context) {
-	param := parseParam(c)
-
-	var result []string
-	dayList := buildDayWithWeekdayList(param.Length, param.Offset)
-	for _, day := range dayList {
-		score, err := GetConnection().ZScore(TotalCount, day.Day).Result()
-		if err != nil {
-			result = append(result, day.Day+"#"+day.WeekDay+"#0")
-		} else {
-			result = append(result, day.Day+"#"+day.WeekDay+"#"+strconv.Itoa(int(score)))
-		}
-	}
-
-	GinSuccessWith(c, result)
 }
 
 //HeatMap 热力图
@@ -230,16 +206,40 @@ func getKeys(m map[string]bool) []string {
 	return keys
 }
 
-func HotKeyWithNum(c *gin.Context) {
+func LineMap(c *gin.Context) {
 	param := parseParam(c)
-
 	dayList := buildDayList(param.Length, param.Offset)
-	//logger.Info(dayList)
-
 	hotKey := hotKey(dayList, param.Top)
-	//logger.Info(hotKey)
-
 	nameMap := keyNameMap(hotKey)
+
+	// keyNames
+	var keyNames []string
+	for _, v := range nameMap {
+		keyNames = append(keyNames, v)
+	}
+	sort.Strings(keyNames)
+	if len(keyNames) == 0 {
+		GinFailed(c)
+		return
+	}
+
+	// days
+	var days []string
+	showDayList := buildDayWithWeekdayList(param.Length, param.Offset)
+	for _, day := range showDayList {
+		score, err := GetConnection().ZScore(TotalCount, day.Day).Result()
+		if err != nil {
+			days = append(days, day.Day+"#"+day.WeekDay+"#0")
+		} else {
+			days = append(days, day.Day+"#"+day.WeekDay+"#"+strconv.Itoa(int(score)))
+		}
+	}
+	if len(days) == 0 {
+		GinFailed(c)
+		return
+	}
+
+	// lines
 	sortHotKeys := getKeys(hotKey)
 	sort.Strings(sortHotKeys)
 	var lines []LineVO
@@ -265,8 +265,7 @@ func HotKeyWithNum(c *gin.Context) {
 		})
 	}
 	//logger.Info(lines)
-
-	GinSuccessWith(c, lines)
+	GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
 }
 
 func parseParam(c *gin.Context) QueryParam {
@@ -359,7 +358,7 @@ func buildDayWithWeekdayList(length int, offset int) []DayBO {
 	return result
 }
 
-// 一 二 三 四  五 六 七
+// 周
 func buildWeekDay(weekday time.Weekday) string {
 	switch weekday {
 	case time.Monday:
