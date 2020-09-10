@@ -242,39 +242,35 @@
     }
 
     function calculateSum(type, lines) {
-        if (type === 'bar') {
-            let sumData = []
-			let first = lines[0];
-            for (let i = 0; i < first.data.length; i++) {
-                let temp = 0
-                for (let j = 0; j < lines.length; j++) {
-                    temp+= lines[j].data[i]
-                }
-                sumData.push(temp)
+        let sumData = []
+        let first = lines[0];
+        for (let i = 0; i < first.data.length; i++) {
+            let temp = 0
+            for (let j = 0; j < lines.length; j++) {
+                temp += lines[j].data[i]
             }
-            console.log(sumData)
-
-            lines.push({      //新的一个柱子 注意不设stack
-                name: '总数',
-                type: 'bar',
-                barGap: '-100%',         // 左移100%，stack不再与上面两个在一列
-                label: {
-                    normal: {
-                        show: true, //显示数值
-                        position: 'top',       //  位置设为top
-                        formatter: '{c}',
-                        textStyle: {color: '#000'} //设置数值颜色
-                    }
-                },
-                itemStyle: {
-                    normal: {
-                        color: 'rgba(128, 128, 128, 0)'   // 设置背景颜色为透明
-                    }
-                },
-                data: sumData,
-            })
-            return lines
+            sumData.push(temp)
         }
+
+        lines.push({ //新的一个柱子 注意不设stack
+            name: '总数',
+            type: 'bar',
+            barGap: '-100%', // 左移100%，stack不再与上面两个在一列
+            label: {
+                normal: {
+                    show: true, //显示数值
+                    position: 'top', //  位置设为top
+                    formatter: '{c}',
+                    textStyle: {color: '#213e53'} //设置数值颜色
+                }
+            },
+            itemStyle: {
+                normal: {
+                    color: 'rgba(128, 128, 128, 0)' // 设置背景颜色为透明
+                }
+            },
+            data: sumData,
+        })
         return lines
     }
 </script>
