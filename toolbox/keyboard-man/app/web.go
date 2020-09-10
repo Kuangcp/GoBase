@@ -56,6 +56,7 @@ type (
 		Offset    int
 		Top       int64
 		ChartType string
+		ShowLabel bool
 	}
 )
 
@@ -72,8 +73,8 @@ var colorSet = [...]string{
 	"#546570",
 	"#c4ccd3",
 }
-var commonLabel = LabelVO{Show: true, Position: "insideRight"}
-var lastShow bool
+
+var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
 func Server(debugStatic bool, port string) {
 	gin.SetMode(gin.ReleaseMode)
@@ -251,8 +252,7 @@ func LineMap(c *gin.Context) {
 	sortHotKeys := getKeys(hotKey)
 	sort.Strings(sortHotKeys)
 	var lines []LineVO
-	commonLabel.Show = lastShow
-	lastShow = !lastShow
+	commonLabel.Show = param.ShowLabel
 	for _, key := range sortHotKeys {
 		var hitPreDay []int
 		for _, day := range dayList {
@@ -284,6 +284,7 @@ func parseParam(c *gin.Context) QueryParam {
 	offset := c.Query("offset")
 	top := c.Query("top")
 	chartType := c.Query("type")
+	showLabel := c.Query("showLabel")
 
 	if length == "" {
 		length = "7"
@@ -294,12 +295,17 @@ func parseParam(c *gin.Context) QueryParam {
 	if top == "" {
 		top = "2"
 	}
+	if showLabel == "" {
+		showLabel = "false"
+	}
 
 	lengthInt, err := strconv.Atoi(length)
 	cuibase.CheckIfError(err)
 	offsetInt, err := strconv.Atoi(offset)
 	cuibase.CheckIfError(err)
 	topInt, err := strconv.ParseInt(top, 10, 64)
+	cuibase.CheckIfError(err)
+	showLabelBool, err := strconv.ParseBool(showLabel)
 	cuibase.CheckIfError(err)
 
 	if chartType == "" {
@@ -315,6 +321,7 @@ func parseParam(c *gin.Context) QueryParam {
 		Offset:    offsetInt,
 		Top:       topInt,
 		ChartType: chartType,
+		ShowLabel: showLabelBool,
 	}
 }
 

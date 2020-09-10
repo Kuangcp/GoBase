@@ -41,6 +41,8 @@
 	<label for="top">top:</label>
 	<input id="top" value="111" type="number" min="1"/>
 
+	<label for="showLabel">label:</label><input id="showLabel" type="checkbox">
+
 	<button onclick="lineChart()">折线图</button>
 	<button onclick="barChart()">柱状图</button>
 	<button onclick="heatmapChart()">热力图</button>
@@ -67,8 +69,9 @@
         let period = $("#period").val();
         let offset = $("#offset").val();
         let top = $("#top").val();
+        let showLabel = $("#showLabel").prop("checked");
 
-        return '?length=' + period + '&offset=' + offset + '&top=' + top;
+        return '?length=' + period + '&offset=' + offset + '&top=' + top + "&showLabel=" + showLabel;
     }
 
     function barChart() {
