@@ -13,12 +13,17 @@
             height: 500px;
         }
 
+        .heatmap-box {
+            width: 50%;
+            height: 500px;
+            position: relative;
+            float: left;
+        }
+
     </style>
 </head>
 <body>
-<a href="/static">
-    <button>首页</button>
-</a>
+<button onclick="window.location='/static'">首页</button>
 <label for="heatMapWeeks">热力图周数</label><input type="number" min="1" id="heatMapWeeks" value="1">
 <button onclick="heatMapMultiple()">生成</button>
 
@@ -36,18 +41,26 @@
         let weeks = $("#heatMapWeeks").val();
 
         for (let i = 0; i < weeks; i++) {
+
             let weekDom = document.createElement('div')
-            weekDom.id = 'week' + i
-            weekDom.className = 'heatmap-chart'
+            weekDom.className = 'heatmap-box'
+            let chartDom = document.createElement('div')
+            chartDom.id = 'week' + i
+            chartDom.className = 'heatmap-chart'
             let titleDom = document.createElement('div')
             titleDom.id = 'title' + i
             titleDom.style = 'text-align: center;'
 
-            document.getElementById("multiHeatMap").appendChild(titleDom)
+            // document.getElementById("multiHeatMap").appendChild(titleDom)
+            // document.getElementById("multiHeatMap").appendChild(chartDom)
+
+            weekDom.appendChild(titleDom)
+            weekDom.appendChild(chartDom)
             document.getElementById("multiHeatMap").appendChild(weekDom)
+
             let offset = (weekDay - 1) + 7 * i
             let param = '?length=7&offset=' + offset;
-            heatmapChartApi(param, weekDom.id, titleDom.id)
+            heatmapChartApi(param, chartDom.id, titleDom.id)
         }
     }
 
