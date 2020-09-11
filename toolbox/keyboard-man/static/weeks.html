@@ -10,29 +10,42 @@
     <style>
         .heatmap-chart {
             width: 100%;
-            height: 500px;
+            height: 400px;
         }
 
         .heatmap-box {
             width: 50%;
-            height: 500px;
+            height: 400px;
             float: left;
         }
 
+        .nav {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-<button onclick="window.location='/static'">首页</button>
-<label for="heatMapWeeks">热力图周数</label><input type="number" min="1" id="heatMapWeeks" value="1">
-<button onclick="heatMapMultiple()">生成</button>
+<nav class="nav">
+    <button onclick="window.location='/static'">首页</button>
+    <label for="heatMapWeeks">展示</label><input type="number" min="1" id="heatMapWeeks" value="1" style="width: 40px">周
+    <button onclick="heatMapMultiple()">生成</button>
+</nav>
 
 <div id="multiHeatMap"></div>
 
 </body>
 <script>
 
+    let created = []
+
     function heatMapMultiple() {
-        document.getElementById("multiHeatMap").className = ''
+        if (created.length !== 0) {
+            for (let i = 0; i < created.length; i++) {
+                created[i].dispose()
+            }
+        }
+        created = []
+        document.getElementById("multiHeatMap").className = '';
         document.getElementById("multiHeatMap").innerHTML = ''
         let now = new Date();
         let weekDay = now.getDay();
@@ -46,40 +59,41 @@
             let chartDom = document.createElement('div')
             chartDom.id = 'week' + i
             chartDom.className = 'heatmap-chart'
-            let titleDom = document.createElement('div')
-            titleDom.id = 'title' + i
-            titleDom.style = 'text-align: center;'
 
-            // document.getElementById("multiHeatMap").appendChild(titleDom)
-            // document.getElementById("multiHeatMap").appendChild(chartDom)
-
-            weekDom.appendChild(titleDom)
             weekDom.appendChild(chartDom)
             document.getElementById("multiHeatMap").appendChild(weekDom)
 
             let offset = (weekDay - 1) + 7 * i
             let param = '?length=7&offset=' + offset;
-            heatmapChartApi(param, chartDom.id, titleDom.id)
+            heatmapChartApi(param, chartDom.id)
         }
     }
 
-    function heatmapChartApi(param, elementId, titleElementId) {
+    function heatmapChartApi(param, elementId) {
         let chart = echarts.init(document.getElementById(elementId));
+        created.push(chart)
         handleGet('/heatMap' + param, function (heatMap) {
             // weekday, hour, count
             let data = heatMap.Data.data.map(function (item) {
                 return [item[1], item[0], item[2] || '-'];
             });
 
-            $('#' + titleElementId).html(heatMap.Data.start + " => " + heatMap.Data.end)
+            let title = heatMap.Data.start + " ➡️ " + heatMap.Data.end
             let option = {
+                title: {
+                    text: title,
+                    left: 'center',
+                    align: 'right',
+                    top: '-5px'
+                },
                 tooltip: {
                     position: 'top'
                 },
                 animation: false,
                 grid: {
-                    height: '66%',
-                    top: '8%',
+                    height: '65%',
+                    top: '20px',
+                    right: 0
                 },
                 xAxis: {
                     type: 'category',

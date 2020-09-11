@@ -56,7 +56,6 @@
     <a href="weeks.html">
         <button>每周热力图</button>
     </a>
-    <div id="tipTitle"></div>
 </div>
 
 <div id="main" class="line-chart"></div>
@@ -176,45 +175,16 @@
         fillDataByURL(url, chart);
     }
 
-    function heatMapMultiple() {
-        document.getElementById("main").className = ''
-        document.getElementById("main").innerHTML = ''
-
-        document.getElementById("multiHeatMap").className = ''
-        document.getElementById("multiHeatMap").innerHTML = ''
-        document.getElementById("tipTitle").innerHTML = ''
-        let now = new Date();
-        let weekDay = now.getDay();
-
-        let weeks = $("#heatMapWeeks").val();
-
-        for (let i = 0; i < weeks; i++) {
-            let weekDom = document.createElement('div')
-            weekDom.id = 'week' + i
-            weekDom.className = 'heatmap-chart'
-            let titleDom = document.createElement('div')
-            titleDom.id = 'title' + i
-            titleDom.style = 'text-align: center;'
-
-            document.getElementById("multiHeatMap").appendChild(titleDom)
-            document.getElementById("multiHeatMap").appendChild(weekDom)
-            let offset = (weekDay - 1) + 7 * i
-            let param = '?length=7&offset=' + offset;
-            heatmapChartApi(param, weekDom.id, titleDom.id)
-        }
-    }
-
     function heatmapChart() {
         if (lastChart !== null) {
             lastChart.dispose()
         }
 
         let queryStr = buildQueryStr();
-        lastChart = heatmapChartApi(queryStr, 'main', 'tipTitle')
+        lastChart = heatmapChartApi(queryStr, 'main')
     }
 
-    // TODO 多周横向对比
-    function heatmapChartApi(param, elementId, titleElementId) {
+    function heatmapChartApi(param, elementId) {
         let chart = echarts.init(document.getElementById(elementId));
         handleGet('/heatMap' + param, function (heatMap) {
             // weekday, hour, count
@@ -222,8 +192,13 @@
                 return [item[1], item[0], item[2] || '-'];
             });
 
-            $('#' + titleElementId).html(heatMap.Data.start + " => " + heatMap.Data.end)
+            let title = heatMap.Data.start + " ➡️ " + heatMap.Data.end
             let option = {
+                title: {
+                    text: title,
+                    left: 'center',
+                    align: 'right',
+                },
                 tooltip: {
                     position: 'top'
                 },
@@ -305,7 +280,7 @@
         lines.push({ //新的一个柱子 注意不设stack
             name: '总数',
             type: 'bar',
-            barGap: '-100%', // 左移100%，stack不再与上面两个在一列
+            barGap: '-100%', // 左移100%，stack不再与上面两个同列
             label: {
                 normal: {
                     show: true, //显示数值
