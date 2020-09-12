@@ -67,7 +67,7 @@
             weekDom.appendChild(chartDom)
             document.getElementById("multiHeatMap").appendChild(weekDom)
 
-            let offset = (weekDay - 1) + 7 * i
+            let offset = (weekDay) + 7 * i
             let param = '?length=7&offset=' + offset;
             heatmapChartApi(param, chartDom.id)
         }
