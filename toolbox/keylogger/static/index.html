@@ -32,20 +32,26 @@
         .nav input {
             width: 50px;
         }
+
+        body {
+            background-color: #686868;
+        }
     </style>
 </head>
 <body>
 <div class="nav">
     向前偏移X天，绘制天数Y的图表 (键：将每天的最多键并集运算得到最终参与展示的键值)<br>
 
+    <button onclick="setWeek()">周</button>
+    <button onclick="setMonth()">月</button>
     <label for="period">天数:</label>
-    <input id="period" value="122" type="number" min="0"/>
+    <input id="period" value="7" type="number" min="0"/>
 
     <label for="offset">偏移: </label>
-    <input id="offset" value="120" type="number" min="0"/>
+    <input id="offset" value="6" type="number" min="0"/>
 
     <label for="top">top:</label>
-    <input id="top" value="111" type="number" min="1"/>
+    <input id="top" value="10" type="number" min="1"/>
 
     <label for="showLabel">label:</label><input id="showLabel" type="checkbox">
 
@@ -62,6 +68,16 @@
 
 <script type="text/javascript">
     let lastChart = null
+
+    function setMonth() {
+        $("#period").val(30);
+        $("#offset").val(29);
+    }
+
+    function setWeek() {
+        $("#period").val(7);
+        $("#offset").val(6);
+    }
 
     function buildQueryStr() {
         let period = $("#period").val();

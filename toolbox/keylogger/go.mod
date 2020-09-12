@@ -1,4 +1,4 @@
-module github.com/kuangcp/gobase/keyboard-man
+module github.com/kuangcp/gobase/keylogger
 
 go 1.14
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/cuibase"
-	"github.com/kuangcp/gobase/keyboard-man/app"
+	"github.com/kuangcp/gobase/keylogger/app"
 )
 
 var info = cuibase.HelpInfo{

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/kuangcp/gobase/keyboard-man/app/statik"
+	_ "github.com/kuangcp/gobase/keylogger/app/statik"
 	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
 )
