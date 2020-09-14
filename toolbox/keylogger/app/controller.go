@@ -10,12 +10,44 @@ import (
 	"github.com/wonderivan/logger"
 )
 
+func CalendarMap(c *gin.Context) {
+	conn := GetConnection()
+	data, err := conn.ZRange(TotalCount, 0, -1).Result()
+	cuibase.CheckIfError(err)
+	sort.Strings(data)
+	logger.Info(data)
+
+	lastDay := 0
+	var lastTime *time.Time = nil
+	for i, day := range data {
+		if i == 0 {
+			lastTime.YearDay()
+			continue
+		}
+
+		dayTime, err := time.Parse("2006:01:02", day)
+		cuibase.CheckIfError(err)
+		logger.Info(dayTime)
+
+		currentDay := dayTime.Year()*1000 + dayTime.YearDay()
+		if currentDay-lastDay > 1 {
+
+		}
+
+		lastDay = currentDay
+		lastTime = &dayTime
+	}
+
+	GinSuccessWith(c, data)
+}
+
+func fill
 //HeatMap 热力图
 func HeatMap(c *gin.Context) {
 	param := parseParam(c)
 	dayList := buildDayList(param.Length, param.Offset)
 
-	// [weekday, hour, count]
+	// [weekday, hour, count], [weekday, hour, count]
 	var result [168][3]int
 
 	totalMap := make(map[int]map[int]int)

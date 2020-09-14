@@ -141,6 +141,7 @@ func gracefulExit(srv *http.Server) {
 func registerRouter(router *gin.Engine) {
 	router.GET(buildPath("/lineMap"), LineMap)
 	router.GET(buildPath("/heatMap"), HeatMap)
+	router.GET(buildPath("/calendarMap"), CalendarMap)
 }
 
 func buildPath(path string) string {
