@@ -10,6 +10,69 @@ import (
 	"github.com/wonderivan/logger"
 )
 
+var colorSet = [...]string{
+	"#c23531",
+	"#2f4554",
+	"#61a0a8",
+	"#d48265",
+	"#91c7ae",
+	"#749f83",
+	"#ca8622",
+	"#bda29a",
+	"#6e7074",
+	"#546570",
+	"#c4ccd3",
+}
+
+type (
+	LineChartVO struct {
+		Lines    []LineVO `json:"lines"`
+		Days     []string `json:"days"`
+		KeyNames []string `json:"keyNames"`
+	}
+
+	LineVO struct {
+		Type  string `json:"type"`
+		Name  string `json:"name"`
+		Stack string `json:"stack"`
+		Data  []int  `json:"data"`
+		Color string `json:"color"`
+
+		AreaStyle string  `json:"areaStyle"`
+		Label     LabelVO `json:"label"`
+	}
+	LabelVO struct {
+		Show     bool   `json:"show"`
+		Position string `json:"position"`
+	}
+
+	HeatMapVO struct {
+		Data  [168][3]int `json:"data"`
+		Max   int         `json:"max"`
+		Start string      `json:"start"`
+		End   string      `json:"end"`
+	}
+
+	CalendarHeatMapVO struct {
+		Data [][2]string `json:"data"`
+		Max  int         `json:"max"`
+	}
+
+	DayBO struct {
+		Day     string
+		WeekDay string
+	}
+	QueryParam struct {
+		Length    int
+		Offset    int
+		Top       int64
+		ChartType string
+		ShowLabel bool
+	}
+)
+
+var commonLabel = LabelVO{Show: false, Position: "insideRight"}
+
 func CalendarMap(c *gin.Context) {
 	conn := GetConnection()
 	data, err := conn.ZRange(TotalCount, 0, -1).Result()
@@ -17,15 +80,13 @@ func CalendarMap(c *gin.Context) {
 	totalData, err := conn.ZRangeWithScores(TotalCount, 0, -1).Result()
 	cuibase.CheckIfError(err)
 	sort.Strings(data)
-	logger.Info(data)
 
-	logger.Info(totalData)
-	scoreMap := make(map[string]string)
+	scoreMap := make(map[string]int)
 	for _, ele := range totalData {
-		scoreMap[ele.Member.(string)] = strconv.Itoa(int(ele.Score))
+		scoreMap[ele.Member.(string)] = int(ele.Score)
 	}
 	var result [][2]string
-
+	max := 0
 	var lastTime *time.Time = nil
 	for _, day := range data {
 		var dayTime, err = time.Parse("2006:01:02", day)
@@ -33,23 +94,32 @@ func CalendarMap(c *gin.Context) {
 
 		if lastTime == nil {
 			// fill year start to dayTime
-			//fillEmptyDay(result, lastTime, dayTime)
+			emptyDay := fillEmptyDay(dayTime.AddDate(0, 0, -dayTime.YearDay()+1), dayTime)
+			result = append(result, emptyDay...)
 			lastTime = &dayTime
 		} else {
-			emptyDay := fillEmptyDay(lastTime, dayTime)
+			emptyDay := fillEmptyDay(lastTime.AddDate(0, 0, 1), dayTime)
 			result = append(result, emptyDay...)
 			lastTime = &dayTime
 		}
-		result = append(result, [2]string{dayTime.Format("2006-01-02"), scoreMap[day]})
+		score := scoreMap[day]
+		if score > max {
+			max = score
+		}
+
+		result = append(result, [2]string{dayTime.Format("2006-01-02"), strconv.Itoa(score)})
 	}
 
-	GinSuccessWith(c, result)
+	GinSuccessWith(c, CalendarHeatMapVO{Data: result, Max: max})
 }
-func fillEmptyDay(startDay *time.Time, endDay time.Time) [][2]string {
+
+func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 	var result [][2]string
-	var indexDay = *startDay
-	actualEndDay := endDay.AddDate(0, 0, -1)
-	for !indexDay.Equal(actualEndDay) {
+	var indexDay = startDay
+	if startDay.Equal(endDay) {
+		return nil
+	}
+	for !indexDay.Equal(endDay) {
 		result = append(result, [2]string{indexDay.Format("2006-01-02"), "0"})
 		indexDay = indexDay.AddDate(0, 0, 1)
 	}

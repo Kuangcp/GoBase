@@ -15,64 +15,6 @@ import (
 	"github.com/wonderivan/logger"
 )
 
-type (
-	LineChartVO struct {
-		Lines    []LineVO `json:"lines"`
-		Days     []string `json:"days"`
-		KeyNames []string `json:"keyNames"`
-	}
-
-	LineVO struct {
-		Type  string `json:"type"`
-		Name  string `json:"name"`
-		Stack string `json:"stack"`
-		Data  []int  `json:"data"`
-		Color string `json:"color"`
-
-		AreaStyle string  `json:"areaStyle"`
-		Label     LabelVO `json:"label"`
-	}
-	LabelVO struct {
-		Show     bool   `json:"show"`
-		Position string `json:"position"`
-	}
-
-	HeatMapVO struct {
-		Data  [168][3]int `json:"data"`
-		Max   int         `json:"max"`
-		Start string      `json:"start"`
-		End   string      `json:"end"`
-	}
-
-	DayBO struct {
-		Day     string
-		WeekDay string
-	}
-	QueryParam struct {
-		Length    int
-		Offset    int
-		Top       int64
-		ChartType string
-		ShowLabel bool
-	}
-)
-
-var colorSet = [...]string{
-	"#c23531",
-	"#2f4554",
-	"#61a0a8",
-	"#d48265",
-	"#91c7ae",
-	"#749f83",
-	"#ca8622",
-	"#bda29a",
-	"#6e7074",
-	"#546570",
-	"#c4ccd3",
-}
-
-var commonLabel = LabelVO{Show: false, Position: "insideRight"}
-
 func Server(debugStatic bool, port string) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
