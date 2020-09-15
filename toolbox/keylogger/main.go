@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/wonderivan/logger"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -109,6 +110,8 @@ var (
 )
 
 func init() {
+	logger.SetLogPathTrim("/keylogger/")
+
 	flag.BoolVar(&help, "h", false, "")
 	flag.BoolVar(&printKeyMap, "p", false, "")
 	flag.StringVar(&targetDevice, "e", "", "specific device")
