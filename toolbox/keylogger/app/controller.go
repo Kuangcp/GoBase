@@ -14,34 +14,48 @@ func CalendarMap(c *gin.Context) {
 	conn := GetConnection()
 	data, err := conn.ZRange(TotalCount, 0, -1).Result()
 	cuibase.CheckIfError(err)
+	totalData, err := conn.ZRangeWithScores(TotalCount, 0, -1).Result()
+	cuibase.CheckIfError(err)
 	sort.Strings(data)
 	logger.Info(data)
 
-	lastDay := 0
+	logger.Info(totalData)
+	scoreMap := make(map[string]string)
+	for _, ele := range totalData {
+		scoreMap[ele.Member.(string)] = strconv.Itoa(int(ele.Score))
+	}
+	var result [][2]string
+
 	var lastTime *time.Time = nil
-	for i, day := range data {
-		if i == 0 {
-			lastTime.YearDay()
-			continue
-		}
-
-		dayTime, err := time.Parse("2006:01:02", day)
+	for _, day := range data {
+		var dayTime, err = time.Parse("2006:01:02", day)
 		cuibase.CheckIfError(err)
-		logger.Info(dayTime)
 
-		currentDay := dayTime.Year()*1000 + dayTime.YearDay()
-		if currentDay-lastDay > 1 {
-
+		if lastTime == nil {
+			// fill year start to dayTime
+			//fillEmptyDay(result, lastTime, dayTime)
+			lastTime = &dayTime
+		} else {
+			emptyDay := fillEmptyDay(lastTime, dayTime)
+			result = append(result, emptyDay...)
+			lastTime = &dayTime
 		}
-
-		lastDay = currentDay
-		lastTime = &dayTime
+		result = append(result, [2]string{dayTime.Format("2006-01-02"), scoreMap[day]})
 	}
 
-	GinSuccessWith(c, data)
+	GinSuccessWith(c, result)
+}
+func fillEmptyDay(startDay *time.Time, endDay time.Time) [][2]string {
+	var result [][2]string
+	var indexDay = *startDay
+	actualEndDay := endDay.AddDate(0, 0, -1)
+	for !indexDay.Equal(actualEndDay) {
+		result = append(result, [2]string{indexDay.Format("2006-01-02"), "0"})
+		indexDay = indexDay.AddDate(0, 0, 1)
+	}
+	return result
 }
 
-func fill
 //HeatMap 热力图
 func HeatMap(c *gin.Context) {
 	param := parseParam(c)
