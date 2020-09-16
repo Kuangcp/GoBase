@@ -43,6 +43,10 @@
 
     let created = []
 
+    window.onload = function () {
+        heatMapMultiple()
+    }
+
     function heatMapMultiple() {
         if (created.length !== 0) {
             for (let i = 0; i < created.length; i++) {
