@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/wonderivan/logger"
 	"os"
 	"strconv"
 	"strings"
@@ -50,7 +51,12 @@ func ListenDevice(targetDevice string) {
 	success := false
 	for true {
 		inputEvents, err := device.Read()
-		if err != nil || inputEvents == nil || len(inputEvents) == 0 {
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
+		if inputEvents == nil || len(inputEvents) == 0 {
 			continue
 		}
 
