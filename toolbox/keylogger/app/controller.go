@@ -308,7 +308,9 @@ func keyNameMap(keyCode map[string]bool) map[string]string {
 	result := make(map[string]string)
 	for k := range keyCode {
 		name, err := GetConnection().HGet(KeyMap, k).Result()
-		cuibase.CheckIfError(err)
+		if err != nil {
+			result[k] = "unknown"
+		}
 		result[k] = name
 	}
 	return result
