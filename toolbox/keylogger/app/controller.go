@@ -3,6 +3,7 @@ package app
 import (
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -54,8 +55,20 @@ type (
 	}
 
 	CalendarHeatMapVO struct {
-		Data [][2]string `json:"data"`
-		Max  int         `json:"max"`
+		Data             [][2]string `json:"data"`
+		Type             string      `json:"type"`
+		CoordinateSystem string      `json:"coordinateSystem"`
+		CalendarIndex    int         `json:"calendarIndex"`
+	}
+	CalendarStyleVO struct {
+		Range string `json:"range"`
+	}
+
+	CalendarResultVO struct {
+		Maps   []CalendarHeatMapVO `json:"maps"`
+		Styles []CalendarStyleVO   `json:"styles"`
+		Max    int                 `json:"max"`
+		Title  string              `json:"title"`
 	}
 
 	DayBO struct {
@@ -85,6 +98,65 @@ func CalendarMap(c *gin.Context) {
 	for _, ele := range totalData {
 		scoreMap[ele.Member.(string)] = int(ele.Score)
 	}
+	max := 0
+
+	yearListMap := make(map[string][]string)
+	for _, day := range data {
+		fields := strings.Split(day, ":")
+		yearStr := fields[0]
+		if val, ok := yearListMap[yearStr]; ok {
+			val = append(val, day)
+			yearListMap[yearStr] = val
+		} else {
+			var val []string
+			val = append(val, day)
+			yearListMap[yearStr] = val
+		}
+	}
+
+	// sort year
+	var yearList []string
+	for k := range yearListMap {
+		yearList = append(yearList, k)
+	}
+	sort.Strings(yearList)
+
+	chartIndex := -1
+	var mapList []CalendarHeatMapVO
+	var styleList []CalendarStyleVO
+	for i := range yearList {
+		year := yearList[i]
+
+		result, tempMax := buildYear(yearListMap[year], scoreMap)
+
+		chartIndex += 1
+		mapList = append(mapList, CalendarHeatMapVO{
+			Type:             "heatmap",
+			CoordinateSystem: "calendar",
+			CalendarIndex:    chartIndex,
+			Data:             result,
+		})
+		styleList = append(styleList, CalendarStyleVO{Range: year})
+		if tempMax > max {
+			max = tempMax
+		}
+	}
+
+	GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max, Title: buildTitle(yearList)})
+}
+
+func buildTitle(yearList []string) string {
+	suffix := "年度数据"
+	if len(yearList) == 0 {
+		return "" + suffix
+	} else if len(yearList) == 1 {
+		return yearList[0] + "" + suffix
+	} else {
+		return yearList[0] + "-" + yearList[len(yearList)-1] + suffix
+	}
+}
+
+func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 	var result [][2]string
 	max := 0
 	var lastTime *time.Time = nil
@@ -109,8 +181,7 @@ func CalendarMap(c *gin.Context) {
 
 		result = append(result, [2]string{dayTime.Format("2006-01-02"), strconv.Itoa(score)})
 	}
-
-	GinSuccessWith(c, CalendarHeatMapVO{Data: result, Max: max})
+	return result, max
 }
 
 func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {

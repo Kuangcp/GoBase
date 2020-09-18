@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Calendar</title>
+    <!-- https://echarts.apache.org/examples/zh/editor.html?c=calendar-heatmap -->
 
     <script src="/static/js/lib/jquery.min.js"></script>
     <script src="/static/js/lib/echarts.min.js"></script>
@@ -13,7 +14,7 @@
 <style>
     .calendar-map {
         width: 100%;
-        height: 200px;
+        height: 700px;
     }
 
     .nav {
@@ -32,8 +33,12 @@
 <div id="calendarMap" class="calendar-map"></div>
 
 <script>
-
     option = {
+        title: {
+            top: 30,
+            left: 'center',
+            text: '2016年某人每天的步数'
+        },
         tooltip: {
             position: 'top',
             formatter: function (p) {
@@ -41,66 +46,50 @@
                 return format + ': ' + p.data[1];
             }
         },
-        calendar: [
-            {
-                orient: 'horizontal',
-                range: '2020',
-                cellSize: [20, 'auto'],
-            },
-            // {
-            //     left: 300,
-            //     orient: 'vertical',
-            //     range: '2016',
-            //     cellSize: [20, 'auto'],
-            // },
-            // {
-            //     left: 520,
-            //     cellSize: [20, 'auto'],
-            //     bottom: 10,
-            //     orient: 'vertical',
-            //     range: '2017',
-            //     dayLabel: {
-            //         margin: 5
-            //     }
-            // }
-        ],
-
-        // series: [{
-        //     type: 'heatmap',
-        //     coordinateSystem: 'calendar',
-        //     calendarIndex: 0,
-        //     data: getVirtualData(2015)
-        // }, {
-        //     type: 'heatmap',
-        //     coordinateSystem: 'calendar',
-        //     calendarIndex: 1,
-        //     data: getVirtualData(2016)
-        // }, {
-        //     type: 'heatmap',
-        //     coordinateSystem: 'calendar',
-        //     calendarIndex: 2,
-        //     data: getVirtualData(2017)
-        // }]
     };
 
     let chart = echarts.init(document.getElementById('calendarMap'));
 
-    handleGet('/calendarMap', function (data) {
-        console.log(data.Data)
-        option.series = [
-            {
-                type: 'heatmap',
-                coordinateSystem: 'calendar',
-                calendarIndex: 0,
-                data: data.Data.data
-            }
-        ]
+    handleGet('/calendarMap', function (response) {
+        // console.log(data.Data)
+
+        let calendar = []
+        let topVal = -110
+        for (let idx in response.Data.styles) {
+            topVal += 210
+            calendar.push({
+                left: '17%',
+                right: 30,
+                top: topVal,
+                height: 160,
+                width: 1200,
+                cellSize: ['auto', 13],
+                range: response.Data.styles[idx].range,
+                itemStyle: {
+                    borderWidth: 0.5
+                },
+                yearLabel: {show: false}
+            })
+        }
+        option.calendar = calendar
+
+        option.title.text = response.Data.title
+
+        option.series = response.Data.maps
+
         option.visualMap = {
             min: 0,
-            max: data.Data.max,
+            max: response.Data.max,
+            // type: 'piecewise',
             calculable: true,
-            top: 'center'
+            orient: 'vertical',
+            // orient: 'horizontal',
+            top: 'left',
+            inRange: {
+                color: ['#ffffff', '#dcffd3', '#bbffab', '#9be9a8', '#40c463', '#30a14e', '#216e39']
+            }
         }
+
         chart.setOption(option)
     })
 </script>
