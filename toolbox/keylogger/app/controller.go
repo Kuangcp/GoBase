@@ -216,6 +216,10 @@ func HeatMap(c *gin.Context) {
 				cur := time.Unix(parseInt/1000000, 0)
 				weekDay := int(cur.Weekday())
 				dayMap := totalMap[weekDay]
+				curStr := cur.Format("2006:01:02")
+				if curStr != day {
+					logger.Error("error detail data", curStr, day)
+				}
 				if dayMap == nil {
 					dayMap = make(map[int]int)
 					totalMap[weekDay] = dayMap
