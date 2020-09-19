@@ -68,7 +68,6 @@ type (
 		Maps   []CalendarHeatMapVO `json:"maps"`
 		Styles []CalendarStyleVO   `json:"styles"`
 		Max    int                 `json:"max"`
-		Title  string              `json:"title"`
 	}
 
 	DayBO struct {
@@ -142,18 +141,7 @@ func CalendarMap(c *gin.Context) {
 		}
 	}
 
-	GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max, Title: buildTitle(yearList)})
-}
-
-func buildTitle(yearList []string) string {
-	suffix := "年度数据"
-	if len(yearList) == 0 {
-		return "" + suffix
-	} else if len(yearList) == 1 {
-		return yearList[0] + "" + suffix
-	} else {
-		return yearList[0] + "-" + yearList[len(yearList)-1] + suffix
-	}
+	GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max})
 }
 
 func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {

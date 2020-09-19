@@ -9,20 +9,13 @@
     <script src="/static/js/lib/echarts.min.js"></script>
 
     <script src="/static/js/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/common.css">
 </head>
 
 <style>
     .calendar-map {
         width: 100%;
         height: 700px;
-    }
-
-    .nav {
-        text-align: center;
-    }
-
-    body {
-        background-color: #999999;
     }
 </style>
 
@@ -35,9 +28,9 @@
 <script>
     option = {
         title: {
-            top: 30,
+            top: 15,
             left: 'center',
-            text: '2016年某人每天的步数'
+            text: '年度数据'
         },
         tooltip: {
             position: 'top',
@@ -54,7 +47,7 @@
         // console.log(data.Data)
 
         let calendar = []
-        let topVal = -110
+        let topVal = -140
         for (let idx in response.Data.styles) {
             topVal += 210
             calendar.push({
@@ -66,14 +59,13 @@
                 cellSize: ['auto', 13],
                 range: response.Data.styles[idx].range,
                 itemStyle: {
-                    borderWidth: 0.5
+                    borderWidth: 4
                 },
-                yearLabel: {show: false}
+                yearLabel: {show: true},
+                backgroundColor:'#fff'
             })
         }
         option.calendar = calendar
-
-        option.title.text = response.Data.title
 
         option.series = response.Data.maps
 
@@ -86,7 +78,9 @@
             // orient: 'horizontal',
             top: 'left',
             inRange: {
-                color: ['#ffffff', '#dcffd3', '#bbffab', '#9be9a8', '#40c463', '#30a14e', '#216e39']
+                color: ['#f5fff4', '#dcffd3', '#bbffab',
+                    '#9be9a8', '#40c463', '#30a14e', '#216e39'
+                ]
             }
         }
 

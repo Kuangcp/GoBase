@@ -7,7 +7,9 @@
 
     <script src="/static/js/lib/jquery.min.js"></script>
     <script src="/static/js/lib/echarts.min.js"></script>
+
     <script src="/static/js/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/common.css">
 
     <style>
         .line-chart {
@@ -20,18 +22,6 @@
         .heatmap-chart {
             width: 100%;
             height: 500px;
-        }
-
-        .nav {
-            text-align: center;
-        }
-
-        .nav input {
-            width: 50px;
-        }
-
-        body {
-            background-color: #999999;
         }
     </style>
 </head>
@@ -56,12 +46,8 @@
     <button onclick="barChart()">柱状图</button>
     <button onclick="heatmapChart()">热力图</button>
 
-    <a href="weeks.html">
-        <button>每周热力图</button>
-    </a>
-    <a href="calendar.html">
-        <button>年视图</button>
-    </a>
+    <button onclick="window.location='/static/weeks.html'" style="border-color: yellowgreen">每周热力图</button>
+    <button onclick="window.location='/static/calendar.html'" style="border-color: yellowgreen">年视图</button>
 </div>
 
 <div id="main" class="line-chart"></div>
