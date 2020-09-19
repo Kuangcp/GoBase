@@ -49,17 +49,17 @@
         let calendar = []
         let topVal = -140
         for (let idx in response.Data.styles) {
-            topVal += 210
+            topVal += 220
             calendar.push({
                 left: '17%',
                 right: 30,
                 top: topVal,
-                height: 160,
-                width: 1200,
+                height: 170,
+                width: 1300,
                 cellSize: ['auto', 13],
                 range: response.Data.styles[idx].range,
                 itemStyle: {
-                    borderWidth: 4
+                    borderWidth: 4.1
                 },
                 yearLabel: {show: true},
                 backgroundColor:'#fff'
@@ -78,7 +78,7 @@
             // orient: 'horizontal',
             top: 'left',
             inRange: {
-                color: ['#f5fff4', '#dcffd3', '#bbffab',
+                color: ['#edffe9', '#dcffd3', '#bbffab',
                     '#9be9a8', '#40c463', '#30a14e', '#216e39'
                 ]
             }
