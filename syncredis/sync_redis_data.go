@@ -19,18 +19,15 @@ func logWarn(msg string, v ...interface{}) {
 	log.Println(cuibase.Yellow, msg, v, cuibase.End)
 }
 
-func initConnection() (*redis.Client, *redis.Client) {
-	origin := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6666",
-		Password: "",
-		DB:       2,
-	})
+func Action(originO *redis.Options, targetO *redis.Options,
+	action func(client *redis.Client, client2 *redis.Client)) {
 
-	target := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6667",
-		Password: "",
-		DB:       5,
-	})
+	if originO == nil || targetO == nil {
+		log.Fatal("origin or target option is nil")
+	}
+
+	origin := redis.NewClient(originO)
+	target := redis.NewClient(targetO)
 
 	_, err := origin.Ping().Result()
 	if err != nil {
@@ -41,12 +38,10 @@ func initConnection() (*redis.Client, *redis.Client) {
 	if err != nil {
 		log.Fatal("target can not connection ", err)
 	}
-	return origin, target
+	action(origin, target)
 }
 
-func syncKeyRecord() {
-	origin, target := initConnection()
-
+func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 	logInfo("start sync")
 	result, _ := origin.Keys("*").Result()
 	//logInfo("total key: ", result)
@@ -105,9 +100,15 @@ func syncKeyRecord() {
 	latch.Wait()
 }
 
-func syncAllKey() {
-	origin, target := initConnection()
+func convert(data map[string]string) map[string]interface{} {
+	result := make(map[string]interface{})
 
+	for k, v := range data {
+		result[k] = v
+	}
+	return result
+}
+func SyncAllKey(origin *redis.Client, target *redis.Client) {
 	logInfo("start sync")
 	result, _ := origin.Keys("*").Result()
 	//logInfo("total key: ", result)
@@ -141,11 +142,9 @@ func syncAllKey() {
 				// []string -> ...string
 				target.ZAdd(key, val...)
 			case HASH:
-				// TODO complete
-				// var val map[string]interface{}
 				val, _ := origin.HGetAll(key).Result()
 				logInfo(workerId, "value", val)
-				// target.HMSet(key, val)
+				target.HMSet(key, convert(val))
 			}
 		})
 		if err != nil {
