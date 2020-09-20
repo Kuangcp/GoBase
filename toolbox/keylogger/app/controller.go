@@ -193,6 +193,10 @@ func HeatMap(c *gin.Context) {
 	// [weekday, hour, count], [weekday, hour, count]
 	var result [168][3]int
 
+	//TODO concurrency with sync map
+
+	// weekday -> hour -> count
+	start := time.Now().UnixNano()
 	totalMap := make(map[int]map[int]int)
 	for _, day := range dayList {
 		var lastCursor uint64 = 0
@@ -200,7 +204,7 @@ func HeatMap(c *gin.Context) {
 
 		totalCount := 0
 		for lastCursor != 0 || first {
-			result, cursor, err := GetConnection().ZScan(GetDetailKeyByString(day), lastCursor, "", 2000).Result()
+			result, cursor, err := GetConnection().ZScan(GetDetailKeyByString(day), lastCursor, "", 1000).Result()
 			cuibase.CheckIfError(err)
 			lastCursor = cursor
 			first = false
@@ -213,7 +217,7 @@ func HeatMap(c *gin.Context) {
 				parseInt, err := strconv.ParseInt(result[i], 0, 64)
 				cuibase.CheckIfError(err)
 
-				cur := time.Unix(parseInt/1000000, 0)
+				cur := time.Unix(parseInt/1000_000, 0)
 				weekDay := int(cur.Weekday())
 				dayMap := totalMap[weekDay]
 				curStr := cur.Format("2006:01:02")
@@ -230,6 +234,9 @@ func HeatMap(c *gin.Context) {
 		}
 		//logger.Info(day, totalCount/2)
 	}
+	end := time.Now().UnixNano()
+	logger.Info("hotKey: ", end-start, "ns ", (end-start)/1000_000, "ms")
+
 	max := 0
 	for weekday, v := range totalMap {
 		chartIndex := 6 - weekday
@@ -238,13 +245,16 @@ func HeatMap(c *gin.Context) {
 			if count > max {
 				max = count
 			}
-			result[(chartIndex*24)+hour] = [...]int{
-				chartIndex, hour, count,
-			}
+			result[(chartIndex*24)+hour] = [...]int{chartIndex, hour, count}
 		}
 	}
 
-	GinSuccessWith(c, HeatMapVO{Data: result, Max: max, Start: dayList[0], End: dayList[len(dayList)-1]})
+	GinSuccessWith(c, HeatMapVO{
+		Max:   max,
+		Data:  result,
+		Start: dayList[0],
+		End:   dayList[len(dayList)-1],
+	})
 }
 
 //LineMap 折线图 柱状图
@@ -380,6 +390,7 @@ func keyNameMap(keyCode map[string]bool) map[string]string {
 }
 
 func hotKey(dayList []string, top int64) map[string]bool {
+	start := time.Now().UnixNano()
 	keyCodeMap := make(map[string]bool)
 	for i := range dayList {
 		result, err := GetConnection().ZRevRange(GetRankKeyByString(dayList[i]), 0, top).Result()
@@ -392,6 +403,8 @@ func hotKey(dayList []string, top int64) map[string]bool {
 			keyCodeMap[s] = true
 		}
 	}
+	end := time.Now().UnixNano()
+	logger.Info("hotKey: ", end-start)
 	return keyCodeMap
 }
 
