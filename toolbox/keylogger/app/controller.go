@@ -1,9 +1,11 @@
 package app
 
 import (
+	"github.com/kuangcp/threadpool"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -193,47 +195,23 @@ func HeatMap(c *gin.Context) {
 	// [weekday, hour, count], [weekday, hour, count]
 	var result [168][3]int
 
-	//TODO concurrency with sync map
-
+	var mutex = &sync.Mutex{}
 	// weekday -> hour -> count
 	start := time.Now().UnixNano()
 	totalMap := make(map[int]map[int]int)
+	pool := threadpool.NewThreadPoolWithPrefix(30, 10000, "sync-")
+	var latch sync.WaitGroup
+	latch.Add(len(dayList))
+
 	for _, day := range dayList {
-		var lastCursor uint64 = 0
-		first := true
+		var curDay = day
+		pool.ExecuteFunc(func(workerId string) {
+			defer latch.Done()
 
-		totalCount := 0
-		for lastCursor != 0 || first {
-			result, cursor, err := GetConnection().ZScan(GetDetailKeyByString(day), lastCursor, "", 1000).Result()
-			cuibase.CheckIfError(err)
-			lastCursor = cursor
-			first = false
-			for i := range result {
-				if i%2 == 1 {
-					continue
-				}
-				//logger.Info(result[i], result[i+1])
-
-				parseInt, err := strconv.ParseInt(result[i], 0, 64)
-				cuibase.CheckIfError(err)
-
-				cur := time.Unix(parseInt/1000_000, 0)
-				weekDay := int(cur.Weekday())
-				dayMap := totalMap[weekDay]
-				curStr := cur.Format("2006:01:02")
-				if curStr != day {
-					logger.Error("error detail data", curStr, day)
-				}
-				if dayMap == nil {
-					dayMap = make(map[int]int)
-					totalMap[weekDay] = dayMap
-				}
-				dayMap[cur.Hour()] += 1
-			}
-			totalCount += len(result)
-		}
-		//logger.Info(day, totalCount/2)
+			readDetailToMap(curDay, mutex, totalMap)
+		})
 	}
+	latch.Wait()
 	end := time.Now().UnixNano()
 	logger.Info("hotKey: ", end-start, "ns ", (end-start)/1000_000, "ms")
 
@@ -255,6 +233,53 @@ func HeatMap(c *gin.Context) {
 		Start: dayList[0],
 		End:   dayList[len(dayList)-1],
 	})
+}
+
+func readDetailToMap(
+	curDay string,
+	mutex *sync.Mutex,
+	totalMap map[int]map[int]int) {
+
+	var lastCursor uint64 = 0
+	first := true
+
+	totalCount := 0
+	for lastCursor != 0 || first {
+		result, cursor, err := GetConnection().
+			ZScan(GetDetailKeyByString(curDay), lastCursor, "", 1000).Result()
+		cuibase.CheckIfError(err)
+		lastCursor = cursor
+		first = false
+		for i := range result {
+			if i%2 == 1 {
+				continue
+			}
+			//logger.Info(result[i], result[i+1])
+
+			parseInt, err := strconv.ParseInt(result[i], 0, 64)
+			cuibase.CheckIfError(err)
+
+			cur := time.Unix(parseInt/1000_000, 0)
+			weekDay := int(cur.Weekday())
+
+			mutex.Lock()
+
+			dayMap := totalMap[weekDay]
+			//curStr := cur.Format("2006:01:02")
+			//if curStr != curDay {
+			//	logger.Error("error detail data", curStr, curDay)
+			//}
+			if dayMap == nil {
+				dayMap = make(map[int]int)
+				totalMap[weekDay] = dayMap
+			}
+			dayMap[cur.Hour()] += 1
+
+			mutex.Unlock()
+		}
+		totalCount += len(result)
+	}
+	//logger.Info(day, totalCount/2)
 }
 
 //LineMap 折线图 柱状图
