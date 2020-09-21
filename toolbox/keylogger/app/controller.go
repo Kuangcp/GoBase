@@ -199,7 +199,7 @@ func HeatMap(c *gin.Context) {
 	// weekday -> hour -> count
 	start := time.Now().UnixNano()
 	totalMap := make(map[int]map[int]int)
-	pool := threadpool.NewThreadPoolWithPrefix(30, 10000, "sync-")
+	pool := threadpool.NewThreadPoolWithPrefix(40, 10000, "sync-")
 	var latch sync.WaitGroup
 	latch.Add(len(dayList))
 
@@ -213,7 +213,7 @@ func HeatMap(c *gin.Context) {
 	}
 	latch.Wait()
 	end := time.Now().UnixNano()
-	logger.Info("hotKey: ", end-start, "ns ", (end-start)/1000_000, "ms")
+	logger.Info("heatMap: ", end-start, "ns ", (end-start)/1000_000, "ms")
 
 	max := 0
 	for weekday, v := range totalMap {
