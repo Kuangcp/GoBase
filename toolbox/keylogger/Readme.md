@@ -24,6 +24,7 @@
 - **zset** `keyboard:年:月:日:rank`
 	- value: keyCode score: 当日按键数
 
-## Version 
+## Version
+- 1.0.4 remove thread pool(memory leak)
 - 1.0.3 import thread pool 
 - 1.0.2 GA

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/kuangcp/threadpool"
 	"sort"
 	"strconv"
 	"strings"
@@ -197,23 +196,19 @@ func HeatMap(c *gin.Context) {
 
 	var mutex = &sync.Mutex{}
 	// weekday -> hour -> count
-	start := time.Now().UnixNano()
 	totalMap := make(map[int]map[int]int)
-	pool := threadpool.NewThreadPoolWithPrefix(40, 10000, "sync-")
 	var latch sync.WaitGroup
 	latch.Add(len(dayList))
 
 	for _, day := range dayList {
 		var curDay = day
-		pool.ExecuteFunc(func(workerId string) {
+		go func() {
 			defer latch.Done()
 
 			readDetailToMap(curDay, mutex, totalMap)
-		})
+		}()
 	}
 	latch.Wait()
-	end := time.Now().UnixNano()
-	logger.Info("heatMap: ", end-start, "ns ", (end-start)/1000_000, "ms")
 
 	max := 0
 	for weekday, v := range totalMap {

@@ -13,7 +13,7 @@ import (
 
 var info = cuibase.HelpInfo{
 	Description: "Record key input, show rank",
-	Version:     "1.0.3",
+	Version:     "1.0.4",
 	VerbLen:     -5,
 	ParamLen:    -14,
 	Params: []cuibase.ParamInfo{
