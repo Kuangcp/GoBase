@@ -188,7 +188,11 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 
 //HeatMap 热力图
 func HeatMap(c *gin.Context) {
-	param := parseParam(c)
+	param, err := parseParam(c)
+	if err != nil {
+		GinFailedWithMsg(c, err.Error())
+		return
+	}
 	dayList := buildDayList(param.Length, param.Offset)
 
 	// [weekday, hour, count], [weekday, hour, count]
@@ -279,7 +283,11 @@ func readDetailToMap(
 
 //LineMap 折线图 柱状图
 func LineMap(c *gin.Context) {
-	param := parseParam(c)
+	param, err := parseParam(c)
+	if err != nil {
+		GinFailedWithMsg(c, err.Error())
+		return
+	}
 	dayList := buildDayList(param.Length, param.Offset)
 	hotKey := hotKey(dayList, param.Top)
 	nameMap := keyNameMap(hotKey)
@@ -351,7 +359,7 @@ func getMapKeys(m map[string]bool) []string {
 	return keys
 }
 
-func parseParam(c *gin.Context) QueryParam {
+func parseParam(c *gin.Context) (*QueryParam, error) {
 	length := c.Query("length")
 	offset := c.Query("offset")
 	top := c.Query("top")
@@ -372,13 +380,21 @@ func parseParam(c *gin.Context) QueryParam {
 	}
 
 	lengthInt, err := strconv.Atoi(length)
-	cuibase.CheckIfError(err)
+	if err != nil {
+		return nil, err
+	}
 	offsetInt, err := strconv.Atoi(offset)
-	cuibase.CheckIfError(err)
+	if err != nil {
+		return nil, err
+	}
 	topInt, err := strconv.ParseInt(top, 10, 64)
-	cuibase.CheckIfError(err)
+	if err != nil {
+		return nil, err
+	}
 	showLabelBool, err := strconv.ParseBool(showLabel)
-	cuibase.CheckIfError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	if chartType == "" {
 		chartType = "bar"
@@ -388,13 +404,16 @@ func parseParam(c *gin.Context) QueryParam {
 	if topInt < 0 {
 		topInt = 0
 	}
-	return QueryParam{
+	if lengthInt <= 0 {
+		lengthInt = 1
+	}
+	return &QueryParam{
 		Length:    lengthInt,
 		Offset:    offsetInt,
 		Top:       topInt,
 		ChartType: chartType,
 		ShowLabel: showLabelBool,
-	}
+	}, nil
 }
 
 func keyNameMap(keyCode map[string]bool) map[string]string {

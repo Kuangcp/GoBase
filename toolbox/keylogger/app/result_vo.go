@@ -52,6 +52,10 @@ func GinFailed(c *gin.Context) {
 	c.JSON(http.StatusOK, failed)
 }
 
+func GinFailedWithMsg(c *gin.Context, msg string) {
+	c.JSON(http.StatusOK, FailedWithMsg(msg))
+}
+
 func GinSuccessWith(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, SuccessWith(data))
 }
