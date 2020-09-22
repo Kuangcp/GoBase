@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/go-redis/redis"
 	"testing"
+
+	"github.com/go-redis/redis"
 )
 
 func Test_syncAllKey(t *testing.T) {

@@ -453,7 +453,11 @@ func buildDayList(length int, offset int) []string {
 	var result []string
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
-		day := start.AddDate(0, 0, i).Format("2006:01:02")
+		tempTime := start.AddDate(0, 0, i)
+		day := tempTime.Format("2006:01:02")
+		if tempTime.After(now) {
+			return result
+		}
 		result = append(result, day)
 	}
 	return result
@@ -465,9 +469,12 @@ func buildDayWithWeekdayList(length int, offset int) []DayBO {
 	var result []DayBO
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
-		date := start.AddDate(0, 0, i)
-		day := date.Format("2006:01:02")
-		result = append(result, DayBO{Day: day, WeekDay: buildWeekDay(date.Weekday())})
+		tempTime := start.AddDate(0, 0, i)
+		day := tempTime.Format("2006:01:02")
+		if tempTime.After(now) {
+			return result
+		}
+		result = append(result, DayBO{Day: day, WeekDay: buildWeekDay(tempTime.Weekday())})
 	}
 	return result
 }
