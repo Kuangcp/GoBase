@@ -4,18 +4,23 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/tidwall/pretty"
 	"os"
+
+	"github.com/tidwall/pretty"
 )
 
-var help bool
-var uglyJSON string
-var indent string
+var (
+	debug    bool
+	help     bool
+	uglyJSON string
+	indent   string
+)
 
 func init() {
 	flag.BoolVar(&help, "h", false, "show help")
 	flag.StringVar(&uglyJSON, "s", "", "json string")
 	flag.StringVar(&indent, "i", "    ", "indent string")
+	flag.BoolVar(&debug, "d", false, "debug info")
 }
 
 func helpInfo() {
@@ -37,9 +42,8 @@ func main() {
 	if uglyJSON == "" {
 		reader := bufio.NewReader(os.Stdin)
 		result, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Println("read error:", err)
-			return
+		if err != nil && debug {
+			fmt.Printf("read error. result:%s error: %v\n", result, err)
 		}
 		uglyJSON = result
 	}
