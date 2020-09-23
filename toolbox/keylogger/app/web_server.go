@@ -36,6 +36,9 @@ func Server(debugStatic bool, port string) {
 	router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "static/")
 	})
+	router.GET("/favicon.ico", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
+	})
 
 	// backend logic router
 	registerRouter(router)
