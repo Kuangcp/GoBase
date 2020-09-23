@@ -16,20 +16,15 @@ var (
 	port int
 )
 var info = cuibase.HelpInfo{
-	Description: "Start simple http server on current path",
-	Version:     "1.0.3",
-	VerbLen:     -3,
-	ParamLen:    -5,
-	Params: []cuibase.ParamInfo{
-		{
-			Verb:    "-h",
-			Param:   "",
-			Comment: "help",
-		}, {
-			Verb:    "-p",
-			Param:   "port",
-			Comment: "web server port",
-		},
+	Description:   "Start simple http server on current path",
+	Version:       "1.0.3",
+	SingleFlagLen: -3,
+	ValueLen:      -7,
+	Flags: []cuibase.ParamVO{
+		{Short: "-h", Comment: "help"},
+	},
+	Options: []cuibase.ParamVO{
+		{Short: "-p", Value: "<port>", Comment: "web server port"},
 	}}
 
 func init() {

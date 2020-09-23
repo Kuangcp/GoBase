@@ -46,8 +46,12 @@ func PrintParams(format string, flagColor Color, params []ParamVO) {
 
 // PrintTitle
 func PrintTitle(command string, description string) {
-	fmt.Printf("%s\n\n  %v %v %v %v\n\n", LightCyan.Print("Usage:"),
-		command, Green.PrintNoEnd("[Flags]"), Purple.Print("[Options]"), Blue.Print("[Args]"))
+	fmt.Printf("%s\n\n  %v %v %v %v\n\n",
+		LightCyan.Print("Usage:"),
+		command,
+		Yellow.PrintNoEnd("[Flags]"),
+		Purple.Print("[Options]"),
+		Blue.Print("[Args]"))
 	fmt.Printf("%s\n\n  %v\n", LightCyan.Print("Description:"), description)
 }
 

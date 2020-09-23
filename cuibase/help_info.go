@@ -36,12 +36,12 @@ func (helpInfo HelpInfo) PrintHelp() {
 	format := BuildFormat(helpInfo)
 
 	if len(helpInfo.Flags) > 0 {
-		fmt.Printf("\n%v\n", LightCyan.Print("Flags:"))
+		fmt.Printf("\n%v\n", Yellow.Print("Flags:"))
 		PrintParams(format, Green, helpInfo.Flags)
 	}
 	if len(helpInfo.Options) > 0 {
-		fmt.Printf("\n%v\n", LightCyan.Print("Options:"))
-		PrintParams(format, Purple, helpInfo.Options)
+		fmt.Printf("\n%v\n", Purple.Print("Options:"))
+		PrintParams(format, Green, helpInfo.Options)
 	}
 
 	if len(helpInfo.Args) > 0 {
