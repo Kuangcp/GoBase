@@ -12,6 +12,12 @@
 
 ![](https://img-blog.csdnimg.cn/20200912222920568.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2tjcDYwNg==,size_16,color_FFFFFF,t_70#pic_center)
 
+## Install 
+1. make down 
+1. make statik
+1. make install 
+1. make web
+
 ## Redis
 > 全局
 - **string** `keyboard:last-event`

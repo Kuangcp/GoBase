@@ -9,10 +9,6 @@ type (
 		Comment string
 		Handler func(params []string)
 	}
-	ParamBlock struct {
-		Name   string
-		Params []ParamVO
-	}
 	ParamVO struct {
 		Short   string
 		Long    string

@@ -2,87 +2,44 @@ package main
 
 import (
 	"flag"
-	"github.com/wonderivan/logger"
 	"net/http"
 	_ "net/http/pprof"
+
+	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/keylogger/app"
 )
 
+var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
-	Description: "Record key input, show rank",
-	Version:     "1.0.4",
-	VerbLen:     -5,
-	ParamLen:    -14,
-	Params: []cuibase.ParamInfo{
-		{
-			Verb:    "-h",
-			Param:   "",
-			Comment: "Help info",
-		}, {
-			Verb:    "-l",
-			Param:   "",
-			Comment: cuibase.Red.Print("root") + " List keyboard device",
-		}, {
-			Verb:    "-ld",
-			Param:   "",
-			Comment: cuibase.Red.Print("root") + " List all device",
-		}, {
-			Verb:    "-p",
-			Param:   "",
-			Comment: cuibase.Red.Print("root") + " Print key map",
-		}, {
-			Verb:    "-ca",
-			Param:   "",
-			Comment: cuibase.Red.Print("root") + " Cache key map",
-		}, {
-			Verb:    "-s",
-			Param:   "",
-			Comment: cuibase.Red.Print("root") + " Listen keyboard with last device or specific device",
-		}, {
-			Verb:    "-d",
-			Param:   "",
-			Comment: "Print daily total by before x day ago and duration",
-		}, {
-			Verb:    "-dr",
-			Param:   "",
-			Comment: "Print daily rank by before x day ago and duration",
-		}, {
-			Verb:    "-t",
-			Param:   "<x>,<duration>",
-			Comment: "Before x day ago and duration. For -d and -dr",
-		}, {
-			Verb:    "-e",
-			Param:   "device",
-			Comment: "Device. For -p -ca -s",
-		}, {
-			Verb:    "-host",
-			Param:   "",
-			Comment: "Redis host",
-		}, {
-			Verb:    "-port",
-			Param:   "",
-			Comment: "Redis port",
-		}, {
-			Verb:    "-pwd",
-			Param:   "",
-			Comment: "Redis pwd",
-		}, {
-			Verb:    "-db",
-			Param:   "",
-			Comment: "Redis db",
-		}, {
-			Verb:    "-ws",
-			Param:   "",
-			Comment: "Start Web Server",
-		}, {
-			Verb:    "-wp",
-			Param:   "port",
-			Comment: "Web Server port. default 9902",
-		},
-	}}
+	Description:   "Record key input, show rank",
+	Version:       "1.0.4",
+	SingleFlagLen: -5,
+	DoubleFlagLen: -10,
+	ValueLen:      -19,
+	Flags: []cuibase.ParamVO{
+		{Short: "-h", Long: "--help", Comment: "Help info"},
+		{Short: "-l", Comment: user + " List keyboard device"},
+		{Short: "-ld", Comment: user + " List all device"},
+		{Short: "-p", Comment: user + " Print key map"},
+		{Short: "-ca", Comment: user + " Cache key map"},
+		{Short: "-s", Comment: user + " Listen keyboard with last device or specific device"},
+		{Short: "-d", Comment: "Print daily total by before x day ago and duration"},
+		{Short: "-dr", Comment: "Print daily rank by before x day ago and duration"},
+		{Short: "-ws", Comment: "Web server"},
+	},
+	Options: []cuibase.ParamVO{
+		{Short: "-t", Long: "--time", Value: "<x>,<duration>", Comment: "Before x day ago and duration. For -d and -dr"},
+		{Short: "-e", Long: "--device", Value: "<device>", Comment: "Operation target device, work for -p -ca -s"},
+		{Short: "-wp", Value: "<port>", Comment: "Web Server port. default 9902"},
+		{Short: "-host", Value: "<host>", Comment: "Redis host"},
+		{Short: "-port", Value: "<port>", Comment: "Redis port"},
+		{Short: "-pwd", Value: "<pwd>", Comment: "Redis password"},
+		{Short: "-db", Value: "<db>", Comment: "Redis db"},
+	},
+}
 
 var (
 	help               bool
@@ -113,6 +70,7 @@ func init() {
 	logger.SetLogPathTrim("/keylogger/")
 
 	flag.BoolVar(&help, "h", false, "")
+	flag.BoolVar(&help, "help", false, "")
 	flag.BoolVar(&printKeyMap, "p", false, "")
 	flag.StringVar(&targetDevice, "e", "", "specific device")
 	flag.BoolVar(&cacheKeyMap, "ca", false, "")

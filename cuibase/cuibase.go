@@ -30,13 +30,17 @@ func BuildFormat(info HelpInfo) string {
 	single := strconv.Itoa(info.SingleFlagLen)
 	double := strconv.Itoa(info.DoubleFlagLen)
 	value := strconv.Itoa(info.ValueLen)
-	return "    %v %" + single + "v, %" + double + "v %" + value + "v %v %v %v\n"
+	return "    %v %" + single + "v%" + double + "v %v %" + value + "v %v %v\n"
 }
 
 // PrintParams
 func PrintParams(format string, flagColor Color, params []ParamVO) {
 	for _, vo := range params {
-		fmt.Printf(format, flagColor, vo.Short, vo.Long, Yellow, vo.Value, End, vo.Comment)
+		if vo.Long == "" {
+			fmt.Printf(format, flagColor, vo.Short, "", Yellow, vo.Value, End, vo.Comment)
+		} else {
+			fmt.Printf(format, flagColor, vo.Short, ", "+vo.Long, Yellow, vo.Value, End, vo.Comment)
+		}
 	}
 }
 
