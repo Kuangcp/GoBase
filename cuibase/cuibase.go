@@ -15,16 +15,6 @@ import (
 	"strings"
 )
 
-// ParamInfo one line struct
-type (
-	ParamInfo struct {
-		Verb    string
-		Param   string
-		Comment string
-		Handler func(params []string)
-	}
-)
-
 // AssertParamCount os.Args 参数构成: 0 go源文件; 1 参数1; 2 参数2; count 必填参数个数
 func AssertParamCount(count int, msg string) {
 	param := os.Args
@@ -35,67 +25,26 @@ func AssertParamCount(count int, msg string) {
 	}
 }
 
-// BuildFormat 
-func BuildFormat(verbLen int, paramLen int) string {
-	return "    %v %" + strconv.Itoa(verbLen) + "v %v %" + strconv.Itoa(paramLen) + "v %v %v\n"
+// BuildFormat
+func BuildFormat(info HelpInfo) string {
+	single := strconv.Itoa(info.SingleFlagLen)
+	double := strconv.Itoa(info.DoubleFlagLen)
+	value := strconv.Itoa(info.ValueLen)
+	return "    %v %" + single + "v, %" + double + "v %" + value + "v %v %v %v\n"
 }
 
-// PrintParam 
-func PrintParam(format string, verb string, param string, comment string) {
-	fmt.Printf(format, Green, verb, Yellow, param, End, comment)
-}
-
-// PrintParams 
-func PrintParams(format string, params []ParamInfo) {
-	for _, param := range params {
-		PrintParam(format, param.Verb, param.Param, param.Comment)
+// PrintParams
+func PrintParams(format string, flagColor Color, params []ParamVO) {
+	for _, vo := range params {
+		fmt.Printf(format, flagColor, vo.Short, vo.Long, Yellow, vo.Value, End, vo.Comment)
 	}
 }
 
-// PrintTitle 
+// PrintTitle
 func PrintTitle(command string, description string) {
-	fmt.Printf("%s\n\n  %v %v %v \n\n", LightGreen.Print("Usage:"),
-		command, Green.PrintNoEnd("<verb>"), Yellow.Print("<param>"))
-	fmt.Printf("%s\n\n  %v\n\n", LightGreen.Print("Description:"), description)
-}
-
-// RunActionFromInfo 当 defaultAction 为空时默认PrintHelp, 当一个参数时优先寻找空参数方法
-func RunActionFromInfo(info HelpInfo, defaultAction func(params []string)) {
-	if len(info.Params) == 0 {
-		return
-	}
-	params := os.Args
-	if len(params) < 2 {
-		if defaultAction != nil {
-			defaultAction(params)
-		} else {
-			info.PrintHelp()
-		}
-		return
-	}
-
-	verb := params[1]
-	for _, param := range info.Params {
-		if len(params) == 2 && param.Verb == "" {
-			param.Handler(params)
-			return
-		}
-		if verb != param.Verb {
-			continue
-		}
-
-		if param.Handler != nil {
-			param.Handler(params)
-			return
-		} else {
-			info.PrintHelp()
-		}
-	}
-}
-
-// RunAction actions map
-func RunAction(actions map[string]func(params []string), defaultAction func(params []string)) {
-	runAction(os.Args, actions, defaultAction)
+	fmt.Printf("%s\n\n  %v %v %v %v\n\n", LightCyan.Print("Usage:"),
+		command, Green.PrintNoEnd("[Flags]"), Purple.Print("[Options]"), Blue.Print("[Args]"))
+	fmt.Printf("%s\n\n  %v\n", LightCyan.Print("Description:"), description)
 }
 
 // CheckIfError assert err is nil
@@ -176,23 +125,6 @@ func PrintWithColorful() {
 
 func printTitleDefault(description string) {
 	PrintTitle(os.Args[0], description)
-}
-
-func runAction(params []string, actions map[string]func(params []string), defaultAction func(params []string)) {
-	if len(params) < 2 {
-		defaultAction(os.Args)
-		return
-	}
-
-	verb := params[1]
-	action := actions[verb]
-	if action != nil {
-		action(os.Args)
-		return
-	}
-	if defaultAction != nil {
-		defaultAction(os.Args)
-	}
 }
 
 func homeUnix() (string, error) {
