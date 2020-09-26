@@ -3,3 +3,4 @@ bin/
 local*
 conf/static/
 data/
+/conf/static/js/lib/
