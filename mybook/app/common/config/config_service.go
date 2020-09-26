@@ -32,7 +32,7 @@ func GetAppConfig() *AppConfig {
 
 	loadConfigFile()
 	configLogger()
-	buildAppConfig()
+	config = buildAppConfig()
 
 	logger.Info("Final config: %v", config)
 	return config
@@ -73,7 +73,7 @@ func configLogger() {
 	}
 }
 
-func buildAppConfig() {
+func buildAppConfig() *AppConfig {
 	dbFile := viper.GetString("db.file")
 	if dbFile == "" {
 		dbFile = DefaultDBPath
@@ -87,7 +87,7 @@ func buildAppConfig() {
 		port = DefaultPort
 	}
 	debug := viper.GetBool("debug")
-	config = &AppConfig{
+	return &AppConfig{
 		Path:       dbFile,
 		DriverName: driver,
 		Debug:      debug,

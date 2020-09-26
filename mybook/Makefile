@@ -13,7 +13,7 @@ buildSingleWin:
 clean:
 	rm -f bin/mybook
 
-run:
+web:
 	sh run.sh
 
 buildAlpine:

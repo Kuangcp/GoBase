@@ -57,7 +57,7 @@ func Server(debugStatic bool, port int) {
 
 	// start web server by specific port
 	var finalPort string
-	if port == config.DefaultPort {
+	if port == 0 {
 		finalPort = strconv.Itoa(appConfig.Port)
 	} else {
 		finalPort = strconv.Itoa(port)
@@ -67,6 +67,8 @@ func Server(debugStatic bool, port int) {
 		Addr:    ":" + finalPort,
 		Handler: router,
 	}
+
+	logger.Info("Start http://localhost:" + finalPort)
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
