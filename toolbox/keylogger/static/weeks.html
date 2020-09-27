@@ -49,6 +49,39 @@
         created = []
         document.getElementById("multiHeatMap").className = '';
         document.getElementById("multiHeatMap").innerHTML = ''
+
+        let weeks = $("#heatMapWeeks").val();
+
+        handleGet('/weeksHeatMap?weeks=' + weeks, function (heatMaps) {
+            console.log(heatMaps)
+            for (let i = 0; i < heatMaps.Data.length; i++) {
+                let heatMap = heatMaps.Data[i]
+                let weekDom = document.createElement('div')
+                weekDom.className = 'heatmap-box'
+                let chartDom = document.createElement('div')
+                chartDom.id = 'week' + i
+                chartDom.className = 'heatmap-chart'
+                weekDom.appendChild(chartDom)
+                document.getElementById("multiHeatMap").appendChild(weekDom)
+
+                let chart = echarts.init(document.getElementById(chartDom.id));
+                created.push(chart)
+
+                fillChartData(chart, heatMap)
+            }
+        })
+    }
+
+
+    function heatMapMultiple2() {
+        if (created.length !== 0) {
+            for (let i = 0; i < created.length; i++) {
+                created[i].dispose()
+            }
+        }
+        created = []
+        document.getElementById("multiHeatMap").className = '';
+        document.getElementById("multiHeatMap").innerHTML = ''
         let now = new Date();
         let weekDay = now.getDay();
 
@@ -75,71 +108,75 @@
         let chart = echarts.init(document.getElementById(elementId));
         created.push(chart)
         handleGet('/heatMap' + param, function (heatMap) {
-            // weekday, hour, count
-            let data = heatMap.Data.data.map(function (item) {
-                return [item[1], item[0], item[2] || '-'];
-            });
-
-            let title = heatMap.Data.start + " ➡️ " + heatMap.Data.end
-            let option = {
-                title: {
-                    text: title,
-                    left: 'center',
-                    align: 'right',
-                    top: '-5px'
-                },
-                tooltip: {
-                    position: 'top'
-                },
-                animation: false,
-                grid: {
-                    height: '65%',
-                    top: '20px',
-                    right: 0,
-                    left: '85px',
-                    bottom: 0
-                },
-                xAxis: {
-                    type: 'category',
-                    data: hours,
-                    splitArea: {
-                        show: true
-                    }
-                },
-                yAxis: {
-                    type: 'category',
-                    data: days,
-                    splitArea: {
-                        show: true
-                    }
-                },
-                visualMap: {
-                    min: 0,
-                    max: heatMap.Data.max,
-                    calculable: true,
-                    orient: 'horizontal',
-                    left: 'center',
-                    bottom: '15%'
-                },
-                series: [{
-                    name: 'Hit Count',
-                    type: 'heatmap',
-                    data: data,
-                    label: {
-                        show: true
-                    },
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
-                }]
-            };
-
-            chart.setOption(option);
+            fillChartData(chart, heatMap.Data);
         });
         return chart
+    }
+
+    function fillChartData(chart, heatMap) {
+        // weekday, hour, count
+        let data = heatMap.data.map(function (item) {
+            return [item[1], item[0], item[2] || '-'];
+        });
+
+        let title = heatMap.start + " ➡️ " + heatMap.end
+        let option = {
+            title: {
+                text: title,
+                left: 'center',
+                align: 'right',
+                top: '-5px'
+            },
+            tooltip: {
+                position: 'top'
+            },
+            animation: false,
+            grid: {
+                height: '65%',
+                top: '20px',
+                right: 0,
+                left: '85px',
+                bottom: 0
+            },
+            xAxis: {
+                type: 'category',
+                data: hours,
+                splitArea: {
+                    show: true
+                }
+            },
+            yAxis: {
+                type: 'category',
+                data: days,
+                splitArea: {
+                    show: true
+                }
+            },
+            visualMap: {
+                min: 0,
+                max: heatMap.max,
+                calculable: true,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: '15%'
+            },
+            series: [{
+                name: 'Hit Count',
+                type: 'heatmap',
+                data: data,
+                label: {
+                    show: true
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }]
+        };
+
+        chart.setOption(option);
     }
 </script>
 </html>
