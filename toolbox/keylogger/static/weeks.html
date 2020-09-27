@@ -26,7 +26,8 @@
 <nav class="nav">
     <button onclick="window.location='/static'">首页</button>
     <label for="heatMapWeeks">展示</label><input type="number" min="1" id="heatMapWeeks" value="1" style="width: 40px">周
-    <button onclick="heatMapMultiple()">生成</button>
+    <button onclick="heatMapMultipleWithMerge()">合并生成</button>
+    <button onclick="heatMapMultiple()">独立生成</button>
 </nav>
 
 <div id="multiHeatMap"></div>
@@ -40,7 +41,7 @@
         heatMapMultiple()
     }
 
-    function heatMapMultiple() {
+    function heatMapMultipleWithMerge() {
         if (created.length !== 0) {
             for (let i = 0; i < created.length; i++) {
                 created[i].dispose()
@@ -73,7 +74,7 @@
     }
 
 
-    function heatMapMultiple2() {
+    function heatMapMultiple() {
         if (created.length !== 0) {
             for (let i = 0; i < created.length; i++) {
                 created[i].dispose()

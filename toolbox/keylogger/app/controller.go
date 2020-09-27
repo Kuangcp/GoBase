@@ -199,20 +199,24 @@ func MultipleHeatMap(c *gin.Context) {
 	var weeksMap []*HeatMapVO
 
 	var mutex = &sync.Mutex{}
-	var latch sync.WaitGroup
-	latch.Add(param.Weeks)
+	//var latch sync.WaitGroup
+	//latch.Add(param.Weeks)
 	max := 0
 	for i := 0; i < param.Weeks; i++ {
 		offset := int(weekday) + (7 * i)
-		mapVO := buildDataFromFrame(7, offset)
-		mutex.Lock()
-		if mapVO.Max > max {
-			max = mapVO.Max
-		}
-		weeksMap = append(weeksMap, mapVO)
-		mutex.Unlock()
+		//go func() {
+		//	defer latch.Done()
+			mapVO := buildDataFromFrame(7, offset)
+			mutex.Lock()
+			if mapVO.Max > max {
+				max = mapVO.Max
+			}
+			weeksMap = append(weeksMap, mapVO)
+			mutex.Unlock()
+		//}()
 	}
 
+	//latch.Wait()
 	for _, vo := range weeksMap {
 		vo.Max = max
 	}
@@ -283,7 +287,7 @@ func readDetailToMap(
 	totalCount := 0
 	for lastCursor != 0 || first {
 		result, cursor, err := GetConnection().
-			ZScan(GetDetailKeyByString(curDay), lastCursor, "", 1000).Result()
+			ZScan(GetDetailKeyByString(curDay), lastCursor, "", 600).Result()
 		cuibase.CheckIfError(err)
 		lastCursor = cursor
 		first = false
