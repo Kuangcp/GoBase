@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -37,7 +38,9 @@ type (
 )
 
 func (t *QueryParam) buildMD5(salt string) string {
-	return fmt.Sprintf("%x", md5.Sum([]byte(t.App+t.Query+salt+t.SecretKey)))
+	h := md5.New()
+	h.Write([]byte(t.App + t.Query + salt + t.SecretKey))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 var info = cuibase.HelpInfo{
