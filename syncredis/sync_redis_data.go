@@ -4,12 +4,19 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/cuibase"
-	"github.com/kuangcp/threadpool"
+	"github.com/kuangcp/sizedwaitgroup"
 )
+
+var debugFlag = false
+
+func logDebug(msg string, v ...interface{}) {
+	if debugFlag {
+		log.Println(msg, v)
+	}
+}
 
 func logInfo(msg string, v ...interface{}) {
 	log.Println(cuibase.Green, msg, v, cuibase.End)
@@ -19,9 +26,10 @@ func logWarn(msg string, v ...interface{}) {
 	log.Println(cuibase.Yellow, msg, v, cuibase.End)
 }
 
-func Action(originO *redis.Options, targetO *redis.Options,
+func Action(debug bool, originO *redis.Options, targetO *redis.Options,
 	action func(client *redis.Client, client2 *redis.Client)) {
 
+	debugFlag = debug
 	if originO == nil || targetO == nil {
 		log.Fatal("origin or target option is nil")
 	}
@@ -46,20 +54,19 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 	result, _ := origin.Keys("*").Result()
 	//logInfo("total key: ", result)
 
-	pool := threadpool.NewThreadPoolWithPrefix(10, 10000, "sync-")
-	var latch sync.WaitGroup
-	latch.Add(len(result))
+	swg := sizedwaitgroup.New(12)
+
 	for i := range result {
+		swg.Add()
 		key := result[i]
 		keyType, _ := origin.Type(key).Result()
-		err := pool.ExecuteFunc(func(workerId string) {
-			defer latch.Done()
+		go func() {
 
-			logWarn(workerId, key, keyType)
+			logWarn(key, keyType)
 			switch keyType {
 			case STRING:
 				val, _ := origin.Get(key).Result()
-				//logInfo(workerId, "value: ", val)
+				logDebug("value: ", val)
 
 				if strings.HasPrefix(key, "all-") {
 					atoi, _ := strconv.Atoi(val)
@@ -70,7 +77,7 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 				}
 			case ZSET:
 				val, _ := origin.ZRangeWithScores(key, 0, -1).Result()
-				//logInfo(workerId, "value", val)
+				logDebug("value", val)
 
 				newKey := key
 				if strings.HasPrefix(key, "detail-") {
@@ -92,12 +99,9 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 					target.ZAdd(newKey, val...)
 				}
 			}
-		})
-		if err != nil {
-			logWarn("", err)
-		}
+		}()
 	}
-	latch.Wait()
+	swg.Wait()
 }
 
 func convert(data map[string]string) map[string]interface{} {
@@ -111,45 +115,42 @@ func convert(data map[string]string) map[string]interface{} {
 func SyncAllKey(origin *redis.Client, target *redis.Client) {
 	logInfo("start sync")
 	result, _ := origin.Keys("*").Result()
-	//logInfo("total key: ", result)
 
-	pool := threadpool.NewThreadPoolWithPrefix(10, 10000, "sync-")
-	var latch sync.WaitGroup
-	latch.Add(len(result))
+	swg := sizedwaitgroup.New(12)
+	logInfo("total key: ", len(result))
 	for i := range result {
+		swg.Add()
 		key := result[i]
 		keyType, _ := origin.Type(key).Result()
-		err := pool.ExecuteFunc(func(workerId string) {
-			defer latch.Done()
 
-			logWarn(workerId, key, keyType)
+		go func() {
+			defer swg.Done()
+
+			logWarn(key, keyType)
 			switch keyType {
 			case STRING:
 				val, _ := origin.Get(key).Result()
-				logInfo(workerId, "value: ", val)
+				logDebug("value: ", val)
 				target.Set(key, val, -1)
 			case LIST:
 				val := origin.LRange(key, 0, -1)
-				logInfo(workerId, "value", val.Val())
+				logDebug("value", val.Val())
 				target.LPush(key, val.Val())
 			case SET:
 				val, _ := origin.SMembers(key).Result()
-				logInfo(workerId, "value", val)
+				logDebug("value", val)
 				target.SAdd(key, val)
 			case ZSET:
 				val, _ := origin.ZRangeWithScores(key, 0, -1).Result()
-				logInfo(workerId, "value", val)
+				logDebug("value", val)
 				// []string -> ...string
 				target.ZAdd(key, val...)
 			case HASH:
 				val, _ := origin.HGetAll(key).Result()
-				logInfo(workerId, "value", val)
+				logDebug("value", val)
 				target.HMSet(key, convert(val))
 			}
-		})
-		if err != nil {
-			logWarn("", err)
-		}
+		}()
 	}
-	latch.Wait()
+	swg.Wait()
 }
