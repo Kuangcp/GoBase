@@ -1,4 +1,4 @@
-module github.com/kuangcp/gobase/syncredis
+module github.com/kuangcp/gobase/toolbox/syncredis
 
 go 1.13
 
