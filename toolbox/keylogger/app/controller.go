@@ -78,6 +78,7 @@ type (
 	QueryParam struct {
 		Length    int
 		Offset    int
+		Weeks     int
 		Top       int64
 		ChartType string
 		ShowLabel bool
@@ -186,6 +187,42 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 	return result
 }
 
+func MultipleHeatMap(c *gin.Context) {
+	param, err := parseParam(c)
+	if err != nil {
+		GinFailedWithMsg(c, err.Error())
+		return
+	}
+
+	now := time.Now()
+	weekday := now.Weekday()
+	var weeksMap []*HeatMapVO
+
+	var mutex = &sync.Mutex{}
+	//var latch sync.WaitGroup
+	//latch.Add(param.Weeks)
+	max := 0
+	for i := 0; i < param.Weeks; i++ {
+		offset := int(weekday) + (7 * i)
+		//go func() {
+		//	defer latch.Done()
+			mapVO := buildDataFromFrame(7, offset)
+			mutex.Lock()
+			if mapVO.Max > max {
+				max = mapVO.Max
+			}
+			weeksMap = append(weeksMap, mapVO)
+			mutex.Unlock()
+		//}()
+	}
+
+	//latch.Wait()
+	for _, vo := range weeksMap {
+		vo.Max = max
+	}
+	GinSuccessWith(c, weeksMap)
+}
+
 //HeatMap 热力图
 func HeatMap(c *gin.Context) {
 	param, err := parseParam(c)
@@ -193,7 +230,12 @@ func HeatMap(c *gin.Context) {
 		GinFailedWithMsg(c, err.Error())
 		return
 	}
-	dayList := buildDayList(param.Length, param.Offset)
+	mapVO := buildDataFromFrame(param.Length, param.Offset)
+	GinSuccessWith(c, mapVO)
+}
+
+func buildDataFromFrame(length int, offset int) *HeatMapVO {
+	dayList := buildDayList(length, offset)
 
 	// [weekday, hour, count], [weekday, hour, count]
 	var result [168][3]int
@@ -226,12 +268,12 @@ func HeatMap(c *gin.Context) {
 		}
 	}
 
-	GinSuccessWith(c, HeatMapVO{
+	return &HeatMapVO{
 		Max:   max,
 		Data:  result,
 		Start: dayList[0],
 		End:   dayList[len(dayList)-1],
-	})
+	}
 }
 
 func readDetailToMap(
@@ -245,7 +287,7 @@ func readDetailToMap(
 	totalCount := 0
 	for lastCursor != 0 || first {
 		result, cursor, err := GetConnection().
-			ZScan(GetDetailKeyByString(curDay), lastCursor, "", 1000).Result()
+			ZScan(GetDetailKeyByString(curDay), lastCursor, "", 600).Result()
 		cuibase.CheckIfError(err)
 		lastCursor = cursor
 		first = false
@@ -360,24 +402,12 @@ func getMapKeys(m map[string]bool) []string {
 }
 
 func parseParam(c *gin.Context) (*QueryParam, error) {
-	length := c.Query("length")
-	offset := c.Query("offset")
-	top := c.Query("top")
-	chartType := c.Query("type")
-	showLabel := c.Query("showLabel")
-
-	if length == "" {
-		length = "7"
-	}
-	if offset == "" {
-		offset = "0"
-	}
-	if top == "" {
-		top = "2"
-	}
-	if showLabel == "" {
-		showLabel = "false"
-	}
+	length := c.DefaultQuery("length", "7")
+	offset := c.DefaultQuery("offset", "0")
+	top := c.DefaultQuery("top", "2")
+	chartType := c.DefaultQuery("type", "bar")
+	showLabel := c.DefaultQuery("showLabel", "false")
+	weeks := c.DefaultQuery("weeks", "1")
 
 	lengthInt, err := strconv.Atoi(length)
 	if err != nil {
@@ -396,8 +426,9 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 		return nil, err
 	}
 
-	if chartType == "" {
-		chartType = "bar"
+	weeksInt, err := strconv.Atoi(weeks)
+	if err != nil {
+		return nil, err
 	}
 
 	topInt -= 1
@@ -411,6 +442,7 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 		Length:    lengthInt,
 		Offset:    offsetInt,
 		Top:       topInt,
+		Weeks:     weeksInt,
 		ChartType: chartType,
 		ShowLabel: showLabelBool,
 	}, nil

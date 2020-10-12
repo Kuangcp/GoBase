@@ -1,4 +1,4 @@
-module mongodemo
+module mongodb
 
 go 1.13
 

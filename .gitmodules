@@ -1,3 +1,0 @@
-[submodule "gogit"]
-	path = gogit
-	url = git@github.com:Kuangcp/gogit.git
