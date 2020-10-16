@@ -5,12 +5,6 @@
 .idea/
 *.iml
 
-# Binaries for programs and plugins
-*.exe
-*.dll
-*.so
-*.dylib
-
 *.sum
 
 # Test binary, build with `go test -c`
@@ -21,7 +15,13 @@
 *.log
 statik.go
 
-## binaray
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+*.run
+
 mybook/mybook
 */kserver/kserver
 */recycle-bin/recycle-bin

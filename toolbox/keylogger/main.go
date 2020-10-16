@@ -18,7 +18,7 @@ var info = cuibase.HelpInfo{
 	Version:       "1.0.4",
 	SingleFlagLen: -5,
 	DoubleFlagLen: -10,
-	ValueLen:      -19,
+	ValueLen:      -14,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", Long: "--help", Comment: "Help info"},
 		{Short: "-l", Comment: user + " List keyboard device"},
@@ -105,7 +105,7 @@ func main() {
 	debugPort := "8891"
 	if debug {
 		go func() {
-			http.ListenAndServe("0.0.0.0:"+debugPort, nil)
+			_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
 		}()
 	}
 
