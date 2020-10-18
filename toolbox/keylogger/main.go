@@ -95,6 +95,7 @@ func main() {
 	flag.Parse()
 
 	options := redis.Options{
+		PoolSize: 20,
 		Addr:     host + ":" + port,
 		Password: pwd,
 		DB:       db,

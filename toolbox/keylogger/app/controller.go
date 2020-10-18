@@ -461,7 +461,7 @@ func keyNameMap(keyCode map[string]bool) map[string]string {
 }
 
 func hotKey(dayList []string, top int64) map[string]bool {
-	start := time.Now().UnixNano()
+	//start := time.Now().UnixNano()
 	keyCodeMap := make(map[string]bool)
 	for i := range dayList {
 		result, err := GetConnection().ZRevRange(GetRankKeyByString(dayList[i]), 0, top).Result()
@@ -474,8 +474,8 @@ func hotKey(dayList []string, top int64) map[string]bool {
 			keyCodeMap[s] = true
 		}
 	}
-	end := time.Now().UnixNano()
-	logger.Info("hotKey: ", end-start)
+	//end := time.Now().UnixNano()
+	//logger.Info("hotKey: ", end-start)
 	return keyCodeMap
 }
 
