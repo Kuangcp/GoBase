@@ -21,6 +21,7 @@ statik.go
 *.so
 *.dylib
 *.run
+*.bin
 
 mybook/mybook
 */kserver/kserver
