@@ -38,6 +38,7 @@ func ListenDevice(targetDevice string) {
 		}
 	}
 
+	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
 	targetDevice = FormatEvent(targetDevice)
 	fmt.Println("try listen", targetDevice)
 	connection.Set(LastInputEvent, targetDevice, 0)
@@ -63,7 +64,7 @@ func ListenDevice(targetDevice string) {
 		handleResult := handleEvents(inputEvents, connection)
 		if !success && handleResult {
 			success = handleResult
-			fmt.Println(cuibase.Green.Println("listen success. "))
+			fmt.Println(cuibase.Green.Print("\n    Listen success."))
 		}
 	}
 }

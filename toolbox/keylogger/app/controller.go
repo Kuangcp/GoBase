@@ -199,24 +199,19 @@ func MultipleHeatMap(c *gin.Context) {
 	var weeksMap []*HeatMapVO
 
 	var mutex = &sync.Mutex{}
-	//var latch sync.WaitGroup
-	//latch.Add(param.Weeks)
 	max := 0
 	for i := 0; i < param.Weeks; i++ {
 		offset := int(weekday) + (7 * i)
-		//go func() {
-		//	defer latch.Done()
-			mapVO := buildDataFromFrame(7, offset)
-			mutex.Lock()
-			if mapVO.Max > max {
-				max = mapVO.Max
-			}
-			weeksMap = append(weeksMap, mapVO)
-			mutex.Unlock()
-		//}()
+		mapVO := buildDataFromFrame(7, offset)
+
+		mutex.Lock()
+		if mapVO.Max > max {
+			max = mapVO.Max
+		}
+		weeksMap = append(weeksMap, mapVO)
+		mutex.Unlock()
 	}
 
-	//latch.Wait()
 	for _, vo := range weeksMap {
 		vo.Max = max
 	}
