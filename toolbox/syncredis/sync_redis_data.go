@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -36,8 +35,6 @@ func init() {
 }
 
 func main() {
-	fmt.Println(fromAddr)
-
 	Action(false,
 		&redis.Options{
 			Addr:     fromAddr,

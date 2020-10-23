@@ -89,11 +89,11 @@ func init() {
 	flag.StringVar(&webPort, "wp", "9902", "")
 	flag.BoolVar(&webServer, "ws", false, "")
 	flag.BoolVar(&debug, "debug", false, "")
+
+	flag.Parse()
 }
 
 func main() {
-	flag.Parse()
-
 	options := redis.Options{
 		PoolSize: 20,
 		Addr:     host + ":" + port,
