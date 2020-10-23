@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -11,6 +13,43 @@ import (
 )
 
 var debugFlag = false
+
+var (
+	fromAddr string
+	fromPwd  string
+	fromDB   int
+
+	toAddr string
+	toPwd  string
+	toDB   int
+)
+
+func init() {
+	flag.StringVar(&fromAddr, "f.addr", "127.0.0.1:6379", "from redis address")
+	flag.StringVar(&fromPwd, "f.pwd", "", "from redis password")
+	flag.IntVar(&fromDB, "f.db", 2, "from redis db")
+	flag.StringVar(&toAddr, "t.addr", "127.0.0.1:6379", "to redis address")
+	flag.StringVar(&toPwd, "t.pwd", "", "to redis password")
+	flag.IntVar(&toDB, "t.db", 3, "to redis db")
+
+	flag.Parse()
+}
+
+func main() {
+	fmt.Println(fromAddr)
+
+	Action(false,
+		&redis.Options{
+			Addr:     fromAddr,
+			Password: fromPwd,
+			DB:       fromDB,
+		},
+		&redis.Options{
+			Addr:     toAddr,
+			Password: toPwd,
+			DB:       toDB,
+		}, SyncAllKey)
+}
 
 func logDebug(msg string, v ...interface{}) {
 	if debugFlag {

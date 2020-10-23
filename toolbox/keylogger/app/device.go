@@ -2,11 +2,12 @@ package app
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
 	. "github.com/gvalkov/golang-evdev"
@@ -32,15 +33,14 @@ func ListenDevice(targetDevice string) {
 			return
 		}
 		targetDevice = last.Val()
-	} else {
-		connection.GetSet(LastInputEvent, targetDevice)
-	}
-	if targetDevice == "" {
-		return
+		if targetDevice == "" {
+			return
+		}
 	}
 
-	fmt.Println("try listen", targetDevice)
 	targetDevice = FormatEvent(targetDevice)
+	fmt.Println("try listen", targetDevice)
+	connection.Set(LastInputEvent, targetDevice, 0)
 
 	device, _ := Open("/dev/input/" + targetDevice)
 	if device == nil {
