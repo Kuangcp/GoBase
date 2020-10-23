@@ -13,4 +13,4 @@ require (
 	github.com/wonderivan/logger v1.0.0
 )
 
-replace github.com/kuangcp/gobase/cuibase => ./../../cuibase
+replace github.com/kuangcp/gobase/cuibase => ./../../pkg/cuibase
