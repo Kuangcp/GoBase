@@ -1,4 +1,4 @@
-module github.com/kuangcp/gobase/ginhelper
+module github.com/kuangcp/gobase/pkg/ginhelper
 
 go 1.15
 
