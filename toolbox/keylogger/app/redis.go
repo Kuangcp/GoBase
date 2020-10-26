@@ -42,14 +42,21 @@ func GetDetailKeyByString(time string) string {
 }
 
 func GetConnection() *redis.Client {
+	if time.Now().Second()%7 == 0 {
+		_, err := connection.Ping().Result()
+		if err != nil {
+			fmt.Println("ping redis failed:", err)
+			os.Exit(1)
+		}
+	}
 	return connection
 }
 
 func InitConnection(option redis.Options) {
 	connection = redis.NewClient(&option)
-	result, err := connection.Ping().Result()
+	_, err := connection.Ping().Result()
 	if err != nil {
-		fmt.Println(result, err)
+		fmt.Println("ping redis failed:", err)
 		os.Exit(1)
 	}
 }

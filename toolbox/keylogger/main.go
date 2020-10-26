@@ -8,8 +8,8 @@ import (
 	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/gobase/keylogger/app"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
 var user = cuibase.Red.Print("root")

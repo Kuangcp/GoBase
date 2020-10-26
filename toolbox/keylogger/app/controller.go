@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/cuibase"
+	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/wonderivan/logger"
 )
 
@@ -143,7 +144,7 @@ func CalendarMap(c *gin.Context) {
 		}
 	}
 
-	GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max})
+	ginhelper.GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max})
 }
 
 func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
@@ -190,7 +191,7 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 func MultipleHeatMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
-		GinFailedWithMsg(c, err.Error())
+		ginhelper.GinFailedWithMsg(c, err.Error())
 		return
 	}
 
@@ -215,18 +216,18 @@ func MultipleHeatMap(c *gin.Context) {
 	for _, vo := range weeksMap {
 		vo.Max = max
 	}
-	GinSuccessWith(c, weeksMap)
+	ginhelper.GinSuccessWith(c, weeksMap)
 }
 
 //HeatMap 热力图
 func HeatMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
-		GinFailedWithMsg(c, err.Error())
+		ginhelper.GinFailedWithMsg(c, err.Error())
 		return
 	}
 	mapVO := buildDataFromFrame(param.Length, param.Offset)
-	GinSuccessWith(c, mapVO)
+	ginhelper.GinSuccessWith(c, mapVO)
 }
 
 func buildDataFromFrame(length int, offset int) *HeatMapVO {
@@ -322,11 +323,15 @@ func readDetailToMap(
 func LineMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
-		GinFailedWithMsg(c, err.Error())
+		ginhelper.GinFailedWithMsg(c, err.Error())
 		return
 	}
 	dayList := buildDayList(param.Length, param.Offset)
 	hotKey := hotKey(dayList, param.Top)
+	if len(hotKey) == 0 {
+		ginhelper.GinFailed(c)
+		return
+	}
 	nameMap := keyNameMap(hotKey)
 
 	// keyNames
@@ -336,7 +341,7 @@ func LineMap(c *gin.Context) {
 	}
 	sort.Strings(keyNames)
 	if len(keyNames) == 0 {
-		GinFailed(c)
+		ginhelper.GinFailed(c)
 		return
 	}
 
@@ -352,7 +357,7 @@ func LineMap(c *gin.Context) {
 		}
 	}
 	if len(days) == 0 {
-		GinFailed(c)
+		ginhelper.GinFailed(c)
 		return
 	}
 
@@ -384,7 +389,7 @@ func LineMap(c *gin.Context) {
 		})
 	}
 	//logger.Info(lines)
-	GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
+	ginhelper.GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
 }
 
 func getMapKeys(m map[string]bool) []string {
