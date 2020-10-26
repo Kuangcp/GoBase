@@ -15,7 +15,7 @@ import (
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
-	Version:       "1.0.4",
+	Version:       "1.0.5",
 	SingleFlagLen: -5,
 	DoubleFlagLen: -10,
 	ValueLen:      -14,

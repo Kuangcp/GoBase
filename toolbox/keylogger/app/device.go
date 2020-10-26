@@ -38,9 +38,8 @@ func ListenDevice(targetDevice string) {
 		}
 	}
 
-	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
 	targetDevice = FormatEvent(targetDevice)
-	fmt.Println("try listen", targetDevice)
+	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
 	connection.Set(LastInputEvent, targetDevice, 0)
 
 	device, _ := Open("/dev/input/" + targetDevice)
