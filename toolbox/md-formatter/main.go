@@ -27,7 +27,7 @@ var ignoreDirs = [...]string{
 	"out", "build", "target", "log", "logs", "__pycache__", "ARTS",
 }
 var ignoreFiles = [...]string{
-	"README.md", "Readme.md", "readme.md", "SUMMARY.md", "Process.md", "License.md",
+	"README.md", "Readme.md", "Readme_CN.md", "readme.md", "SUMMARY.md", "Process.md", "License.md",
 }
 var handleSuffix = [...]string{
 	".md", ".markdown", ".txt",
