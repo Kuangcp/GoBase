@@ -17,27 +17,28 @@ var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.0.5",
 	SingleFlagLen: -5,
-	DoubleFlagLen: -10,
+	DoubleFlagLen: 0,
 	ValueLen:      -14,
 	Flags: []cuibase.ParamVO{
-		{Short: "-h", Long: "--help", Comment: "Help info"},
-		{Short: "-l", Comment: user + " List keyboard device"},
-		{Short: "-ld", Comment: user + " List all device"},
-		{Short: "-p", Comment: user + " Print key map"},
-		{Short: "-ca", Comment: user + " Cache key map"},
-		{Short: "-s", Comment: user + " Listen keyboard with last device or specific device"},
-		{Short: "-d", Comment: "Print daily total by before x day ago and duration"},
-		{Short: "-dr", Comment: "Print daily rank by before x day ago and duration"},
-		{Short: "-ws", Comment: "Web server"},
+		{Short: "-h", Comment: "help info"},
+		{Short: "-l", Comment: user + " list keyboard device"},
+		{Short: "-L", Comment: user + " list all device"},
+		{Short: "-p", Comment: user + " print key map"},
+		{Short: "-c", Comment: user + " cache key map"},
+		{Short: "-s", Comment: user + " listen keyboard with last device or specific device"},
+		{Short: "-T", Comment: "print daily total by before x day ago and duration"},
+		{Short: "-R", Comment: "print daily rank by before x day ago and duration"},
+		{Short: "-S", Comment: "web server"},
+		{Short: "-d", Comment: "debug"},
 	},
 	Options: []cuibase.ParamVO{
-		{Short: "-t", Long: "--time", Value: "<x>,<duration>", Comment: "Before x day ago and duration. For -d and -dr"},
-		{Short: "-e", Long: "--device", Value: "<device>", Comment: "Operation target device, work for -p -ca -s"},
-		{Short: "-wp", Value: "<port>", Comment: "Web Server port. default 9902"},
-		{Short: "-host", Value: "<host>", Comment: "Redis host"},
-		{Short: "-port", Value: "<port>", Comment: "Redis port"},
-		{Short: "-pwd", Value: "<pwd>", Comment: "Redis password"},
-		{Short: "-db", Value: "<db>", Comment: "Redis db"},
+		{Short: "-t", Value: "x,duration", Comment: "before x day ago and duration. For -T and -R"},
+		{Short: "-e", Value: "device", Comment: "operation target device, work for -p -ca -s"},
+		{Short: "-P", Value: "port", Comment: "web Server port. default 9902"},
+		{Short: "-host", Value: "host", Comment: "redis host"},
+		{Short: "-port", Value: "port", Comment: "redis port"},
+		{Short: "-pwd", Value: "pwd", Comment: "redis password"},
+		{Short: "-db", Value: "db", Comment: "redis db"},
 	},
 }
 
@@ -72,13 +73,14 @@ func init() {
 	flag.BoolVar(&help, "h", false, "")
 	flag.BoolVar(&help, "help", false, "")
 	flag.BoolVar(&printKeyMap, "p", false, "")
-	flag.StringVar(&targetDevice, "e", "", "specific device")
-	flag.BoolVar(&cacheKeyMap, "ca", false, "")
+	flag.StringVar(&targetDevice, "e", "", "")
+	flag.BoolVar(&cacheKeyMap, "c", false, "")
 	flag.BoolVar(&listKeyboardDevice, "l", false, "")
-	flag.BoolVar(&listAllDevice, "la", false, "")
+	flag.BoolVar(&listAllDevice, "L", false, "")
 	flag.BoolVar(&listenDevice, "s", false, "")
-	flag.BoolVar(&day, "d", false, "")
-	flag.BoolVar(&dayRank, "dr", false, "")
+	flag.BoolVar(&day, "T", false, "")
+	flag.BoolVar(&dayRank, "R", false, "")
+
 	flag.StringVar(&timePair, "t", "1", "")
 
 	flag.StringVar(&host, "host", "127.0.0.1", "")
@@ -86,9 +88,9 @@ func init() {
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
 
-	flag.StringVar(&webPort, "wp", "9902", "")
-	flag.BoolVar(&webServer, "ws", false, "")
-	flag.BoolVar(&debug, "debug", false, "")
+	flag.StringVar(&webPort, "P", "9902", "")
+	flag.BoolVar(&webServer, "S", false, "")
+	flag.BoolVar(&debug, "d", false, "")
 
 	flag.Parse()
 }
@@ -110,32 +112,24 @@ func main() {
 		}()
 	}
 
+	targetDevice = app.FormatEvent(targetDevice)
+
 	if help {
 		info.PrintHelp()
 		return
 	} else if webServer {
 		app.Server(debug, webPort)
 		return
-	}
-
-	targetDevice = app.FormatEvent(targetDevice)
-
-	if listKeyboardDevice {
+	} else if listKeyboardDevice {
 		app.ListAllKeyBoardDevice()
 		return
-	}
-
-	if listAllDevice {
+	} else if listAllDevice {
 		app.ListAllDevice()
 		return
-	}
-
-	if cacheKeyMap {
+	} else if cacheKeyMap {
 		app.CacheKeyMap(targetDevice)
 		return
-	}
-
-	if listenDevice {
+	} else if listenDevice {
 		app.ListenDevice(targetDevice)
 		return
 	}

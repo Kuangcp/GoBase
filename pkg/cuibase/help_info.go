@@ -31,7 +31,7 @@ type (
 // PrintHelp info msg
 func (helpInfo HelpInfo) PrintHelp() {
 	// Usage Description
-	printTitleDefault(helpInfo.Description)
+	printTitleDefault(helpInfo)
 
 	format := BuildFormat(helpInfo)
 

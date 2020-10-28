@@ -45,14 +45,24 @@ func PrintParams(format string, flagColor Color, params []ParamVO) {
 }
 
 // PrintTitle
-func PrintTitle(command string, description string) {
-	fmt.Printf("%s\n\n  %v %v %v %v\n\n",
+func PrintTitle(command string, helpInfo HelpInfo) {
+	flagStr := ""
+	for _, flagVO := range helpInfo.Flags {
+		flagStr += flagVO.Short
+	}
+	flagStr = strings.Replace(flagStr, "-", "", -1)
+
+	optionStr := ""
+	for _, option := range helpInfo.Options {
+		optionStr +=  fmt.Sprintf("[%s %s] ", option.Short,option.Value)
+	}
+	fmt.Printf("%s\n\n  %v %v %v\n\n",
 		LightCyan.Print("Usage:"),
 		command,
-		Yellow.PrintNoEnd("[Flags]"),
-		Purple.Print("[Options]"),
-		Blue.Print("[Args]"))
-	fmt.Printf("%s\n\n  %v\n", LightCyan.Print("Description:"), description)
+		Yellow.PrintNoEnd("[-"+flagStr+"]"),
+		Purple.Print(optionStr))
+
+	fmt.Printf("%s\n\n  %v\n", LightCyan.Print("Description:"), helpInfo.Description)
 }
 
 // CheckIfError assert err is nil
@@ -131,8 +141,8 @@ func PrintWithColorful() {
 	}
 }
 
-func printTitleDefault(description string) {
-	PrintTitle(os.Args[0], description)
+func printTitleDefault(helpInfo HelpInfo) {
+	PrintTitle(os.Args[0], helpInfo)
 }
 
 func homeUnix() (string, error) {
