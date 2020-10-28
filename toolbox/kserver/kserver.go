@@ -32,7 +32,7 @@ func init() {
 	flag.IntVar(&port, "p", 8989, "")
 }
 
-func getInternalIp() string {
+func getInternalIP() string {
 	address, err := net.InterfaceAddrs()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -50,14 +50,14 @@ func getInternalIp() string {
 }
 
 func startWebServer(port int) {
-	internalIp := getInternalIp()
+	internalIP := getInternalIP()
 
 	// 绑定路由到当前目录
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
 	log.Printf("Start webserver success. %vhttp://127.0.0.1:%v %vhttp://%v:%v %v ",
-		cuibase.Green, port, cuibase.Yellow, internalIp, port, cuibase.End)
+		cuibase.Green, port, cuibase.Yellow, internalIP, port, cuibase.End)
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
 		log.Fatal("error: ", err)
