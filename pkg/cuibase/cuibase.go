@@ -54,7 +54,7 @@ func PrintTitle(command string, helpInfo HelpInfo) {
 
 	optionStr := ""
 	for _, option := range helpInfo.Options {
-		optionStr +=  fmt.Sprintf("[%s %s] ", option.Short,option.Value)
+		optionStr += fmt.Sprintf("[%s %s] ", option.Short, option.Value)
 	}
 	fmt.Printf("%s\n\n  %v %v %v\n\n",
 		LightCyan.Print("Usage:"),
@@ -131,7 +131,22 @@ func Home() (string, error) {
 	return homeUnix()
 }
 
-// PrintWithColorful 
+func OpenBrowser(url string) error {
+	var cmd string
+	var args []string
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default: // "linux", "freebsd", "openbsd", "netbsd"
+		cmd = "xdg-open"
+	}
+	return exec.Command(cmd, append(args, url)...).Start()
+}
+
+// PrintWithColorful
 func PrintWithColorful() {
 	for i := 0; i < 255; i++ {
 		fmt.Printf("\x1b[48;5;%dm%3d\u001B[0m", i, i)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/kuangcp/gobase/keylogger/app/statik"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
@@ -44,7 +45,9 @@ func Server(debugStatic bool, port string) {
 		Handler: router,
 	}
 
-	logger.Info("http://localhost" + srv.Addr)
+	url := "http://localhost" + srv.Addr
+	logger.Info(url)
+	_ = cuibase.OpenBrowser(url)
 
 	ginhelper.GracefulExit(srv)
 }
