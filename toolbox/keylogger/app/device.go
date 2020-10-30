@@ -171,6 +171,8 @@ func PrintTotalRank(timeSegment string) {
 	}
 
 	result := make(map[string]float64)
+	firstDay := now.AddDate(0, 0, -indexDay)
+	lastDay := now.AddDate(0, 0, -indexDay+durationDay-1)
 	for i := 0; i < durationDay; i++ {
 		timeIndex := now.AddDate(0, 0, -indexDay+i)
 
@@ -199,15 +201,17 @@ func PrintTotalRank(timeSegment string) {
 		return sortList[i].Value > sortList[j].Value // 降序
 	})
 
+	fmt.Printf("    %s → %s\n", firstDay.Format("2006-01-02"), lastDay.Format("2006-01-02"))
+
 	if len(keyMap) != 0 {
 		printWithTwoColumn(len(sortList), func(index int) string {
 			val := sortList[index]
-			return fmt.Sprintf("%7v → %-26v", val.Value, cuibase.LightGreen.Print(keyMap[val.Key]))
+			return fmt.Sprintf("%7v → %-28v", val.Value, cuibase.LightGreen.Print(keyMap[val.Key]))
 		})
 	} else {
 		printWithTwoColumn(len(sortList), func(index int) string {
 			val := sortList[index]
-			return fmt.Sprintf("%7v → %-26v", val.Value, cuibase.LightGreen.Print(val.Key))
+			return fmt.Sprintf("%7v → %-28v", val.Value, cuibase.LightGreen.Print(val.Key))
 		})
 	}
 }
