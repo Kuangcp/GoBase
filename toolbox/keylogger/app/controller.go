@@ -52,6 +52,7 @@ type (
 	HeatMapVO struct {
 		Data  [168][3]int `json:"data"`
 		Max   int         `json:"max"`
+		Total int         `json:"total"`
 		Start string      `json:"start"`
 		End   string      `json:"end"`
 	}
@@ -152,7 +153,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 	max := 0
 	var lastTime *time.Time = nil
 	for _, day := range data {
-		var dayTime, err = time.Parse("2006:01:02", day)
+		var dayTime, err = time.Parse(DateFormat, day)
 		cuibase.CheckIfError(err)
 
 		if lastTime == nil {
@@ -203,7 +204,7 @@ func MultipleHeatMap(c *gin.Context) {
 	max := 0
 	for i := 0; i < param.Weeks; i++ {
 		offset := int(weekday) + (7 * i)
-		mapVO := buildDataFromFrame(7, offset)
+		mapVO := buildDataByDatePeriod(7, offset)
 
 		mutex.Lock()
 		if mapVO.Max > max {
@@ -226,11 +227,11 @@ func HeatMap(c *gin.Context) {
 		ginhelper.GinFailedWithMsg(c, err.Error())
 		return
 	}
-	mapVO := buildDataFromFrame(param.Length, param.Offset)
+	mapVO := buildDataByDatePeriod(param.Length, param.Offset)
 	ginhelper.GinSuccessWith(c, mapVO)
 }
 
-func buildDataFromFrame(length int, offset int) *HeatMapVO {
+func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	dayList := buildDayList(length, offset)
 
 	// [weekday, hour, count], [weekday, hour, count]
@@ -252,6 +253,7 @@ func buildDataFromFrame(length int, offset int) *HeatMapVO {
 	}
 	latch.Wait()
 
+	total := 0
 	max := 0
 	for weekday, v := range totalMap {
 		chartIndex := 6 - weekday
@@ -260,15 +262,18 @@ func buildDataFromFrame(length int, offset int) *HeatMapVO {
 			if count > max {
 				max = count
 			}
+			total += count
 			result[(chartIndex*24)+hour] = [...]int{chartIndex, hour, count}
 		}
 	}
 
+	strings.Replace(dayList[0], ":", "-", -1)
 	return &HeatMapVO{
 		Max:   max,
+		Total: total,
 		Data:  result,
-		Start: dayList[0],
-		End:   dayList[len(dayList)-1],
+		Start: strings.Replace(dayList[0], ":", "-", -1),
+		End:   strings.Replace(dayList[len(dayList)-1], ":", "-", -1),
 	}
 }
 
@@ -302,7 +307,7 @@ func readDetailToMap(
 			mutex.Lock()
 
 			dayMap := totalMap[weekDay]
-			//curStr := cur.Format("2006:01:02")
+			//curStr := cur.Format(DateFormat)
 			//if curStr != curDay {
 			//	logger.Error("error detail data", curStr, curDay)
 			//}
@@ -486,7 +491,7 @@ func buildDayList(length int, offset int) []string {
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
 		tempTime := start.AddDate(0, 0, i)
-		day := tempTime.Format("2006:01:02")
+		day := tempTime.Format(DateFormat)
 		if tempTime.After(now) {
 			return result
 		}
@@ -502,7 +507,7 @@ func buildDayWithWeekdayList(length int, offset int) []DayBO {
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
 		tempTime := start.AddDate(0, 0, i)
-		day := tempTime.Format("2006:01:02")
+		day := tempTime.Format(DateFormat)
 		if tempTime.After(now) {
 			return result
 		}

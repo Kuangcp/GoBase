@@ -16,6 +16,7 @@ const LastInputEvent = Prefix + "last-event"
 
 //TotalCount total count ZSET
 const TotalCount = Prefix + "total"
+const DateFormat = "2006:01:02"
 
 //KeyMap cache key code map HASH
 const KeyMap = Prefix + "key-map"
@@ -24,7 +25,7 @@ var connection *redis.Client
 
 //GetRankKey by time
 func GetRankKey(time time.Time) string {
-	return GetRankKeyByString(time.Format("2006:01:02"))
+	return GetRankKeyByString(time.Format(DateFormat))
 }
 
 //GetRankKeyByString
@@ -34,7 +35,7 @@ func GetRankKeyByString(time string) string {
 
 //GetDetailKey by time
 func GetDetailKey(time time.Time) string {
-	return GetDetailKeyByString(time.Format("2006:01:02"))
+	return GetDetailKeyByString(time.Format(DateFormat))
 }
 
 func GetDetailKeyByString(time string) string {

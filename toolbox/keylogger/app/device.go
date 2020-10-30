@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -77,7 +78,7 @@ func FormatEvent(input string) string {
 
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	today := time.Now()
-	todayStr := today.Format("2006:01:02")
+	todayStr := today.Format(DateFormat)
 	matchFlag := false
 	for _, inputEvent := range inputEvents {
 		if inputEvent.Code == 0 {
@@ -144,17 +145,123 @@ func OpenDevice(targetDevice string) *InputDevice {
 }
 
 func PrintDay(timeSegment string) {
-	printDayInfoByDay(timeSegment, handleTotalByDate)
+	now := time.Now()
+	indexDay, durationDay := parseTime(timeSegment)
+	for i := 0; i < durationDay; i++ {
+		handleTotalByDate(now.AddDate(0, 0, -indexDay+i), GetConnection())
+	}
 }
 
 func PrintDayRank(timeSegment string) {
-	printDayInfoByDay(timeSegment, handleRankByDate)
+	now := time.Now()
+	indexDay, durationDay := parseTime(timeSegment)
+	for i := 0; i < durationDay; i++ {
+		handleRankByDate(now.AddDate(0, 0, -indexDay+i), GetConnection())
+	}
 }
 
-func printDayInfoByDay(timeSegment string, action func(time time.Time, conn *redis.Client)) {
+func PrintTotalRank(timeSegment string) {
+	now := time.Now()
+	indexDay, durationDay := parseTime(timeSegment)
+	conn := GetConnection()
+	all := conn.HGetAll(KeyMap)
+	var keyMap map[string]string
+	if all != nil {
+		keyMap = all.Val()
+	}
+
+	result := make(map[string]float64)
+	for i := 0; i < durationDay; i++ {
+		timeIndex := now.AddDate(0, 0, -indexDay+i)
+
+		keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(timeIndex), redis.ZRangeBy{Min: "0", Max: "50000"})
+		for _, v := range keyRank.Val() {
+			keyCode := v.Member.(string)
+			val, ok := result[keyCode]
+			if ok {
+				result[keyCode] = val + v.Score
+			} else {
+				result[keyCode] = v.Score
+			}
+		}
+	}
+	type kv struct {
+		Key   string
+		Value float64
+	}
+
+	var sortList []kv
+	for k, v := range result {
+		sortList = append(sortList, kv{k, v})
+	}
+
+	sort.Slice(sortList, func(i, j int) bool {
+		return sortList[i].Value > sortList[j].Value // 降序
+	})
+
+	if len(keyMap) != 0 {
+		printWithTwoColumn(len(sortList), func(index int) string {
+			val := sortList[index]
+			return fmt.Sprintf("%7v → %-26v", val.Value, cuibase.LightGreen.Print(keyMap[val.Key]))
+		})
+	} else {
+		printWithTwoColumn(len(sortList), func(index int) string {
+			val := sortList[index]
+			return fmt.Sprintf("%7v → %-26v", val.Value, cuibase.LightGreen.Print(val.Key))
+		})
+	}
+}
+
+func printWithTwoColumn(dataLen int, toString func(index int) string) {
+	var lines []string
+	row := dataLen/2 + 1
+	for i := 0; i < dataLen; i++ {
+		var lineIdx = i % row
+		halfLine := toString(i)
+		if len(lines) <= lineIdx {
+			lines = append(lines, halfLine)
+		} else {
+			lines[lineIdx] = lines[lineIdx] + halfLine
+		}
+	}
+	fmt.Println()
+	for _, s := range lines {
+		fmt.Println(s)
+	}
+}
+
+func handleRankByDate(time time.Time, conn *redis.Client) {
+	today := time.Format(DateFormat)
+
+	all := conn.HGetAll(KeyMap)
+	var keyMap map[string]string
+	if all != nil {
+		keyMap = all.Val()
+	}
+	totalScore := conn.ZScore(TotalCount, today)
+
+	fmt.Printf("%s | %s | Total: %v\n", cuibase.Green.Printf("%-8s", time.Weekday()),
+		time.Format("2006-01-02"), cuibase.Yellow.Printf("%d", int64(totalScore.Val())))
+
+	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
+	if len(keyMap) != 0 {
+		valList := keyRank.Val()
+		printWithTwoColumn(len(valList), func(index int) string {
+			val := valList[index]
+			return fmt.Sprintf("%4v → %-26v", val.Score, cuibase.LightGreen.Print(keyMap[val.Member.(string)]))
+		})
+	} else {
+		valList := keyRank.Val()
+		printWithTwoColumn(len(valList), func(index int) string {
+			val := valList[index]
+			return fmt.Sprintf("%4v → %-26v", val.Score, cuibase.LightGreen.Print(val.Member.(string)))
+		})
+	}
+}
+
+func parseTime(timeSegment string) (int, int) {
 	timePairs := strings.Split(timeSegment, ",")
 
-	now := time.Now()
 	indexDay := 0
 	durationDay := 1
 	if len(timePairs) == 1 {
@@ -170,51 +277,11 @@ func printDayInfoByDay(timeSegment string, action func(time time.Time, conn *red
 		durationDay, err = strconv.Atoi(timePairs[1])
 		cuibase.CheckIfError(err)
 	}
-	for i := 0; i < durationDay; i++ {
-		action(now.AddDate(0, 0, -indexDay+i), GetConnection())
-	}
-}
-
-func handleRankByDate(time time.Time, conn *redis.Client) {
-	today := time.Format("2006:01:02")
-
-	all := conn.HGetAll(KeyMap)
-	var keyMap map[string]string
-	if all != nil {
-		keyMap = all.Val()
-	}
-	totalScore := conn.ZScore(TotalCount, today)
-
-	fmt.Printf("%s | %s | Total: %v\n", cuibase.Green.Printf("%-8s", time.Weekday()),
-		time.Format("2006-01-02"), cuibase.Yellow.Printf("%d", int64(totalScore.Val())))
-
-	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "10000"})
-	if len(keyMap) != 0 {
-		var page []string
-		row := len(keyRank.Val())/2 + 1
-		for index, v := range keyRank.Val() {
-			var d = index % row
-			element := fmt.Sprintf("%4v → %-26v", v.Score, cuibase.LightGreen.Print(keyMap[v.Member.(string)]))
-
-			if len(page) <= d {
-				page = append(page, element)
-			} else {
-				page[d] = page[d] + element
-			}
-		}
-		fmt.Println()
-		for _, s := range page {
-			fmt.Println(s)
-		}
-	} else {
-		for _, v := range keyRank.Val() {
-			fmt.Printf("%4v %v\n", v.Score, v.Member)
-		}
-	}
+	return indexDay, durationDay
 }
 
 func handleTotalByDate(time time.Time, conn *redis.Client) {
-	today := time.Format("2006:01:02")
+	today := time.Format(DateFormat)
 	score := conn.ZScore(TotalCount, today)
 	fmt.Printf("%s %s %v\n", time.Format("2006-01-02"),
 		cuibase.Green.Printf("%-9s", time.Weekday()), int64(score.Val()))

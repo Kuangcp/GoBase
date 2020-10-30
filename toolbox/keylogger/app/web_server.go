@@ -47,7 +47,9 @@ func Server(debugStatic bool, port string) {
 
 	url := "http://localhost" + srv.Addr
 	logger.Info(url)
-	_ = cuibase.OpenBrowser(url)
+	if !debugStatic {
+		_ = cuibase.OpenBrowser(url)
+	}
 
 	ginhelper.GracefulExit(srv)
 }

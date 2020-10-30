@@ -28,6 +28,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-s", Comment: user + " listen keyboard with last device or specific device"},
 		{Short: "-T", Comment: "print daily total by before x day ago and duration"},
 		{Short: "-R", Comment: "print daily rank by before x day ago and duration"},
+		{Short: "-r", Comment: "print total rank by before x day ago and duration"},
 		{Short: "-S", Comment: "web server"},
 		{Short: "-d", Comment: "debug"},
 	},
@@ -51,6 +52,7 @@ var (
 	listenDevice       bool
 	day                bool
 	dayRank            bool
+	totalRank          bool
 
 	targetDevice string
 	timePair     string
@@ -80,6 +82,7 @@ func init() {
 	flag.BoolVar(&listenDevice, "s", false, "")
 	flag.BoolVar(&day, "T", false, "")
 	flag.BoolVar(&dayRank, "R", false, "")
+	flag.BoolVar(&totalRank, "r", false, "")
 
 	flag.StringVar(&timePair, "t", "1", "")
 
@@ -146,5 +149,9 @@ func main() {
 
 	if dayRank {
 		app.PrintDayRank(timePair)
+	}
+
+	if totalRank {
+		app.PrintTotalRank(timePair)
 	}
 }
