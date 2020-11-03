@@ -95,6 +95,7 @@ func init() {
 	flag.BoolVar(&webServer, "S", false, "")
 	flag.BoolVar(&debug, "d", false, "")
 
+	flag.Usage = info.PrintHelp
 	flag.Parse()
 }
 
