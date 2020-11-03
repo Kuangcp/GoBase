@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/kuangcp/gobase/keylogger/app/statik"
+	_ "keylogger/app/statik"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/rakyll/statik/fs"

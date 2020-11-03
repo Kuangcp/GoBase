@@ -8,7 +8,7 @@ import (
 	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/keylogger/app"
+	"keylogger/app"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 

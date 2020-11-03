@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-redis/redis"
 	. "github.com/gvalkov/golang-evdev"
-	"github.com/kuangcp/gobase/cuibase"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
 func closeDevice(device *InputDevice) {
