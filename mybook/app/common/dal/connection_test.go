@@ -1,7 +1,7 @@
 package dal
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/common/config"
+	"mybook/app/common/config"
 	"reflect"
 	"testing"
 )

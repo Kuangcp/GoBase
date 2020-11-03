@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/app/common"
-	"github.com/kuangcp/gobase/mybook/app/common/config"
-	_ "github.com/kuangcp/gobase/mybook/app/common/statik"
-	"github.com/kuangcp/gobase/mybook/app/controller"
-	"github.com/kuangcp/gobase/mybook/app/service"
+	"mybook/app/common"
+	"mybook/app/common/config"
+	_ "mybook/app/common/statik"
+	"mybook/app/controller"
+	"mybook/app/service"
 	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
 )

@@ -1,8 +1,8 @@
 package dal
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/common/config"
 	"log"
+	"mybook/app/common/config"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/common/dal"
-	"github.com/kuangcp/gobase/mybook/app/domain"
+	"mybook/app/common/dal"
+	"mybook/app/domain"
 )
 
 func AutoMigrateAll() {

@@ -2,9 +2,9 @@ package common
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/app/common/constant"
-	"github.com/kuangcp/gobase/mybook/app/service"
-	"github.com/kuangcp/gobase/mybook/app/vo"
+	"mybook/app/common/constant"
+	"mybook/app/service"
+	"mybook/app/vo"
 	"strconv"
 )
 

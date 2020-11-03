@@ -2,7 +2,7 @@ package vo
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/app/common/constant"
+	"mybook/app/common/constant"
 	"net/http"
 	"reflect"
 )

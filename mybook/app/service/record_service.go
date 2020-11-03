@@ -1,13 +1,13 @@
 package service
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/common/constant"
-	"github.com/kuangcp/gobase/mybook/app/common/dal"
-	"github.com/kuangcp/gobase/mybook/app/common/util"
-	"github.com/kuangcp/gobase/mybook/app/domain"
-	"github.com/kuangcp/gobase/mybook/app/dto"
-	"github.com/kuangcp/gobase/mybook/app/param"
-	"github.com/kuangcp/gobase/mybook/app/vo"
+	"mybook/app/common/constant"
+	"mybook/app/common/dal"
+	"mybook/app/common/util"
+	"mybook/app/domain"
+	"mybook/app/dto"
+	"mybook/app/param"
+	"mybook/app/vo"
 	"github.com/wonderivan/logger"
 	"strconv"
 	"time"

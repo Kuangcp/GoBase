@@ -2,10 +2,10 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/mybook/app/common/util"
-	"github.com/kuangcp/gobase/mybook/app/param"
-	"github.com/kuangcp/gobase/mybook/app/service"
-	"github.com/kuangcp/gobase/mybook/app/vo"
+	"mybook/app/common/util"
+	"mybook/app/param"
+	"mybook/app/service"
+	"mybook/app/vo"
 	"github.com/wonderivan/logger"
 )
 

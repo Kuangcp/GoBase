@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/kuangcp/gobase/mybook/app/dto"
+	"mybook/app/dto"
 	"github.com/wonderivan/logger"
 	"testing"
 )

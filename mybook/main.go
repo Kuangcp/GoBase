@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/kuangcp/gobase/mybook/app/common/web"
-	"github.com/kuangcp/gobase/mybook/app/service"
+	"mybook/app/common/web"
+	"mybook/app/service"
 )
 
 var (
