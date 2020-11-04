@@ -1,11 +1,12 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
 	"mybook/app/common/util"
 	"mybook/app/param"
 	"mybook/app/service"
-	"mybook/app/vo"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/wonderivan/logger"
 )
 
@@ -37,7 +38,7 @@ func CreateRecord(c *gin.Context) {
 		logger.Debug("createRecord success: ", util.Json(record))
 	}
 
-	vo.GinResult(c, record)
+	ginhelper.GinResult(c, record)
 }
 
 func ListRecord(c *gin.Context) {
@@ -48,7 +49,7 @@ func ListRecord(c *gin.Context) {
 
 	query := param.QueryRecordParam{AccountId: accountId, StartDate: startDate, EndDate: endDate, TypeId: typeId}
 	result := service.FindRecord(query)
-	vo.GinResult(c, result)
+	ginhelper.GinResult(c, result)
 }
 
 func CategoryRecord(c *gin.Context) {
@@ -57,22 +58,22 @@ func CategoryRecord(c *gin.Context) {
 	typeId := c.Query("typeId")
 
 	result := service.CategoryRecord(startDate, endDate, typeId)
-	vo.GinResult(c, result)
+	ginhelper.GinResult(c, result)
 }
 
 func CategoryDetailRecord(c *gin.Context) {
 	result := service.FindRecord(buildCategoryQueryParam(c))
-	vo.GinResult(c, result)
+	ginhelper.GinResult(c, result)
 }
 
 func WeekCategoryDetailRecord(c *gin.Context) {
 	result := service.WeekCategoryRecord(buildCategoryQueryParam(c))
-	vo.GinResult(c, result)
+	ginhelper.GinResult(c, result)
 }
 
 func MonthCategoryDetailRecord(c *gin.Context) {
 	result := service.MonthCategoryRecord(buildCategoryQueryParam(c))
-	vo.GinResult(c, result)
+	ginhelper.GinResult(c, result)
 }
 
 func buildCategoryQueryParam(c *gin.Context) param.QueryRecordParam {

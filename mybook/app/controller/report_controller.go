@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"mybook/app/vo"
+	"github.com/kuangcp/gobase/pkg/ginhelper"
 )
 
 type (
@@ -15,7 +15,7 @@ type (
 func LineMap(c *gin.Context) {
 	param := buildParam(c)
 	if param == nil {
-		vo.GinFailedWithMsg(c, "invalid param")
+		ginhelper.GinFailedWithMsg(c, "invalid param")
 		return
 	}
 }

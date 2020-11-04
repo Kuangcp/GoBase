@@ -8,10 +8,12 @@ import (
 	"mybook/app/dto"
 	"mybook/app/param"
 	"mybook/app/vo"
-	"github.com/wonderivan/logger"
 	"strconv"
 	"time"
 	"unsafe"
+
+	"github.com/kuangcp/gobase/pkg/ginhelper"
+	"github.com/wonderivan/logger"
 )
 
 func addRecord(record *domain.Record) {
@@ -21,29 +23,29 @@ func addRecord(record *domain.Record) {
 	db.Create(record)
 }
 
-func checkParam(record *domain.Record) (vo.ResultVO, *domain.Category, *domain.Account) {
+func checkParam(record *domain.Record) (ginhelper.ResultVO, *domain.Category, *domain.Account) {
 	category := FindCategoryById(record.CategoryId)
 	if category == nil || !category.Leaf {
-		return vo.FailedWithMsg("分类id无效"), nil, nil
+		return ginhelper.FailedWithMsg("分类id无效"), nil, nil
 	}
 
 	account := FindAccountById(record.AccountId)
 	if account == nil {
-		return vo.FailedWithMsg("账户无效"), category, nil
+		return ginhelper.FailedWithMsg("账户无效"), category, nil
 	}
 
 	if record.Amount <= 0 {
-		return vo.FailedWithMsg("金额无效"), category, account
+		return ginhelper.FailedWithMsg("金额无效"), category, account
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return vo.FailedWithMsg("类别无效"), category, account
+		return ginhelper.FailedWithMsg("类别无效"), category, account
 	}
-	return vo.Success(), category, account
+	return ginhelper.Success(), category, account
 }
 
-func CreateRecord(record *domain.Record) vo.ResultVO {
+func CreateRecord(record *domain.Record) ginhelper.ResultVO {
 	if nil == record {
-		return vo.Failed()
+		return ginhelper.Failed()
 	}
 	resultVO, _, _ := checkParam(record)
 	if resultVO.IsFailed() {
@@ -51,12 +53,12 @@ func CreateRecord(record *domain.Record) vo.ResultVO {
 	}
 
 	addRecord(record)
-	return vo.Success()
+	return ginhelper.Success()
 }
 
-func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO {
+func createTransRecord(origin *domain.Record, target *domain.Record) ginhelper.ResultVO {
 	if nil == origin || nil == target {
-		return vo.Failed()
+		return ginhelper.Failed()
 	}
 
 	resultVO, _, _ := checkParam(origin)
@@ -71,9 +73,9 @@ func createTransRecord(origin *domain.Record, target *domain.Record) vo.ResultVO
 	e := dal.BatchSaveWithTransaction(origin, target)
 	if e != nil {
 		logger.Error(e)
-		return vo.Failed()
+		return ginhelper.Failed()
 	}
-	return vo.Success()
+	return ginhelper.Success()
 }
 
 func BuildRecordByField(param param.CreateRecordParam) *domain.Record {

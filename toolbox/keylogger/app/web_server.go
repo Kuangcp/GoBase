@@ -4,8 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	_ "keylogger/app/statik"
+
+	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/rakyll/statik/fs"
