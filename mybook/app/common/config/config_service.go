@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/json"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/wonderivan/logger"
@@ -8,12 +10,10 @@ import (
 
 type (
 	AppConfig struct {
-		// SQLite 文件绝对路径
-		Path       string
-		DriverName string
-		// 是否 Debug 模式
-		Debug bool
-		Port  int
+		Path       string `json:"path"` // SQLite 文件绝对路径
+		DriverName string `json:"driver"`
+		Debug      bool   `json:"debug"` // 是否 Debug 模式
+		Port       int    `json:"port"`
 	}
 )
 
@@ -34,7 +34,8 @@ func GetAppConfig() *AppConfig {
 	configLogger()
 	config = buildAppConfig()
 
-	logger.Info("Final config: %v", config)
+	show, _ := json.Marshal(config)
+	logger.Info("Final config: %v", string(show))
 	return config
 }
 
