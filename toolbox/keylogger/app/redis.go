@@ -1,11 +1,11 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/wonderivan/logger"
 )
 
 //Prefix redis prefix
@@ -43,31 +43,38 @@ func GetDetailKeyByString(time string) string {
 }
 
 func GetConnection() *redis.Client {
-	if time.Now().Second()%7 == 0 {
-		_, err := connection.Ping().Result()
-		if err != nil {
-			fmt.Println("ping redis failed:", err)
-			os.Exit(1)
-		}
-	}
 	return connection
 }
 
 func InitConnection(option redis.Options) {
 	connection = redis.NewClient(&option)
-	_, err := connection.Ping().Result()
-	if err != nil {
-		fmt.Println("ping redis failed:", err)
+	if !isValidConnection(connection) {
 		os.Exit(1)
 	}
+	go func() {
+		for {
+			time.Sleep(time.Second * 17)
+			if !isValidConnection(connection) {
+				os.Exit(1)
+			}
+		}
+	}()
 }
 
+func isValidConnection(client *redis.Client) bool {
+	_, err := client.Ping().Result()
+	if err != nil {
+		logger.Error("ping redis failed:", err)
+		return false
+	}
+	return true
+}
 func CloseConnection() {
 	if connection == nil {
 		return
 	}
 	err := connection.Close()
 	if err != nil {
-		fmt.Println("close redis connection error: ", err)
+		logger.Error("close redis connection error: ", err)
 	}
 }

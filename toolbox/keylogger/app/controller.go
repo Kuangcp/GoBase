@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,7 +28,14 @@ var colorSet = [...]string{
 	"#c4ccd3",
 }
 
+const (
+	TimeUnitDay  LineTimeUnit = "day"
+	TimeUnitHour LineTimeUnit = "hour"
+)
+
 type (
+	LineTimeUnit string
+
 	LineChartVO struct {
 		Lines    []LineVO `json:"lines"`
 		Days     []string `json:"days"`
@@ -84,8 +92,20 @@ type (
 		Top       int64
 		ChartType string
 		ShowLabel bool
+		TimeUnit  LineTimeUnit
 	}
 )
+
+func valueOf(value string) (LineTimeUnit, error) {
+	switch value {
+	case string(TimeUnitDay):
+		return TimeUnitDay, nil
+	case string(TimeUnitHour):
+		return TimeUnitHour, nil
+	default:
+		return "", fmt.Errorf("not support time unit")
+	}
+}
 
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
@@ -324,6 +344,10 @@ func readDetailToMap(
 	//logger.Info(day, totalCount/2)
 }
 
+func HourLineChart(c *gin.Context, param *QueryParam) {
+
+}
+
 //LineMap 折线图 柱状图
 func LineMap(c *gin.Context) {
 	param, err := parseParam(c)
@@ -331,12 +355,19 @@ func LineMap(c *gin.Context) {
 		ginhelper.GinFailedWithMsg(c, err.Error())
 		return
 	}
+
+	if param.TimeUnit == TimeUnitHour {
+		HourLineChart(c, param)
+		return
+	}
+
 	dayList := buildDayList(param.Length, param.Offset)
 	hotKey := hotKey(dayList, param.Top)
 	if len(hotKey) == 0 {
 		ginhelper.GinFailed(c)
 		return
 	}
+
 	nameMap := keyNameMap(hotKey)
 
 	// keyNames
@@ -413,7 +444,12 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 	chartType := c.DefaultQuery("type", "bar")
 	showLabel := c.DefaultQuery("showLabel", "false")
 	weeks := c.DefaultQuery("weeks", "1")
+	timeUnit := c.DefaultQuery("timeUnit", "day")
 
+	unit, err := valueOf(timeUnit)
+	if err != nil {
+		return nil, err
+	}
 	lengthInt, err := strconv.Atoi(length)
 	if err != nil {
 		return nil, err
@@ -450,6 +486,7 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 		Weeks:     weeksInt,
 		ChartType: chartType,
 		ShowLabel: showLabelBool,
+		TimeUnit:  unit,
 	}, nil
 }
 

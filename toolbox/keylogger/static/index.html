@@ -268,14 +268,14 @@
                 legend: {
                     data: response.Data.keyNames
                 },
-                series: calculateSum(response.Data.lines)
+                series: appendSumLine(response.Data.lines)
             });
         }, function (data) {
             alert('连接失败' + data.responseText)
         });
     }
 
-    function calculateSum(lines) {
+    function appendSumLine(lines) {
         let sumData = []
         let first = lines[0];
         for (let i = 0; i < first.data.length; i++) {
