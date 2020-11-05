@@ -64,6 +64,7 @@ func TestHelpInfo_PrintHelp(t *testing.T) {
 }
 
 func TestColor(t *testing.T) {
-	//PrintWithColorful()
-	print(Red.Print("ddd"))
+	PrintWithColorful()
+    println()
+	print(Red.Print("Red"))
 }
