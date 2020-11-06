@@ -1,11 +1,9 @@
-module recycle-bin
+module github.com/kuangcp/gobase/toolbox/recycle-bin
 
 go 1.14
 
 require (
-	github.com/kuangcp/gobase/cuibase v0.0.0-20200922103718-c83c08229d82
+	github.com/kuangcp/gobase/pkg/cuibase v0.0.0-20201105021415-0bdbbc0a38fd
 	github.com/wonderivan/logger v1.0.0
-	github.com/syndtr/goleveldb v1.0.0
+	github.com/zh-five/xdaemon v0.1.1
 )
-
-
