@@ -42,7 +42,7 @@ var (
 )
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
-	Version:       "1.0.0",
+	Version:       "1.0.2",
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
@@ -54,6 +54,10 @@ var info = cuibase.HelpInfo{
 			Short:   "-D",
 			Value:   "",
 			Comment: "Debug mode",
+		}, {
+			Short:   "-X",
+			Value:   "",
+			Comment: "Exit daemon",
 		}, {
 			Short:   "-C",
 			Value:   "",
@@ -86,6 +90,7 @@ var info = cuibase.HelpInfo{
 
 func init() {
 	logger.SetLogPathTrim("recycle-bin")
+
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
 
@@ -104,6 +109,7 @@ func init() {
 	flag.BoolVar(&check, "C", false, "")
 	flag.BoolVar(&daemon, "d", false, "")
 	flag.BoolVar(&exit, "X", false, "")
+
 	flag.StringVar(&liveStr, "l", "1m", "")
 	flag.StringVar(&checkStr, "c", "1m", "")
 	flag.StringVar(&suffix, "s", "", "")
@@ -147,7 +153,7 @@ func main() {
 }
 
 func checkWithDaemon() {
-	params := fmt.Sprintf(" -C %s -l %s", checkStr, liveStr)
+	params := fmt.Sprintf(" -c %s -l %s", checkStr, liveStr)
 	proc, err := startProc([]string{"/usr/bin/bash", "-c", "recycle-bin -C" + params}, logFile)
 	if err != nil {
 		logger.Error(proc, err)
