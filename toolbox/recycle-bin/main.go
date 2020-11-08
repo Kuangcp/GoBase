@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/wonderivan/logger"
-	"github.com/zh-five/xdaemon"
 )
 
 var (
@@ -34,6 +34,7 @@ var (
 	help     bool
 	suffix   string
 	check    bool
+	daemon   bool
 	debug    bool
 	exit     bool
 	liveStr  string // time.ParseDuration()
@@ -57,6 +58,10 @@ var info = cuibase.HelpInfo{
 			Short:   "-C",
 			Value:   "",
 			Comment: "Start check",
+		}, {
+			Short:   "-d",
+			Value:   "",
+			Comment: "Start check by daemon",
 		},
 	},
 	Options: []cuibase.ParamVO{
@@ -97,6 +102,7 @@ func init() {
 	flag.BoolVar(&help, "H", false, "")
 	flag.BoolVar(&debug, "D", false, "")
 	flag.BoolVar(&check, "C", false, "")
+	flag.BoolVar(&daemon, "d", false, "")
 	flag.BoolVar(&exit, "X", false, "")
 	flag.StringVar(&liveStr, "l", "1m", "")
 	flag.StringVar(&checkStr, "c", "1m", "")
@@ -119,7 +125,11 @@ func main() {
 	}
 
 	if check {
-		checkTrashDir()
+		if daemon {
+			checkWithDaemon()
+		} else {
+			checkTrashDir()
+		}
 		return
 	}
 	if exit {
@@ -132,6 +142,15 @@ func main() {
 		info.PrintHelp()
 	} else {
 		deleteFiles(args[1:])
+		checkWithDaemon()
+	}
+}
+
+func checkWithDaemon() {
+	params := fmt.Sprintf(" -C %s -l %s", checkStr, liveStr)
+	proc, err := startProc([]string{"/usr/bin/bash", "-c", "recycle-bin -C" + params}, logFile)
+	if err != nil {
+		logger.Error(proc, err)
 	}
 }
 
@@ -189,7 +208,6 @@ func deleteFiles(files []string) {
 		cmd := exec.Command("mv", filepath, trashDir+"/"+filepath+".T."+timestamp)
 		execCmdWithQuite(cmd)
 	}
-	checkTrashDaemon()
 }
 
 func deleteFileBySuffix(params []string) {
@@ -217,28 +235,52 @@ func exitCheckFileDaemon() {
 	execCmdWithQuite(cmd)
 }
 
+func NewSysProcAttr() *syscall.SysProcAttr {
+	return &syscall.SysProcAttr{
+		Setsid: true,
+	}
+}
+
+func startProc(args []string, logFile string) (*exec.Cmd, error) {
+	cmd := &exec.Cmd{
+		Path:        args[0],
+		Args:        args,
+		SysProcAttr: NewSysProcAttr(),
+	}
+
+	if logFile != "" {
+		stdout, err := os.OpenFile(logFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+		if err != nil {
+			log.Println(os.Getpid(), ": 打开日志文件错误:", err)
+			return nil, err
+		}
+		cmd.Stderr = stdout
+		cmd.Stdout = stdout
+	}
+
+	err := cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	return cmd, nil
+}
+
 func checkTrashDaemon() {
 	exists, err := isPathExists(pidFile)
 	if exists {
 		return
 	}
+	logger.Debug("Start check trash")
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
-	//启动一个子进程后主进程退出，之后的代码只有子进程会执行
-	if !debug {
-		_, err = xdaemon.Background(logFile, true)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-	}
-
 	// avoid repeat delete
 	var deleteFlag int32 = 0
 
+	logger.Debug("process", os.Getpid())
 	go func() {
 		// Wait for interrupt signal to gracefully shutdown the server with
 		// a timeout of 5 seconds.
@@ -257,12 +299,14 @@ func checkTrashDaemon() {
 		os.Exit(1)
 	}()
 
+	// create pid
 	err = ioutil.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
+	// delete pid
 	defer func() {
 		curDelete := atomic.AddInt32(&deleteFlag, 1)
 		if curDelete == 1 {
@@ -273,7 +317,7 @@ func checkTrashDaemon() {
 	for true {
 		current := time.Now().UnixNano()
 		time.Sleep(checkPeriod)
-		logger.Info("check ...")
+		logger.Info("check ...", checkPeriod, os.Getpid())
 		dir, err := ioutil.ReadDir(trashDir)
 		if err != nil {
 			return
