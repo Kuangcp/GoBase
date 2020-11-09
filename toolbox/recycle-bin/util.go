@@ -35,6 +35,10 @@ var info = cuibase.HelpInfo{
 			Short:   "-d",
 			Value:   "",
 			Comment: "Start check by daemon",
+		},{
+			Short:   "-q",
+			Value:   "",
+			Comment: "Remove pid file",
 		},
 	},
 	Options: []cuibase.ParamVO{

@@ -240,7 +240,7 @@ func deleteFiles(files []string) {
 			return
 		}
 
-		logger.Warn("Prepare delete:", filepath)
+		logger.Info("Prepare delete:", filepath)
 
 		timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
 		//logger.Debug(filepath, trashDir+"/"+filepath)
