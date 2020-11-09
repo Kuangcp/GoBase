@@ -6,7 +6,7 @@ import (
 	"syscall"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 var info = cuibase.HelpInfo{

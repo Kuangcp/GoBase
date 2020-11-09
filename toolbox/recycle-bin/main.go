@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 const (
-	emptyMaxLoop = 10
+	maxEmptyTrashCheck = 10
 )
 
 var (
@@ -58,6 +58,8 @@ func init() {
 	logFile = logDir + "/main.log"
 
 	trashDir = mainDir + "/trash"
+
+	logger.SetLogger("{\"Console\": {\"level\": \"DEBG\",\"color\": true},\"File\":{\"filename\": \"" + logFile + "\",\"level\": \"DEBG\",\"color\": true,\"append\": true,\"permit\": \"0660\"}}")
 
 	flag.BoolVar(&help, "h", false, "")
 	flag.BoolVar(&help, "H", false, "")
@@ -134,7 +136,7 @@ func checkTrashDir() {
 	if exists {
 		return
 	}
-	logger.Debug("Start check trash, period:", checkPeriod, "pid:", os.Getpid())
+	logger.Info("Start check trash, period:", checkPeriod, "pid:", os.Getpid())
 	if err != nil {
 		logger.Error(err)
 		return
@@ -153,7 +155,7 @@ func checkTrashDir() {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 
-		logger.Warn("killed")
+		logger.Warn("Killed")
 		deletePidFile(&deleteFlag)
 		os.Exit(1)
 	}()
@@ -171,7 +173,7 @@ func checkTrashDir() {
 	for true {
 		current := time.Now().UnixNano()
 		time.Sleep(checkPeriod)
-		logger.Info("check")
+		logger.Debug("Check")
 		dir, err := ioutil.ReadDir(trashDir)
 		if err != nil {
 			return
@@ -180,7 +182,7 @@ func checkTrashDir() {
 		if len(dir) == 0 {
 			emptyCount++
 		}
-		if emptyCount > emptyMaxLoop {
+		if emptyCount > maxEmptyTrashCheck {
 			return
 		}
 
@@ -201,7 +203,7 @@ func checkTrashDir() {
 
 			//logger.Debug(current, parseInt, current-parseInt)
 			if current-parseInt > liveTime.Nanoseconds() {
-				logger.Info("delete: ", name[:index])
+				logger.Warn("Delete: ", name[:index])
 				actualPath := trashDir + "/" + name
 				if actualPath == "/" {
 					logger.Error("danger error")
@@ -215,7 +217,7 @@ func checkTrashDir() {
 }
 
 func deletePidFile(deleteFlag *int32) {
-	logger.Warn("exit")
+	logger.Warn("Exit")
 	curDelete := atomic.AddInt32(deleteFlag, 1)
 	if curDelete == 1 {
 		actualDeleteFile(pidFile)
@@ -232,7 +234,7 @@ func deleteFiles(files []string) {
 			return
 		}
 
-		logger.Info(filepath, "move to", trashDir)
+		logger.Warn("Prepare delete:", filepath)
 
 		timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
 		//logger.Debug(filepath, trashDir+"/"+filepath)
