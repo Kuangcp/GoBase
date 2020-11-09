@@ -34,14 +34,15 @@ var (
 )
 
 var (
-	help     bool
-	suffix   string
-	check    bool
-	daemon   bool
-	debug    bool
-	exit     bool
-	liveStr  string // time.ParseDuration()
-	checkStr string
+	help        bool
+	suffix      string
+	check       bool
+	daemon      bool
+	debug       bool
+	exit        bool
+	illegalQuit bool
+	liveStr     string // time.ParseDuration()
+	checkStr    string
 )
 
 func init() {
@@ -67,6 +68,7 @@ func init() {
 	flag.BoolVar(&check, "C", false, "")
 	flag.BoolVar(&daemon, "d", false, "")
 	flag.BoolVar(&exit, "X", false, "")
+	flag.BoolVar(&illegalQuit, "q", false, "")
 
 	flag.StringVar(&liveStr, "l", "30s", "")
 	flag.StringVar(&checkStr, "c", "5s", "")
@@ -98,6 +100,10 @@ func main() {
 	}
 	if exit {
 		exitCheckFileDaemon()
+		return
+	}
+	if illegalQuit {
+		actualDeleteFile(pidFile)
 		return
 	}
 
