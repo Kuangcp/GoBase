@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	maxEmptyTrashCheck = 10
+	maxEmptyTrashCheck = 3
 )
 
 var (
@@ -60,7 +60,19 @@ func init() {
 
 	trashDir = mainDir + "/trash"
 
-	logger.SetLogger("{\"Console\": {\"level\": \"DEBG\",\"color\": true},\"File\":{\"filename\": \"" + logFile + "\",\"level\": \"DEBG\",\"color\": true,\"append\": true,\"permit\": \"0660\"}}")
+	logger.SetLoggerConfig(&logger.LogConfig{
+		Console: &logger.ConsoleLogger{
+			Level:    logger.DebugDesc,
+			Colorful: true,
+		},
+		File: &logger.FileLogger{
+			Filename:   logFile,
+			Level:      logger.DebugDesc,
+			Colorful:   true,
+			Append:     true,
+			PermitMask: "0660",
+		},
+	})
 
 	flag.BoolVar(&help, "h", false, "")
 	flag.BoolVar(&help, "H", false, "")
@@ -182,13 +194,14 @@ func checkTrashDir() {
 		logger.Debug("Check")
 		dir, err := ioutil.ReadDir(trashDir)
 		if err != nil {
+			logger.Error(err)
 			return
 		}
 
 		if len(dir) == 0 {
 			emptyCount++
 		}
-		if emptyCount > maxEmptyTrashCheck {
+		if emptyCount >= maxEmptyTrashCheck {
 			return
 		}
 
