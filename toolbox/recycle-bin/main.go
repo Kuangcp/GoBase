@@ -28,6 +28,7 @@ var (
 	logDir      string
 	trashDir    string
 	logFile     string
+	configFile  string
 	pidFile     string
 	liveTime    time.Duration
 	checkPeriod time.Duration
@@ -54,6 +55,7 @@ func init() {
 	mainDir = home + mainDir
 	configDir = mainDir + "/conf"
 	pidFile = configDir + "/pid"
+	configFile = configDir + "/main.json"
 
 	logDir = mainDir + "/log"
 	logFile = logDir + "/main.log"
