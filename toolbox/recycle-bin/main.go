@@ -28,7 +28,7 @@ var (
 	logDir        string
 	trashDir      string
 	logFile       string
-	configFile  string
+	configFile    string
 	pidFile       string
 	retentionTime time.Duration
 	checkPeriod   time.Duration
@@ -43,8 +43,8 @@ var (
 	exit         bool
 	illegalQuit  bool
 	listTrash    bool
-	retentionStr string // time.ParseDuration()
-	checkStr     string
+	retentionStr = "168h" // time.ParseDuration()
+	checkStr     = "1h"
 )
 
 func init() {
@@ -86,8 +86,8 @@ func init() {
 	flag.BoolVar(&illegalQuit, "q", false, "")
 	flag.BoolVar(&listTrash, "l", false, "")
 
-	flag.StringVar(&retentionStr, "r", "168h", "")
-	flag.StringVar(&checkStr, "c", "1h", "")
+	flag.StringVar(&retentionStr, "r", retentionStr, "")
+	flag.StringVar(&checkStr, "c", checkStr, "")
 	flag.StringVar(&suffix, "s", "", "")
 
 	flag.Usage = info.PrintHelp
@@ -151,7 +151,7 @@ func ListTrashFiles() {
 	}
 
 	current := time.Now().UnixNano()
-	if len(dir)!= 0 {
+	if len(dir) != 0 {
 		fmt.Printf("%-23s %-10s %s\n", "DeleteTime", "Remaining", "File")
 	}
 	for _, fileInfo := range dir {

@@ -35,10 +35,14 @@ var info = cuibase.HelpInfo{
 			Short:   "-d",
 			Value:   "",
 			Comment: "Start check by daemon",
-		},{
+		}, {
 			Short:   "-q",
 			Value:   "",
 			Comment: "Remove pid file",
+		}, {
+			Short:   "-l",
+			Value:   "",
+			Comment: "List trash",
 		},
 	},
 	Options: []cuibase.ParamVO{
@@ -51,13 +55,13 @@ var info = cuibase.HelpInfo{
 			Value:   "suffix",
 			Comment: "Delete *.suffix",
 		}, {
-			Short:   "-l",
+			Short:   "-r",
 			Value:   "duration",
-			Comment: "File live time, default 1m. (unit: ms/s/m/h) ",
+			Comment: "File retention time, default " + retentionStr + ". (unit: ms/s/m/h) ",
 		}, {
 			Short:   "-c",
 			Value:   "duration",
-			Comment: "Check trash period, default 1m. (unit: ms/s/m/h)",
+			Comment: "Check trash period, default " + checkStr + ". (unit: ms/s/m/h)",
 		},
 	}}
 
