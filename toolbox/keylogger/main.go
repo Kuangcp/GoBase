@@ -8,8 +8,8 @@ import (
 	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
-	"keylogger/app"
 	"github.com/kuangcp/gobase/pkg/cuibase"
+	"keylogger/app"
 )
 
 var user = cuibase.Red.Print("root")
@@ -66,7 +66,8 @@ var (
 	webPort   string
 	webServer bool
 
-	debug bool
+	debug  bool
+	option redis.Options
 )
 
 func init() {
@@ -97,20 +98,17 @@ func init() {
 
 	flag.Usage = info.PrintHelp
 	flag.Parse()
-}
-
-func main() {
-	options := redis.Options{
+	option = redis.Options{
 		PoolSize: 20,
 		Addr:     host + ":" + port,
 		Password: pwd,
 		DB:       db,
 	}
-	app.InitConnection(options)
-	defer app.CloseConnection()
+}
 
-	debugPort := "8891"
+func main() {
 	if debug {
+		debugPort := "8891"
 		go func() {
 			_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
 		}()
@@ -122,6 +120,8 @@ func main() {
 		info.PrintHelp()
 		return
 	} else if webServer {
+		app.InitConnection(option)
+		defer app.CloseConnection()
 		app.Server(debug, webPort)
 		return
 	} else if listKeyboardDevice {
@@ -131,6 +131,8 @@ func main() {
 		app.ListAllDevice()
 		return
 	} else if cacheKeyMap {
+		app.InitConnection(option)
+		defer app.CloseConnection()
 		app.CacheKeyMap(targetDevice)
 		return
 	} else if listenDevice {
@@ -140,6 +142,8 @@ func main() {
 
 	// simple query info
 
+	defer app.CloseConnection()
+	app.InitConnection(option)
 	if printKeyMap {
 		app.PrintKeyMap(targetDevice)
 	}
