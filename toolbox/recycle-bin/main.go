@@ -23,26 +23,27 @@ const (
 )
 
 var (
-	mainDir     = "/.config/app-conf/recycle-bin"
-	configDir   string
-	logDir      string
-	trashDir    string
-	logFile     string
-	pidFile     string
-	liveTime    time.Duration
-	checkPeriod time.Duration
+	mainDir       = "/.config/app-conf/recycle-bin"
+	configDir     string
+	logDir        string
+	trashDir      string
+	logFile       string
+	pidFile       string
+	retentionTime time.Duration
+	checkPeriod   time.Duration
 )
 
 var (
-	help        bool
-	suffix      string
-	check       bool
-	daemon      bool
-	debug       bool
-	exit        bool
-	illegalQuit bool
-	liveStr     string // time.ParseDuration()
-	checkStr    string
+	help         bool
+	suffix       string
+	check        bool
+	daemon       bool
+	debug        bool
+	exit         bool
+	illegalQuit  bool
+	listTrash    bool
+	retentionStr string // time.ParseDuration()
+	checkStr     string
 )
 
 func init() {
@@ -60,7 +61,7 @@ func init() {
 
 	trashDir = mainDir + "/trash"
 
-	logger.SetLoggerConfig(&logger.LogConfig{
+	_ = logger.SetLoggerConfig(&logger.LogConfig{
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,
@@ -81,9 +82,10 @@ func init() {
 	flag.BoolVar(&daemon, "d", false, "")
 	flag.BoolVar(&exit, "X", false, "")
 	flag.BoolVar(&illegalQuit, "q", false, "")
+	flag.BoolVar(&listTrash, "l", false, "")
 
-	flag.StringVar(&liveStr, "l", "30s", "")
-	flag.StringVar(&checkStr, "c", "5s", "")
+	flag.StringVar(&retentionStr, "r", "168h", "")
+	flag.StringVar(&checkStr, "c", "1h", "")
 	flag.StringVar(&suffix, "s", "", "")
 
 	flag.Usage = info.PrintHelp
@@ -92,30 +94,37 @@ func init() {
 
 func main() {
 	if help {
-		initDir()
+		InitDir()
 		info.PrintHelp()
 		return
 	}
 
 	if suffix != "" {
-		deleteFileBySuffix(strings.Split(suffix, ","))
+		DeleteFileBySuffix(strings.Split(suffix, ","))
+		return
+	}
+
+	if listTrash {
+		ListTrashFiles()
 		return
 	}
 
 	if check {
 		if daemon {
-			checkWithDaemon()
+			CheckWithDaemon()
 		} else {
-			checkTrashDir()
+			CheckTrashDir()
 		}
 		return
 	}
+
 	if exit {
-		exitCheckFileDaemon()
+		ExitCheckFileDaemon()
 		return
 	}
+
 	if illegalQuit {
-		actualDeleteFile(pidFile)
+		ActualDeleteFile(pidFile)
 		return
 	}
 
@@ -123,30 +132,63 @@ func main() {
 	if len(args) == 1 {
 		info.PrintHelp()
 	} else {
-		deleteFiles(args[1:])
-		checkWithDaemon()
+		DeleteFiles(args[1:])
+		CheckWithDaemon()
 	}
 }
 
-func checkWithDaemon() {
-	params := fmt.Sprintf(" -c %s -l %s", checkStr, liveStr)
+func ListTrashFiles() {
+	err := parseTime()
+	if err != nil {
+		return
+	}
+	dir, err := ioutil.ReadDir(trashDir)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	current := time.Now().UnixNano()
+	if len(dir)!= 0 {
+		fmt.Printf("%-23s %-10s %s\n", "DeleteTime", "Remaining", "File")
+	}
+	for _, fileInfo := range dir {
+		name := fileInfo.Name()
+		index := strings.Index(name, ".T.")
+		if index == -1 {
+			continue
+		}
+
+		file := name[:index]
+
+		value := name[index+3:]
+		//fmt.Println(value)
+		parseInt, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		duration, err := time.ParseDuration(strconv.FormatInt((retentionTime.Nanoseconds()-current+parseInt)/1000000000, 10) + "s")
+		if err != nil {
+			duration = 0
+
+		}
+		fmt.Println(time.Unix(parseInt/1000000000, 0).Format("2006-01-02 15:04:05.000"),
+			cuibase.Yellow.Printf("%10s", duration.String()), cuibase.Green.Print(file))
+	}
+}
+
+func CheckWithDaemon() {
+	params := fmt.Sprintf(" -c %s -r %s", checkStr, retentionStr)
 	proc, err := startProc([]string{"/usr/bin/bash", "-c", "recycle-bin -C" + params}, logFile)
 	if err != nil {
 		logger.Error(proc, err)
 	}
 }
 
-func checkTrashDir() {
-	duration, err := time.ParseDuration(liveStr)
+func CheckTrashDir() {
+	err := parseTime()
 	if err != nil {
-		logger.Error(err)
-		return
-	}
-
-	liveTime = duration
-	checkPeriod, err = time.ParseDuration(checkStr)
-	if err != nil {
-		logger.Error(err)
 		return
 	}
 
@@ -221,7 +263,7 @@ func checkTrashDir() {
 			}
 
 			//logger.Debug(current, parseInt, current-parseInt)
-			if current-parseInt > liveTime.Nanoseconds() {
+			if current-parseInt > retentionTime.Nanoseconds() {
 				logger.Warn("Delete: ", name[:index])
 				actualPath := trashDir + "/" + name
 				if actualPath == "/" {
@@ -235,16 +277,32 @@ func checkTrashDir() {
 	}
 }
 
+func parseTime() error {
+	duration, err := time.ParseDuration(retentionStr)
+	if err != nil {
+		logger.Error(err)
+		return nil
+	}
+
+	retentionTime = duration
+	checkPeriod, err = time.ParseDuration(checkStr)
+	if err != nil {
+		logger.Error(err)
+		return nil
+	}
+	return err
+}
+
 func deletePidFile(deleteFlag *int32) {
 	logger.Warn("Exit")
 	curDelete := atomic.AddInt32(deleteFlag, 1)
 	if curDelete == 1 {
-		actualDeleteFile(pidFile)
+		ActualDeleteFile(pidFile)
 	}
 }
 
 // deleteFies 移动文件到回收站
-func deleteFiles(files []string) {
+func DeleteFiles(files []string) {
 	for _, filepath := range files {
 		exists, err := isPathExists(filepath)
 		cuibase.CheckIfError(err)
@@ -262,14 +320,14 @@ func deleteFiles(files []string) {
 	}
 }
 
-func deleteFileBySuffix(params []string) {
+func DeleteFileBySuffix(params []string) {
 	if len(params) == 0 {
 		return
 	}
 	fmt.Println(params)
 }
 
-func exitCheckFileDaemon() {
+func ExitCheckFileDaemon() {
 	exists, err := isPathExists(pidFile)
 	if !exists {
 		logger.Error("no pid file")
@@ -287,7 +345,7 @@ func exitCheckFileDaemon() {
 	execCmdWithQuite(cmd)
 }
 
-func actualDeleteFile(path string) {
+func ActualDeleteFile(path string) {
 	err := os.Remove(path)
 	if err != nil {
 		logger.Error(err)

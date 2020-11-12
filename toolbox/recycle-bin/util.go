@@ -61,7 +61,7 @@ var info = cuibase.HelpInfo{
 		},
 	}}
 
-func initDir() {
+func InitDir() {
 	err := os.MkdirAll(trashDir, 0755)
 	cuibase.CheckIfError(err)
 	err = os.MkdirAll(configDir, 0755)
