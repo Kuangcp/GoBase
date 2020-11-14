@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -34,65 +33,13 @@ var (
 	checkPeriod   time.Duration
 )
 
-var (
-	help         bool
-	suffix       string
-	check        bool
-	daemon       bool
-	debug        bool
-	exit         bool
-	illegalQuit  bool
-	listTrash    bool
-	retentionStr = "168h" // time.ParseDuration()
-	checkStr     = "1h"
+type (
+	FileItem struct {
+		name      string
+		timestamp int64
+		file      os.FileInfo
+	}
 )
-
-func init() {
-	logger.SetLogPathTrim("recycle-bin")
-
-	home, err := cuibase.Home()
-	cuibase.CheckIfError(err)
-
-	mainDir = home + mainDir
-	configDir = mainDir + "/conf"
-	pidFile = configDir + "/pid"
-	configFile = configDir + "/main.json"
-
-	logDir = mainDir + "/log"
-	logFile = logDir + "/main.log"
-
-	trashDir = mainDir + "/trash"
-
-	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		Console: &logger.ConsoleLogger{
-			Level:    logger.DebugDesc,
-			Colorful: true,
-		},
-		File: &logger.FileLogger{
-			Filename:   logFile,
-			Level:      logger.DebugDesc,
-			Colorful:   true,
-			Append:     true,
-			PermitMask: "0660",
-		},
-	})
-
-	flag.BoolVar(&help, "h", false, "")
-	flag.BoolVar(&help, "H", false, "")
-	flag.BoolVar(&debug, "D", false, "")
-	flag.BoolVar(&check, "C", false, "")
-	flag.BoolVar(&daemon, "d", false, "")
-	flag.BoolVar(&exit, "X", false, "")
-	flag.BoolVar(&illegalQuit, "q", false, "")
-	flag.BoolVar(&listTrash, "l", false, "")
-
-	flag.StringVar(&retentionStr, "r", retentionStr, "")
-	flag.StringVar(&checkStr, "c", checkStr, "")
-	flag.StringVar(&suffix, "s", "", "")
-
-	flag.Usage = info.PrintHelp
-	flag.Parse()
-}
 
 func main() {
 	if help {
@@ -108,6 +55,11 @@ func main() {
 
 	if listTrash {
 		ListTrashFiles()
+		return
+	}
+
+	if restore != "" {
+		Restore(restore)
 		return
 	}
 
@@ -139,44 +91,83 @@ func main() {
 	}
 }
 
-func ListTrashFiles() {
-	err := parseTime()
-	if err != nil {
-		return
+func Restore(restoreFile string) {
+	items := listFileItem(func(val string) bool {
+		return strings.Contains(val, restoreFile)
+	})
+	length := len(items)
+	if length == 0 {
+		logger.Info("Not match: " + restoreFile)
+	} else if length == 1 {
+		restoreFileToCur(items[0])
+	} else {
+
 	}
+}
+
+func restoreFileToCur(item FileItem) {
+	logger.Warn("restore ", item.file.Name())
+	cmd := exec.Command("mv", trashDir+"/"+item.file.Name(), item.name)
+	execCmdWithQuite(cmd)
+}
+
+func listFileItem(filter func(string) bool) []FileItem {
+	var result []FileItem
 	dir, err := ioutil.ReadDir(trashDir)
 	if err != nil {
 		logger.Error(err)
-		return
+		return result
 	}
 
-	current := time.Now().UnixNano()
-	if len(dir) != 0 {
-		fmt.Printf("%-23s %-10s %s\n", "DeleteTime", "Remaining", "File")
-	}
 	for _, fileInfo := range dir {
 		name := fileInfo.Name()
+		if !filter(name) {
+			continue
+		}
+
 		index := strings.Index(name, ".T.")
 		if index == -1 {
 			continue
 		}
 
-		file := name[:index]
-
+		filename := name[:index]
 		value := name[index+3:]
-		//fmt.Println(value)
 		parseInt, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			logger.Error(err)
-			return
+			continue
 		}
-		duration, err := time.ParseDuration(strconv.FormatInt((retentionTime.Nanoseconds()-current+parseInt)/1000000000, 10) + "s")
+
+		result = append(result, FileItem{
+			name:      filename,
+			timestamp: parseInt,
+			file:      fileInfo,
+		})
+	}
+	return result
+}
+
+func ListTrashFiles() {
+	err := parseTime()
+	if err != nil {
+		return
+	}
+
+	items := listFileItem(func(s string) bool {
+		return true
+	})
+	current := time.Now().UnixNano()
+	if len(items) != 0 {
+		fmt.Printf("%-23s %-10s %s\n", "DeleteTime", "Remaining", "File")
+	}
+
+	for _, item := range items {
+		duration, err := time.ParseDuration(strconv.FormatInt((retentionTime.Nanoseconds()-current+item.timestamp)/1000000000, 10) + "s")
 		if err != nil {
 			duration = 0
-
 		}
-		fmt.Println(time.Unix(parseInt/1000000000, 0).Format("2006-01-02 15:04:05.000"),
-			cuibase.Yellow.Printf("%10s", duration.String()), cuibase.Green.Print(file))
+		fmt.Println(time.Unix(item.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000"),
+			cuibase.Yellow.Printf("%10s", duration.String()), cuibase.Green.Print(item.name))
 	}
 }
 
