@@ -47,7 +47,10 @@ func main() {
 		info.PrintHelp()
 		return
 	}
-
+	if log {
+		fmt.Println(logFile)
+		return
+	}
 	if suffix != "" {
 		DeleteFileBySuffix(strings.Split(suffix, ","))
 		return
@@ -59,7 +62,7 @@ func main() {
 	}
 
 	if restore != "" {
-		Restore(restore)
+		RestoreFile(restore)
 		return
 	}
 
@@ -91,7 +94,7 @@ func main() {
 	}
 }
 
-func Restore(restoreFile string) {
+func RestoreFile(restoreFile string) {
 	items := listFileItem(func(val string) bool {
 		return strings.Contains(val, restoreFile)
 	})
@@ -99,13 +102,27 @@ func Restore(restoreFile string) {
 	if length == 0 {
 		logger.Info("Not match: " + restoreFile)
 	} else if length == 1 {
-		restoreFileToCur(items[0])
+		restoreFileToCurDir(items[0])
 	} else {
-
+		for i := range items {
+			fmt.Printf("  %s : %s\n", cuibase.Green.Printf("%4s", strconv.Itoa(i)), items[i].name)
+		}
+		fmt.Printf("Select one: ")
+		selectFile := 0
+		_, err := fmt.Scanln(&selectFile)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		if selectFile >= length {
+			logger.Error("Out of index")
+			return
+		}
+		restoreFileToCurDir(items[selectFile])
 	}
 }
 
-func restoreFileToCur(item FileItem) {
+func restoreFileToCurDir(item FileItem) {
 	logger.Warn("restore ", item.file.Name())
 	cmd := exec.Command("mv", trashDir+"/"+item.file.Name(), item.name)
 	execCmdWithQuite(cmd)

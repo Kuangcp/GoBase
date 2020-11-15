@@ -19,6 +19,7 @@ var (
 	exit         bool
 	illegalQuit  bool
 	listTrash    bool
+	log          bool
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
 	checkStr     = "1h"
@@ -63,8 +64,9 @@ func init() {
 	flag.BoolVar(&exit, "X", false, "")
 	flag.BoolVar(&illegalQuit, "q", false, "")
 	flag.BoolVar(&listTrash, "l", false, "")
-	flag.StringVar(&restore, "R", "", "")
+	flag.BoolVar(&log, "g", false, "")
 
+	flag.StringVar(&restore, "R", "", "")
 	flag.StringVar(&retentionStr, "r", retentionStr, "")
 	flag.StringVar(&checkStr, "c", checkStr, "")
 	flag.StringVar(&suffix, "s", "", "")
@@ -107,6 +109,10 @@ var info = cuibase.HelpInfo{
 			Short:   "-l",
 			Value:   "",
 			Comment: "List trash",
+		}, {
+			Short:   "-g",
+			Value:   "",
+			Comment: "Show log file path",
 		},
 	},
 	Options: []cuibase.ParamVO{
