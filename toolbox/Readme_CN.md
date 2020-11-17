@@ -5,6 +5,7 @@
 > [structured-text-tools](https://github.com/dbohdan/structured-text-tools)
 > [go-prompt](https://github.com/c-bata/go-prompt)
 > [ffsend](https://github.com/timvisee/ffsend)
+> [promptui](https://github.com/manifoldco/promptui)
 
 | 项目 | 用途 |
 |:----|:----|

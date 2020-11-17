@@ -114,7 +114,7 @@ func main() {
 	if debug {
 		debugPort := "8891"
 		go func() {
-			fmt.Println("http://127.0.0.1:"+debugPort+"/debug/pprof/")
+			fmt.Println("http://127.0.0.1:" + debugPort + "/debug/pprof/")
 			_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
 		}()
 	}
@@ -122,7 +122,10 @@ func main() {
 	targetDevice = app.FormatEvent(targetDevice)
 
 	if interactiveListen {
-		device := app.SelectValidDevice()
+		device, err := app.SelectDevice()
+		if err != nil {
+			return
+		}
 		app.InitConnection(option)
 		defer app.CloseConnection()
 		app.ListenDevice(device)

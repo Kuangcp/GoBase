@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/c-bata/go-prompt"
+	"github.com/manifoldco/promptui"
 	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
@@ -350,24 +350,49 @@ func ListAllKeyBoardDevice() {
 	}
 }
 
-func completer(d prompt.Document) []prompt.Suggest {
-	var list []prompt.Suggest
+func SelectDevice() (string, error) {
+	type option struct {
+		Device  string
+		Desc    string
+		Peppers int
+	}
 
+	var peppers []option
 	dev := buildKeyBoardDeviceList()
-	for _, device := range dev {
-		list = append(list, prompt.Suggest{Text: device.Fn[11:], Description: device.Name})
+	for i, device := range dev {
+		peppers = append(peppers, option{Device: device.Fn[11:], Desc: device.Name, Peppers: i})
 	}
 
-	return prompt.FilterHasPrefix(list, d.GetWordBeforeCursor(), true)
-}
-
-func SelectValidDevice() string {
-	fmt.Printf("%vPlease select device :%v\n", cuibase.LightGreen, cuibase.End)
-	result := prompt.Input("> ", completer)
-	if !strings.HasPrefix(result, "event") {
-		log.Fatal("invalid device")
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}?",
+		Active:   "🔓{{ .Device | green }} {{ .Desc }}",
+		Inactive: "  {{ .Device | cyan }} {{ .Desc }}",
+		Selected: "🔒️{{ .Device | green | cyan }}",
 	}
-	return result
+
+	searcher := func(input string, index int) bool {
+		pepper := peppers[index]
+		name := strings.Replace(strings.ToLower(pepper.Device), " ", "", -1)
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
+
+	promptSelect := promptui.Select{
+		Label:     "Listen which device",
+		Items:     peppers,
+		Templates: templates,
+		Size:      4,
+		Searcher:  searcher,
+	}
+
+	i, _, err := promptSelect.Run()
+	if err != nil {
+		log.Printf("Prompt failed %v\n", err)
+		return "", err
+	}
+
+	return peppers[i].Device, nil
 }
 
 func buildKeyBoardDeviceList() []*InputDevice {
