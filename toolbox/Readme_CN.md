@@ -1,5 +1,11 @@
 # 命令行工具
 
+> [Github Topic: cli](https://github.com/topics/cli)
+> [awesome-cli-apps](https://github.com/agarrharr/awesome-cli-apps)
+> [structured-text-tools](https://github.com/dbohdan/structured-text-tools)
+> [go-prompt](https://github.com/c-bata/go-prompt)
+> [ffsend](https://github.com/timvisee/ffsend)
+
 | 项目 | 用途 |
 |:----|:----|
 | count       | 统计汉字 |

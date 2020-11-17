@@ -2,12 +2,14 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/c-bata/go-prompt"
 	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
@@ -16,6 +18,9 @@ import (
 )
 
 func closeDevice(device *InputDevice) {
+	if device == nil {
+		return
+	}
 	err := device.Release()
 	if err != nil {
 		fmt.Println("release device error: ", err)
@@ -41,13 +46,13 @@ func ListenDevice(targetDevice string) {
 
 	targetDevice = FormatEvent(targetDevice)
 	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
-	connection.Set(LastInputEvent, targetDevice, 0)
 
 	device, _ := Open("/dev/input/" + targetDevice)
+	defer closeDevice(device)
 	if device == nil {
+		log.Println("device not exist")
 		return
 	}
-	defer closeDevice(device)
 
 	success := false
 	for true {
@@ -65,6 +70,7 @@ func ListenDevice(targetDevice string) {
 		if !success && handleResult {
 			success = handleResult
 			fmt.Println(cuibase.Green.Print("\n    Listen success."))
+			connection.Set(LastInputEvent, targetDevice, 0)
 		}
 	}
 }
@@ -338,11 +344,40 @@ func ListAllDevice() {
 }
 
 func ListAllKeyBoardDevice() {
+	list := buildKeyBoardDeviceList()
+	for _, dev := range list {
+		fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
+	}
+}
+
+func completer(d prompt.Document) []prompt.Suggest {
+	var list []prompt.Suggest
+
+	dev := buildKeyBoardDeviceList()
+	for _, device := range dev {
+		list = append(list, prompt.Suggest{Text: device.Fn[11:], Description: device.Name})
+	}
+
+	return prompt.FilterHasPrefix(list, d.GetWordBeforeCursor(), true)
+}
+
+func SelectValidDevice() string {
+	fmt.Printf("%vPlease select device :%v\n", cuibase.LightGreen, cuibase.End)
+	result := prompt.Input("> ", completer)
+	if !strings.HasPrefix(result, "event") {
+		log.Fatal("invalid device")
+	}
+	return result
+}
+
+func buildKeyBoardDeviceList() []*InputDevice {
+	var result []*InputDevice
 	devices, _ := ListInputDevices()
 	for _, dev := range devices {
 		device, _ := findActualBoardMap(dev)
 		if device != nil {
-			fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
+			result = append(result, dev)
 		}
 	}
+	return result
 }

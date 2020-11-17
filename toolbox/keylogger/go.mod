@@ -3,6 +3,7 @@ module keylogger
 go 1.14
 
 require (
+	github.com/c-bata/go-prompt v0.2.5
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gvalkov/golang-evdev v0.0.0-20191114124502-287e62b94bcb

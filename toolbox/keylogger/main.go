@@ -7,9 +7,10 @@ import (
 
 	"github.com/wonderivan/logger"
 
+	"keylogger/app"
+
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"keylogger/app"
 )
 
 var user = cuibase.Red.Print("root")
@@ -50,6 +51,7 @@ var (
 	listKeyboardDevice bool
 	listAllDevice      bool
 	listenDevice       bool
+	interactiveListen  bool
 	day                bool
 	dayRank            bool
 	totalRank          bool
@@ -81,6 +83,7 @@ func init() {
 	flag.BoolVar(&listKeyboardDevice, "l", false, "")
 	flag.BoolVar(&listAllDevice, "L", false, "")
 	flag.BoolVar(&listenDevice, "s", false, "")
+	flag.BoolVar(&interactiveListen, "is", false, "")
 	flag.BoolVar(&day, "T", false, "")
 	flag.BoolVar(&dayRank, "R", false, "")
 	flag.BoolVar(&totalRank, "r", false, "")
@@ -115,6 +118,14 @@ func main() {
 	}
 
 	targetDevice = app.FormatEvent(targetDevice)
+
+	if interactiveListen {
+		device := app.SelectValidDevice()
+		app.InitConnection(option)
+		defer app.CloseConnection()
+		app.ListenDevice(device)
+		return
+	}
 
 	if help {
 		info.PrintHelp()
