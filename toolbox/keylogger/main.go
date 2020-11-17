@@ -138,12 +138,29 @@ func main() {
 	}
 
 	if listKeyboardDevice {
+	if help {
+		info.PrintHelp()
+		return
+	} else if listKeyboardDevice {
 		app.ListAllKeyBoardDevice()
 		return
 	}
 
 	if listAllDevice {
 		app.ListAllDevice()
+		return
+	}
+
+	app.InitConnection(option)
+	defer app.CloseConnection()
+
+	if webServer {
+		app.Server(debug, webPort)
+		return
+	}
+
+	if cacheKeyMap {
+		app.CacheKeyMap(targetDevice)
 		return
 	}
 

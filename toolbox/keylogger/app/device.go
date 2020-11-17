@@ -51,6 +51,9 @@ func ListenDevice(targetDevice string) {
 	defer closeDevice(device)
 	if device == nil {
 		log.Println("device not exist")
+	device, err := Open("/dev/input/" + targetDevice)
+	if device == nil || err != nil {
+		logger.Error(err)
 		return
 	}
 
