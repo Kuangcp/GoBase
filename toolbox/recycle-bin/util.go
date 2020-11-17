@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"os/exec"
 	"syscall"
@@ -8,6 +9,71 @@ import (
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/logger"
 )
+
+var (
+	help         bool
+	suffix       string
+	check        bool
+	daemon       bool
+	debug        bool
+	exit         bool
+	illegalQuit  bool
+	listTrash    bool
+	log          bool
+	restore      string
+	retentionStr = "168h" // time.ParseDuration()
+	checkStr     = "1h"
+)
+
+func init() {
+	logger.SetLogPathTrim("recycle-bin")
+
+	home, err := cuibase.Home()
+	cuibase.CheckIfError(err)
+
+	mainDir = home + mainDir
+	configDir = mainDir + "/conf"
+	pidFile = configDir + "/pid"
+	configFile = configDir + "/main.json"
+
+	logDir = mainDir + "/log"
+	logFile = logDir + "/main.log"
+
+	trashDir = mainDir + "/trash"
+
+	_ = logger.SetLoggerConfig(&logger.LogConfig{
+		Console: &logger.ConsoleLogger{
+			Level:    logger.DebugDesc,
+			Colorful: true,
+		},
+		File: &logger.FileLogger{
+			Filename:   logFile,
+			Level:      logger.DebugDesc,
+			Colorful:   true,
+			Append:     true,
+			PermitMask: "0660",
+		},
+	})
+
+	// TODO read json
+	flag.BoolVar(&help, "h", false, "")
+	flag.BoolVar(&help, "H", false, "")
+	flag.BoolVar(&debug, "D", false, "")
+	flag.BoolVar(&check, "C", false, "")
+	flag.BoolVar(&daemon, "d", false, "")
+	flag.BoolVar(&exit, "X", false, "")
+	flag.BoolVar(&illegalQuit, "q", false, "")
+	flag.BoolVar(&listTrash, "l", false, "")
+	flag.BoolVar(&log, "g", false, "")
+
+	flag.StringVar(&restore, "R", "", "")
+	flag.StringVar(&retentionStr, "r", retentionStr, "")
+	flag.StringVar(&checkStr, "c", checkStr, "")
+	flag.StringVar(&suffix, "s", "", "")
+
+	flag.Usage = info.PrintHelp
+	flag.Parse()
+}
 
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
@@ -43,6 +109,10 @@ var info = cuibase.HelpInfo{
 			Short:   "-l",
 			Value:   "",
 			Comment: "List trash",
+		}, {
+			Short:   "-g",
+			Value:   "",
+			Comment: "Show log file path",
 		},
 	},
 	Options: []cuibase.ParamVO{
