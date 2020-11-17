@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 
@@ -113,6 +114,7 @@ func main() {
 	if debug {
 		debugPort := "8891"
 		go func() {
+			fmt.Println("http://127.0.0.1:"+debugPort+"/debug/pprof/")
 			_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
 		}()
 	}
@@ -130,23 +132,19 @@ func main() {
 	if help {
 		info.PrintHelp()
 		return
-	} else if webServer {
-		app.InitConnection(option)
-		defer app.CloseConnection()
-		app.Server(debug, webPort)
-		return
-	} else if listKeyboardDevice {
+	}
+
+	if listKeyboardDevice {
 		app.ListAllKeyBoardDevice()
 		return
-	} else if listAllDevice {
+	}
+
+	if listAllDevice {
 		app.ListAllDevice()
 		return
-	} else if cacheKeyMap {
-		app.InitConnection(option)
-		defer app.CloseConnection()
-		app.CacheKeyMap(targetDevice)
-		return
-	} else if listenDevice {
+	}
+
+	if listenDevice {
 		app.ListenDevice(targetDevice)
 		return
 	}
@@ -155,6 +153,17 @@ func main() {
 
 	defer app.CloseConnection()
 	app.InitConnection(option)
+
+	if webServer {
+		app.Server(debug, webPort)
+		return
+	}
+
+	if cacheKeyMap {
+		app.CacheKeyMap(targetDevice)
+		return
+	}
+
 	if printKeyMap {
 		app.PrintKeyMap(targetDevice)
 	}
