@@ -31,6 +31,7 @@
 	- value: keyCode score: 当日按键数
 
 ## Version
+- 1.0.6 add interactive select device
 - 1.0.4 remove thread pool(memory leak)
 - 1.0.3 import thread pool 
 - 1.0.2 GA

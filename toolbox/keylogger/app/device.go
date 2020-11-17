@@ -47,11 +47,8 @@ func ListenDevice(targetDevice string) {
 	targetDevice = FormatEvent(targetDevice)
 	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
 
-	device, _ := Open("/dev/input/" + targetDevice)
-	defer closeDevice(device)
-	if device == nil {
-		log.Println("device not exist")
 	device, err := Open("/dev/input/" + targetDevice)
+	defer closeDevice(device)
 	if device == nil || err != nil {
 		logger.Error(err)
 		return
@@ -361,9 +358,13 @@ func SelectDevice() (string, error) {
 	}
 
 	var peppers []option
-	dev := buildKeyBoardDeviceList()
-	for i, device := range dev {
-		peppers = append(peppers, option{Device: device.Fn[11:], Desc: device.Name, Peppers: i})
+	devList := buildKeyBoardDeviceList()
+	for i, device := range devList {
+		peppers = append(peppers, option{
+			Device:  device.Fn[11:],
+			Desc:    device.Name + " | " + device.Phys,
+			Peppers: i,
+		})
 	}
 
 	templates := &promptui.SelectTemplates{

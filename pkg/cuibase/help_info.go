@@ -15,7 +15,6 @@ type (
 		Value   string
 		Comment string
 	}
-
 	HelpInfo struct {
 		Version       string
 		Description   string

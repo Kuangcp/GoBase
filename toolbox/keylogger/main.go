@@ -3,12 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/wonderivan/logger"
+	"keylogger/app"
 	"net/http"
 	_ "net/http/pprof"
-
-	"github.com/wonderivan/logger"
-
-	"keylogger/app"
+	"os"
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
@@ -17,7 +16,7 @@ import (
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
-	Version:       "1.0.5",
+	Version:       "1.0.6",
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
@@ -28,6 +27,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-p", Comment: user + " print key map"},
 		{Short: "-c", Comment: user + " cache key map"},
 		{Short: "-s", Comment: user + " listen keyboard with last device or specific device"},
+		{Short: "-i", Comment: user + " listen keyboard with interactive select device"},
 		{Short: "-T", Comment: "print daily total by before x day ago and duration"},
 		{Short: "-R", Comment: "print daily rank by before x day ago and duration"},
 		{Short: "-r", Comment: "print total rank by before x day ago and duration"},
@@ -66,6 +66,7 @@ var (
 	pwd  string
 	db   int
 
+	// web
 	webPort   string
 	webServer bool
 
@@ -84,7 +85,7 @@ func init() {
 	flag.BoolVar(&listKeyboardDevice, "l", false, "")
 	flag.BoolVar(&listAllDevice, "L", false, "")
 	flag.BoolVar(&listenDevice, "s", false, "")
-	flag.BoolVar(&interactiveListen, "is", false, "")
+	flag.BoolVar(&interactiveListen, "i", false, "")
 	flag.BoolVar(&day, "T", false, "")
 	flag.BoolVar(&dayRank, "R", false, "")
 	flag.BoolVar(&totalRank, "r", false, "")
@@ -102,6 +103,7 @@ func init() {
 
 	flag.Usage = info.PrintHelp
 	flag.Parse()
+
 	option = redis.Options{
 		PoolSize: 20,
 		Addr:     host + ":" + port,
@@ -110,7 +112,7 @@ func init() {
 	}
 }
 
-func main() {
+func pprofDebug() {
 	if debug {
 		debugPort := "8891"
 		go func() {
@@ -118,49 +120,32 @@ func main() {
 			_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
 		}()
 	}
+}
+
+func invokeThenExit(condition bool, action func()) {
+	if condition {
+		action()
+		os.Exit(0)
+	}
+}
+
+func main() {
+	pprofDebug()
+
+	invokeThenExit(help, info.PrintHelp)
+	invokeThenExit(listKeyboardDevice, app.ListAllKeyBoardDevice)
+	invokeThenExit(listAllDevice, app.ListAllDevice)
 
 	targetDevice = app.FormatEvent(targetDevice)
+	app.InitConnection(option)
+	defer app.CloseConnection()
 
 	if interactiveListen {
 		device, err := app.SelectDevice()
 		if err != nil {
 			return
 		}
-		app.InitConnection(option)
-		defer app.CloseConnection()
 		app.ListenDevice(device)
-		return
-	}
-
-	if help {
-		info.PrintHelp()
-		return
-	}
-
-	if listKeyboardDevice {
-	if help {
-		info.PrintHelp()
-		return
-	} else if listKeyboardDevice {
-		app.ListAllKeyBoardDevice()
-		return
-	}
-
-	if listAllDevice {
-		app.ListAllDevice()
-		return
-	}
-
-	app.InitConnection(option)
-	defer app.CloseConnection()
-
-	if webServer {
-		app.Server(debug, webPort)
-		return
-	}
-
-	if cacheKeyMap {
-		app.CacheKeyMap(targetDevice)
 		return
 	}
 
@@ -168,11 +153,6 @@ func main() {
 		app.ListenDevice(targetDevice)
 		return
 	}
-
-	// simple query info
-
-	defer app.CloseConnection()
-	app.InitConnection(option)
 
 	if webServer {
 		app.Server(debug, webPort)
