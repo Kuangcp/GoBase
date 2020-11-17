@@ -11,7 +11,7 @@
 ## 配置使用
 
 1. `初始化配置和数据库` make install 
-1. `启动web`: make run
+1. `启动web`: make web
 
 ## IDE开发
 
