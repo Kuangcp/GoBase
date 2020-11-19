@@ -119,7 +119,7 @@ func loadConfig() error {
 
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
-	Version:       "1.0.3",
+	Version:       "1.0.4",
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{

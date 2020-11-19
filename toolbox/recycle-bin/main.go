@@ -53,11 +53,11 @@ func main() {
 	invokeWithCondition(initConfig, InitConfig)
 	invokeWithCondition(listTrash, ListTrashFiles)
 	invokeWithCondition(exit, ExitCheckFileDaemon)
+	invokeWithCondition(log, PrintLogFile)
+	invokeWithCondition(illegalQuit, func() {
+		ActualDeleteFile(pidFile)
+	})
 
-	if log {
-		fmt.Println(logFile)
-		return
-	}
 	if suffix != "" {
 		DeleteFileBySuffix(strings.Split(suffix, ","))
 		return
@@ -77,11 +77,6 @@ func main() {
 		return
 	}
 
-	if illegalQuit {
-		ActualDeleteFile(pidFile)
-		return
-	}
-
 	args := os.Args
 	if len(args) == 1 {
 		info.PrintHelp()
@@ -89,6 +84,10 @@ func main() {
 		DeleteFiles(args[1:])
 		CheckWithDaemon()
 	}
+}
+
+func PrintLogFile() {
+	fmt.Println(logFile)
 }
 
 func RestoreFile(restoreFile string) {
@@ -163,9 +162,7 @@ func listFileItem(filter func(string) bool) []FileItem {
 
 func ListTrashFiles() {
 	err := parseTime()
-	if err != nil {
-		return
-	}
+	checkError(err)
 
 	items := listFileItem(func(s string) bool {
 		return true
@@ -201,18 +198,13 @@ func CheckTrashDir() {
 	}
 
 	exists, err := isPathExists(pidFile)
-	if exists {
-		logger.Error("Exist check process!")
-		return
-	}
-	logger.Info("Start check trash, period:", checkPeriod, "pid:", os.Getpid())
-	if err != nil {
-		logger.Error(err)
+	if err != nil || exists {
 		return
 	}
 
 	// avoid repeat delete
 	var deleteFlag int32 = 0
+	logger.Info("Start check trash, period:", checkPeriod, "pid:", os.Getpid())
 
 	go func() {
 		// Wait for interrupt signal to gracefully shutdown the server with
@@ -284,22 +276,21 @@ func CheckTrashDir() {
 			}
 		}
 	}
+	return
 }
 
 func parseTime() error {
 	duration, err := time.ParseDuration(retentionStr)
 	if err != nil {
-		logger.Error(err)
-		return nil
+		return err
 	}
 
 	retentionTime = duration
 	checkPeriod, err = time.ParseDuration(checkStr)
 	if err != nil {
-		logger.Error(err)
-		return nil
+		return err
 	}
-	return err
+	return nil
 }
 
 func deletePidFile(deleteFlag *int32) {
@@ -312,6 +303,9 @@ func deletePidFile(deleteFlag *int32) {
 
 // deleteFies 移动文件到回收站
 func DeleteFiles(files []string) {
+	if files == nil || len(files) == 0 {
+		return
+	}
 	for _, filepath := range files {
 		exists, err := isPathExists(filepath)
 		cuibase.CheckIfError(err)
@@ -329,11 +323,40 @@ func DeleteFiles(files []string) {
 	}
 }
 
+func checkError(err error) {
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
+}
+
 func DeleteFileBySuffix(params []string) {
 	if len(params) == 0 {
 		return
 	}
-	fmt.Println(params)
+
+	pwd, err := os.Getwd()
+	checkError(err)
+	dir, err := ioutil.ReadDir(pwd)
+	checkError(err)
+
+	var files []string
+	for _, fileInfo := range dir {
+		name := fileInfo.Name()
+		for _, suffix := range params {
+			if strings.HasSuffix(name, "."+suffix) {
+				files = append(files, name)
+			}
+		}
+	}
+
+	fmt.Printf("%v\nDelete the above file? (y/n):", files)
+	var input string
+	_, err = fmt.Scanf("%s", &input)
+	checkError(err)
+	if input == "y" {
+		DeleteFiles(files)
+	}
 }
 
 func ExitCheckFileDaemon() {
@@ -343,11 +366,9 @@ func ExitCheckFileDaemon() {
 		return
 	}
 	file, err := ioutil.ReadFile(pidFile)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
+	checkError(err)
 
+	// TODO may kill error pid
 	pid := string(file)
 	logger.Info("kill ", pid)
 	cmd := exec.Command("kill", pid)
@@ -356,9 +377,7 @@ func ExitCheckFileDaemon() {
 
 func ActualDeleteFile(path string) {
 	err := os.Remove(path)
-	if err != nil {
-		logger.Error(err)
-	}
+	checkError(err)
 }
 
 // 静默执行 不关心返回值
@@ -367,8 +386,5 @@ func execCmdWithQuite(cmd *exec.Cmd) {
 
 	cmd.Stdout = &out
 	err := cmd.Run()
-	if err != nil {
-		logger.Error(err)
-		return
-	}
+	checkError(err)
 }
