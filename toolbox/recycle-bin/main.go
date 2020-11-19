@@ -41,23 +41,25 @@ type (
 	}
 )
 
-func main() {
-	if help {
-		InitDir()
-		info.PrintHelp()
-		return
+func invokeWithCondition(flag bool, action func()) {
+	if flag {
+		action()
+		os.Exit(0)
 	}
+}
+
+func main() {
+	invokeWithCondition(help, info.PrintHelp)
+	invokeWithCondition(initConfig, InitConfig)
+	invokeWithCondition(listTrash, ListTrashFiles)
+	invokeWithCondition(exit, ExitCheckFileDaemon)
+
 	if log {
 		fmt.Println(logFile)
 		return
 	}
 	if suffix != "" {
 		DeleteFileBySuffix(strings.Split(suffix, ","))
-		return
-	}
-
-	if listTrash {
-		ListTrashFiles()
 		return
 	}
 
@@ -72,11 +74,6 @@ func main() {
 		} else {
 			CheckTrashDir()
 		}
-		return
-	}
-
-	if exit {
-		ExitCheckFileDaemon()
 		return
 	}
 
@@ -179,7 +176,8 @@ func ListTrashFiles() {
 	}
 
 	for _, item := range items {
-		duration, err := time.ParseDuration(strconv.FormatInt((retentionTime.Nanoseconds()-current+item.timestamp)/1000000000, 10) + "s")
+		second := strconv.FormatInt((retentionTime.Nanoseconds()-current+item.timestamp)/1000000000, 10)
+		duration, err := time.ParseDuration(second + "s")
 		if err != nil {
 			duration = 0
 		}
@@ -204,6 +202,7 @@ func CheckTrashDir() {
 
 	exists, err := isPathExists(pidFile)
 	if exists {
+		logger.Error("Exist check process!")
 		return
 	}
 	logger.Info("Start check trash, period:", checkPeriod, "pid:", os.Getpid())

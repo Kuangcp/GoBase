@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
@@ -20,9 +23,17 @@ var (
 	illegalQuit  bool
 	listTrash    bool
 	log          bool
+	initConfig   bool
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
 	checkStr     = "1h"
+)
+
+type (
+	Setting struct {
+		Retention   string `json:"retention"`
+		CheckPeriod string `json:"checkPeriod"`
+	}
 )
 
 func init() {
@@ -55,7 +66,9 @@ func init() {
 		},
 	})
 
-	// TODO read json
+	err = loadConfig()
+	cuibase.CheckIfError(err)
+
 	flag.BoolVar(&help, "h", false, "")
 	flag.BoolVar(&help, "H", false, "")
 	flag.BoolVar(&debug, "D", false, "")
@@ -65,6 +78,7 @@ func init() {
 	flag.BoolVar(&illegalQuit, "q", false, "")
 	flag.BoolVar(&listTrash, "l", false, "")
 	flag.BoolVar(&log, "g", false, "")
+	flag.BoolVar(&initConfig, "i", false, "")
 
 	flag.StringVar(&restore, "R", "", "")
 	flag.StringVar(&retentionStr, "r", retentionStr, "")
@@ -75,16 +89,44 @@ func init() {
 	flag.Parse()
 }
 
+func loadConfig() error {
+	exists, err := isPathExists(configFile)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	if exists {
+		file, err := ioutil.ReadFile(configFile)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		setting := Setting{}
+		err = json.Unmarshal(file, &setting)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
+		if setting.Retention != "" {
+			retentionStr = setting.Retention
+		}
+		if setting.CheckPeriod != "" {
+			checkStr = setting.CheckPeriod
+		}
+	}
+	return nil
+}
+
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
-	Version:       "1.0.2",
+	Version:       "1.0.3",
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
 		{
 			Short:   "-h",
 			Value:   "",
-			Comment: "Help info and init",
+			Comment: "Help info",
 		}, {
 			Short:   "-D",
 			Value:   "",
@@ -113,6 +155,10 @@ var info = cuibase.HelpInfo{
 			Short:   "-g",
 			Value:   "",
 			Comment: "Show log file path",
+		}, {
+			Short:   "-i",
+			Value:   "",
+			Comment: "Init dir and config",
 		},
 	},
 	Options: []cuibase.ParamVO{
@@ -135,13 +181,22 @@ var info = cuibase.HelpInfo{
 		},
 	}}
 
-func InitDir() {
+func InitConfig() {
+	fmt.Println("init")
 	err := os.MkdirAll(trashDir, 0755)
 	cuibase.CheckIfError(err)
 	err = os.MkdirAll(configDir, 0755)
 	cuibase.CheckIfError(err)
 	err = os.MkdirAll(logDir, 0755)
 	cuibase.CheckIfError(err)
+	exist, err := isPathExists(configFile)
+	cuibase.CheckIfError(err)
+	if !exist {
+		result, err := json.Marshal(Setting{Retention: retentionStr, CheckPeriod: checkStr})
+		cuibase.CheckIfError(err)
+		err = ioutil.WriteFile(configFile, result, 0644)
+		cuibase.CheckIfError(err)
+	}
 }
 
 func isPathExists(path string) (bool, error) {

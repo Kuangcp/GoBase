@@ -8,3 +8,7 @@
 
 `recycle-bin -h`
 
+
+## Release
+- 1.0.2 add config
+- 1.0.1 GA
