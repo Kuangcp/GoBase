@@ -15,4 +15,7 @@
 
 ## IDE开发
 
-IDE内跑单测 需创建 ~/.config/mybook.yml 文件，db.file 为绝对路径
+IDE内运行时默认使用当前目录旁data目录的配置文件
+
+IDE内执行单元测试 需创建 ~/.config/mybook.yml 文件，db.file 为绝对路径
+
