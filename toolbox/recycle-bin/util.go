@@ -167,6 +167,10 @@ var info = cuibase.HelpInfo{
 			Value:   "file",
 			Comment: "Delete file",
 		}, {
+			Short:   "-R",
+			Value:   "file",
+			Comment: "Restore file",
+		}, {
 			Short:   "-s",
 			Value:   "suffix",
 			Comment: "Delete *.suffix",
