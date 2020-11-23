@@ -162,7 +162,10 @@ func listFileItem(filter func(string) bool) []FileItem {
 
 func ListTrashFiles() {
 	err := parseTime()
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 
 	items := listFileItem(func(s string) bool {
 		return true
@@ -308,26 +311,50 @@ func DeleteFiles(files []string) {
 	}
 	for _, filepath := range files {
 		exists, err := isPathExists(filepath)
-		cuibase.CheckIfError(err)
+		if err != nil {
+			logger.Error(err)
+			os.Exit(1)
+		}
 		if !exists {
 			logger.Error(filepath, "not found")
 			return
 		}
 
+		finalName, err := buildTrashFileName(filepath)
+		if err != nil {
+			continue
+		}
 		logger.Info("Prepare delete:", filepath)
-
-		timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
-		//logger.Debug(filepath, trashDir+"/"+filepath)
-		cmd := exec.Command("mv", filepath, trashDir+"/"+filepath+".T."+timestamp)
+		// logger.Debug(filepath, trashDir+"/"+finalName)
+		cmd := exec.Command("mv", filepath, finalName)
 		execCmdWithQuite(cmd)
 	}
 }
 
-func checkError(err error) {
-	if err != nil {
-		logger.Error(err)
-		os.Exit(1)
+func buildTrashFileName(path string) (string, error) {
+	var result = path
+	if strings.HasSuffix(result, "//") || strings.HasPrefix(result, "//") {
+		logger.Error("Invalid path", path)
+		return "", fmt.Errorf("")
 	}
+	if strings.HasSuffix(result, "/") {
+		result = result[:len(result)-1]
+	}
+	if strings.HasPrefix(result, "/") {
+		last := strings.LastIndex(result, "/")
+		if last != -1 && last < len(result)-1 {
+			result = result[last+1:]
+		} else {
+			logger.Error("Invalid path", path)
+			return "", fmt.Errorf("")
+		}
+	}
+	if result == "/" || result == "" {
+		logger.Error("Invalid path", path)
+		return "", fmt.Errorf("")
+	}
+	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+	return trashDir + "/" + result + ".T." + timestamp, nil
 }
 
 func DeleteFileBySuffix(params []string) {
@@ -336,9 +363,15 @@ func DeleteFileBySuffix(params []string) {
 	}
 
 	pwd, err := os.Getwd()
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 	dir, err := ioutil.ReadDir(pwd)
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 
 	var files []string
 	for _, fileInfo := range dir {
@@ -353,7 +386,10 @@ func DeleteFileBySuffix(params []string) {
 	fmt.Printf("%v\nDelete the above file? (y/n):", files)
 	var input string
 	_, err = fmt.Scanf("%s", &input)
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 	if input == "y" {
 		DeleteFiles(files)
 	}
@@ -366,7 +402,10 @@ func ExitCheckFileDaemon() {
 		return
 	}
 	file, err := ioutil.ReadFile(pidFile)
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 
 	// TODO may kill error pid
 	pid := string(file)
@@ -377,7 +416,10 @@ func ExitCheckFileDaemon() {
 
 func ActualDeleteFile(path string) {
 	err := os.Remove(path)
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 }
 
 // 静默执行 不关心返回值
@@ -386,5 +428,8 @@ func execCmdWithQuite(cmd *exec.Cmd) {
 
 	cmd.Stdout = &out
 	err := cmd.Run()
-	checkError(err)
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
 }
