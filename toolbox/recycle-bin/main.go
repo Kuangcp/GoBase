@@ -177,13 +177,27 @@ func ListTrashFiles() {
 
 	for _, item := range items {
 		second := strconv.FormatInt((retentionTime.Nanoseconds()-current+item.timestamp)/1000000000, 10)
+
 		duration, err := time.ParseDuration(second + "s")
 		if err != nil {
 			duration = 0
 		}
+		if duration.Seconds() < 0 {
+			duration = 0
+		}
 		fmt.Println(time.Unix(item.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000"),
-			cuibase.Yellow.Printf("%10s", duration.String()), cuibase.Green.Print(item.name))
+			cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(item.name))
 	}
+}
+
+func fmtDuration(d time.Duration) string {
+	d = d.Round(time.Second)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+	return fmt.Sprintf("%03d:%02d:%02d", h, m, s)
 }
 
 func CheckWithDaemon() {
