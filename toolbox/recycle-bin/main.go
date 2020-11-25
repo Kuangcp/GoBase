@@ -46,6 +46,19 @@ func (t *fileItem) formatTime() string {
 	return time.Unix(t.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000")
 }
 
+func (t *fileItem) formatForList(current int64) string {
+	second := strconv.FormatInt((retentionTime.Nanoseconds()-current+t.timestamp)/1000000000, 10)
+
+	duration, err := time.ParseDuration(second + "s")
+	if err != nil {
+		duration = 0
+	}
+	if duration.Seconds() < 0 {
+		duration = 0
+	}
+	return fmt.Sprintln(t.formatTime(), cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(t.name))
+}
+
 func invokeWithCondition(flag bool, action func()) {
 	if flag {
 		action()
@@ -223,17 +236,24 @@ func ListTrashFiles() {
 		fmt.Printf("%v%-23s %-10s %s%v\n", cuibase.Cyan, "DeleteTime", "Remaining", "File", cuibase.End)
 	}
 
-	for _, item := range items {
-		second := strconv.FormatInt((retentionTime.Nanoseconds()-current+item.timestamp)/1000000000, 10)
-
-		duration, err := time.ParseDuration(second + "s")
-		if err != nil {
-			duration = 0
+	if listSort > 0 {
+		var temp []interface{}
+		for _, v := range items {
+			temp = append(temp, v)
 		}
-		if duration.Seconds() < 0 {
-			duration = 0
+		Sort(SortWrapper{Data: temp,
+			CompareLessFunc: func(a interface{}, b interface{}) bool {
+				result := a.(fileItem).timestamp < b.(fileItem).timestamp
+				return result
+			}, Reverse: listSort != 1})
+		for _, t := range temp {
+			item := t.(fileItem)
+			fmt.Print(item.formatForList(current))
 		}
-		fmt.Println(item.formatTime(), cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(item.name))
+	} else {
+		for _, item := range items {
+			fmt.Print(item.formatForList(current))
+		}
 	}
 }
 
@@ -340,7 +360,6 @@ func CheckTrashDir() {
 			}
 		}
 	}
-	return
 }
 
 func parseTime() error {

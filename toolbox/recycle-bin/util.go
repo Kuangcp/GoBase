@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"sort"
 	"syscall"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
@@ -24,6 +25,7 @@ var (
 	listTrash    bool
 	log          bool
 	initConfig   bool
+	listSort     int
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
 	checkStr     = "1h"
@@ -79,6 +81,7 @@ func init() {
 	flag.BoolVar(&listTrash, "l", false, "")
 	flag.BoolVar(&log, "g", false, "")
 	flag.BoolVar(&initConfig, "i", false, "")
+	flag.IntVar(&listSort, "o", 0, "")
 
 	flag.StringVar(&restore, "R", "", "")
 	flag.StringVar(&retentionStr, "r", retentionStr, "")
@@ -171,6 +174,10 @@ var info = cuibase.HelpInfo{
 			Value:   "file",
 			Comment: "Restore file",
 		}, {
+			Short:   "-o",
+			Value:   "order",
+			Comment: "Order for list(1/2 asc/desc)",
+		}, {
 			Short:   "-s",
 			Value:   "suffix",
 			Comment: "Delete *.suffix",
@@ -243,4 +250,34 @@ func startProc(args []string, logFile string) (*exec.Cmd, error) {
 	}
 
 	return cmd, nil
+}
+
+type Comparable interface {
+	CompareLess(b Comparable) bool
+}
+
+type SortWrapper struct {
+	Data            []interface{}
+	CompareLessFunc func(a interface{}, b interface{}) bool
+	Reverse         bool
+}
+
+func (pw SortWrapper) Len() int {
+	return len(pw.Data)
+}
+
+func (pw SortWrapper) Swap(i, j int) {
+	pw.Data[i], pw.Data[j] = pw.Data[j], pw.Data[i]
+}
+
+func (pw SortWrapper) Less(i, j int) bool {
+	result := pw.CompareLessFunc(pw.Data[i], pw.Data[j])
+	if pw.Reverse {
+		return !result
+	}
+	return result
+}
+
+func Sort(wrapper SortWrapper) {
+	sort.Sort(wrapper)
 }
