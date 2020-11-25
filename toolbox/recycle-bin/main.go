@@ -15,6 +15,7 @@ import (
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/logger"
+	"github.com/manifoldco/promptui"
 )
 
 const (
@@ -34,12 +35,16 @@ var (
 )
 
 type (
-	FileItem struct {
+	fileItem struct {
 		name      string
 		timestamp int64
 		file      os.FileInfo
 	}
 )
+
+func (t *fileItem) formatTime() string {
+	return time.Unix(t.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000")
+}
 
 func invokeWithCondition(flag bool, action func()) {
 	if flag {
@@ -91,41 +96,82 @@ func PrintLogFile() {
 }
 
 func RestoreFile(restoreFile string) {
-	items := listFileItem(func(val string) bool {
+	items := listfileItem(func(val string) bool {
 		return strings.Contains(val, restoreFile)
 	})
+
 	length := len(items)
 	if length == 0 {
 		logger.Info("Not match: " + restoreFile)
 	} else if length == 1 {
 		restoreFileToCurDir(items[0])
 	} else {
-		for i := range items {
-			fmt.Printf("  %s : %s\n", cuibase.Green.Printf("%4s", strconv.Itoa(i)), items[i].name)
-		}
-		fmt.Printf("Select one: ")
-		selectFile := 0
-		_, err := fmt.Scanln(&selectFile)
+		file, err := SelectFile(items)
 		if err != nil {
 			logger.Error(err)
 			return
 		}
-		if selectFile >= length {
-			logger.Error("Out of index")
-			return
-		}
-		restoreFileToCurDir(items[selectFile])
+
+		restoreFileToCurDir(*file)
 	}
 }
 
-func restoreFileToCurDir(item FileItem) {
+func SelectFile(list []fileItem) (*fileItem, error) {
+	type option struct {
+		Name    string
+		Time    string
+		Peppers int
+	}
+
+	var peppers []option
+	for i, item := range list {
+		peppers = append(peppers, option{
+			Name:    item.name,
+			Time:    item.formatTime(),
+			Peppers: i,
+		})
+	}
+
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }}?",
+		Active:   "✔️{{ .Name | green }} {{ .Time }}",
+		Inactive: "  {{ .Name | cyan }} {{ .Time }}",
+		Selected: "✔️{{ .Name | green | cyan }}",
+	}
+
+	searcher := func(input string, index int) bool {
+		pepper := peppers[index]
+		name := strings.Replace(strings.ToLower(pepper.Name), " ", "", -1)
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
+
+	promptSelect := promptui.Select{
+		Label:     "Restore which file",
+		Items:     peppers,
+		Templates: templates,
+		Size:      4,
+		Searcher:  searcher,
+	}
+
+	i, _, err := promptSelect.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return nil, err
+	}
+
+	return &list[i], nil
+}
+
+func restoreFileToCurDir(item fileItem) {
 	logger.Warn("restore ", item.file.Name())
 	cmd := exec.Command("mv", trashDir+"/"+item.file.Name(), item.name)
 	execCmdWithQuite(cmd)
 }
 
-func listFileItem(filter func(string) bool) []FileItem {
-	var result []FileItem
+func listfileItem(filter func(string) bool) []fileItem {
+	var result []fileItem
 	dir, err := ioutil.ReadDir(trashDir)
 	if err != nil {
 		logger.Error(err)
@@ -151,7 +197,7 @@ func listFileItem(filter func(string) bool) []FileItem {
 			continue
 		}
 
-		result = append(result, FileItem{
+		result = append(result, fileItem{
 			name:      filename,
 			timestamp: parseInt,
 			file:      fileInfo,
@@ -167,12 +213,12 @@ func ListTrashFiles() {
 		os.Exit(1)
 	}
 
-	items := listFileItem(func(s string) bool {
+	items := listfileItem(func(s string) bool {
 		return true
 	})
 	current := time.Now().UnixNano()
 	if len(items) != 0 {
-		fmt.Printf("%-23s %-10s %s\n", "DeleteTime", "Remaining", "File")
+		fmt.Printf("%v%-23s %-10s %s%v\n", cuibase.Cyan, "DeleteTime", "Remaining", "File", cuibase.End)
 	}
 
 	for _, item := range items {
@@ -185,8 +231,7 @@ func ListTrashFiles() {
 		if duration.Seconds() < 0 {
 			duration = 0
 		}
-		fmt.Println(time.Unix(item.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000"),
-			cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(item.name))
+		fmt.Println(item.formatTime(), cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(item.name))
 	}
 }
 
