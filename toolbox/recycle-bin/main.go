@@ -53,25 +53,27 @@ func invokeWithCondition(flag bool, action func()) {
 	}
 }
 
+func invokeWithStr(param string, action func(string)) {
+	if param != "" {
+		action(param)
+		os.Exit(0)
+	}
+}
+
 func main() {
 	invokeWithCondition(help, info.PrintHelp)
 	invokeWithCondition(initConfig, InitConfig)
 	invokeWithCondition(listTrash, ListTrashFiles)
 	invokeWithCondition(exit, ExitCheckFileDaemon)
 	invokeWithCondition(log, PrintLogFile)
+
 	invokeWithCondition(illegalQuit, func() {
 		ActualDeleteFile(pidFile)
 	})
-
-	if suffix != "" {
-		DeleteFileBySuffix(strings.Split(suffix, ","))
-		return
-	}
-
-	if restore != "" {
-		RestoreFile(restore)
-		return
-	}
+	invokeWithStr(suffix, func(s string) {
+		DeleteFileBySuffix(strings.Split(s, ","))
+	})
+	invokeWithStr(restore, RestoreFile)
 
 	if check {
 		if daemon {
@@ -476,7 +478,7 @@ func ExitCheckFileDaemon() {
 func ActualDeleteFile(path string) {
 	err := os.Remove(path)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(path, err)
 		os.Exit(1)
 	}
 }
@@ -488,7 +490,7 @@ func execCmdWithQuite(cmd *exec.Cmd) {
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		logger.Error(err)
+		logger.Error(cmd, err)
 		os.Exit(1)
 	}
 }

@@ -1,4 +1,4 @@
-BINARY_NAME=mybook
+BINARY_NAME=mybook.bin
 
 build:
 	go build -o bin/${BINARY_NAME}
