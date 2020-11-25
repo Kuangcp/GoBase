@@ -236,7 +236,7 @@ func ListTrashFiles() {
 		fmt.Printf("%v%-23s %-10s %s%v\n", cuibase.Cyan, "DeleteTime", "Remaining", "File", cuibase.End)
 	}
 
-	if listSort > 0 {
+	if listOrder > 0 {
 		var temp []interface{}
 		for _, v := range items {
 			temp = append(temp, v)
@@ -245,7 +245,7 @@ func ListTrashFiles() {
 			CompareLessFunc: func(a interface{}, b interface{}) bool {
 				result := a.(fileItem).timestamp < b.(fileItem).timestamp
 				return result
-			}, Reverse: listSort != 1})
+			}, Reverse: listOrder != 1})
 		for _, t := range temp {
 			item := t.(fileItem)
 			fmt.Print(item.formatForList(current))

@@ -25,7 +25,7 @@ var (
 	listTrash    bool
 	log          bool
 	initConfig   bool
-	listSort     int
+	listOrder    int
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
 	checkStr     = "1h"
@@ -81,7 +81,7 @@ func init() {
 	flag.BoolVar(&listTrash, "l", false, "")
 	flag.BoolVar(&log, "g", false, "")
 	flag.BoolVar(&initConfig, "i", false, "")
-	flag.IntVar(&listSort, "o", 0, "")
+	flag.IntVar(&listOrder, "o", 0, "")
 
 	flag.StringVar(&restore, "R", "", "")
 	flag.StringVar(&retentionStr, "r", retentionStr, "")
@@ -122,7 +122,7 @@ func loadConfig() error {
 
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
-	Version:       "1.0.4",
+	Version:       "1.0.5",
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
