@@ -240,9 +240,9 @@ func ListTrashFiles() {
 	if listOrder > 0 {
 		sort.Slice(items, func(i, j int) bool {
 			if listOrder != 1 {
-				return items[i].timestamp < items[j].timestamp
+				return items[i].timestamp > items[j].timestamp
 			}
-			return items[i].timestamp > items[j].timestamp
+			return items[i].timestamp < items[j].timestamp
 		})
 		for _, item := range items {
 			fmt.Print(item.formatForList(current))
