@@ -7,5 +7,9 @@
 }
 
 body {
-    background-color: #778899;
+    background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0)
+    /*background-image: linear-gradient(25deg, #227495, #76859d, #b095a5, #e7a5ad)*/
+    /*background-image: linear-gradient(45deg, #235979, #61747e, #909083, #bdad86)*/
+    /*background-image: linear-gradient(25deg, #1f577c, #5f7483, #8f9288, #bcb28d)*/
+    /*background-image: linear-gradient(45deg, #375b71, #677981, #949891, #c1b8a1)*/
 }

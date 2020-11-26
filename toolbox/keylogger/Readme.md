@@ -1,4 +1,5 @@
 # 按键记录
+> [gradient.shapefactory.co](https://gradient.shapefactory.co)
 
 > `柱状图` 每天按键数据
 
