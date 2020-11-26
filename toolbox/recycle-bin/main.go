@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -237,17 +238,13 @@ func ListTrashFiles() {
 	}
 
 	if listOrder > 0 {
-		var temp []interface{}
-		for _, v := range items {
-			temp = append(temp, v)
-		}
-		Sort(SortWrapper{Data: temp,
-			CompareLessFunc: func(a interface{}, b interface{}) bool {
-				result := a.(fileItem).timestamp < b.(fileItem).timestamp
-				return result
-			}, Reverse: listOrder != 1})
-		for _, t := range temp {
-			item := t.(fileItem)
+		sort.Slice(items, func(i, j int) bool {
+			if listOrder != 1 {
+				return items[i].timestamp < items[j].timestamp
+			}
+			return items[i].timestamp > items[j].timestamp
+		})
+		for _, item := range items {
 			fmt.Print(item.formatForList(current))
 		}
 	} else {
