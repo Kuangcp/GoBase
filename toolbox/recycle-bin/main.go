@@ -289,8 +289,7 @@ func CheckTrashDir() {
 	logger.Info("Start check daemon. check:", checkPeriod, "retention:", retentionTime, "pid:", os.Getpid())
 
 	go func() {
-		// Wait for interrupt signal to gracefully shutdown the server with
-		// a timeout of 5 seconds.
+		// Wait for interrupt signal to gracefully shutdown the server with a timeout of 5 seconds.
 		quit := make(chan os.Signal)
 		// kill (no param) default send syscall.SIGTERM
 		// kill -2 is syscall.SIGINT
@@ -317,7 +316,6 @@ func CheckTrashDir() {
 func doCheckTrashDir() {
 	emptyCount := 0
 	for true {
-		current := time.Now().UnixNano()
 		time.Sleep(checkPeriod)
 		logger.Debug("Check")
 		dir, err := ioutil.ReadDir(trashDir)
@@ -333,33 +331,40 @@ func doCheckTrashDir() {
 			return
 		}
 
-		for _, fileInfo := range dir {
-			name := fileInfo.Name()
-			index := strings.Index(name, ".T.")
-			if index == -1 {
-				continue
-			}
+		cleanFile(dir)
+	}
+}
 
-			value := name[index+3:]
-			//fmt.Println(value)
-			parseInt, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				logger.Error(err)
-				return
-			}
-
-			//logger.Debug(current, parseInt, current-parseInt)
-			if current-parseInt > retentionTime.Nanoseconds() {
-				logger.Warn("Delete: ", name[:index])
-				actualPath := trashDir + "/" + name
-				if actualPath == "/" {
-					logger.Error("danger error")
-					continue
-				}
-				cmd := exec.Command("rm", "-rf", actualPath)
-				execCmdWithQuite(cmd)
-			}
+func cleanFile(dir []os.FileInfo) {
+	current := time.Now().UnixNano()
+	for _, fileInfo := range dir {
+		name := fileInfo.Name()
+		index := strings.Index(name, ".T.")
+		if index == -1 {
+			continue
 		}
+
+		value := name[index+3:]
+		//fmt.Println(value)
+		parseInt, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
+		//logger.Debug(current, parseInt, current-parseInt)
+		if current-parseInt <= retentionTime.Nanoseconds() {
+			continue
+		}
+
+		logger.Warn("Delete: ", name[:index])
+		actualPath := trashDir + "/" + name
+		if actualPath == "/" {
+			logger.Error("danger error")
+			continue
+		}
+		cmd := exec.Command("rm", "-rf", actualPath)
+		execCmdWithQuite(cmd)
 	}
 }
 
