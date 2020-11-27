@@ -79,7 +79,12 @@ func main() {
 	invokeWithCondition(initConfig, InitConfig)
 	invokeWithCondition(listTrash, ListTrashFiles)
 	invokeWithCondition(exit, ExitCheckFileDaemon)
-	invokeWithCondition(log, PrintLogFile)
+	invokeWithCondition(log, func() {
+		fmt.Println(logFile)
+	})
+	invokeWithCondition(showConfig, func() {
+		fmt.Println(configFile)
+	})
 
 	invokeWithCondition(illegalQuit, func() {
 		ActualDeleteFile(pidFile)
@@ -105,10 +110,6 @@ func main() {
 		DeleteFiles(args[1:])
 		CheckWithDaemon()
 	}
-}
-
-func PrintLogFile() {
-	fmt.Println(logFile)
 }
 
 func RestoreFile(restoreFile string) {
@@ -285,7 +286,7 @@ func CheckTrashDir() {
 
 	// avoid repeat delete
 	var deleteFlag int32 = 0
-	logger.Info("Start check trash, period:", checkPeriod, "pid:", os.Getpid())
+	logger.Info("Start check daemon. check:", checkPeriod, "retention:", retentionTime, "pid:", os.Getpid())
 
 	go func() {
 		// Wait for interrupt signal to gracefully shutdown the server with

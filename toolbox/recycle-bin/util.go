@@ -23,6 +23,7 @@ var (
 	illegalQuit  bool
 	listTrash    bool
 	log          bool
+	showConfig   bool
 	initConfig   bool
 	listOrder    int
 	restore      string
@@ -79,6 +80,7 @@ func init() {
 	flag.BoolVar(&illegalQuit, "q", false, "")
 	flag.BoolVar(&listTrash, "l", false, "")
 	flag.BoolVar(&log, "g", false, "")
+	flag.BoolVar(&showConfig, "f", false, "")
 	flag.BoolVar(&initConfig, "i", false, "")
 	flag.IntVar(&listOrder, "o", 0, "")
 
