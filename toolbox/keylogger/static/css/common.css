@@ -1,15 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+body {
+  height: 100vh;
+  overflow-x: hidden;
+  background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0);
+  /*background-image: linear-gradient(25deg, #227495, #76859d, #b095a5, #e7a5ad)*/
+  /*background-image: linear-gradient(45deg, #235979, #61747e, #909083, #bdad86)*/
+  /*background-image: linear-gradient(25deg, #1f577c, #5f7483, #8f9288, #bcb28d)*/
+  /*background-image: linear-gradient(45deg, #375b71, #677981, #949891, #c1b8a1)*/
+}
+
 .nav {
-    text-align: center;
+  text-align: center;
+  padding-top: 5px;
 }
 
 .nav input {
-    width: 50px;
-}
-
-body {
-    background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0)
-    /*background-image: linear-gradient(25deg, #227495, #76859d, #b095a5, #e7a5ad)*/
-    /*background-image: linear-gradient(45deg, #235979, #61747e, #909083, #bdad86)*/
-    /*background-image: linear-gradient(25deg, #1f577c, #5f7483, #8f9288, #bcb28d)*/
-    /*background-image: linear-gradient(45deg, #375b71, #677981, #949891, #c1b8a1)*/
+  width: 50px;
 }
