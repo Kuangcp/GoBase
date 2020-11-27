@@ -311,7 +311,10 @@ func CheckTrashDir() {
 	}
 
 	defer deletePidFile(&deleteFlag)
+	doCheckTrashDir()
+}
 
+func doCheckTrashDir() {
 	emptyCount := 0
 	for true {
 		current := time.Now().UnixNano()

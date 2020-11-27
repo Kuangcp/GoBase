@@ -39,6 +39,31 @@ type (
 )
 
 func init() {
+	initConfigValue()
+
+	flag.BoolVar(&help, "h", false, "")
+	flag.BoolVar(&help, "H", false, "")
+	flag.BoolVar(&debug, "D", false, "")
+	flag.BoolVar(&check, "C", false, "")
+	flag.BoolVar(&daemon, "d", false, "")
+	flag.BoolVar(&exit, "X", false, "")
+	flag.BoolVar(&illegalQuit, "q", false, "")
+	flag.BoolVar(&listTrash, "l", false, "")
+	flag.BoolVar(&log, "g", false, "")
+	flag.BoolVar(&showConfig, "f", false, "")
+	flag.BoolVar(&initConfig, "i", false, "")
+	flag.IntVar(&listOrder, "o", 0, "")
+
+	flag.StringVar(&restore, "R", "", "")
+	flag.StringVar(&retentionStr, "r", retentionStr, "")
+	flag.StringVar(&checkStr, "c", checkStr, "")
+	flag.StringVar(&suffix, "s", "", "")
+
+	flag.Usage = info.PrintHelp
+	flag.Parse()
+}
+
+func initConfigValue() {
 	logger.SetLogPathTrim("recycle-bin")
 
 	home, err := cuibase.Home()
@@ -70,27 +95,6 @@ func init() {
 
 	err = loadConfig()
 	cuibase.CheckIfError(err)
-
-	flag.BoolVar(&help, "h", false, "")
-	flag.BoolVar(&help, "H", false, "")
-	flag.BoolVar(&debug, "D", false, "")
-	flag.BoolVar(&check, "C", false, "")
-	flag.BoolVar(&daemon, "d", false, "")
-	flag.BoolVar(&exit, "X", false, "")
-	flag.BoolVar(&illegalQuit, "q", false, "")
-	flag.BoolVar(&listTrash, "l", false, "")
-	flag.BoolVar(&log, "g", false, "")
-	flag.BoolVar(&showConfig, "f", false, "")
-	flag.BoolVar(&initConfig, "i", false, "")
-	flag.IntVar(&listOrder, "o", 0, "")
-
-	flag.StringVar(&restore, "R", "", "")
-	flag.StringVar(&retentionStr, "r", retentionStr, "")
-	flag.StringVar(&checkStr, "c", checkStr, "")
-	flag.StringVar(&suffix, "s", "", "")
-
-	flag.Usage = info.PrintHelp
-	flag.Parse()
 }
 
 func loadConfig() error {
