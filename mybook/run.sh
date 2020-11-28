@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 red='\033[0;31m'
 green='\033[0;32m'
 yellow='\033[0;33m'
@@ -8,17 +10,17 @@ white='\033[0;37m'
 end='\033[0m'
 
 run_app(){
-    type notify-send >/dev/null 2>&1 || { echo >&2 "notify-send not installed.  Aborting."; exit 1; }
-
-    make buildSingle 
+    cd mybook-static \
+    && npm run build \
+    && sed -i 's/="\/css/="css/g;s/="\/js/="js/g' dist/index.html \
+    && cp ../conf/static/favicon.ico dist/favicon.ico \
+    && cd .. \
+    && statik -f -src=mybook-static/dist/ -dest app/common/ \
+    && go build -o bin/${BINARY_NAME}
 
     if [ ! -d bin/data ]; then 
         ln -s data bin/data
-    fi 
-
-    content='<span color="#57dafd" font="26px"> <a href="http://localhost:9090/static/">Enter</a></span>'
-
-    notify-send -t 3000 "MyBook" "$content"
+    fi
 
     bin/mybook -s -p 9090
 }

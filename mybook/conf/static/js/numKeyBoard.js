@@ -19,8 +19,8 @@ function NumKeyBoard(options) {
     }
 
     //创建数字键盘table
-    var inputStr = '<input class="numKeyBoardInput" readonly="readonly"/>'
-    var tableStr = '<table border="0" cellspacing="0" cellpadding="0" class="numKeyBoardTable">';
+    const inputStr = '<input class="numKeyBoardInput" readonly="readonly"/>';
+    let tableStr = '<table border="0" cellspacing="0" cellpadding="0" class="numKeyBoardTable">';
     tableStr += '<tr class="numTr"><td>1</td><td>2</td><td>3</td></tr>';
     tableStr += '<tr class="numTr"><td>4</td><td>5</td><td>6</td></tr>';
     tableStr += '<tr class="numTr"><td>7</td><td>8</td><td>9</td></tr>';
@@ -28,11 +28,11 @@ function NumKeyBoard(options) {
     tableStr += '<td class="dotTd">.</td></tr>';
     tableStr += '</table>';
 
-    var nbtn = '<div class="fBottom">';
-    nbtn += '<div class="saveBtn">确认</div><div class="clearBtn">清除</div><div class="cancleBtn" >取消</div>';
+    let nbtn = '<div class="fBottom">';
+    nbtn += '<div class="saveBtn">确认</div><div class="clearBtn">清除</div><div class="cancelBtn" >取消</div>';
     nbtn += '</div>';
-    var nHtml = inputStr + tableStr + nbtn;
-    var nbox = "<div id='numKeyBoard-box'><div class='numPadLayerBox'><div class='numPadLayerBox-cot'>" + nHtml + "</div></div></div>";
+    const nHtml = inputStr + tableStr + nbtn;
+    const nbox = "<div id='numKeyBoard-box'><div class='numPadLayerBox'><div class='numPadLayerBox-cot'>" + nHtml + "</div></div></div>";
     $('body').append(nbox);
 
     this.inputValue = "";
@@ -48,7 +48,7 @@ function NumKeyBoard(options) {
 
     //数字按键
     $("#numKeyBoard-box .numTr td").click(function (e) {
-        if (self.inputValue.length == 1 && self.inputValue == 0) return;
+        if (self.inputValue.length === 1 && self.inputValue === 0) return;
         if (self.inputValue) {
             if (!validPrecision(self.inputValue)) return;
         }
@@ -72,7 +72,7 @@ function NumKeyBoard(options) {
         if (!self.precision) return;
 
         if (self.inputValue) {
-            if (self.inputValue.indexOf(".") != -1) return;
+            if (self.inputValue.indexOf(".") !== -1) return;
             self.inputValue = self.inputValue + '.'
             self.input.val(self.inputValue)
         } else {
@@ -85,7 +85,7 @@ function NumKeyBoard(options) {
     $("#numKeyBoard-box .zeroTd").click(function () {
         if (self.inputValue) {
             if (!validPrecision(self.inputValue)) return;
-            if (self.inputValue.length == 1 && self.inputValue == 0) return;
+            if (self.inputValue.length === 1 && self.inputValue === 0) return;
             self.inputValue = self.inputValue + '0';
             self.input.val(self.inputValue)
         } else {
@@ -97,18 +97,18 @@ function NumKeyBoard(options) {
 
     //验证精度
     function validPrecision(str) {
-        if (str && str.indexOf(".") != -1) {
-            var len = str.split(".")[1].length;
-            if (len == self.precision) return false;
+        if (str && str.indexOf(".") !== -1) {
+            let len = str.split(".")[1].length;
+            if (len === self.precision) return false;
         }
         return true;
     }
 
     //确认
     $(".saveBtn").click(function () {
-        var val = $(".numKeyBoardInput").val()
+        const val = $(".numKeyBoardInput").val();
 
-        var re = /\.$/;
+        const re = /\.$/;
         if (re.test(val)) return;
 
         if (self.minVal && val < self.minVal) {
@@ -131,7 +131,7 @@ function NumKeyBoard(options) {
 
 
     //取消
-    $(".cancleBtn").click(function () {
+    $(".cancelBtn").click(function () {
         $("#numKeyBoard-box").hide();
     });
 

@@ -3,7 +3,7 @@
 <head>
     <title>Myth Bookkeeping</title>
     <meta charset="UTF-8">
-    <script src="js/lib/jquery-3.4.1.min.js"></script>
+    <script src="js/lib/jquery.min.js "></script>
     <script src="js/layer/layer.js"></script>
 
     <script src="js/main.js"></script>
@@ -39,19 +39,20 @@
 
     <label class="label"> 金额 : </label>
     <input type="number" id="amount" name="amount" min="1" required style="width: 90px;"/>
+    <span id="numBoard">☯️</span>
 
     <label class="label"> 日期 : </label>
     <input type="date" name="date" required>
     <label class="label"> 备注 : </label>
     <input name="comment" style="width: 100px;"/>
-    <button id="submitBtn" style="background: #1E9FFF;margin-left: 10px">Submit</button>
+    <button id="submitBtn" style="margin-left: 10px">Submit</button>
     <button id="recordBtn" type="button">账单</button>
     <a href="chart.html"><button type="button">报表</button></a>
 
     <div style="clear: both"></div>
 
     <hr>
-    <div style="float: none">
+    <div style="float: none; display: none" id="category-box">
         <span>帐单分类</span>
         <table id="categoryArea"></table>
     </div>
@@ -200,7 +201,7 @@
     loadAccount(handleMainPageAccount);
     loadRecordType();
 
-    $("#amount").on('click', numPanel);
+    $("#numBoard").on('click', numPanel);
     $("#recordBtn").on('click', recordPanel);
 </script>
 
