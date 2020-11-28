@@ -17,7 +17,6 @@
       </el-form-item>
       <el-form-item label="账户">
         <el-select v-model="account" size="mini" placeholder="请选择">
-        
           <el-option
             v-for="item in accounts"
             :key="item.ID"
@@ -46,8 +45,15 @@
 <script>
 import DateUtil from "../util/DateUtil.js";
 
+function fillDate(picker, offset) {
+  const end = new Date();
+  const start = new Date();
+  start.setTime(start.getTime() - offset);
+  picker.$emit("pick", [start, end]);
+}
+
 export default {
-  data: function() {
+  data: function () {
     return {
       formInline: {
         user: "",
@@ -58,28 +64,25 @@ export default {
           {
             text: "最近一周",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
+              fillDate(picker, 3600 * 1000 * 24 * 7);
             },
           },
           {
             text: "最近一个月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
+              fillDate(picker, 3600 * 1000 * 24 * 30);
             },
           },
           {
             text: "最近三个月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-              picker.$emit("pick", [start, end]);
+              fillDate(picker, 3600 * 1000 * 24 * 90);
+            },
+          },
+          {
+            text: "最近半年",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 180);
             },
           },
         ],
@@ -96,7 +99,7 @@ export default {
   },
   methods: {
     async onSubmit() {
-        console.log(this.account)
+      console.log(this.account);
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
 
