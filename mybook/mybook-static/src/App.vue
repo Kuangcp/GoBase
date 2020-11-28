@@ -1,19 +1,18 @@
 <template>
   <div id="app">
-    <Tabs/>
+    <Tabs />
   </div>
 </template>
 
 <script>
-import Tabs from './page/Tabs.vue'
-
+import Tabs from "./page/Tabs.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    Tabs
-  }
-}
+    Tabs,
+  },
+};
 </script>
 
 <style>
