@@ -7,7 +7,7 @@
       <Detail />
     </el-tab-pane>
     <el-tab-pane label="余额" name="balance">
-      <Balance />
+      <Balance ref="balanceCom" />
     </el-tab-pane>
   </el-tabs>
 </template>
@@ -37,7 +37,9 @@ export default {
   },
   methods: {
     handleClick() {
-      console.log(this.activeName);
+      if(this.activeName === 'balance'){
+        this.$refs.balanceCom.loadBalanceData()
+      }
     },
   },
 };

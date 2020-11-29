@@ -1,9 +1,6 @@
 <template>
   <div>
-    <el-button type="primary" @click="loadBalanceData" size="mini">
-      刷新
-    </el-button>
-    {{ totalAmount }}
+    余额：{{ totalAmount }}
     <el-table :data="tableData" stripe style="width: 100%" height="800">
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>

@@ -1,8 +1,15 @@
 <template>
   <div>
     <el-form :inline="true" class="demo-form-inline">
+      <el-form-item label="账户">
+        <AccountSelect ref="accountCom" />
+      </el-form-item>
+      <el-form-item label="转账目标账户">
+        <AccountSelect ref="targetAccountCom" />
+      </el-form-item>
+
       <el-form-item>
-        <AccountSelect />
+        <el-button type="primary" @click="onSubmit" size="mini">查询</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -15,11 +22,14 @@ export default {
   components: {
     AccountSelect,
   },
-  data() {
-    return {
-      activeName: "detail",
-    };
+  data: function () {
+    return {};
   },
-  methods: {},
+  methods: {
+    async onSubmit() {
+      console.log(this.$refs.accountCom.account);
+      console.log(this.$refs.targetAccountCom.account);
+    },
+  },
 };
 </script>
