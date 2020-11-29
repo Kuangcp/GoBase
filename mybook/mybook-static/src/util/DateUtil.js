@@ -26,5 +26,8 @@ export default function (timeStamp) {
       }
       return '';
     },
+    formatDate(){
+      return this.format("YYYY-MM-dd")
+    }
   };
 }

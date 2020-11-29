@@ -150,8 +150,8 @@ export default {
     async onSubmit() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
-      let start = (startTime && DateUtil(startTime).format("YYYY-MM-dd")) || "";
-      let end = (endTime && DateUtil(endTime).format("YYYY-MM-dd")) || "";
+      let start = (startTime && DateUtil(startTime).formatDate()) || "";
+      let end = (endTime && DateUtil(endTime).formatDate()) || "";
 
       const res = await this.$http.get("/api/record/list", {
         params: {
