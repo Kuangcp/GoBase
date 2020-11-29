@@ -20,7 +20,7 @@ export default {
   methods: {
     async queryAllAccount() {
       const res = await this.$http.get("/api/account/list");
-      console.log("ren", res.data);
+      // console.log("ren", res.data);
       return res.data.Data;
     },
     async fillAccount() {

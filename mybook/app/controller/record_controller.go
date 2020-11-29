@@ -33,12 +33,17 @@ func CreateRecord(c *gin.Context) {
 
 	logger.Debug("createRecord param: ", util.Json(recordVO))
 
-	record := service.CreateMultipleTypeRecord(recordVO)
+	record, err := service.CreateMultipleTypeRecord(recordVO)
 	if record != nil {
 		logger.Debug("createRecord success: ", util.Json(record))
+		ginhelper.GinResult(c, record)
+	} else {
+		if err != nil {
+			ginhelper.GinFailedWithMsg(c, err.Error())
+		} else {
+			ginhelper.GinFailed(c)
+		}
 	}
-
-	ginhelper.GinResult(c, record)
 }
 
 func ListRecord(c *gin.Context) {

@@ -106,6 +106,7 @@ func registerRouter(router *gin.Engine) {
 	// 分类
 	router.GET(buildApi("/category/typeList"), common.ListCategoryType)
 	router.GET(buildApi("/category/list"), common.ListCategory)
+	router.GET(buildApi("/category/listTree"), common.ListCategoryTree)
 
 	// 账户
 	router.GET(buildApi("/account/list"), controller.ListAccount)
