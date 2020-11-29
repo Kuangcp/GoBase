@@ -1,18 +1,7 @@
 BINARY_NAME=mybook.bin
 
-build:
-	go build -o bin/${BINARY_NAME}
-
-buildSingle:
-# 	statik -f -src=conf/static/ -dest app/common/ && go build -o bin/${BINARY_NAME}
-	cd mybook-static && npm run build && sed -i 's/="\/css/="css/g;s/="\/js/="js/g' dist/index.html && cd .. && statik -f -src=mybook-static/dist/ -dest app/common/ && go build -o bin/${BINARY_NAME}
-
-buildSingleWin:
-	statik -f -src=conf/static/ -dest app/common/ && CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}.exe
-#  -a -ldflags "-linkmode external -extldflags '-static' -s -w"
-
 clean:
-	rm -f bin/mybook
+	rm -f bin/${BINARY_NAME}
 
 web:
 	sh run.sh

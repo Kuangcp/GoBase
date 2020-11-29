@@ -25,13 +25,6 @@ run_app(){
     bin/mybook -s -p 9090
 }
 
-down(){
-    mkdir -p conf/static/js/lib 
-    wget https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js -O conf/static/js/lib/jquery.min.js 
-    wget https://cdn.bootcdn.net/ajax/libs/echarts/4.8.0/echarts.min.js -O conf/static/js/lib/echarts.min.js
-    wget https://cdn.jsdelivr.net/npm/vue/dist/vue.js -O conf/static/js/lib/vue.js
-}
-
 help(){
     printf "Run：$red sh $0 $green<verb> $yellow<args>$end\n"
     format="  $green%-6s $yellow%-8s$end%-20s\n"
@@ -40,8 +33,12 @@ help(){
 
 case $1 in 
     -h)
-        help ;;
-    -d) down ;;
+        help
+    ;;
+    -d)
+        down
+    ;;
     *)
-       run_app ;;
+        run_app
+    ;;
 esac

@@ -357,12 +357,12 @@ func CalculateAccountBalance() []*domain.Account {
 	}
 
 	for _, account := range accountMap {
-		affected := db.Model(&account).
+		db.Model(&account).
 			Select("current_amount").
 			Updates(map[string]interface{}{
 				"current_amount": account.CurrentAmount,
-			}).RowsAffected
-		logger.Debug(account.Name, account.CurrentAmount, affected)
+			})
+		//logger.Debug(account.Name, account.CurrentAmount, affected)
 	}
 
 	return ListAccounts()
