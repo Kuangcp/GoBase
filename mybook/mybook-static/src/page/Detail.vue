@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+    <el-form :inline="true" class="demo-form-inline">
       <el-form-item label="时间">
         <el-date-picker
           v-model="dateArray"
@@ -32,15 +32,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="账户">
-        <el-select v-model="account" size="mini" clearable placeholder="请选择">
-          <el-option
-            v-for="item in accounts"
-            :key="item.ID"
-            :label="item.Name"
-            :value="item.ID"
-          >
-          </el-option>
-        </el-select>
+        <AccountSelect ref="accountCom"/>
       </el-form-item>
 
       <el-form-item>
@@ -54,7 +46,13 @@
     <el-table :data="tableData" stripe style="width: 100%" height="800">
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>
-      <el-table-column sortable prop="AccountName" label="账户" width="120" align="center">
+      <el-table-column
+        sortable
+        prop="AccountName"
+        label="账户"
+        width="120"
+        align="center"
+      >
       </el-table-column>
       <el-table-column
         prop="RecordTypeName"
@@ -91,6 +89,7 @@
 </style>
 <script>
 import DateUtil from "../util/DateUtil.js";
+import AccountSelect from "../components/AccountSelect";
 
 function fillDate(picker, offset) {
   const end = new Date();
@@ -100,12 +99,11 @@ function fillDate(picker, offset) {
 }
 
 export default {
+  components: {
+    AccountSelect,
+  },
   data: function () {
     return {
-      formInline: {
-        user: "",
-        region: "",
-      },
       pickerOptions: {
         shortcuts: [
           {
@@ -137,21 +135,17 @@ export default {
       dateArray: [],
       visible: false,
       tableData: [],
-      account: "",
-      accounts: [],
-      accountType:"",
-      accountTypes:[
-        {ID: 1,Name:"支出"},
-        {ID: 2,Name:"收入"},
-        {ID: 3,Name:"转出"},
-        {ID: 4,Name:"转入"}
+      accountType: "",
+      accountTypes: [
+        { ID: 1, Name: "支出" },
+        { ID: 2, Name: "收入" },
+        { ID: 3, Name: "转出" },
+        { ID: 4, Name: "转入" },
       ],
       totalAmount: 0,
     };
   },
-  mounted() {
-    this.fillAccount();
-  },
+  mounted() {},
   methods: {
     async onSubmit() {
       let startTime = this.dateArray[0];
@@ -164,7 +158,7 @@ export default {
           startDate: start,
           endDate: end,
           typeId: this.accountType,
-          accountId: this.account,
+          accountId: this.$refs.accountCom.account,
         },
       });
 
@@ -179,16 +173,6 @@ export default {
         }
         this.totalAmount = (this.totalAmount / 100.0).toFixed(2);
       }
-    },
-    async queryAllAccount() {
-      const res = await this.$http.get("/api/account/list");
-      console.log("ren", res.data);
-      return res.data.Data;
-    },
-    async fillAccount() {
-      this.accounts = [];
-      let result = await this.queryAllAccount();
-      this.accounts = result;
     },
   },
 };

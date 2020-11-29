@@ -1,6 +1,8 @@
 <template>
   <el-tabs v-model="activeName" @tab-click="handleClick" class="tab-box">
-    <el-tab-pane label="记录" name="record"> </el-tab-pane>
+    <el-tab-pane label="记录" name="record">
+      <Record />
+    </el-tab-pane>
     <el-tab-pane label="明细" name="detail">
       <Detail />
     </el-tab-pane>
@@ -17,12 +19,14 @@
 </style>
 
 <script>
+import Record from "./Record.vue";
 import Detail from "./Detail.vue";
 import Balance from "./Balance.vue";
 
 export default {
   name: "Tabs",
   components: {
+    Record,
     Detail,
     Balance,
   },
@@ -33,7 +37,7 @@ export default {
   },
   methods: {
     handleClick() {
-      console.log(this.activeName)
+      console.log(this.activeName);
     },
   },
 };
