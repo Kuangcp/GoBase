@@ -10,44 +10,8 @@ import (
 	"github.com/wonderivan/logger"
 )
 
-// curl -s -F typeId=4 -F accountId=3 -F categoryId=102 -F amount=2000 -F date='2020-02-03' localhost:10006/record | pretty-json
 func CreateRecord(c *gin.Context) {
-	// typeId 含义为 categoryTypeId
-	typeId := c.PostForm("typeId")
-	accountId := c.PostForm("accountId")
-	targetAccountId := c.PostForm("targetAccountId")
-	categoryId := c.PostForm("categoryId")
-	amount := c.PostForm("amount")
-	date := c.PostForm("date")
-	comment := c.PostForm("comment")
-
-	recordVO := param.CreateRecordParam{
-		TypeId:          typeId,
-		AccountId:       accountId,
-		CategoryId:      categoryId,
-		Amount:          amount,
-		Date:            date,
-		Comment:         comment,
-		TargetAccountId: targetAccountId,
-	}
-
-	logger.Debug("createRecord param: ", util.Json(recordVO))
-
-	record, err := service.CreateMultipleTypeRecord(recordVO)
-	if record != nil {
-		logger.Debug("createRecord success: ", util.Json(record))
-		ginhelper.GinResult(c, record)
-	} else {
-		if err != nil {
-			ginhelper.GinFailedWithMsg(c, err.Error())
-		} else {
-			ginhelper.GinFailed(c)
-		}
-	}
-}
-
-func CreateRecordWithJSON(c *gin.Context) {
-	recordVO := param.CreateRecordParam{}
+	recordVO := param.RecordCreateParamVO{}
 	err := c.Bind(&recordVO)
 	if err != nil {
 		ginhelper.GinFailedWithMsg(c, err.Error())
@@ -56,17 +20,12 @@ func CreateRecordWithJSON(c *gin.Context) {
 
 	logger.Debug("createRecord param: ", util.Json(recordVO))
 
-	record, err := service.CreateMultipleTypeRecord(recordVO)
-	if record != nil {
-		logger.Debug("createRecord success: ", util.Json(record))
-		ginhelper.GinResult(c, record)
-	} else {
-		if err != nil {
-			ginhelper.GinFailedWithMsg(c, err.Error())
-		} else {
-			ginhelper.GinFailed(c)
-		}
+	result := service.CreateMultipleTypeRecord(recordVO)
+	if result.IsFailed() {
+		ginhelper.GinResultVO(c, result)
+		return
 	}
+	ginhelper.GinResult(c, result.Data)
 }
 
 func ListRecord(c *gin.Context) {

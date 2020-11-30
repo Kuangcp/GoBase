@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
@@ -79,94 +78,87 @@ func createTransRecord(origin *domain.Record, target *domain.Record) ginhelper.R
 	return ginhelper.Success()
 }
 
-func BuildRecordByField(param param.CreateRecordParam) *domain.Record {
-	typeId, e := strconv.Atoi(param.TypeId)
-	if e != nil || !constant.IsValidRecordType(int8(typeId)) {
-		logger.Error(e)
-		return nil
+func BuildRecordByField(param param.RecordCreateParamVO) ginhelper.ResultVO {
+	if len(param.Date) == 0 {
+		return ginhelper.FailedWithMsg("日期为空")
 	}
-	accountId, e := strconv.ParseUint(param.AccountId, 10, 64)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-	categoryId, e := strconv.ParseUint(param.CategoryId, 10, 64)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-
-	amount, e := strconv.Atoi(param.Amount)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-
-	recordDate, e := time.Parse("2006-01-02", param.Date)
-	if e != nil {
-		logger.Error(e)
-		return nil
-	}
-
-	record := &domain.Record{
-		AccountId:  uint(accountId),
-		CategoryId: uint(categoryId),
-		Type:       int8(typeId),
-		Amount:     amount,
-		RecordTime: recordDate,
-	}
-	if param.Comment != "" {
-		record.Comment = param.Comment
-	}
-
-	return record
-}
-
-func CreateMultipleTypeRecord(param param.CreateRecordParam) (*domain.Record,error) {
-	record := BuildRecordByField(param)
-	if record == nil {
-		return nil, fmt.Errorf("构建失败")
-	}
-
-	if param.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
-		record.Type = constant.RecordTransferOut
-		accountId, e := strconv.ParseUint(param.TargetAccountId, 10, 64)
+	var recordList []*domain.Record
+	for _, date := range param.Date {
+		recordDate, e := time.Parse("2006-01-02", date)
 		if e != nil {
 			logger.Error(e)
-			return nil, e
+			return ginhelper.FailedWithMsg("date 参数错误")
 		}
-
-		now := time.Now()
-		record.TransferId = uint(now.UnixNano())
-
-		target := util.Copy(record, new(domain.Record)).(*domain.Record)
-		if target == nil {
-			return nil, fmt.Errorf("复制失败")
+		record := &domain.Record{
+			AccountId:  uint(param.AccountId),
+			CategoryId: uint(param.CategoryId),
+			Type:       param.TypeId,
+			Amount:     param.Amount,
+			RecordTime: recordDate,
 		}
-
-		target.AccountId = uint(accountId)
-		target.Type = constant.RecordTransferIn
-
-		checkResult, _, _ := checkParam(target)
-		if checkResult.IsFailed() {
-			logger.Error(checkResult)
-			return nil, fmt.Errorf("记录校验失败")
+		if param.Comment != "" {
+			record.Comment = param.Comment
 		}
-
-		createResult := createTransRecord(record, target)
-		if createResult.IsFailed() {
-			logger.Error(createResult)
-			return nil, fmt.Errorf("转账记录校验失败")
-		}
-		return record,nil
-	} else {
-		resultVO := CreateRecord(record)
-		if resultVO.IsFailed() {
-			logger.Error(resultVO)
-			return nil, fmt.Errorf("参数校验失败")
-		}
-		return record, nil
+		recordList = append(recordList, record)
 	}
+
+	return ginhelper.SuccessWith(recordList)
+}
+
+func CreateMultipleTypeRecord(param param.RecordCreateParamVO) ginhelper.ResultVO {
+	result := BuildRecordByField(param)
+	if result.IsFailed() {
+		return result
+	}
+
+	list := result.Data.([]*domain.Record)
+	var successList []*domain.Record
+	var failResults []*domain.Record
+
+	for _, record := range list {
+		if param.TargetAccountId != 0 && constant.IsTransferRecordType(record.Type) {
+			record.Type = constant.RecordTransferOut
+
+			now := time.Now()
+			record.TransferId = uint(now.UnixNano())
+
+			target := util.Copy(record, new(domain.Record)).(*domain.Record)
+			if target == nil {
+				failResults = append(failResults, record)
+				logger.Error("复制失败")
+				continue
+			}
+
+			target.AccountId = uint(param.TargetAccountId)
+			target.Type = constant.RecordTransferIn
+
+			checkResult, _, _ := checkParam(target)
+			if checkResult.IsFailed() {
+				logger.Error(checkResult)
+				failResults = append(failResults, record)
+				continue
+			}
+
+			createResult := createTransRecord(record, target)
+			if createResult.IsFailed() {
+				logger.Error(createResult)
+				failResults = append(failResults, record)
+				continue
+			}
+			successList = append(successList, record)
+		} else {
+			resultVO := CreateRecord(record)
+			if resultVO.IsFailed() {
+				logger.Error(resultVO)
+				return resultVO
+			}
+			successList = append(successList, record)
+		}
+	}
+	if len(failResults) != 0 {
+		logger.Error(failResults)
+	}
+	return ginhelper.SuccessWith(successList)
 }
 
 func FindRecord(param param.QueryRecordParam) *[]dto.RecordDTO {

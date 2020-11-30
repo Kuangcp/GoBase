@@ -1,13 +1,13 @@
 package param
 
 type (
-	CreateRecordParam struct {
-		AccountId       string `json:"accountId"`
-		TargetAccountId string `json:"targetAccountId"`
-		Amount          string `json:"amount"`
-		CategoryId      string `json:"categoryId"`
-		TypeId          string `json:"typeId"` // TypeId 含义为 categoryTypeId
-		Date            string `json:"date"`
-		Comment         string `json:"comment"`
+	RecordCreateParamVO struct {
+		AccountId       int    `json:"accountId"`
+		TargetAccountId int    `json:"targetAccountId"`
+		Amount          int     `json:"amount"`
+		CategoryId      int    `json:"categoryId"`
+		TypeId          int8    `json:"typeId"` // TypeId 含义为 categoryTypeId
+		Date            []string `json:"date"`
+		Comment         string  `json:"comment"`
 	}
 )

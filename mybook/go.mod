@@ -33,3 +33,4 @@ require (
 )
 
 replace github.com/kuangcp/gobase/pkg/cuibase => ./../pkg/cuibase
+replace github.com/kuangcp/gobase/pkg/ginhelper => ./../pkg/ginhelper

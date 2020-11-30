@@ -113,8 +113,7 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildApi("/account/balance"), controller.CalculateAccountBalance)
 
 	// 账单
-	router.POST(buildApi("/record/create"), controller.CreateRecord)
-	router.POST(buildApi("/record/createRecord"), controller.CreateRecordWithJSON)
+	router.POST(buildApi("/record/createRecord"), controller.CreateRecord)
 	router.GET(buildApi("/record/list"), controller.ListRecord)
 
 	router.GET(buildApi("/record/category"), controller.CategoryRecord)
