@@ -1,5 +1,11 @@
 <template>
-  <el-select v-model="account" size="mini" clearable placeholder="请选择">
+  <el-select
+    v-model="tempVal"
+    size="mini"
+    clearable
+    placeholder="请选择"
+    @change="onChanges"
+  >
     <el-option
       v-for="item in accounts"
       :key="item.ID"
@@ -11,8 +17,14 @@
 </template>
 <script>
 export default {
+  props: {
+    account: {
+      type: Number,
+      // default: 1,
+    },
+  },
   data: function () {
-    return { account: "", accounts: [] };
+    return { tempVal: this.account, accounts: [] };
   },
   mounted() {
     this.fillAccount();
@@ -27,6 +39,10 @@ export default {
       this.accounts = [];
       let result = await this.queryAllAccount();
       this.accounts = result;
+    },
+    onChanges(val) {
+      console.log("child", val);
+      this.$emit("hasChange", val);
     },
   },
 };

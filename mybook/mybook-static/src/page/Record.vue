@@ -6,10 +6,20 @@
       </el-form-item>
       <!-- <br> -->
       <el-form-item label="操作账户">
-        <AccountSelect ref="accountCom" style="width: 120px" />
+        <AccountSelect
+          ref="accountCom"
+          :account="accountId"
+          @hasChange="hasChange"
+          style="width: 120px"
+        />
       </el-form-item>
       <el-form-item label="=> 转账目标账户">
-        <AccountSelect ref="targetAccountCom" style="width: 120px" />
+        <AccountSelect
+          ref="targetAccountCom"
+          :account="targetAccountId"
+          @hasChange="listenTargetAccount"
+          style="width: 120px"
+        />
       </el-form-item>
       <el-form-item label="金额">
         <el-input
@@ -23,9 +33,10 @@
       <el-form-item label="时间">
         <el-date-picker
           v-model="recordDate"
-          type="date"
+          type="dates"
           size="mini"
-          style="width: 132px"
+          clearable
+          style="width: 200px"
           placeholder="选择日期"
         >
         </el-date-picker>
@@ -52,27 +63,56 @@ export default {
   },
   data: function () {
     return {
+      accountId: 2,
+      targetAccountId:1,
       amount: 0,
-      recordDate: "",
+      recordDate: [],
       comment: "",
     };
   },
   methods: {
     async onSubmit() {
-      // console.log(param);
       let ids = this.$refs.categoryCom.categoryId;
-      console.log(ids);
+      if (this.recordDate.length == 0) {
+        this.$message({
+          message: "时间为空",
+          type: "warning",
+        });
+        return;
+      }
+
+      let resultDate = this.recordDate.map((v) => DateUtil(v).formatDate());
 
       let param = {
-        typeId: ids[0] + "",
-        accountId: this.$refs.accountCom.account + "",
-        targetAccountId: this.$refs.targetAccountCom.account + "",
-        categoryId: ids[ids.length - 1] + "",
-        amount: this.amount + "",
-        date: DateUtil(this.recordDate).formatDate(),
+        typeId: ids[0],
+        accountId: this.$refs.accountCom.account || 0,
+        targetAccountId: this.$refs.targetAccountCom.account || 0,
+        categoryId: ids[ids.length - 1],
+        amount: this.amount,
+        date: resultDate,
         comment: this.comment,
       };
-      this.$http.post("/api/record/createRecord", param);
+
+      console.log(param);
+      let resp = await this.$http.post("/api/record/createRecord", param);
+      console.log(resp);
+      if (resp.data.Code !== 0) {
+        this.$message({
+          message: resp.data.Msg,
+          type: "warning",
+        });
+      } else {
+        this.$message({
+          message: "新增 " + resp.data.Data.length + " 条",
+          type: "success",
+        });
+      }
+    },
+    hasChange(val) {
+      this.accountId = val;
+    },
+    listenTargetAccount(val) {
+      this.targetAccountId = val;
     },
   },
 };

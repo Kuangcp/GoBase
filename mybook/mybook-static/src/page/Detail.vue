@@ -32,7 +32,11 @@
         </el-select>
       </el-form-item>
       <el-form-item label="账户">
-        <AccountSelect ref="accountCom" />
+        <AccountSelect
+          ref="accountCom"
+          :account="accountId"
+          @hasChange="listenAccount"
+        />
       </el-form-item>
 
       <el-form-item>
@@ -106,6 +110,7 @@ export default {
   },
   data: function () {
     return {
+      accountId: null,
       pickerOptions: {
         shortcuts: [
           {
@@ -175,6 +180,9 @@ export default {
         }
         this.totalAmount = this.totalAmount / 100.0;
       }
+    },
+    listenAccount(val) {
+      this.accountId = val;
     },
   },
 };
