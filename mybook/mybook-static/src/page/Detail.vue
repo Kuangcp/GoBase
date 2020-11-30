@@ -32,7 +32,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="账户">
-        <AccountSelect ref="accountCom"/>
+        <AccountSelect ref="accountCom" />
       </el-form-item>
 
       <el-form-item>
@@ -71,11 +71,13 @@
       <el-table-column
         sortable
         prop="Amount"
-        cell-style="text-align:right;"
         label="金额"
-        width="100"
         align="right"
+        width="100"
       >
+        <template slot-scope="scope">
+          <span>{{ scope.row.Amount.toFixed(2) }}</span>
+        </template>
       </el-table-column>
       <el-table-column sortable prop="RecordTime" label="时间" width="190">
       </el-table-column>
@@ -169,9 +171,9 @@ export default {
         this.totalAmount = 0;
         for (let v of this.tableData) {
           this.totalAmount += v.Amount;
-          v.Amount = (v.Amount / 100.0).toFixed(2);
+          v.Amount = v.Amount / 100.0;
         }
-        this.totalAmount = (this.totalAmount / 100.0).toFixed(2);
+        this.totalAmount = this.totalAmount / 100.0;
       }
     },
   },

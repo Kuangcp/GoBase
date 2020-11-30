@@ -1,9 +1,10 @@
 <template>
   <div>
-    <el-form :inline="true" class="demo-form-inline">
+    <el-form :inline="true" ref="ruleForm" class="demo-form-inline">
       <el-form-item>
-          <CategorySelect ref="categoryCom"/>
+        <CategorySelect ref="categoryCom" />
       </el-form-item>
+      <!-- <br> -->
       <el-form-item label="操作账户">
         <AccountSelect ref="accountCom" style="width: 120px" />
       </el-form-item>
@@ -12,7 +13,7 @@
       </el-form-item>
       <el-form-item label="金额">
         <el-input
-          v-model="amount"
+          v-model.number="amount"
           size="mini"
           clearable
           min="0"
@@ -51,7 +52,6 @@ export default {
   },
   data: function () {
     return {
-      recordType: "1",
       amount: 0,
       recordDate: "",
       comment: "",
@@ -59,16 +59,20 @@ export default {
   },
   methods: {
     async onSubmit() {
+      // console.log(param);
+      let ids = this.$refs.categoryCom.categoryId;
+      console.log(ids);
+
       let param = {
-        typeId: this.recordType,
-        accountId: this.$refs.accountCom.account,
-        targetAccountId: this.$refs.targetAccountCom.account,
-        categoryId: 0,
-        amount: this.amount,
+        typeId: ids[0] + "",
+        accountId: this.$refs.accountCom.account + "",
+        targetAccountId: this.$refs.targetAccountCom.account + "",
+        categoryId: ids[ids.length - 1] + "",
+        amount: this.amount + "",
         date: DateUtil(this.recordDate).formatDate(),
         comment: this.comment,
       };
-      console.log(param);
+      this.$http.post("/api/record/createRecord", param);
     },
   },
 };
