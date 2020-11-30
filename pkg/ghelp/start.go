@@ -1,4 +1,4 @@
-package ginhelper
+package ghelp
 
 import (
 	"context"
