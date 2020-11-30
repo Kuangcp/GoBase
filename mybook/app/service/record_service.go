@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
@@ -121,10 +122,10 @@ func BuildRecordByField(param param.CreateRecordParam) *domain.Record {
 	return record
 }
 
-func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
+func CreateMultipleTypeRecord(param param.CreateRecordParam) (*domain.Record,error) {
 	record := BuildRecordByField(param)
 	if record == nil {
-		return nil
+		return nil, fmt.Errorf("构建失败")
 	}
 
 	if param.TargetAccountId != "" && constant.IsTransferRecordType(record.Type) {
@@ -132,7 +133,7 @@ func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
 		accountId, e := strconv.ParseUint(param.TargetAccountId, 10, 64)
 		if e != nil {
 			logger.Error(e)
-			return nil
+			return nil, e
 		}
 
 		now := time.Now()
@@ -140,7 +141,7 @@ func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
 
 		target := util.Copy(record, new(domain.Record)).(*domain.Record)
 		if target == nil {
-			return nil
+			return nil, fmt.Errorf("复制失败")
 		}
 
 		target.AccountId = uint(accountId)
@@ -149,22 +150,22 @@ func CreateMultipleTypeRecord(param param.CreateRecordParam) *domain.Record {
 		checkResult, _, _ := checkParam(target)
 		if checkResult.IsFailed() {
 			logger.Error(checkResult)
-			return nil
+			return nil, fmt.Errorf("记录校验失败")
 		}
 
 		createResult := createTransRecord(record, target)
 		if createResult.IsFailed() {
 			logger.Error(createResult)
-			return nil
+			return nil, fmt.Errorf("转账记录校验失败")
 		}
-		return record
+		return record,nil
 	} else {
 		resultVO := CreateRecord(record)
 		if resultVO.IsFailed() {
 			logger.Error(resultVO)
-			return nil
+			return nil, fmt.Errorf("参数校验失败")
 		}
-		return record
+		return record, nil
 	}
 }
 
@@ -356,12 +357,12 @@ func CalculateAccountBalance() []*domain.Account {
 	}
 
 	for _, account := range accountMap {
-		affected := db.Model(&account).
+		db.Model(&account).
 			Select("current_amount").
 			Updates(map[string]interface{}{
 				"current_amount": account.CurrentAmount,
-			}).RowsAffected
-		logger.Debug(account.Name, account.CurrentAmount, affected)
+			})
+		//logger.Debug(account.Name, account.CurrentAmount, affected)
 	}
 
 	return ListAccounts()

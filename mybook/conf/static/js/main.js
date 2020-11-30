@@ -57,6 +57,7 @@ function loadRecordType() {
 }
 
 function loadCategoryByRecordType() {
+    $('#category-box').css('display', 'block');
     $('#categoryArea').html('');
 
     let typeId = $('input:radio[name="typeId"]:checked').val();

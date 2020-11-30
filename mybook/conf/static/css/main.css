@@ -1,9 +1,16 @@
-.label {
-    color: #1E9FFF;
+* {
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    height: 97%;
+    height: 100vh;
+    overflow-x: hidden;
+    background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0);
+}
+
+.label {
+    color: #1E9FFF;
 }
 
 .record-table td {

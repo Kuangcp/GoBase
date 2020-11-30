@@ -1,20 +1,13 @@
 BINARY_NAME=mybook.bin
 
-build:
-	go build -o bin/${BINARY_NAME}
-
-buildSingle:
-	statik -f -src=conf/static/ -dest app/common/ && go build -o bin/${BINARY_NAME}
-
-buildSingleWin:
-	statik -f -src=conf/static/ -dest app/common/ && CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o bin/${BINARY_NAME}.exe
-#  -a -ldflags "-linkmode external -extldflags '-static' -s -w"
-
 clean:
-	rm -f bin/mybook
+	rm -f bin/${BINARY_NAME}
 
-web:
+run:
 	sh run.sh
+
+runS:
+	sh run.sh -s
 
 buildAlpine:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/${BINARY_NAME}

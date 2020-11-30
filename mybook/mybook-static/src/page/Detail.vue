@@ -1,95 +1,135 @@
 <template>
   <div>
-    <el-button @click="showDiv()" ref="viewBtn">Button</el-button>
+    <el-form :inline="true" class="demo-form-inline">
+      <el-form-item label="时间">
+        <el-date-picker
+          v-model="dateArray"
+          type="daterange"
+          align="right"
+          unlink-panels
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          size="mini"
+          :picker-options="pickerOptions"
+        >
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item label="类型">
+        <el-select
+          v-model="accountType"
+          size="mini"
+          clearable
+          placeholder="请选择"
+        >
+          <el-option
+            v-for="item in accountTypes"
+            :key="item.ID"
+            :label="item.Name"
+            :value="item.ID"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="账户">
+        <AccountSelect ref="accountCom" />
+      </el-form-item>
 
-    <el-dialog :visible.sync="visible">
-      <div
-        style="display: none"
-        :style="{ display: visible ? 'block' : 'none' }"
+      <el-form-item>
+        <el-button type="primary" @click="onSubmit" size="mini">查询</el-button>
+      </el-form-item>
+      <el-form-item>
+        <div>总金额:{{ totalAmount }}</div>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="tableData" stripe style="width: 100%" height="800">
+      <el-table-column sortable prop="ID" label="ID" width="60" align="right">
+      </el-table-column>
+      <el-table-column
+        sortable
+        prop="AccountName"
+        label="账户"
+        width="120"
+        align="center"
       >
-        <el-form :inline="true" :model="formInline" class="demo-form-inline">
-          <el-form-item label="时间">
-            <el-date-picker
-              v-model="dateArray"
-              type="daterange"
-              align="right"
-              unlink-panels
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              size="mini"
-              :picker-options="pickerOptions"
-            >
-            </el-date-picker>
-          </el-form-item>
-          <el-form-item label="分类">
-            <el-select v-model="categoryType" size="mini" placeholder="请选择">
-              <el-option
-                v-for="item in categoryTypes"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              >
-              </el-option>
-            </el-select>
-          </el-form-item>
+      </el-table-column>
+      <el-table-column
+        prop="RecordTypeName"
+        label="类型"
+        width="60"
+      ></el-table-column>
+      <el-table-column
+        prop="CategoryName"
+        label="明细类型"
+        width="100"
+        align="right"
+      ></el-table-column>
 
-          <el-form-item>
-            <el-button type="primary" @click="onSubmit" size="mini"
-              >查询</el-button
-            >
-          </el-form-item>
-        </el-form>
+      <!-- <el-table-column prop="RecordType" label="类型" width="180"> -->
 
-        <el-table :data="tableData" stripe style="width: 100%">
-          <el-table-column prop="date" label="日期" width="180">
-          </el-table-column>
-          <el-table-column prop="name" label="姓名" width="180">
-          </el-table-column>
-          <el-table-column prop="address" label="地址"> </el-table-column>
-        </el-table>
-      </div>
-    </el-dialog>
+      <el-table-column
+        sortable
+        prop="Amount"
+        label="金额"
+        align="right"
+        width="100"
+      >
+        <template slot-scope="scope">
+          <span>{{ scope.row.Amount.toFixed(2) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column sortable prop="RecordTime" label="时间" width="190">
+      </el-table-column>
+      <el-table-column prop="Comment" label="备注" width="200">
+      </el-table-column>
+    </el-table>
   </div>
 </template>
 
+<style>
+</style>
 <script>
-import DateUtil from '../util/DateUtil.js'
+import DateUtil from "../util/DateUtil.js";
+import AccountSelect from "../components/AccountSelect";
+
+function fillDate(picker, offset) {
+  const end = new Date();
+  const start = new Date();
+  start.setTime(start.getTime() - offset);
+  picker.$emit("pick", [start, end]);
+}
 
 export default {
-  data: function() {
+  components: {
+    AccountSelect,
+  },
+  data: function () {
     return {
-      formInline: {
-        user: "",
-        region: "",
-      },
       pickerOptions: {
         shortcuts: [
           {
             text: "最近一周",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit("pick", [start, end]);
+              fillDate(picker, 3600 * 1000 * 24 * 7);
             },
           },
           {
             text: "最近一个月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit("pick", [start, end]);
+              fillDate(picker, 3600 * 1000 * 24 * 30);
             },
           },
           {
             text: "最近三个月",
             onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-              picker.$emit("pick", [start, end]);
+              fillDate(picker, 3600 * 1000 * 24 * 90);
+            },
+          },
+          {
+            text: "最近半年",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 180);
             },
           },
         ],
@@ -97,62 +137,44 @@ export default {
       dateArray: [],
       visible: false,
       tableData: [],
-      obj: {
-        // inputVal: 1
-      },
-      categoryTypes: [
-        {
-          value: "选项1",
-          label: "黄金糕",
-        },
-        {
-          value: "选项2",
-          label: "双皮奶",
-        },
-        {
-          value: "选项3",
-          label: "蚵仔煎",
-        },
-        {
-          value: "选项4",
-          label: "龙须面",
-        },
-        {
-          value: "选项5",
-          label: "北京烤鸭",
-        },
+      accountType: "",
+      accountTypes: [
+        { ID: 1, Name: "支出" },
+        { ID: 2, Name: "收入" },
+        { ID: 3, Name: "转出" },
+        { ID: 4, Name: "转入" },
       ],
-      categoryType: "",
+      totalAmount: 0,
     };
   },
+  mounted() {},
   methods: {
-    watchInput(val) {
-      console.log(val);
-    },
-    showDiv() {
-      this.visible = true;
-      console.log(this.$refs.viewBtn);
-    },
-    onSubmit() {
+    async onSubmit() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
+      let start = (startTime && DateUtil(startTime).formatDate()) || "";
+      let end = (endTime && DateUtil(endTime).formatDate()) || "";
 
-      let startStr =
-        (startTime && DateUtil(startTime).format("YYYY-MM-dd")) || "";
-      console.log(startTime, startStr, endTime);
-      this.tableData = [
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄",
+      const res = await this.$http.get("/api/record/list", {
+        params: {
+          startDate: start,
+          endDate: end,
+          typeId: this.accountType,
+          accountId: this.$refs.accountCom.account,
         },
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          address: "上海市普陀区金沙江路 1518 弄",
-        },
-      ];
-      this.$set(this.obj, "inputVal", 0);
+      });
+
+      this.tableData = [];
+      this.totalAmount = 0;
+      if (res.data && res.data.Data && res.data.Data.length > 0) {
+        this.tableData = res.data.Data;
+        this.totalAmount = 0;
+        for (let v of this.tableData) {
+          this.totalAmount += v.Amount;
+          v.Amount = v.Amount / 100.0;
+        }
+        this.totalAmount = this.totalAmount / 100.0;
+      }
     },
   },
 };

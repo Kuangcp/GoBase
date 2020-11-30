@@ -1,18 +1,18 @@
 <template>
   <div id="app">
-    <Detail/>
+    <Tabs />
   </div>
 </template>
 
 <script>
-import Detail from './page/Detail.vue'
+import Tabs from "./page/Tabs.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    Detail
-  }
-}
+    Tabs,
+  },
+};
 </script>
 
 <style>
@@ -20,8 +20,8 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /*text-align: center;*/
+  /* text-align: center; */
   color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 16px;
 }
 </style>
