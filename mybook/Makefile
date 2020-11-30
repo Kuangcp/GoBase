@@ -3,8 +3,11 @@ BINARY_NAME=mybook.bin
 clean:
 	rm -f bin/${BINARY_NAME}
 
-web:
+run:
 	sh run.sh
+
+runS:
+	sh run.sh -s
 
 buildAlpine:
 	CGO_ENABLED=0 GOOS=linux go build -o bin/${BINARY_NAME}

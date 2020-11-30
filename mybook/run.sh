@@ -25,6 +25,16 @@ run_app(){
     bin/mybook -s -p 9090
 }
 
+run_server(){
+    go build -o bin/${BINARY_NAME}
+
+    if [ ! -d bin/data ]; then 
+        ln -s data bin/data
+    fi
+
+    bin/mybook -s -p 9090
+}
+
 help(){
     printf "Run：$red sh $0 $green<verb> $yellow<args>$end\n"
     format="  $green%-6s $yellow%-8s$end%-20s\n"
@@ -35,8 +45,8 @@ case $1 in
     -h)
         help
     ;;
-    -d)
-        down
+    -s)
+        run_server
     ;;
     *)
         run_app
