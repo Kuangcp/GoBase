@@ -1,5 +1,8 @@
 <template>
   <el-tabs v-model="activeName" @tab-click="handleClick" class="tab-box">
+    <el-tab-pane label="面板" name="dashboard">
+      <Dashboard />
+    </el-tab-pane>
     <el-tab-pane label="记录" name="record">
       <Record />
     </el-tab-pane>
@@ -26,6 +29,7 @@ import Record from "./Record.vue";
 import Detail from "./Detail.vue";
 import Balance from "./Balance.vue";
 import Category from "./Category.vue";
+import Dashboard from "./Dashboard.vue";
 
 export default {
   name: "Tabs",
@@ -34,6 +38,7 @@ export default {
     Detail,
     Balance,
     Category,
+    Dashboard,
   },
   data() {
     return {

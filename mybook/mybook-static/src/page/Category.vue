@@ -42,7 +42,7 @@
     </el-form>
 
     <el-dialog title="明细" :visible.sync="dialogTableVisible">
-      <el-table :data="detailData" stripe style="width: 100%" height="800">
+      <el-table :data="detailData" stripe style="width: 100%" height="400">
         <el-table-column sortable prop="ID" label="ID" width="60" align="right">
         </el-table-column>
         <el-table-column
