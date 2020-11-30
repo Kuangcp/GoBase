@@ -41,6 +41,50 @@
       </el-form-item>
     </el-form>
 
+    <el-dialog title="明细" :visible.sync="dialogTableVisible">
+      <el-table :data="detailData" stripe style="width: 100%" height="800">
+        <el-table-column sortable prop="ID" label="ID" width="60" align="right">
+        </el-table-column>
+        <el-table-column
+          sortable
+          prop="AccountName"
+          label="账户"
+          width="120"
+          align="center"
+        >
+        </el-table-column>
+        <el-table-column
+          prop="RecordTypeName"
+          label="类型"
+          width="60"
+        ></el-table-column>
+        <el-table-column
+          prop="CategoryName"
+          label="明细类型"
+          width="100"
+          align="right"
+        ></el-table-column>
+
+        <!-- <el-table-column prop="RecordType" label="类型" width="180"> -->
+
+        <el-table-column
+          sortable
+          prop="Amount"
+          label="金额"
+          align="right"
+          width="100"
+        >
+          <template slot-scope="scope">
+            <span>{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column sortable prop="RecordTime" label="时间" width="190">
+        </el-table-column>
+        <el-table-column prop="Comment" label="备注" width="200">
+        </el-table-column>
+      </el-table>
+    </el-dialog>
+
     <el-table :data="tableData" stripe style="width: 100%" height="800">
       <el-table-column
         sortable
@@ -124,6 +168,7 @@ export default {
   components: {},
   data: function () {
     return {
+      dialogTableVisible: false,
       accountId: null,
       pickerOptions: {
         shortcuts: [
@@ -156,6 +201,7 @@ export default {
       dateArray: [],
       visible: false,
       tableData: [],
+      detailData:[],
       accountType: "",
       accountTypes: [
         { ID: 1, Name: "支出" },
@@ -205,6 +251,7 @@ export default {
       this.accountId = val;
     },
     async detail(categoryId) {
+      this.dialogTableVisible = true;
       const { start, end } = this.getFormatDate();
       const res = await this.$http.get("/api/record/categoryDetail", {
         params: {
@@ -214,8 +261,8 @@ export default {
           typeId: this.accountType,
         },
       });
-      console.log("ren", res.data);
-      console.log(categoryId);
+      this.detailData = [];
+      this.detailData = res.data.Data;
     },
     weekDetail(categoryId) {
       console.log(categoryId);
