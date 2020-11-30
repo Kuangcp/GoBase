@@ -1,6 +1,6 @@
 <template>
   <div>
-    余额：{{ totalAmount }}
+    余额：{{ (this.totalAmount / 100.0).toFixed(2) }}
     <el-table :data="tableData" stripe style="width: 100%" height="800">
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>
@@ -37,6 +37,9 @@
         width="100"
         align="right"
       >
+        <template slot-scope="scope">
+          <span>{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
+        </template>
       </el-table-column>
     </el-table>
   </div>
@@ -60,9 +63,7 @@ export default {
         this.tableData = res.data.Data;
         for (let v of this.tableData) {
           this.totalAmount += v.CurrentAmount;
-          v.CurrentAmount = (v.CurrentAmount / 100.0).toFixed(2);
         }
-        this.totalAmount = (this.totalAmount / 100.0).toFixed(2);
       }
     },
   },

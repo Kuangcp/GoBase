@@ -15,6 +15,7 @@
         >
         </el-date-picker>
       </el-form-item>
+
       <el-form-item label="类型">
         <el-select
           v-model="accountType"
@@ -31,31 +32,22 @@
           </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="账户">
-        <AccountSelect
-          ref="accountCom"
-          :account="accountId"
-          @hasChange="listenAccount"
-        />
-      </el-form-item>
 
       <el-form-item>
         <el-button type="primary" @click="onSubmit" size="mini">查询</el-button>
       </el-form-item>
       <el-form-item>
-        <div>总金额:{{ (totalAmount / 100.0).toFixed(2) }}</div>
+        <div>总金额:{{ totalAmount }}</div>
       </el-form-item>
     </el-form>
 
     <el-table :data="tableData" stripe style="width: 100%" height="800">
-      <el-table-column sortable prop="ID" label="ID" width="60" align="right">
-      </el-table-column>
       <el-table-column
         sortable
-        prop="AccountName"
-        label="账户"
-        width="120"
-        align="center"
+        prop="CategoryId"
+        label="ID"
+        width="60"
+        align="right"
       >
       </el-table-column>
       <el-table-column
@@ -64,7 +56,7 @@
         width="60"
       ></el-table-column>
       <el-table-column
-        prop="CategoryName"
+        prop="Name"
         label="明细类型"
         width="100"
         align="right"
@@ -77,15 +69,40 @@
         prop="Amount"
         label="金额"
         align="right"
-        width="100"
+        width="110"
       >
         <template slot-scope="scope">
-          <span>{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
+          <span>{{ scope.row.Amount.toFixed(2) }}</span>
         </template>
       </el-table-column>
-      <el-table-column sortable prop="RecordTime" label="时间" width="190">
+
+      <el-table-column sortable prop="Date" label="时间" width="100">
       </el-table-column>
-      <el-table-column prop="Comment" label="备注" width="200">
+
+      <el-table-column label="操作" width="150">
+        <template slot-scope="scope">
+          <el-button
+            @click.native.prevent="detail(scope.row.CategoryId)"
+            type="text"
+            size="mini"
+          >
+            详情
+          </el-button>
+          <el-button
+            @click.native.prevent="weekDetail(scope.row.CategoryId)"
+            type="text"
+            size="mini"
+          >
+            周统计
+          </el-button>
+          <el-button
+            @click.native.prevent="monthDetail(scope.row.CategoryId)"
+            type="text"
+            size="mini"
+          >
+            月统计
+          </el-button>
+        </template>
       </el-table-column>
     </el-table>
   </div>
@@ -95,7 +112,6 @@
 </style>
 <script>
 import DateUtil from "../util/DateUtil.js";
-import AccountSelect from "../components/AccountSelect";
 
 function fillDate(picker, offset) {
   const end = new Date();
@@ -105,9 +121,7 @@ function fillDate(picker, offset) {
 }
 
 export default {
-  components: {
-    AccountSelect,
-  },
+  components: {},
   data: function () {
     return {
       accountId: null,
@@ -154,18 +168,24 @@ export default {
   },
   mounted() {},
   methods: {
-    async onSubmit() {
+    getFormatDate() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
       let start = (startTime && DateUtil(startTime).formatDate()) || "";
       let end = (endTime && DateUtil(endTime).formatDate()) || "";
+      return {
+        start,
+        end,
+      };
+    },
+    async onSubmit() {
+      const { start, end } = this.getFormatDate();
 
-      const res = await this.$http.get("/api/record/list", {
+      const res = await this.$http.get("/api/record/category", {
         params: {
           startDate: start,
           endDate: end,
           typeId: this.accountType,
-          accountId: this.$refs.accountCom.account,
         },
       });
 
@@ -176,11 +196,32 @@ export default {
         this.totalAmount = 0;
         for (let v of this.tableData) {
           this.totalAmount += v.Amount;
+          v.Amount = v.Amount / 100.0;
         }
+        this.totalAmount = this.totalAmount / 100.0;
       }
     },
     listenAccount(val) {
       this.accountId = val;
+    },
+    async detail(categoryId) {
+      const { start, end } = this.getFormatDate();
+      const res = await this.$http.get("/api/record/categoryDetail", {
+        params: {
+          startDate: start,
+          endDate: end,
+          categoryId: categoryId,
+          typeId: this.accountType,
+        },
+      });
+      console.log("ren", res.data);
+      console.log(categoryId);
+    },
+    weekDetail(categoryId) {
+      console.log(categoryId);
+    },
+    monthDetail(categoryId) {
+      console.log(categoryId);
     },
   },
 };

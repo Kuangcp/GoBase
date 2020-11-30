@@ -6,6 +6,9 @@
     <el-tab-pane label="明细" name="detail">
       <Detail />
     </el-tab-pane>
+    <el-tab-pane label="分类" name="category">
+      <Category ref="categoryCom" />
+    </el-tab-pane>
     <el-tab-pane label="余额" name="balance">
       <Balance ref="balanceCom" />
     </el-tab-pane>
@@ -22,6 +25,7 @@
 import Record from "./Record.vue";
 import Detail from "./Detail.vue";
 import Balance from "./Balance.vue";
+import Category from "./Category.vue";
 
 export default {
   name: "Tabs",
@@ -29,6 +33,7 @@ export default {
     Record,
     Detail,
     Balance,
+    Category,
   },
   data() {
     return {
@@ -37,8 +42,8 @@ export default {
   },
   methods: {
     handleClick() {
-      if(this.activeName === 'balance'){
-        this.$refs.balanceCom.loadBalanceData()
+      if (this.activeName === "balance") {
+        this.$refs.balanceCom.loadBalanceData();
       }
     },
   },
