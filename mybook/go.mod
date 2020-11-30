@@ -10,7 +10,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kuangcp/gobase/pkg/cuibase v0.0.0-20201103041857-ea5c95ff0199
-	github.com/kuangcp/gobase/pkg/ginhelper v0.0.0-20201103041857-ea5c95ff0199
+	github.com/kuangcp/gobase/pkg/ghelp v0.0.0-20201103041857-ea5c95ff0199
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
@@ -33,4 +33,4 @@ require (
 )
 
 replace github.com/kuangcp/gobase/pkg/cuibase => ./../pkg/cuibase
-replace github.com/kuangcp/gobase/pkg/ginhelper => ./../pkg/ginhelper
+replace github.com/kuangcp/gobase/pkg/ghelp => ./../pkg/ghelp

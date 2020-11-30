@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/kuangcp/gobase/pkg/ghelp"
 	"log"
 	"mybook/app/common"
 	"mybook/app/common/config"
@@ -11,7 +12,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/rakyll/statik/fs"
 	"github.com/wonderivan/logger"
 )
@@ -66,7 +66,7 @@ func Server(debugStatic bool, port int) {
 	}
 
 	logger.Info("Start http://localhost:" + finalPort)
-	ginhelper.GracefulExit(srv)
+	ghelp.GracefulExit(srv)
 }
 
 func Cors() gin.HandlerFunc {
@@ -121,6 +121,9 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildApi("/record/categoryDetail"), controller.CategoryDetailRecord)
 	router.GET(buildApi("/record/categoryWeekDetail"), controller.WeekCategoryDetailRecord)
 	router.GET(buildApi("/record/categoryMonthDetail"), controller.MonthCategoryDetailRecord)
+
+	router.GET(buildApi("/report/categoryMonth"), controller.CategoryMonthMap)
+
 }
 
 func buildApi(path string) string {

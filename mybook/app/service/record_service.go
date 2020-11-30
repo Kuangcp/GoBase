@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/kuangcp/gobase/pkg/ghelp"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
@@ -12,7 +13,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/wonderivan/logger"
 )
 
@@ -23,29 +23,29 @@ func addRecord(record *domain.Record) {
 	db.Create(record)
 }
 
-func checkParam(record *domain.Record) (ginhelper.ResultVO, *domain.Category, *domain.Account) {
+func checkParam(record *domain.Record) (ghelp.ResultVO, *domain.Category, *domain.Account) {
 	category := FindCategoryById(record.CategoryId)
 	if category == nil || !category.Leaf {
-		return ginhelper.FailedWithMsg("分类id无效"), nil, nil
+		return ghelp.FailedWithMsg("分类id无效"), nil, nil
 	}
 
 	account := FindAccountById(record.AccountId)
 	if account == nil {
-		return ginhelper.FailedWithMsg("账户无效"), category, nil
+		return ghelp.FailedWithMsg("账户无效"), category, nil
 	}
 
 	if record.Amount <= 0 {
-		return ginhelper.FailedWithMsg("金额无效"), category, account
+		return ghelp.FailedWithMsg("金额无效"), category, account
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return ginhelper.FailedWithMsg("类别无效"), category, account
+		return ghelp.FailedWithMsg("类别无效"), category, account
 	}
-	return ginhelper.Success(), category, account
+	return ghelp.Success(), category, account
 }
 
-func CreateRecord(record *domain.Record) ginhelper.ResultVO {
+func CreateRecord(record *domain.Record) ghelp.ResultVO {
 	if nil == record {
-		return ginhelper.Failed()
+		return ghelp.Failed()
 	}
 	resultVO, _, _ := checkParam(record)
 	if resultVO.IsFailed() {
@@ -53,12 +53,12 @@ func CreateRecord(record *domain.Record) ginhelper.ResultVO {
 	}
 
 	addRecord(record)
-	return ginhelper.Success()
+	return ghelp.Success()
 }
 
-func createTransRecord(origin *domain.Record, target *domain.Record) ginhelper.ResultVO {
+func createTransRecord(origin *domain.Record, target *domain.Record) ghelp.ResultVO {
 	if nil == origin || nil == target {
-		return ginhelper.Failed()
+		return ghelp.Failed()
 	}
 
 	resultVO, _, _ := checkParam(origin)
@@ -73,21 +73,21 @@ func createTransRecord(origin *domain.Record, target *domain.Record) ginhelper.R
 	e := dal.BatchSaveWithTransaction(origin, target)
 	if e != nil {
 		logger.Error(e)
-		return ginhelper.Failed()
+		return ghelp.Failed()
 	}
-	return ginhelper.Success()
+	return ghelp.Success()
 }
 
-func BuildRecordByField(param param.RecordCreateParamVO) ginhelper.ResultVO {
+func BuildRecordByField(param param.RecordCreateParamVO) ghelp.ResultVO {
 	if len(param.Date) == 0 {
-		return ginhelper.FailedWithMsg("日期为空")
+		return ghelp.FailedWithMsg("日期为空")
 	}
 	var recordList []*domain.Record
 	for _, date := range param.Date {
 		recordDate, e := time.Parse("2006-01-02", date)
 		if e != nil {
 			logger.Error(e)
-			return ginhelper.FailedWithMsg("date 参数错误")
+			return ghelp.FailedWithMsg("date 参数错误")
 		}
 		record := &domain.Record{
 			AccountId:  uint(param.AccountId),
@@ -102,10 +102,10 @@ func BuildRecordByField(param param.RecordCreateParamVO) ginhelper.ResultVO {
 		recordList = append(recordList, record)
 	}
 
-	return ginhelper.SuccessWith(recordList)
+	return ghelp.SuccessWith(recordList)
 }
 
-func CreateMultipleTypeRecord(param param.RecordCreateParamVO) ginhelper.ResultVO {
+func CreateMultipleTypeRecord(param param.RecordCreateParamVO) ghelp.ResultVO {
 	result := BuildRecordByField(param)
 	if result.IsFailed() {
 		return result
@@ -158,7 +158,7 @@ func CreateMultipleTypeRecord(param param.RecordCreateParamVO) ginhelper.ResultV
 	if len(failResults) != 0 {
 		logger.Error(failResults)
 	}
-	return ginhelper.SuccessWith(successList)
+	return ghelp.SuccessWith(successList)
 }
 
 func FindRecord(param param.QueryRecordParam) *[]dto.RecordDTO {

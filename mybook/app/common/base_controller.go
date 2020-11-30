@@ -2,7 +2,7 @@ package common
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/ginhelper"
+	"github.com/kuangcp/gobase/pkg/ghelp"
 	"mybook/app/common/constant"
 	"mybook/app/domain"
 	"mybook/app/service"
@@ -20,12 +20,12 @@ func HealthCheck(c *gin.Context) {
 
 func ListRecordType(c *gin.Context) {
 	_, list := constant.GetRecordTypeMap()
-	ginhelper.GinSuccessWith(c, list)
+	ghelp.GinSuccessWith(c, list)
 }
 
 func ListCategoryType(c *gin.Context) {
 	_, list := constant.GetCategoryTypeMap()
-	ginhelper.GinSuccessWith(c, list)
+	ghelp.GinSuccessWith(c, list)
 }
 
 func ListCategoryTree(c *gin.Context) {
@@ -48,7 +48,7 @@ func ListCategoryTree(c *gin.Context) {
 		})
 	}
 
-	ginhelper.GinSuccessWith(c, result)
+	ghelp.GinSuccessWith(c, result)
 }
 
 func buildTreeRoot(categories []domain.Category) []*vo.CategoryTree {
@@ -115,7 +115,7 @@ func appendChild(tree []*vo.CategoryTree, node domain.Category) bool {
 func ListCategory(c *gin.Context) {
 	recordType := c.Query("recordType")
 	if recordType == "" {
-		ginhelper.GinSuccessWith(c, service.ListCategories())
+		ghelp.GinSuccessWith(c, service.ListCategories())
 		return
 	}
 
@@ -123,8 +123,8 @@ func ListCategory(c *gin.Context) {
 	typeEnum := constant.GetCategoryTypeByRecordTypeIndex(int8(i))
 	if typeEnum != nil {
 		list := service.FindLeafCategoryByTypeId(typeEnum.Index)
-		ginhelper.GinSuccessWith(c, list)
+		ghelp.GinSuccessWith(c, list)
 	} else {
-		ginhelper.GinFailed(c)
+		ghelp.GinFailed(c)
 	}
 }
