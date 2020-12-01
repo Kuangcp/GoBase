@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"github.com/kuangcp/gobase/pkg/ghelp"
 	"mybook/app/common/util"
 	"mybook/app/param"
 	"mybook/app/service"
+
+	"github.com/kuangcp/gobase/pkg/ghelp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wonderivan/logger"
@@ -12,7 +13,7 @@ import (
 
 func CreateRecord(c *gin.Context) {
 	recordVO := param.RecordCreateParamVO{}
-	err := c.Bind(&recordVO)
+	err := c.ShouldBind(&recordVO)
 	if err != nil {
 		ghelp.GinFailedWithMsg(c, err.Error())
 		return

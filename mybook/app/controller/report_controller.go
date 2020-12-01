@@ -102,7 +102,7 @@ func buildMonth(param RecordQueryParam) []string {
 
 func buildParam(c *gin.Context) ghelp.ResultVO {
 	var param RecordQueryParam
-	err := c.Bind(&param)
+	err := c.ShouldBind(&param)
 	if err != nil {
 		return ghelp.FailedWithMsg("参数解析失败")
 	}
