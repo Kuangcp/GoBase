@@ -1,48 +1,53 @@
 <template>
   <div>
-    <el-form :inline="true" ref="ruleForm" class="demo-form-inline">
-      <el-form-item>
-        <CategorySelect ref="categoryCom" />
+    <el-form :inline="false" :label-position="left" label-width="80px" ref="ruleForm" class="demo-form-inline">
+      <el-form-item label="分类" required="true">
+        <CategorySelect ref="categoryCom"/>
       </el-form-item>
-      <!-- <br> -->
-      <el-form-item label="操作账户">
+
+      <el-form-item label="操作账户" required="true">
         <AccountSelect
-          ref="accountCom"
-          :account="accountId"
-          @hasChange="hasChange"
-          style="width: 120px"
+            ref="accountCom"
+            :account="accountId"
+            @hasChange="hasChange"
+            style="width: 120px"
         />
       </el-form-item>
-      <el-form-item label="=> 转账目标账户">
-        <AccountSelect
-          ref="targetAccountCom"
-          :account="targetAccountId"
-          @hasChange="listenTargetAccount"
-          style="width: 120px"
-        />
+
+      <el-form-item label="目标账户">
+        <el-tooltip class="item" effect="dark" content="仅在转账时有效" placement="top-start">
+          <AccountSelect
+              ref="targetAccountCom"
+              :account="targetAccountId"
+              @hasChange="listenTargetAccount"
+              style="width: 120px"
+          />
+        </el-tooltip>
       </el-form-item>
-      <el-form-item label="金额">
+
+      <el-form-item label="金额" required="true">
         <el-input
-          v-model.number="amount"
-          size="mini"
-          clearable
-          min="0"
-          style="width: 100px"
+            v-model.number="amount"
+            size="mini"
+            clearable
+            min="0"
+            style="width: 120px"
         />
       </el-form-item>
-      <el-form-item label="时间">
+
+      <el-form-item label="时间" required="true">
         <el-date-picker
-          v-model="recordDate"
-          type="dates"
-          size="mini"
-          clearable
-          style="width: 200px"
-          placeholder="选择日期"
+            v-model="recordDate"
+            type="dates"
+            size="mini"
+            clearable
+            style="width: 200px"
+            placeholder="选择日期"
         >
         </el-date-picker>
       </el-form-item>
       <el-form-item label="备注">
-        <el-input v-model="comment" size="mini" style="width: 100px" />
+        <el-input v-model="comment" size="mini" clearable style="width: 200px"/>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSubmit" size="mini">新增</el-button>
@@ -64,7 +69,7 @@ export default {
   data: function () {
     return {
       accountId: 2,
-      targetAccountId:1,
+      targetAccountId: 1,
       amount: 0,
       recordDate: [],
       comment: "",
@@ -73,7 +78,7 @@ export default {
   methods: {
     async onSubmit() {
       let ids = this.$refs.categoryCom.categoryId;
-      if (this.recordDate.length == 0) {
+      if (this.recordDate.length === 0) {
         this.$message({
           message: "时间为空",
           type: "warning",
@@ -94,7 +99,7 @@ export default {
       };
 
       console.log(param);
-      let resp = await this.$http.post("/api/record/createRecord", param);
+      let resp = await this.$http.post(window.api.record.create, param);
       console.log(resp);
       if (resp.data.Code !== 0) {
         this.$message({

@@ -1,7 +1,6 @@
 <template>
   <div id="bar_dv" ref="chart" style="width: 600px; height: 400px"></div>
 </template>
- 
 <script>
 var echarts = require("echarts");
 
@@ -71,12 +70,12 @@ export default {
         };
 
         myChart.setOption(option);
-        let resp = await this.$http.get("/api/report/categoryMonth", {
+        let resp = await this.$http.get(window.api.report.categoryMonth, {
           params: {
-            startDate: "2018-11",
+            startDate: "2019-11",
             endDate: "2020-11",
             typeId: 1,
-            chartType: "line",
+            chartType: "bar",
             showLabel: false,
           },
         });
@@ -96,6 +95,6 @@ export default {
   },
 };
 </script>
- 
+
 <style scoped>
 </style> 

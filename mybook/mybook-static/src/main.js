@@ -5,6 +5,7 @@ import ECharts from 'vue-echarts'
 
 import App from './App.vue'
 import http from './util/request';
+import './config/api.js'
 
 Vue.component('v-chart', ECharts)
 

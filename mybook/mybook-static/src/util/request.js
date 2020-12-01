@@ -6,7 +6,7 @@ import isPlainObject from 'lodash/isPlainObject'
 import { Loading } from 'element-ui'
 
 const http = axios.create({
-  baseURL: 'http://localhost:9090',
+  baseURL: '/api',
   timeout: 1000 * 180,
   withCredentials: true
 })

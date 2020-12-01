@@ -1,11 +1,11 @@
 <template>
   <div>
     <el-cascader
-      v-model="categoryId"
-      :options="categoryMap"
-      :props="{ expandTrigger: 'hover' }"
-      @change="handleChange"
-      size="mini"
+        v-model="categoryId"
+        :options="categoryMap"
+        :props="{ expandTrigger: 'hover' }"
+        @change="handleChange"
+        size="mini"
     ></el-cascader>
 
     <!-- <span :key="index" v-for="(item, index) in categoryMap">
@@ -28,14 +28,14 @@
 <script>
 export default {
   data: function () {
-    return { leaf: 0, radio: 1, categoryId: [], categoryMap: [] };
+    return {leaf: 0, radio: 1, categoryId: [], categoryMap: []};
   },
   mounted() {
     this.fillAccount();
   },
   methods: {
     async queryAllAccount() {
-      const res = await this.$http.get("/api/category/listTree");
+      const res = await this.$http.get(window.api.category.tree);
       console.log("ren", res.data);
       return res.data.Data;
     },

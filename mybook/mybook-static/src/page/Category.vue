@@ -3,31 +3,31 @@
     <el-form :inline="true" class="demo-form-inline">
       <el-form-item label="时间">
         <el-date-picker
-          v-model="dateArray"
-          type="daterange"
-          align="right"
-          unlink-panels
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          size="mini"
-          :picker-options="pickerOptions"
+            v-model="dateArray"
+            type="daterange"
+            align="right"
+            unlink-panels
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            size="mini"
+            :picker-options="pickerOptions"
         >
         </el-date-picker>
       </el-form-item>
 
       <el-form-item label="类型">
         <el-select
-          v-model="accountType"
-          size="mini"
-          clearable
-          placeholder="请选择"
+            v-model="accountType"
+            size="mini"
+            clearable
+            placeholder="请选择"
         >
           <el-option
-            v-for="item in accountTypes"
-            :key="item.ID"
-            :label="item.Name"
-            :value="item.ID"
+              v-for="item in accountTypes"
+              :key="item.ID"
+              :label="item.Name"
+              :value="item.ID"
           >
           </el-option>
         </el-select>
@@ -42,37 +42,37 @@
     </el-form>
 
     <el-dialog title="明细" :visible.sync="dialogTableVisible">
-      <el-table :data="detailData" stripe style="width: 100%" height="400">
+      <el-table :data="detailData" stripe style="width: 100%" height="480">
         <el-table-column sortable prop="ID" label="ID" width="60" align="right">
         </el-table-column>
         <el-table-column
-          sortable
-          prop="AccountName"
-          label="账户"
-          width="120"
-          align="center"
+            sortable
+            prop="AccountName"
+            label="账户"
+            width="120"
+            align="center"
         >
         </el-table-column>
         <el-table-column
-          prop="RecordTypeName"
-          label="类型"
-          width="60"
+            prop="RecordTypeName"
+            label="类型"
+            width="60"
         ></el-table-column>
         <el-table-column
-          prop="CategoryName"
-          label="明细类型"
-          width="100"
-          align="right"
+            prop="CategoryName"
+            label="明细类型"
+            width="100"
+            align="right"
         ></el-table-column>
 
         <!-- <el-table-column prop="RecordType" label="类型" width="180"> -->
 
         <el-table-column
-          sortable
-          prop="Amount"
-          label="金额"
-          align="right"
-          width="100"
+            sortable
+            prop="Amount"
+            label="金额"
+            align="right"
+            width="120"
         >
           <template slot-scope="scope">
             <span>{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
@@ -87,33 +87,33 @@
 
     <el-table :data="tableData" stripe style="width: 100%" height="800">
       <el-table-column
-        sortable
-        prop="CategoryId"
-        label="ID"
-        width="60"
-        align="right"
+          sortable
+          prop="CategoryId"
+          label="ID"
+          width="60"
+          align="right"
       >
       </el-table-column>
       <el-table-column
-        prop="RecordTypeName"
-        label="类型"
-        width="60"
+          prop="RecordTypeName"
+          label="类型"
+          width="60"
       ></el-table-column>
       <el-table-column
-        prop="Name"
-        label="明细类型"
-        width="100"
-        align="right"
+          prop="Name"
+          label="明细类型"
+          width="100"
+          align="right"
       ></el-table-column>
 
       <!-- <el-table-column prop="RecordType" label="类型" width="180"> -->
 
       <el-table-column
-        sortable
-        prop="Amount"
-        label="金额"
-        align="right"
-        width="110"
+          sortable
+          prop="Amount"
+          label="金额"
+          align="right"
+          width="140"
       >
         <template slot-scope="scope">
           <span>{{ scope.row.Amount.toFixed(2) }}</span>
@@ -126,23 +126,23 @@
       <el-table-column label="操作" width="150">
         <template slot-scope="scope">
           <el-button
-            @click.native.prevent="detail(scope.row.CategoryId)"
-            type="text"
-            size="mini"
+              @click.native.prevent="detail(scope.row.CategoryId)"
+              type="text"
+              size="mini"
           >
             详情
           </el-button>
           <el-button
-            @click.native.prevent="weekDetail(scope.row.CategoryId)"
-            type="text"
-            size="mini"
+              @click.native.prevent="weekDetail(scope.row.CategoryId)"
+              type="text"
+              size="mini"
           >
             周统计
           </el-button>
           <el-button
-            @click.native.prevent="monthDetail(scope.row.CategoryId)"
-            type="text"
-            size="mini"
+              @click.native.prevent="monthDetail(scope.row.CategoryId)"
+              type="text"
+              size="mini"
           >
             月统计
           </el-button>
@@ -153,6 +153,9 @@
 </template>
 
 <style>
+.el-dialog__body {
+  padding: 0 0 0 30px;
+}
 </style>
 <script>
 import DateUtil from "../util/DateUtil.js";
@@ -201,18 +204,19 @@ export default {
       dateArray: [],
       visible: false,
       tableData: [],
-      detailData:[],
+      detailData: [],
       accountType: "",
       accountTypes: [
-        { ID: 1, Name: "支出" },
-        { ID: 2, Name: "收入" },
-        { ID: 3, Name: "转出" },
-        { ID: 4, Name: "转入" },
+        {ID: 1, Name: "支出"},
+        {ID: 2, Name: "收入"},
+        {ID: 3, Name: "转出"},
+        {ID: 4, Name: "转入"},
       ],
       totalAmount: 0,
     };
   },
-  mounted() {},
+  mounted() {
+  },
   methods: {
     getFormatDate() {
       let startTime = this.dateArray[0];
@@ -225,9 +229,9 @@ export default {
       };
     },
     async onSubmit() {
-      const { start, end } = this.getFormatDate();
+      const {start, end} = this.getFormatDate();
 
-      const res = await this.$http.get("/api/record/category", {
+      const res = await this.$http.get(window.api.record.byCategory, {
         params: {
           startDate: start,
           endDate: end,
@@ -252,8 +256,8 @@ export default {
     },
     async detail(categoryId) {
       this.dialogTableVisible = true;
-      const { start, end } = this.getFormatDate();
-      const res = await this.$http.get("/api/record/categoryDetail", {
+      const {start, end} = this.getFormatDate();
+      const res = await this.$http.get(window.api.record.categoryDetail, {
         params: {
           startDate: start,
           endDate: end,

@@ -5,37 +5,37 @@
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>
       <el-table-column
-        sortable
-        prop="Name"
-        label="账户"
-        width="120"
-        align="center"
+          sortable
+          prop="Name"
+          label="账户"
+          width="120"
+          align="center"
       >
       </el-table-column>
       <el-table-column
-        sortable
-        prop="TypeId"
-        label="账户"
-        width="120"
-        align="center"
+          sortable
+          prop="TypeId"
+          label="账户"
+          width="120"
+          align="center"
       >
       </el-table-column>
       <el-table-column
-        sortable
-        prop="InitAmount"
-        cell-style="text-align:right;"
-        label="初始金额"
-        width="120"
-        align="right"
+          sortable
+          prop="InitAmount"
+          cell-style="text-align:right;"
+          label="初始金额"
+          width="120"
+          align="right"
       >
       </el-table-column>
       <el-table-column
-        sortable
-        prop="CurrentAmount"
-        cell-style="text-align:right;"
-        label="余额"
-        width="100"
-        align="right"
+          sortable
+          prop="CurrentAmount"
+          cell-style="text-align:right;"
+          label="余额"
+          width="100"
+          align="right"
       >
         <template slot-scope="scope">
           <span>{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
@@ -55,7 +55,7 @@ export default {
   },
   methods: {
     async loadBalanceData() {
-      const res = await this.$http.get("/api/account/balance");
+      const res = await this.$http.get(window.api.account.balance);
       console.log("ren", res.data);
       this.tableData = [];
       this.totalAmount = 0;

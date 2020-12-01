@@ -160,7 +160,7 @@ export default {
       let start = (startTime && DateUtil(startTime).formatDate()) || "";
       let end = (endTime && DateUtil(endTime).formatDate()) || "";
 
-      const res = await this.$http.get("/api/record/list", {
+      const res = await this.$http.get(window.api.record.list, {
         params: {
           startDate: start,
           endDate: end,
