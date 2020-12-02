@@ -30,7 +30,7 @@ func Server(debugStatic bool, port int) {
 
 	// 是否读取 statik 打包后的静态文件
 	if debugStatic {
-		router.Static("/static", "./mybook-static/dist")
+		router.Static("/s", "./mybook-static/dist")
 		router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 	} else {
 		// static file mapping
@@ -38,14 +38,14 @@ func Server(debugStatic bool, port int) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		router.StaticFS("/static", fileSystem)
+		router.StaticFS("/s", fileSystem)
 		router.GET("/favicon.ico", func(c *gin.Context) {
 			c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
 		})
 	}
 
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "static/")
+		c.Redirect(http.StatusMovedPermanently, "s/")
 	})
 
 	router.Use(Cors())
