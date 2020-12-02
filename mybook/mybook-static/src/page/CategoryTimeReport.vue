@@ -90,20 +90,10 @@
   </div>
 </template>
 
-<style>
-* {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  height: 100vh;
-  /*background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0);*/
-  background-image: linear-gradient(25deg, #227495, #76859d, #b095a5, #e7a5ad)
-}
-
+<style scoped>
 .categoryMonth {
-  width: 1200px;
+  /*width: 1880px;*/
+  width: 100vw;
   height: 700px;
 }
 </style>
@@ -121,7 +111,7 @@ function appendSumLine(lines) {
     for (let j = 0; j < lines.length; j++) {
       temp += lines[j].data[i];
     }
-      sumData.push(temp.toFixed(2));
+    sumData.push(temp.toFixed(2));
   }
 
   lines.push({
@@ -162,8 +152,7 @@ export default {
       accountTypes: [
         {ID: 1, Name: "支出"},
         {ID: 2, Name: "收入"},
-        {ID: 3, Name: "转出"},
-        {ID: 4, Name: "转入"},
+        {ID: 3, Name: "转帐"},
       ],
       monthChart: "",
       lineChartType: false,
@@ -321,6 +310,3 @@ export default {
   },
 };
 </script>
-
-<style scoped>
-</style> 

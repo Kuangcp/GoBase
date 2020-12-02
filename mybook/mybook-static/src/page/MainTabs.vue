@@ -1,26 +1,26 @@
 <template>
   <el-tabs v-model="activeName" @tab-click="handleClick" class="tab-box">
-    <el-tab-pane label="面板" name="dashboard">
-      <Dashboard ref="dashboardCom"/>
+    <el-tab-pane label="面板" name="report">
+      <ReportTabs/>
     </el-tab-pane>
     <el-tab-pane label="记录" name="record">
-      <Record />
+      <Record/>
     </el-tab-pane>
     <el-tab-pane label="明细" name="detail">
-      <Detail />
+      <Detail/>
     </el-tab-pane>
     <el-tab-pane label="分类" name="category">
-      <Category ref="categoryCom" />
+      <Category ref="categoryCom"/>
     </el-tab-pane>
     <el-tab-pane label="余额" name="balance">
-      <Balance ref="balanceCom" />
+      <Balance ref="balanceCom"/>
     </el-tab-pane>
   </el-tabs>
 </template>
 
-<style>
+<style scoped>
 .tab-box {
-  padding-left: 36px;
+  padding-left: 22px;
 }
 </style>
 
@@ -29,28 +29,26 @@ import Record from "./Record.vue";
 import Detail from "./Detail.vue";
 import Balance from "./Balance.vue";
 import Category from "./Category.vue";
-import Dashboard from "./Dashboard.vue";
+import ReportTabs from "./ReportTabs.vue";
 
 export default {
-  name: "Tabs",
+  name: "MainTabs",
   components: {
     Record,
     Detail,
     Balance,
     Category,
-    Dashboard,
+    ReportTabs,
   },
   data() {
     return {
-      activeName: "dashboard",
+      activeName: "report",
     };
   },
   methods: {
     handleClick() {
       if (this.activeName === "balance") {
         this.$refs.balanceCom.loadBalanceData();
-      }else if (this.activeName === 'dashboard'){
-        this.$refs.dashboardCom.drawLine();
       }
     },
   },
