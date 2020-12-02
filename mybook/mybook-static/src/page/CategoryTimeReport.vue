@@ -2,7 +2,6 @@
   <div>
     <el-form
         :inline="true"
-        label-width="80px"
         ref="ruleForm"
         class="demo-form-inline"
     >
@@ -11,6 +10,7 @@
             v-model="accountType"
             size="mini"
             placeholder="请选择"
+            style="width:90px"
         >
           <el-option
               v-for="item in accountTypes"
@@ -21,12 +21,13 @@
           </el-option>
         </el-select>
       </el-form-item>
+
       <el-form-item label="类型">
         <el-select
             v-model="timePeriod"
             size="mini"
-            clearable
             placeholder="请选择"
+            style="width:60px"
         >
           <el-option
               v-for="item in timePeriods"
@@ -73,6 +74,7 @@
             end-placeholder="结束日期"
             size="mini"
             :picker-options="pickerOptions"
+            style="width:240px"
         >
         </el-date-picker>
       </el-form-item>
@@ -92,9 +94,8 @@
 
 <style scoped>
 .categoryMonth {
-  /*width: 1880px;*/
-  width: 100vw;
-  height: 700px;
+  width: 1860px;
+  height: 760px;
 }
 </style>
 
@@ -111,7 +112,11 @@ function appendSumLine(lines) {
     for (let j = 0; j < lines.length; j++) {
       temp += lines[j].data[i];
     }
-    sumData.push(temp.toFixed(2));
+    if (temp === 0) {
+      sumData.push(0);
+    } else {
+      sumData.push(temp.toFixed(2));
+    }
   }
 
   lines.push({
@@ -160,8 +165,9 @@ export default {
       showSumLabel: false,
       timePeriod: "month",
       timePeriods: [
-        {ID: "month", Name: "月"},
         {ID: "year", Name: "年"},
+        {ID: "month", Name: "月"},
+        {ID: "week", Name: "周"},
         {ID: "day", Name: "日"},
       ],
       pickerOptions: {
