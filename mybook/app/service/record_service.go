@@ -168,7 +168,7 @@ func FindRecord(param param.QueryRecordParam) *[]dto.RecordDTO {
 	typeId, _ := strconv.Atoi(param.TypeId)
 	categoryId, _ := strconv.Atoi(param.CategoryId)
 
-	query := db.Where("deleted_at is null and record_time between ? and ?", param.StartDate, param.EndDate)
+	query := db.Where("deleted_at is null and record_time BETWEEN ? AND ?", param.StartDate, param.EndDate)
 	record := domain.Record{}
 	if typeId != 0 {
 		record.Type = int8(typeId)

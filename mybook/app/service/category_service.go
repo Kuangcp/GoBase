@@ -47,7 +47,7 @@ func FindLeafCategoryByTypeId(typeId int8) *[]domain.Category {
 	db := dal.GetDB()
 
 	var lists []domain.Category
-	db.Where("type_id=? and leaf = true", typeId).Find(&lists)
+	db.Where("type_id = ? AND leaf = true", typeId).Find(&lists)
 	return &lists
 }
 

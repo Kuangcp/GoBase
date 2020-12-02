@@ -1,7 +1,7 @@
 <template>
   <el-tabs v-model="activeName" @tab-click="handleClick" class="tab-box">
     <el-tab-pane label="面板" name="dashboard">
-      <Dashboard />
+      <Dashboard ref="dashboardCom"/>
     </el-tab-pane>
     <el-tab-pane label="记录" name="record">
       <Record />
@@ -42,13 +42,15 @@ export default {
   },
   data() {
     return {
-      activeName: "record",
+      activeName: "dashboard",
     };
   },
   methods: {
     handleClick() {
       if (this.activeName === "balance") {
         this.$refs.balanceCom.loadBalanceData();
+      }else if (this.activeName === 'dashboard'){
+        this.$refs.dashboardCom.drawLine();
       }
     },
   },

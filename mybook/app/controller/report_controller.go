@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"mybook/app/common/dal"
+	"mybook/app/service"
+	"mybook/app/vo"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
-	"mybook/app/service"
-	"time"
 )
 
 type (
@@ -14,6 +17,8 @@ type (
 		TypeId    int    `form:"typeId" json:"typeId"`
 		ChartType string `form:"chartType" json:"chartType"`
 		ShowLabel bool   `form:"showLabel" json:"showLabel"`
+		Period    string `form:"period" json:"period"`
+
 		startDate time.Time
 		endDate   time.Time
 	}
@@ -24,13 +29,13 @@ type (
 		Legends []string `json:"legends"`
 	}
 	LineVO struct {
-		Type      string  `json:"type"`
-		Name      string  `json:"name"`
-		Stack     string  `json:"stack"`
-		Data      []int   `json:"data"`
-		Color     string  `json:"color"`
-		AreaStyle string  `json:"areaStyle"`
-		Label     LabelVO `json:"label"`
+		Type      string    `json:"type"`
+		Name      string    `json:"name"`
+		Stack     string    `json:"stack"`
+		Data      []float32 `json:"data"`
+		Color     string    `json:"color"`
+		AreaStyle string    `json:"areaStyle"`
+		Label     LabelVO   `json:"label"`
 	}
 	LabelVO struct {
 		Show     bool   `json:"show"`
@@ -51,7 +56,26 @@ var colorSet = [...]string{
 	"#546570",
 	"#c4ccd3",
 }
+
+const (
+	yearPeriod  = "year"
+	monthPeriod = "month"
+	dayPeriod   = "day"
+)
+
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
+
+func (this *RecordQueryParam) gerTimeFmt() (string, string) {
+	switch this.Period {
+	case yearPeriod:
+		return "2006", "%Y"
+	case monthPeriod:
+		return "2006-01", "%Y-%m"
+	case dayPeriod:
+		return "2006-01-02", "%Y-%m-%d"
+	}
+	return "2006-01", "%Y-%m"
+}
 
 func CategoryMonthMap(c *gin.Context) {
 	paramResult := buildParam(c)
@@ -61,43 +85,84 @@ func CategoryMonthMap(c *gin.Context) {
 	}
 
 	param := paramResult.Data.(RecordQueryParam)
-	list := service.FindLeafCategoryByTypeId(int8(param.TypeId))
-	var legends []string
-	for _, category := range *list {
-		legends = append(legends, category.Name)
-	}
-	months := buildMonth(param)
-	var lines []LineVO
 	commonLabel.Show = param.ShowLabel
 
-	//TODO
-	for i := 0; i < 10; i++ {
-		var perMonth []int
-		for j := 0; j < len(months); j++ {
-			perMonth = append(perMonth, (i*3+j)%5)
+	categoryList := service.FindLeafCategoryByTypeId(int8(param.TypeId))
+	var categoryNameMap = make(map[uint]string)
+	for _, category := range *categoryList {
+		categoryNameMap[category.ID] = category.Name
+	}
+
+	timeFmt, sqlFmt := param.gerTimeFmt()
+	periodList := buildPeriodList(param, timeFmt)
+
+	var sumResult []vo.CategorySumVO
+	db := dal.GetDB()
+	db.Table("record").
+		Select("category_id, sum(amount)/100.0 sum, strftime('"+sqlFmt+"',record_time) as period").
+		Where(" type = ?", param.TypeId).
+		Where("record_time BETWEEN ? AND ?", param.StartDate, param.EndDate).
+		Group("category_id, period").Find(&sumResult)
+
+	var legends []string
+	var existCategoryMap = make(map[uint]int)
+	for _, sum := range sumResult {
+		_, ok := existCategoryMap[sum.CategoryId]
+		if !ok {
+			existCategoryMap[sum.CategoryId] = 0
+			legends = append(legends, categoryNameMap[sum.CategoryId])
+		}
+	}
+
+	var lines []LineVO
+	for categoryId, _ := range existCategoryMap {
+		var data []float32
+		for _, period := range periodList {
+			find := false
+			for _, sum := range sumResult {
+				if sum.CategoryId == categoryId {
+					if sum.Period == period {
+						data = append(data, sum.Sum)
+						find = true
+					}
+				}
+			}
+			if !find {
+				data = append(data, 0)
+			}
 		}
 		lines = append(lines, LineVO{
 			Type:      param.ChartType,
-			Name:      legends[i],
-			Data:      perMonth,
+			Name:      categoryNameMap[categoryId],
+			Data:      data,
 			Stack:     "all",
 			AreaStyle: "{normal: {}}",
 			Label:     commonLabel,
-			Color:     colorSet[i%len(colorSet)],
+			Color:     colorSet[int(categoryId)%len(colorSet)],
 		})
 	}
 
-	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: months, Legends: legends})
+	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodList, Legends: legends})
 }
 
-func buildMonth(param RecordQueryParam) []string {
+func buildPeriodList(param RecordQueryParam, timeFmt string) []string {
 	start := param.startDate
+
 	var result []string
 	for !start.After(param.endDate) {
-		result = append(result, start.Format("2006-01"))
-		start = start.AddDate(0, 1, 0)
+		result = append(result, start.Format(timeFmt))
+		switch param.Period {
+		case yearPeriod:
+			start = start.AddDate(1, 0, 0)
+		case monthPeriod:
+			start = start.AddDate(0, 1, 0)
+		case dayPeriod:
+			start = start.AddDate(0, 0, 1)
+		default:
+			start = start.AddDate(0, 1, 0)
+		}
 	}
-	return result
+	return result[:len(result)-1]
 }
 
 func buildParam(c *gin.Context) ghelp.ResultVO {
