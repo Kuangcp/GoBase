@@ -1,55 +1,263 @@
 <template>
-  <div id="categoryMonthDiv" ref="chart" style="width: 1200px; height: 400px"></div>
+  <div>
+    <el-form
+        :inline="true"
+        label-width="80px"
+        ref="ruleForm"
+        class="demo-form-inline"
+    >
+      <el-form-item label="类型">
+        <el-select
+            v-model="accountType"
+            size="mini"
+            placeholder="请选择"
+        >
+          <el-option
+              v-for="item in accountTypes"
+              :key="item.ID"
+              :label="item.Name"
+              :value="item.ID"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="类型">
+        <el-select
+            v-model="timePeriod"
+            size="mini"
+            clearable
+            placeholder="请选择"
+        >
+          <el-option
+              v-for="item in timePeriods"
+              :key="item.ID"
+              :label="item.Name"
+              :value="item.ID"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="明细标记">
+        <el-switch
+            v-model="detailLabel"
+            active-color="#13ce66"
+            inactive-color="#ff4949">
+        </el-switch>
+      </el-form-item>
+
+      <el-form-item label="求和">
+        <el-switch
+            v-model="showSumLabel"
+            active-color="#13ce66"
+            inactive-color="#ff4949">
+        </el-switch>
+      </el-form-item>
+
+      <el-form-item label="线/柱">
+        <el-switch
+            v-model="lineChartType"
+            active-color="#13ce66"
+            inactive-color="#ff4949">
+        </el-switch>
+      </el-form-item>
+
+      <el-form-item label="时间">
+        <el-date-picker
+            v-model="dateArray"
+            type="daterange"
+            align="right"
+            unlink-panels
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            size="mini"
+            :picker-options="pickerOptions"
+        >
+        </el-date-picker>
+      </el-form-item>
+
+      <el-form-item>
+        <el-button type="primary" @click="drawLine" size="mini">查询</el-button>
+      </el-form-item>
+    </el-form>
+
+    <div
+        id="categoryMonthDiv"
+        ref="chart"
+        class="categoryMonth"
+    ></div>
+  </div>
 </template>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  height: 100vh;
+  /*background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0);*/
+  background-image: linear-gradient(25deg, #227495, #76859d, #b095a5, #e7a5ad)
+}
+
+.categoryMonth {
+  width: 1200px;
+  height: 700px;
+}
+</style>
+
 <script>
+import DateUtil from "../util/DateUtil.js";
+
 var echarts = require("echarts");
 
 function appendSumLine(lines) {
-  let sumData = []
+  let sumData = [];
   let first = lines[0];
   for (let i = 0; i < first.data.length; i++) {
-    let temp = 0
+    let temp = 0;
     for (let j = 0; j < lines.length; j++) {
-      temp += lines[j].data[i]
+      temp += lines[j].data[i];
     }
-    sumData.push(temp.toFixed(2))
+      sumData.push(temp.toFixed(2));
   }
 
-  lines.push({ //新的一个柱子 注意不设stack
-    name: '累计',
-    type: 'bar',
-    barGap: '-100%', // 左移100%，stack不再与上面两个同列
+  lines.push({
+    //新的一个柱子 注意不设stack
+    name: "累计",
+    type: "bar",
+    barGap: "-100%", // 左移100%，stack不再与上面两个同列
     label: {
       normal: {
         show: true, //显示数值
-        position: 'top', //  位置设为top
-        formatter: '{c}',
-        textStyle: {color: '#213e53'} //设置数值颜色
-      }
+        position: "top", //  位置设为top
+        formatter: "{c}",
+        textStyle: {color: "#213e53"}, //设置数值颜色
+      },
     },
     itemStyle: {
       normal: {
-        color: 'rgba(128, 128, 128, 0)' // 设置背景颜色为透明
-      }
+        color: "rgba(128, 128, 128, 0)", // 设置背景颜色为透明
+      },
     },
     data: sumData,
-  })
-  return lines
+  });
+  return lines;
+}
+
+function fillDate(picker, offset) {
+  const end = new Date();
+  const start = new Date();
+  start.setTime(start.getTime() - offset);
+  picker.$emit("pick", [start, end]);
 }
 
 export default {
-  data() {
-    return {};
+  components: {},
+  data: function () {
+    return {
+      accountType: 1,
+      accountTypes: [
+        {ID: 1, Name: "支出"},
+        {ID: 2, Name: "收入"},
+        {ID: 3, Name: "转出"},
+        {ID: 4, Name: "转入"},
+      ],
+      monthChart: "",
+      lineChartType: false,
+      detailLabel: false,
+      showSumLabel: false,
+      timePeriod: "month",
+      timePeriods: [
+        {ID: "month", Name: "月"},
+        {ID: "year", Name: "年"},
+        {ID: "day", Name: "日"},
+      ],
+      pickerOptions: {
+        shortcuts: [
+          {
+            text: "最近一周",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 7);
+            },
+          },
+          {
+            text: "最近一个月",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 30);
+            },
+          },
+          {
+            text: "最近三个月",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 90);
+            },
+          },
+          {
+            text: "最近半年",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 180);
+            },
+          },
+          {
+            text: "最近一年",
+            onClick(picker) {
+              fillDate(picker, 3600 * 1000 * 24 * 360);
+            },
+          },
+        ],
+      },
+      dateArray: [],
+    };
   },
   mounted() {
-    this.drawLine();
   },
   methods: {
+    getFormat() {
+      switch (this.timePeriod) {
+        case "year":
+          return "YYYY"
+        case "month":
+          return "YYYY-MM"
+        case "day":
+          return "YYYY-MM-dd"
+      }
+    },
+
     async drawLine() {
       let categoryMonthDiv = this.$refs.chart;
       if (categoryMonthDiv) {
-        let myChart = echarts.init(categoryMonthDiv);
+        let startTime = this.dateArray[0];
+        let endTime = this.dateArray[1];
+        let start = (startTime && DateUtil(startTime).format(this.getFormat())) || "";
+        let end = (endTime && DateUtil(endTime).format(this.getFormat())) || "";
 
+        let resp = await this.$http.get(window.api.report.categoryMonth, {
+          params: {
+            startDate: start,
+            endDate: end,
+            typeId: this.accountType,
+            chartType: this.lineChartType ? 'line' : 'bar',
+            showLabel: this.detailLabel,
+            period: this.timePeriod,
+          },
+        });
+
+        if (resp.data.Data == null || resp.data.Data.length === 0) {
+          this.$message({
+            message: "分类统计数据为空",
+            type: "warning",
+          });
+          return;
+        }
+
+        if (this.monthChart !== "") {
+          this.monthChart.dispose()
+        }
+        let myChart = echarts.init(categoryMonthDiv);
+        this.monthChart = myChart
         let option = {
           title: {
             text: "",
@@ -91,18 +299,12 @@ export default {
           ],
           series: [],
         };
-
         myChart.setOption(option);
-        let resp = await this.$http.get(window.api.report.categoryMonth, {
-          params: {
-            startDate: "2019-01",
-            endDate: "2020-12",
-            typeId: 1,
-            chartType: "bar",
-            showLabel: false,
-            period: 'month',
-          },
-        });
+
+        let finalLines = resp.data.Data.lines
+        if (this.showSumLabel) {
+          finalLines = appendSumLine(finalLines)
+        }
         myChart.setOption({
           xAxis: {
             data: resp.data.Data.xAxis,
@@ -110,7 +312,7 @@ export default {
           legend: {
             data: resp.data.Data.legends,
           },
-          series: appendSumLine(resp.data.Data.lines),
+          series: finalLines,
         });
       } else {
         console.error("div 不存在");

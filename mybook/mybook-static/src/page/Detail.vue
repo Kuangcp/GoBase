@@ -142,7 +142,7 @@ export default {
       dateArray: [],
       visible: false,
       tableData: [],
-      accountType: "",
+      accountType: 1,
       accountTypes: [
         { ID: 1, Name: "支出" },
         { ID: 2, Name: "收入" },

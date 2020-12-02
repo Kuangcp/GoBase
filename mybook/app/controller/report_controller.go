@@ -4,6 +4,7 @@ import (
 	"mybook/app/common/dal"
 	"mybook/app/service"
 	"mybook/app/vo"
+	"sort"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,8 +20,10 @@ type (
 		ShowLabel bool   `form:"showLabel" json:"showLabel"`
 		Period    string `form:"period" json:"period"`
 
-		startDate time.Time
-		endDate   time.Time
+		startDate  time.Time
+		endDate    time.Time
+		timeFmt    string
+		sqlTimeFmt string
 	}
 
 	LineChartVO struct {
@@ -65,8 +68,8 @@ const (
 
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
-func (this *RecordQueryParam) gerTimeFmt() (string, string) {
-	switch this.Period {
+func gerTimeFmt(period string) (string, string) {
+	switch period {
 	case yearPeriod:
 		return "2006", "%Y"
 	case monthPeriod:
@@ -93,13 +96,12 @@ func CategoryMonthMap(c *gin.Context) {
 		categoryNameMap[category.ID] = category.Name
 	}
 
-	timeFmt, sqlFmt := param.gerTimeFmt()
-	periodList := buildPeriodList(param, timeFmt)
+	periodList := buildPeriodList(param)
 
 	var sumResult []vo.CategorySumVO
 	db := dal.GetDB()
 	db.Table("record").
-		Select("category_id, sum(amount)/100.0 sum, strftime('"+sqlFmt+"',record_time) as period").
+		Select("category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
 		Where(" type = ?", param.TypeId).
 		Where("record_time BETWEEN ? AND ?", param.StartDate, param.EndDate).
 		Group("category_id, period").Find(&sumResult)
@@ -113,9 +115,15 @@ func CategoryMonthMap(c *gin.Context) {
 			legends = append(legends, categoryNameMap[sum.CategoryId])
 		}
 	}
-
+	var existCategoryList []uint
+	for k, _ := range existCategoryMap {
+		existCategoryList = append(existCategoryList, k)
+	}
+	sort.Slice(existCategoryList, func(i, j int) bool {
+		return existCategoryList[i] < existCategoryList[j]
+	})
 	var lines []LineVO
-	for categoryId, _ := range existCategoryMap {
+	for _, categoryId := range existCategoryList {
 		var data []float32
 		for _, period := range periodList {
 			find := false
@@ -145,12 +153,12 @@ func CategoryMonthMap(c *gin.Context) {
 	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodList, Legends: legends})
 }
 
-func buildPeriodList(param RecordQueryParam, timeFmt string) []string {
+func buildPeriodList(param RecordQueryParam) []string {
 	start := param.startDate
 
 	var result []string
 	for !start.After(param.endDate) {
-		result = append(result, start.Format(timeFmt))
+		result = append(result, start.Format(param.timeFmt))
 		switch param.Period {
 		case yearPeriod:
 			start = start.AddDate(1, 0, 0)
@@ -174,11 +182,13 @@ func buildParam(c *gin.Context) ghelp.ResultVO {
 	if param.StartDate == "" || param.EndDate == "" || param.ChartType == "" || param.TypeId == 0 {
 		return ghelp.FailedWithMsg("参数含空值")
 	}
-	startDate, err := time.Parse("2006-01", param.StartDate)
+	param.timeFmt, param.sqlTimeFmt = gerTimeFmt(param.Period)
+
+	startDate, err := time.Parse(param.timeFmt, param.StartDate)
 	if err != nil {
 		return ghelp.FailedWithMsg(err.Error())
 	}
-	endDate, err := time.Parse("2006-01", param.EndDate)
+	endDate, err := time.Parse(param.timeFmt, param.EndDate)
 	if err != nil {
 		return ghelp.FailedWithMsg(err.Error())
 	}

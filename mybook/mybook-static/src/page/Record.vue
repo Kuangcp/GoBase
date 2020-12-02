@@ -1,11 +1,11 @@
 <template>
   <div>
-    <el-form :inline="false" :label-position="left" label-width="80px" ref="ruleForm" class="demo-form-inline">
-      <el-form-item label="分类" required="true">
+    <el-form :inline="false" label-width="80px" ref="ruleForm" class="demo-form-inline">
+      <el-form-item label="分类" required>
         <CategorySelect ref="categoryCom"/>
       </el-form-item>
 
-      <el-form-item label="操作账户" required="true">
+      <el-form-item label="操作账户" required>
         <AccountSelect
             ref="accountCom"
             :account="accountId"
@@ -25,7 +25,7 @@
         </el-tooltip>
       </el-form-item>
 
-      <el-form-item label="金额" required="true">
+      <el-form-item label="金额" required>
         <el-input
             v-model.number="amount"
             size="mini"
@@ -35,7 +35,7 @@
         />
       </el-form-item>
 
-      <el-form-item label="时间" required="true">
+      <el-form-item label="时间" required>
         <el-date-picker
             v-model="recordDate"
             type="dates"
