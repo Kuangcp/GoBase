@@ -13,7 +13,6 @@ BINARY_NAME=mybook.bin
 run_app() {
     cd mybook-static &&
         npm run build &&
-        sed -i 's/="\/css/="css/g;s/="\/js/="js/g' dist/index.html &&
         cp ../../toolbox/keylogger/static/favicon.ico dist/favicon.ico &&
         cd .. &&
         statik -f -src=mybook-static/dist/ -dest app/common/ &&
@@ -23,7 +22,7 @@ run_app() {
         ln -s data bin/data
     fi
 
-    bin/mybook -s -p 9090
+    bin/${BINARY_NAME} -s -p 9090
 }
 
 run_server() {
@@ -33,7 +32,7 @@ run_server() {
         ln -s data bin/data
     fi
 
-    bin/mybook -s -p 9090
+    bin/${BINARY_NAME} -s -p 9090
 }
 
 help() {

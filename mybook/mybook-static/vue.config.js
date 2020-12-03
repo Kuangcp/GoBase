@@ -2,7 +2,7 @@
  * 配置参考: https://cli.vuejs.org/zh/config/
  */
 module.exports = {
-  // baseUrl: './',
+  publicPath: './',
   productionSourceMap: false,
   devServer: {
     // host: '',
