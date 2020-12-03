@@ -97,13 +97,18 @@ func CategoryMonthMap(c *gin.Context) {
 	}
 
 	periodList := buildPeriodList(param)
-
+	finalStart := param.StartDate
+	finalEnd := param.EndDate
+	if param.Period == yearPeriod {
+		finalStart += "-01"
+		finalEnd += "-01"
+	}
 	var sumResult []vo.CategorySumVO
 	db := dal.GetDB()
 	db.Table("record").
 		Select("category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
 		Where(" type = ?", param.TypeId).
-		Where("record_time BETWEEN ? AND ?", param.StartDate, param.EndDate).
+		Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 		Group("category_id, period").Find(&sumResult)
 
 	var legends []string

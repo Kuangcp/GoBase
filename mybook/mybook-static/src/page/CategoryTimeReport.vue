@@ -55,7 +55,7 @@
         </el-switch>
       </el-form-item>
 
-      <el-form-item label="线/柱">
+      <el-form-item label="柱/线">
         <el-switch
             v-model="lineChartType"
             active-color="#13ce66"
