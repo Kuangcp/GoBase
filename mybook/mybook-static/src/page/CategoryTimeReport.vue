@@ -22,7 +22,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="类型">
+      <el-form-item label="周期">
         <el-select
             v-model="timePeriod"
             size="mini"
@@ -39,31 +39,47 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="明细标记">
-        <el-switch
-            v-model="detailLabel"
-            active-color="#13ce66"
-            inactive-color="#ff4949">
-        </el-switch>
+      <el-form-item>
+        <el-dropdown size="mini">
+          <el-button type="primary" size="mini">
+            标记<i class="el-icon-arrow-down el-icon--right"></i>
+          </el-button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>
+              <div class="k-flex">
+                <span>明细标记</span>
+                <el-switch
+                    v-model="detailLabel"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949">
+                </el-switch>
+              </div>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <div class="k-flex">
+                <span>求和</span>
+                <el-switch
+                    v-model="showSumLabel"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949">
+                </el-switch>
+              </div>
+            </el-dropdown-item>
+            <el-dropdown-item>
+              <div class="k-flex">
+                <span>柱/线</span>
+                <el-switch
+                    v-model="lineChartType"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949">
+                </el-switch>
+              </div>
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </el-form-item>
 
-      <el-form-item label="求和">
-        <el-switch
-            v-model="showSumLabel"
-            active-color="#13ce66"
-            inactive-color="#ff4949">
-        </el-switch>
-      </el-form-item>
-
-      <el-form-item label="柱/线">
-        <el-switch
-            v-model="lineChartType"
-            active-color="#13ce66"
-            inactive-color="#ff4949">
-        </el-switch>
-      </el-form-item>
-
-      <el-form-item label="时间">
+      <el-form-item>
         <el-date-picker
             v-model="dateArray"
             type="daterange"
@@ -95,6 +111,14 @@
 .categoryMonth {
   width: 1960px;
   height: 760px;
+}
+
+.k-flex {
+  width: 100px;
+  height: 30px;
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
 }
 </style>
 
