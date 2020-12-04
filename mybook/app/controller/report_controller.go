@@ -90,12 +90,6 @@ func CategoryMonthMap(c *gin.Context) {
 	param := paramResult.Data.(RecordQueryParam)
 	commonLabel.Show = param.ShowLabel
 
-	categoryList := service.FindLeafCategoryByTypeId(int8(param.TypeId))
-	var categoryNameMap = make(map[uint]string)
-	for _, category := range *categoryList {
-		categoryNameMap[category.ID] = category.Name
-	}
-
 	periodList := buildPeriodList(param)
 	finalStart := param.StartDate
 	finalEnd := param.EndDate
@@ -110,6 +104,17 @@ func CategoryMonthMap(c *gin.Context) {
 		Where(" type = ?", param.TypeId).
 		Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 		Group("category_id, period").Find(&sumResult)
+
+	if len(sumResult) == 0 {
+		ghelp.GinFailedWithMsg(c, "数据为空")
+		return
+	}
+
+	categoryList := service.FindLeafCategoryByTypeId(int8(param.TypeId))
+	var categoryNameMap = make(map[uint]string)
+	for _, category := range *categoryList {
+		categoryNameMap[category.ID] = category.Name
+	}
 
 	var legends []string
 	var existCategoryMap = make(map[uint]int)
