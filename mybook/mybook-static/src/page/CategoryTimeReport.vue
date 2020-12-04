@@ -84,63 +84,23 @@
       </el-form-item>
     </el-form>
 
-    <div
-        id="categoryMonthDiv"
-        ref="chart"
-        class="categoryMonth"
-    ></div>
+    <Echart
+        ref="echart"
+        v-if="showChart"
+        class="categoryMonth"/>
   </div>
 </template>
 
 <style scoped>
 .categoryMonth {
-  width: 1860px;
+  width: 1960px;
   height: 760px;
 }
 </style>
 
 <script>
 import DateUtil from "../util/DateUtil.js";
-
-var echarts = require("echarts");
-
-function appendSumLine(lines) {
-  let sumData = [];
-  let first = lines[0];
-  for (let i = 0; i < first.data.length; i++) {
-    let temp = 0;
-    for (let j = 0; j < lines.length; j++) {
-      temp += lines[j].data[i];
-    }
-    if (temp === 0) {
-      sumData.push(0);
-    } else {
-      sumData.push(temp.toFixed(2));
-    }
-  }
-
-  lines.push({
-    //新的一个柱子 注意不设stack
-    name: "累计",
-    type: "bar",
-    barGap: "-100%", // 左移100%，stack不再与上面两个同列
-    label: {
-      normal: {
-        show: true, //显示数值
-        position: "top", //  位置设为top
-        formatter: "{c}",
-        textStyle: {color: "#213e53"}, //设置数值颜色
-      },
-    },
-    itemStyle: {
-      normal: {
-        color: "rgba(128, 128, 128, 0)", // 设置背景颜色为透明
-      },
-    },
-    data: sumData,
-  });
-  return lines;
-}
+import Echart from "../components/Echart";
 
 function fillDate(picker, offset) {
   const end = new Date();
@@ -150,9 +110,51 @@ function fillDate(picker, offset) {
 }
 
 export default {
-  components: {},
+  components: {
+    Echart,
+  },
   data: function () {
     return {
+      showChart: false,
+      echartOption: {
+        title: {
+          text: '',
+        },
+        tooltip: {
+          trigger: 'axis',
+        },
+        color: ['#409EFF'],
+        legend: {
+          data: [],
+        },
+        toolbox: {
+          show: true,
+          feature: {
+            // mark: { show: true },
+            // dataView: { show: true, readOnly: false },
+            // magicType: { show: true, type: ['line', 'bar'] },
+            // restore: { show: true },
+            saveAsImage: {show: true},
+          },
+        },
+        calculable: true,
+        xAxis: [
+          {
+            type: 'category',
+            boundaryGap: true,
+            data: [],
+          },
+        ],
+        yAxis: [
+          {
+            type: 'value',
+            axisLabel: {
+              formatter: '{value}',
+            },
+          },
+        ],
+        series: [],
+      },
       accountType: 1,
       accountTypes: [
         {ID: 1, Name: "支出"},
@@ -222,96 +224,53 @@ export default {
     },
 
     async drawLine() {
-      let categoryMonthDiv = this.$refs.chart;
-      if (categoryMonthDiv) {
-        let startTime = this.dateArray[0];
-        let endTime = this.dateArray[1];
-        let start = (startTime && DateUtil(startTime).format(this.getFormat())) || "";
-        let end = (endTime && DateUtil(endTime).format(this.getFormat())) || "";
+      let startTime = this.dateArray[0];
+      let endTime = this.dateArray[1];
+      let start = (startTime && DateUtil(startTime).format(this.getFormat())) || "";
+      let end = (endTime && DateUtil(endTime).format(this.getFormat())) || "";
 
-        let resp = await this.$http.get(window.api.report.categoryMonth, {
-          params: {
-            startDate: start,
-            endDate: end,
-            typeId: this.accountType,
-            chartType: this.lineChartType ? 'line' : 'bar',
-            showLabel: this.detailLabel,
-            period: this.timePeriod,
-          },
+      this.showChart = false
+      let resp = await this.$http.get(window.api.report.categoryMonth, {
+        params: {
+          startDate: start,
+          endDate: end,
+          typeId: this.accountType,
+          chartType: this.lineChartType ? 'line' : 'bar',
+          showLabel: this.detailLabel,
+          period: this.timePeriod,
+        },
+      });
+      this.showChart = true
+
+      let respData = resp.data;
+      if (respData.Code !== 0) {
+        this.$message({
+          message: respData.Msg,
+          type: "warning",
         });
-
-        if (resp.data.Data == null || resp.data.Data.length === 0) {
-          this.$message({
-            message: "分类统计数据为空",
-            type: "warning",
-          });
-          return;
-        }
-
-        if (this.monthChart !== "") {
-          this.monthChart.dispose()
-        }
-        let myChart = echarts.init(categoryMonthDiv);
-        this.monthChart = myChart
-        let option = {
-          title: {
-            text: "",
-          },
-          tooltip: {
-            trigger: "axis",
-            axisPointer: {
-              type: "cross",
-              label: {
-                backgroundColor: "#6a7985",
-              },
-            },
-          },
-          legend: {
-            data: [],
-          },
-          toolbox: {
-            feature: {
-              saveAsImage: {},
-            },
-          },
-          grid: {
-            left: "3%",
-            right: "4%",
-            bottom: "3%",
-            containLabel: true,
-          },
-          xAxis: [
-            {
-              type: "category",
-              boundaryGap: false,
-              data: [],
-            },
-          ],
-          yAxis: [
-            {
-              type: "value",
-            },
-          ],
-          series: [],
-        };
-        myChart.setOption(option);
-
-        let finalLines = resp.data.Data.lines
-        if (this.showSumLabel) {
-          finalLines = appendSumLine(finalLines)
-        }
-        myChart.setOption({
-          xAxis: {
-            data: resp.data.Data.xAxis,
-          },
-          legend: {
-            data: resp.data.Data.legends,
-          },
-          series: finalLines,
-        });
-      } else {
-        console.error("div 不存在");
+        return;
       }
+      if (respData.Data == null || !respData.Data.lines) {
+        this.$message({
+          message: "分类统计数据为空",
+          type: "warning",
+        });
+        return;
+      }
+
+      // console.log(this.echartOption)
+      this.$nextTick(() => {
+        let finalLines = respData.Data.lines
+        if (this.showSumLabel) {
+          finalLines = this.$refs.echart.appendSumLine(finalLines)
+        }
+
+        this.echartOption.xAxis[0].data = respData.Data.xAxis
+        this.echartOption.legend.data = respData.Data.legends
+        this.echartOption.series = finalLines
+
+        this.$refs.echart.setOption(this.echartOption);
+      })
     },
   },
 };
