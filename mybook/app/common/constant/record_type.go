@@ -9,6 +9,9 @@ const (
 	RecordTransferOut int8 = 3
 	// 转入
 	RecordTransferIn int8 = 4
+
+	// 收支 仅用于报表
+	RecordOverview int8 = 9
 )
 
 var ERecordExpense = NewBaseEnum(RecordExpense, "支出")

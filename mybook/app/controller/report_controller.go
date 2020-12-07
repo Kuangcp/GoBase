@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/service"
 	"mybook/app/vo"
@@ -97,37 +98,57 @@ func CategoryPeriodReport(c *gin.Context) {
 		finalStart += "-01"
 		finalEnd += "-01"
 	}
-	var sumResult []vo.CategorySumVO
-	db := dal.GetDB()
-	db.Table("record").
-		Select("category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
-		Where(" type = ?", param.TypeId).
-		Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
-		Group("category_id, period").Find(&sumResult)
 
+	var sumResult []vo.CategorySumVO
+	sumResult = buildQueryData(param, finalStart, finalEnd)
 	if len(sumResult) == 0 {
 		ghelp.GinFailedWithMsg(c, "数据为空")
 		return
 	}
 
-	categoryList := service.FindLeafCategoryByTypeId(int8(param.TypeId))
-	var categoryNameMap = make(map[uint]string)
-	for _, category := range *categoryList {
-		categoryNameMap[category.ID] = category.Name
-	}
-
 	var legends []string
 	var existCategoryMap = make(map[uint]int)
 	var periodNumMap = make(map[string]float32)
-	for _, sum := range sumResult {
-		periodNumMap[sum.BuildKey()] = sum.Sum
-		_, ok := existCategoryMap[sum.CategoryId]
-		if !ok {
-			existCategoryMap[sum.CategoryId] = 0
-			legends = append(legends, categoryNameMap[sum.CategoryId])
+	var lines []LineVO
+
+	if param.TypeId == int(constant.RecordOverview) {
+		legends = append(legends, "结余", constant.ERecordExpense.Name, constant.ERecordIncome.Name)
+		for _, sum := range sumResult {
+			periodNumMap[sum.BuildKey()] = sum.Sum
+			_, ok := existCategoryMap[sum.CategoryId]
+			if !ok {
+				existCategoryMap[sum.CategoryId] = 0
+			}
 		}
 
+		lines = buildLinesForOverview(periodList, periodNumMap, param)
+	} else {
+		categoryList := service.FindLeafCategoryByTypeId(int8(param.TypeId))
+		var categoryNameMap = make(map[uint]string)
+		for _, category := range *categoryList {
+			categoryNameMap[category.ID] = category.Name
+		}
+
+		for _, sum := range sumResult {
+			periodNumMap[sum.BuildKey()] = sum.Sum
+			_, ok := existCategoryMap[sum.CategoryId]
+			if !ok {
+				existCategoryMap[sum.CategoryId] = 0
+				legends = append(legends, categoryNameMap[sum.CategoryId])
+			}
+		}
+
+		lines = buildLines(existCategoryMap, periodList, periodNumMap, param, categoryNameMap)
 	}
+
+	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodList, Legends: legends})
+}
+
+func buildLines(existCategoryMap map[uint]int,
+	periodList []string,
+	periodNumMap map[string]float32,
+	param RecordQueryParam,
+	categoryNameMap map[uint]string) []LineVO {
 
 	var existCategoryList []uint
 	for k, _ := range existCategoryMap {
@@ -149,7 +170,7 @@ func CategoryPeriodReport(c *gin.Context) {
 				data = append(data, 0)
 			}
 		}
-		lines = append(lines, LineVO{
+		line := LineVO{
 			Type:      param.ChartType,
 			Name:      categoryNameMap[categoryId],
 			Data:      data,
@@ -157,10 +178,85 @@ func CategoryPeriodReport(c *gin.Context) {
 			AreaStyle: "{normal: {}}",
 			Label:     commonLabel,
 			Color:     colorSet[int(categoryId)%len(colorSet)],
-		})
+		}
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+func buildLinesForOverview(periodList []string, periodNumMap map[string]float32, param RecordQueryParam) []LineVO {
+	var lines []LineVO
+	var balanceData []float32
+
+	expenseColor := "#DF5327"
+	incomeColor := "#418AB3"
+	overviewColor := "#A6B727"
+
+	for _, categoryId := range []uint{uint(constant.RecordExpense), uint(constant.RecordIncome)} {
+		var data []float32
+		for i, period := range periodList {
+			key := vo.BuildKey(categoryId, period)
+			_, exist := periodNumMap[key]
+			var temp float32 = 0.0
+			if exist {
+				temp = periodNumMap[key]
+			}
+
+			// 计算结余
+			data = append(data, temp)
+			if categoryId == uint(constant.RecordExpense) {
+				balanceData = append(balanceData, -temp)
+			} else {
+				balanceData[i] += temp
+			}
+		}
+
+		name := constant.ERecordExpense.Name
+		color := expenseColor
+		if categoryId == uint(constant.RecordIncome) {
+			name = constant.ERecordIncome.Name
+			color = incomeColor
+		}
+		line := LineVO{
+			Type:      param.ChartType,
+			Name:      name,
+			Data:      data,
+			AreaStyle: "{normal: {}}",
+			Label:     commonLabel,
+			Color:     color,
+		}
+		lines = append(lines, line)
 	}
 
-	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodList, Legends: legends})
+	line := LineVO{
+		Type:      param.ChartType,
+		Name:      "结余",
+		Data:      balanceData,
+		AreaStyle: "{normal: {}}",
+		Label:     commonLabel,
+		Color:     overviewColor,
+	}
+	lines = append(lines, line)
+	return lines
+}
+
+func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) []vo.CategorySumVO {
+	var sumResult []vo.CategorySumVO
+	db := dal.GetDB()
+	if param.TypeId == int(constant.RecordOverview) {
+		db.Table("record").
+			Select("type as category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
+			Where(" type in (?,?)", constant.RecordExpense, constant.RecordIncome).
+			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
+			Group("type, period").Find(&sumResult)
+	} else {
+		db.Table("record").
+			Select("category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
+			Where(" type = ?", param.TypeId).
+			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
+			Group("category_id, period").Find(&sumResult)
+	}
+	return sumResult
 }
 
 func buildPeriodList(param RecordQueryParam) []string {

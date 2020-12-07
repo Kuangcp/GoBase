@@ -12,5 +12,5 @@ func (this *CategorySumVO) BuildKey() string {
 	return BuildKey(this.CategoryId, this.Period)
 }
 func BuildKey(categoryId uint, period string) string {
-	return strconv.FormatUint(uint64(categoryId), 10) + period
+	return strconv.FormatUint(uint64(categoryId), 10) + ":" + period
 }

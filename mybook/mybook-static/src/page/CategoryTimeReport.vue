@@ -179,11 +179,11 @@ export default {
         ],
         series: [],
       },
-      accountType: 1,
+      accountType: 9,
       accountTypes: [
+        {ID: 9, Name: "收支图"},
         {ID: 1, Name: "支出"},
         {ID: 2, Name: "收入"},
-        {ID: 0, Name: "收支图"},
         {ID: 3, Name: "转帐"},
       ],
       monthChart: "",
