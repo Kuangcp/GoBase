@@ -188,9 +188,9 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 	var lines []LineVO
 	var balanceData []int32
 
-	expenseColor := "#DF5327"
-	incomeColor := "#418AB3"
-	overviewColor := "#A6B727"
+	expenseColor := "#DD8047"
+	incomeColor := "#548BB7"
+	balanceColor := "#7BA79D"
 
 	for _, categoryId := range []uint{uint(constant.RecordExpense), uint(constant.RecordIncome)} {
 		var data []float32
@@ -238,7 +238,7 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 		Data:      finalBalanceData,
 		AreaStyle: "{normal: {}}",
 		Label:     commonLabel,
-		Color:     overviewColor,
+		Color:     balanceColor,
 	}
 	lines = append(lines, line)
 	return lines

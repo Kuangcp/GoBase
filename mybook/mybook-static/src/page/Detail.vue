@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form :inline="true" class="demo-form-inline">
+    <el-form :inline="true" class="demo-form-inline form-nav">
       <el-form-item label="时间">
         <el-date-picker
           v-model="dateArray"
@@ -47,7 +47,7 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="tableData" stripe style="width: 100%" height="800">
+    <el-table :data="tableData" stripe class="main-box" height="860">
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>
       <el-table-column
@@ -91,7 +91,15 @@
   </div>
 </template>
 
-<style>
+<style scoped>
+.form-nav {
+  margin-bottom: -16px;
+}
+.main-box {
+  width: 850px;
+  margin-left: 2vw;
+  border-radius: 4px;
+}
 </style>
 <script>
 import DateUtil from "../util/DateUtil.js";

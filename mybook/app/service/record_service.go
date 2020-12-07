@@ -231,7 +231,6 @@ func CategoryRecord(startDate string, endDate string, typeId string) *[]interfac
 	for i := range result {
 		recordDTO := &result[i]
 
-		recordDTO.Date = startDate
 		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).Name
 
 		temp = append(temp, recordDTO)

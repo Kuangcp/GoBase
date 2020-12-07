@@ -1,7 +1,7 @@
 <template>
   <div>
     余额：{{ (this.totalAmount / 100.0).toFixed(2) }}
-    <el-table :data="tableData" stripe style="width: 100%" height="800">
+    <el-table :data="tableData" stripe class="main-box" height="880">
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>
       <el-table-column
@@ -44,6 +44,14 @@
     </el-table>
   </div>
 </template>
+
+<style scoped>
+.main-box {
+  width: 550px;
+  margin-left: 2vw;
+  border-radius: 4px;
+}
+</style>
 
 <script>
 export default {

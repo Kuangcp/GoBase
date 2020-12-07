@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form :inline="true" class="demo-form-inline">
+    <el-form :inline="true" class="demo-form-inline form-nav">
       <el-form-item label="时间">
         <el-date-picker
             v-model="dateArray"
@@ -85,19 +85,19 @@
       </el-table>
     </el-dialog>
 
-    <el-table :data="tableData" stripe style="width: 100%" height="800">
+    <el-table :data="tableData" stripe height="860" class="main-box">
       <el-table-column
           sortable
           prop="CategoryId"
           label="ID"
-          width="60"
+          width="80"
           align="right"
       >
       </el-table-column>
       <el-table-column
           prop="RecordTypeName"
           label="类型"
-          width="60"
+          width="80"
       ></el-table-column>
       <el-table-column
           prop="Name"
@@ -120,10 +120,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column sortable prop="Date" label="时间" width="100">
-      </el-table-column>
-
-      <el-table-column label="操作" width="150">
+      <el-table-column label="操作" width="180">
         <template slot-scope="scope">
           <el-button
               @click.native.prevent="detail(scope.row.CategoryId)"
@@ -152,9 +149,19 @@
   </div>
 </template>
 
-<style>
+<style scoped>
 .el-dialog__body {
   padding: 0 0 0 30px;
+}
+
+.form-nav {
+  margin-bottom: -16px;
+}
+
+.main-box {
+  width: 600px;
+  margin-left: 2vw;
+  border-radius: 4px;
 }
 </style>
 <script>
