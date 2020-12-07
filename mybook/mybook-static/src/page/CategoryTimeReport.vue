@@ -183,6 +183,7 @@ export default {
       accountTypes: [
         {ID: 1, Name: "支出"},
         {ID: 2, Name: "收入"},
+        {ID: 0, Name: "收支图"},
         {ID: 3, Name: "转帐"},
       ],
       monthChart: "",
@@ -254,7 +255,7 @@ export default {
       let end = (endTime && DateUtil(endTime).format(this.getFormat())) || "";
 
       this.showChart = false
-      let resp = await this.$http.get(window.api.report.categoryMonth, {
+      let resp = await this.$http.get(window.api.report.categoryPeriod, {
         params: {
           startDate: start,
           endDate: end,

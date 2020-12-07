@@ -13,6 +13,6 @@ window.api = {
         categoryDetail: "/record/categoryDetail"
     },
     report: {
-        categoryMonth: "/report/categoryMonth"
+        categoryPeriod: "/report/categoryPeriod"
     }
 }

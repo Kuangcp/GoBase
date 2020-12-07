@@ -80,7 +80,7 @@ func gerTimeFmt(period string) (string, string) {
 	return "2006-01", "%Y-%m"
 }
 
-func CategoryMonthMap(c *gin.Context) {
+func CategoryPeriodReport(c *gin.Context) {
 	paramResult := buildParam(c)
 	if paramResult.IsFailed() {
 		ghelp.GinResultVO(c, paramResult)
@@ -118,13 +118,17 @@ func CategoryMonthMap(c *gin.Context) {
 
 	var legends []string
 	var existCategoryMap = make(map[uint]int)
+	var periodNumMap = make(map[string]float32)
 	for _, sum := range sumResult {
+		periodNumMap[sum.BuildKey()] = sum.Sum
 		_, ok := existCategoryMap[sum.CategoryId]
 		if !ok {
 			existCategoryMap[sum.CategoryId] = 0
 			legends = append(legends, categoryNameMap[sum.CategoryId])
 		}
+
 	}
+
 	var existCategoryList []uint
 	for k, _ := range existCategoryMap {
 		existCategoryList = append(existCategoryList, k)
@@ -132,20 +136,16 @@ func CategoryMonthMap(c *gin.Context) {
 	sort.Slice(existCategoryList, func(i, j int) bool {
 		return existCategoryList[i] < existCategoryList[j]
 	})
+
 	var lines []LineVO
 	for _, categoryId := range existCategoryList {
 		var data []float32
 		for _, period := range periodList {
-			find := false
-			for _, sum := range sumResult {
-				if sum.CategoryId == categoryId {
-					if sum.Period == period {
-						data = append(data, sum.Sum)
-						find = true
-					}
-				}
-			}
-			if !find {
+			key := vo.BuildKey(categoryId, period)
+			_, exist := periodNumMap[key]
+			if exist {
+				data = append(data, periodNumMap[key])
+			} else {
 				data = append(data, 0)
 			}
 		}
