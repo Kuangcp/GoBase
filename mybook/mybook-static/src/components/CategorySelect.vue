@@ -36,13 +36,11 @@ export default {
   methods: {
     async queryAllAccount() {
       const res = await this.$http.get(window.api.category.tree);
-      console.log("ren", res.data);
       return res.data.Data;
     },
     async fillAccount() {
       this.categoryMap = [];
-      let result = await this.queryAllAccount();
-      this.categoryMap = result;
+      this.categoryMap = await this.queryAllAccount();
     },
     handleChange(value) {
       console.log(value);

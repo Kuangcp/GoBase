@@ -186,7 +186,7 @@ func buildLines(existCategoryMap map[uint]int,
 
 func buildLinesForOverview(periodList []string, periodNumMap map[string]float32, param RecordQueryParam) []LineVO {
 	var lines []LineVO
-	var balanceData []float32
+	var balanceData []int32
 
 	expenseColor := "#DF5327"
 	incomeColor := "#418AB3"
@@ -205,9 +205,9 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 			// 计算结余
 			data = append(data, temp)
 			if categoryId == uint(constant.RecordExpense) {
-				balanceData = append(balanceData, -temp)
+				balanceData = append(balanceData, -int32(temp*100))
 			} else {
-				balanceData[i] += temp
+				balanceData[i] += int32(temp * 100)
 			}
 		}
 
@@ -228,10 +228,14 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 		lines = append(lines, line)
 	}
 
+	var finalBalanceData []float32
+	for _, datum := range balanceData {
+		finalBalanceData = append(finalBalanceData, float32(datum)/100.0)
+	}
 	line := LineVO{
 		Type:      param.ChartType,
 		Name:      "结余",
-		Data:      balanceData,
+		Data:      finalBalanceData,
 		AreaStyle: "{normal: {}}",
 		Label:     commonLabel,
 		Color:     overviewColor,

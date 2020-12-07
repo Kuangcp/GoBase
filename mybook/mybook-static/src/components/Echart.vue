@@ -39,7 +39,6 @@ export default {
   },
   methods: {
     initChart() {
-      console.log('init chart')
       // 基于准备好的dom，初始化echarts实例
       this.chart = echarts.init(this.$refs.echart, 'macarons');
     },
