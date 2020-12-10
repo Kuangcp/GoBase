@@ -1,21 +1,14 @@
-package service
+package account
 
 import (
-	"mybook/app/domain"
 	"testing"
 )
 
-func TestListAccounts(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		go ListAccounts()
-	}
-}
-
 func TestAddCount(t *testing.T) {
 	type args struct {
-		account *domain.Account
+		account *Account
 	}
-	account := &domain.Account{Name: "test", InitAmount: 0, TypeId: 1}
+	account := &Account{Name: "test", InitAmount: 0, TypeId: 1}
 	tests := []struct {
 		name string
 		args args

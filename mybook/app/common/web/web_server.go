@@ -3,11 +3,12 @@ package web
 import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 	"log"
+	"mybook/app/account"
 	"mybook/app/common"
 	"mybook/app/common/config"
 	_ "mybook/app/common/statik"
-	"mybook/app/controller"
 	"mybook/app/record"
+	"mybook/app/report"
 	"net/http"
 	"strconv"
 
@@ -109,10 +110,10 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildApi("/category/listCategoryTree"), common.ListCategoryTree)
 
 	// 账户
-	router.GET(buildApi("/account/listAccount"), controller.ListAccount)
-	router.GET(buildApi("/account/balance"), controller.CalculateAccountBalance)
+	router.GET(buildApi("/account/listAccount"), account.ListAccount)
 
 	// 账单
+	router.GET(buildApi("/record/calBalance"), record.QueryAccountBalance)
 	router.POST(buildApi("/record/createRecord"), record.CreateRecord)
 	router.GET(buildApi("/record/listRecord"), record.ListRecord)
 
@@ -123,7 +124,7 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildApi("/record/categoryMonthDetail"), record.MonthCategoryDetailRecord)
 
 	// 各分类周期报表
-	router.GET(buildApi("/report/categoryPeriod"), controller.CategoryPeriodReport)
+	router.GET(buildApi("/report/categoryPeriod"), report.CategoryPeriodReport)
 }
 
 func buildApi(path string) string {

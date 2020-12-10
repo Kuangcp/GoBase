@@ -2,6 +2,7 @@ package record
 
 import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
+	"mybook/app/account"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
@@ -22,24 +23,24 @@ func addRecord(record *RecordEntity) {
 	db.Create(record)
 }
 
-func checkParam(record *RecordEntity) (ghelp.ResultVO, *domain.Category, *domain.Account) {
+func checkParam(record *RecordEntity) (ghelp.ResultVO, *domain.Category, *account.Account) {
 	category := service.FindCategoryById(record.CategoryId)
 	if category == nil || !category.Leaf {
 		return ghelp.FailedWithMsg("分类id无效"), nil, nil
 	}
 
-	account := service.FindAccountById(record.AccountId)
-	if account == nil {
+	accountEntity := account.FindAccountById(record.AccountId)
+	if accountEntity == nil {
 		return ghelp.FailedWithMsg("账户无效"), category, nil
 	}
 
 	if record.Amount <= 0 {
-		return ghelp.FailedWithMsg("金额无效"), category, account
+		return ghelp.FailedWithMsg("金额无效"), category, accountEntity
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return ghelp.FailedWithMsg("类别无效"), category, account
+		return ghelp.FailedWithMsg("类别无效"), category, accountEntity
 	}
-	return ghelp.Success(), category, account
+	return ghelp.Success(), category, accountEntity
 }
 
 func DoCreateRecord(record *RecordEntity) ghelp.ResultVO {
@@ -187,7 +188,7 @@ func findRecord(param QueryRecordParam) []RecordDTO {
 		return nil
 	}
 
-	accountMap := service.ListAccountMap()
+	accountMap := account.ListAccountMap()
 	categoryMap := service.ListCategoryMap()
 	var result []RecordDTO
 	for i := range lists {
@@ -327,33 +328,33 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time,
 	return &result
 }
 
-func CalculateAccountBalance() []*domain.Account {
+func calculateAndQueryAccountBalance() []*account.Account {
 	db := dal.GetDB()
 	var list []RecordEntity
 
-	accountMap := service.ListAccountMap()
+	accountMap := account.ListAccountMap()
 	db.Where("1=1").Find(&list)
-	for _, account := range accountMap {
-		account.CurrentAmount = account.InitAmount
+	for _, accountEntity := range accountMap {
+		accountEntity.CurrentAmount = accountEntity.InitAmount
 	}
 
 	for _, record := range list {
-		account := accountMap[record.AccountId]
+		accountEntity := accountMap[record.AccountId]
 		if constant.IsExpense(record.Type) {
-			account.CurrentAmount -= record.Amount
+			accountEntity.CurrentAmount -= record.Amount
 		} else {
-			account.CurrentAmount += record.Amount
+			accountEntity.CurrentAmount += record.Amount
 		}
 	}
 
-	for _, account := range accountMap {
-		db.Model(&account).
+	for _, accountEntity := range accountMap {
+		db.Model(&accountEntity).
 			Select("current_amount").
 			Updates(map[string]interface{}{
-				"current_amount": account.CurrentAmount,
+				"current_amount": accountEntity.CurrentAmount,
 			})
 		//logger.Debug(account.Name, account.CurrentAmount, affected)
 	}
 
-	return service.ListAccounts()
+	return account.ListAccounts()
 }

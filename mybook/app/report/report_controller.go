@@ -1,10 +1,9 @@
-package controller
+package report
 
 import (
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/service"
-	"mybook/app/vo"
 	"sort"
 	"time"
 
@@ -99,7 +98,7 @@ func CategoryPeriodReport(c *gin.Context) {
 		finalEnd += "-01"
 	}
 
-	var sumResult []vo.CategorySumVO
+	var sumResult []CategorySumVO
 	sumResult = buildQueryData(param, finalStart, finalEnd)
 	if len(sumResult) == 0 {
 		ghelp.GinFailedWithMsg(c, "数据为空")
@@ -151,7 +150,7 @@ func buildLines(existCategoryMap map[uint]int,
 	categoryNameMap map[uint]string) []LineVO {
 
 	var existCategoryList []uint
-	for k, _ := range existCategoryMap {
+	for k := range existCategoryMap {
 		existCategoryList = append(existCategoryList, k)
 	}
 	sort.Slice(existCategoryList, func(i, j int) bool {
@@ -162,7 +161,7 @@ func buildLines(existCategoryMap map[uint]int,
 	for _, categoryId := range existCategoryList {
 		var data []float32
 		for _, period := range periodList {
-			key := vo.BuildKey(categoryId, period)
+			key := BuildKey(categoryId, period)
 			_, exist := periodNumMap[key]
 			if exist {
 				data = append(data, periodNumMap[key])
@@ -195,7 +194,7 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 	for _, categoryId := range []uint{uint(constant.RecordExpense), uint(constant.RecordIncome)} {
 		var data []float32
 		for i, period := range periodList {
-			key := vo.BuildKey(categoryId, period)
+			key := BuildKey(categoryId, period)
 			_, exist := periodNumMap[key]
 			var temp float32 = 0.0
 			if exist {
@@ -244,8 +243,8 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 	return lines
 }
 
-func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) []vo.CategorySumVO {
-	var sumResult []vo.CategorySumVO
+func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) []CategorySumVO {
+	var sumResult []CategorySumVO
 	db := dal.GetDB()
 	if param.TypeId == int(constant.RecordOverview) {
 		db.Table("record").

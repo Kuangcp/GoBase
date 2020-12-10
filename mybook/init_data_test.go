@@ -1,6 +1,7 @@
 package main
 
 import (
+	"mybook/app/account"
 	"mybook/app/common"
 	"mybook/app/common/constant"
 	"mybook/app/domain"
@@ -17,12 +18,12 @@ func TestInitBook(t *testing.T) {
 }
 
 func TestInitAccount(t *testing.T) {
-	service.AddAccount(&domain.Account{TypeId: constant.AccountCash, Name: "现金", InitAmount: 0})
-	service.AddAccount(&domain.Account{TypeId: constant.AccountCredit, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
-	service.AddAccount(&domain.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0})
-	service.AddAccount(&domain.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0})
-	service.AddAccount(&domain.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0})
-	service.AddAccount(&domain.Account{TypeId: constant.AccountDeposit, Name: "应收款", InitAmount: 0})
+	account.AddAccount(&account.Account{TypeId: constant.AccountCash, Name: "现金", InitAmount: 0})
+	account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
+	account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0})
+	account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0})
+	account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0})
+	account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "应收款", InitAmount: 0})
 }
 
 func TestInitCategory(t *testing.T) {

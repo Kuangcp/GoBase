@@ -1,20 +1,17 @@
-package domain
-
-import "github.com/jinzhu/gorm"
+package account
 
 type (
-	Account struct {
-		gorm.Model
-
+	AccountDTO struct {
+		ID            uint
 		Name          string
-		InitAmount    int
-		CurrentAmount int
+		InitAmount    int32
+		CurrentAmount int32
 		TypeId        int8
 		// 账本id
 		BookId int
 
 		// 信用卡 最大额度
-		MaxAmount int
+		MaxAmount int32
 
 		// 信用卡 账单日
 		BillDay int8
@@ -23,7 +20,3 @@ type (
 		RepaymentDay int8
 	}
 )
-
-func (Account) TableName() string {
-	return "account"
-}

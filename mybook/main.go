@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"mybook/app/account"
 	"mybook/app/common"
 	"mybook/app/common/web"
 	"mybook/app/service"
@@ -37,7 +38,7 @@ func main() {
 	}
 
 	if printAccount {
-		service.PrintAccount()
+		account.PrintAccount()
 	}
 
 	if webServer {

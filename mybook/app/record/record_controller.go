@@ -60,3 +60,7 @@ func MonthCategoryDetailRecord(c *gin.Context) {
 	result := monthCategoryRecord(param)
 	ghelp.GinResult(c, result)
 }
+
+func QueryAccountBalance(c *gin.Context) {
+	ghelp.GinSuccessWith(c, calculateAndQueryAccountBalance())
+}
