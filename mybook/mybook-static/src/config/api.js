@@ -1,14 +1,14 @@
 window.api = {
     account:{
-      listAll: "/account/list",
+      listAll: "/account/listAccount",
         balance: "/account/balance"
     },
     category:{
-      tree: "/category/listTree"
+      tree: "/category/listCategoryTree"
     },
     record: {
         create: "/record/createRecord",
-        list: "/record/list",
+        list: "/record/listRecord",
         byCategory: "/record/category",
         categoryDetail: "/record/categoryDetail"
     },

@@ -1,4 +1,4 @@
-package domain
+package record
 
 import (
 	"github.com/jinzhu/gorm"
@@ -6,7 +6,7 @@ import (
 )
 
 type (
-	Record struct {
+	RecordEntity struct {
 		gorm.Model
 
 		// 账本id
@@ -34,6 +34,6 @@ type (
 	}
 )
 
-func (Record) TableName() string {
+func (RecordEntity) TableName() string {
 	return "record"
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"mybook/app/common"
 	"mybook/app/common/constant"
 	"mybook/app/domain"
 	"mybook/app/service"
@@ -8,7 +9,7 @@ import (
 )
 
 func TestInitDBAndTable(t *testing.T) {
-	service.AutoMigrateAll()
+	common.AutoMigrateAll()
 }
 
 func TestInitBook(t *testing.T) {

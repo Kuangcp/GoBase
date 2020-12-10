@@ -83,9 +83,9 @@
           <span>{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
         </template>
       </el-table-column>
-      <el-table-column sortable prop="RecordTime" label="时间" width="190">
+      <el-table-column sortable prop="RecordTime" label="时间" width="100">
       </el-table-column>
-      <el-table-column prop="Comment" label="备注" width="200">
+      <el-table-column prop="Comment" label="备注" width="280">
       </el-table-column>
     </el-table>
   </div>

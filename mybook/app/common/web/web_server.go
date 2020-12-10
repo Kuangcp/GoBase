@@ -7,7 +7,7 @@ import (
 	"mybook/app/common/config"
 	_ "mybook/app/common/statik"
 	"mybook/app/controller"
-	"mybook/app/service"
+	"mybook/app/record"
 	"net/http"
 	"strconv"
 
@@ -22,7 +22,7 @@ func Server(debugStatic bool, port int) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	if appConfig.Path == config.DefaultDBPath {
-		service.AutoMigrateAll()
+		common.AutoMigrateAll()
 	}
 
 	router := gin.Default()
@@ -104,23 +104,23 @@ func Cors() gin.HandlerFunc {
 
 func registerRouter(router *gin.Engine) {
 	// 分类
-	router.GET(buildApi("/category/typeList"), common.ListCategoryType)
-	router.GET(buildApi("/category/list"), common.ListCategory)
-	router.GET(buildApi("/category/listTree"), common.ListCategoryTree)
+	router.GET(buildApi("/category/listCategoryType"), common.ListCategoryType)
+	router.GET(buildApi("/category/listCategory"), common.ListCategory)
+	router.GET(buildApi("/category/listCategoryTree"), common.ListCategoryTree)
 
 	// 账户
-	router.GET(buildApi("/account/list"), controller.ListAccount)
+	router.GET(buildApi("/account/listAccount"), controller.ListAccount)
 	router.GET(buildApi("/account/balance"), controller.CalculateAccountBalance)
 
 	// 账单
-	router.POST(buildApi("/record/createRecord"), controller.CreateRecord)
-	router.GET(buildApi("/record/list"), controller.ListRecord)
+	router.POST(buildApi("/record/createRecord"), record.CreateRecord)
+	router.GET(buildApi("/record/listRecord"), record.ListRecord)
 
-	router.GET(buildApi("/record/category"), controller.CategoryRecord)
+	router.GET(buildApi("/record/category"), record.CategoryRecord)
 
-	router.GET(buildApi("/record/categoryDetail"), controller.CategoryDetailRecord)
-	router.GET(buildApi("/record/categoryWeekDetail"), controller.WeekCategoryDetailRecord)
-	router.GET(buildApi("/record/categoryMonthDetail"), controller.MonthCategoryDetailRecord)
+	router.GET(buildApi("/record/categoryDetail"), record.CategoryDetailRecord)
+	router.GET(buildApi("/record/categoryWeekDetail"), record.WeekCategoryDetailRecord)
+	router.GET(buildApi("/record/categoryMonthDetail"), record.MonthCategoryDetailRecord)
 
 	// 各分类周期报表
 	router.GET(buildApi("/report/categoryPeriod"), controller.CategoryPeriodReport)

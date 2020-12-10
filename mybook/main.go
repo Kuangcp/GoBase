@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"mybook/app/common"
 	"mybook/app/common/web"
 	"mybook/app/service"
 )
@@ -28,7 +29,7 @@ func init() {
 
 func main() {
 	if updateDb {
-		service.AutoMigrateAll()
+		common.AutoMigrateAll()
 	}
 
 	if printCategory {

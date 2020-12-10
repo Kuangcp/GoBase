@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
+	"mybook/app/record"
 
 	"mybook/app/common/util"
 	"mybook/app/dto"
@@ -16,5 +17,5 @@ func ListAccount(c *gin.Context) {
 }
 
 func CalculateAccountBalance(c *gin.Context) {
-	ghelp.GinSuccessWith(c, service.CalculateAccountBalance())
+	ghelp.GinSuccessWith(c, record.CalculateAccountBalance())
 }
