@@ -10,7 +10,7 @@ white='\033[0;37m'
 end='\033[0m'
 
 BINARY_NAME=mybook.bin
-run_app() {
+install_app() {
     cd mybook-static &&
         npm run build &&
         cp ../../toolbox/keylogger/static/favicon.ico dist/favicon.ico &&
@@ -25,7 +25,7 @@ run_app() {
     bin/${BINARY_NAME} -s -p 9090
 }
 
-run_server() {
+install_server() {
     go build -o bin/${BINARY_NAME}
 
     if [ ! -d bin/data ]; then
@@ -33,6 +33,10 @@ run_server() {
     fi
 
     bin/${BINARY_NAME} -s -p 9090
+}
+
+run(){
+  bin/${BINARY_NAME} -s -p 9090
 }
 
 help() {
@@ -45,10 +49,13 @@ case $1 in
 -h)
     help
     ;;
+-r)
+    run
+    ;;
 -s)
-    run_server
+    install_server
     ;;
 *)
-    run_app
+    install_app
     ;;
 esac

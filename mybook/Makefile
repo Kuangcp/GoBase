@@ -4,9 +4,12 @@ clean:
 	rm -f bin/${BINARY_NAME}
 
 run:
+	sh run.sh -r
+
+build:
 	sh run.sh
 
-runS:
+buildS:
 	sh run.sh -s
 
 buildAlpine:
