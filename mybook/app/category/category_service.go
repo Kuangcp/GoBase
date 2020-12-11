@@ -1,4 +1,4 @@
-package service
+package category
 
 import (
 	"fmt"
@@ -6,13 +6,12 @@ import (
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
-	"mybook/app/domain"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/wonderivan/logger"
 )
 
-func AddCategory(entity *domain.Category) {
+func AddCategory(entity *Category) {
 	db := dal.GetDB()
 	db.Create(entity)
 }
@@ -36,38 +35,38 @@ func SetParentId(name string, id uint) {
 	db.Update(current)
 }
 
-func FindCategoryByName(name string) *domain.Category {
+func FindCategoryByName(name string) *Category {
 	db := dal.GetDB()
-	var result domain.Category
+	var result Category
 	db.Where("name = ?", name).First(&result)
 	return &result
 }
 
-func FindLeafCategoryByTypeId(typeId int8) *[]domain.Category {
+func FindLeafCategoryByTypeId(typeId int8) *[]Category {
 	db := dal.GetDB()
 
-	var lists []domain.Category
+	var lists []Category
 	db.Where("type_id = ? AND leaf = true", typeId).Find(&lists)
 	return &lists
 }
 
-func FindCategoryById(id uint) *domain.Category {
+func FindCategoryById(id uint) *Category {
 	db := dal.GetDB()
-	var result domain.Category
+	var result Category
 	db.Where("id = ?", id).First(&result)
 	return &result
 }
 
-func ListCategories() []domain.Category {
+func ListCategories() []Category {
 	db := dal.GetDB()
-	var lists []domain.Category
+	var lists []Category
 	db.Where("1=1").Find(&lists)
 	return lists
 }
 
-func ListCategoryMap() map[uint]domain.Category {
+func ListCategoryMap() map[uint]Category {
 	categories := ListCategories()
-	result := make(map[uint]domain.Category)
+	result := make(map[uint]Category)
 	for i := range categories {
 		category := categories[i]
 		result[category.ID] = category
@@ -77,16 +76,16 @@ func ListCategoryMap() map[uint]domain.Category {
 
 func PrintCategory() {
 	db := dal.GetDB()
-	var lists []domain.Category
+	var lists []Category
 	db.Where("1=1").Find(&lists)
 
-	resultMap := make(map[int8][]domain.Category)
+	resultMap := make(map[int8][]Category)
 	for i := range lists {
 		category := lists[i]
 
 		categories := resultMap[category.TypeId]
 		if categories == nil {
-			resultMap[category.TypeId] = []domain.Category{}
+			resultMap[category.TypeId] = []Category{}
 			categories = resultMap[category.TypeId]
 		}
 

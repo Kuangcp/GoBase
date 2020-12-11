@@ -1,9 +1,9 @@
 package web
 
 import (
-	"github.com/kuangcp/gobase/pkg/ghelp"
 	"log"
 	"mybook/app/account"
+	"mybook/app/category"
 	"mybook/app/common"
 	"mybook/app/common/config"
 	_ "mybook/app/common/statik"
@@ -11,6 +11,8 @@ import (
 	"mybook/app/report"
 	"net/http"
 	"strconv"
+
+	"github.com/kuangcp/gobase/pkg/ghelp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rakyll/statik/fs"
@@ -106,8 +108,8 @@ func Cors() gin.HandlerFunc {
 func registerRouter(router *gin.Engine) {
 	// 分类
 	router.GET(buildApi("/category/listCategoryType"), common.ListCategoryType)
-	router.GET(buildApi("/category/listCategory"), common.ListCategory)
-	router.GET(buildApi("/category/listCategoryTree"), common.ListCategoryTree)
+	router.GET(buildApi("/category/listCategory"), category.ListCategory)
+	router.GET(buildApi("/category/listCategoryTree"), category.ListCategoryTree)
 
 	// 账户
 	router.GET(buildApi("/account/listAccount"), account.ListAccount)

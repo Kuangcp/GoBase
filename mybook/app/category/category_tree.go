@@ -1,4 +1,4 @@
-package vo
+package category
 
 type CategoryTree struct {
 	ID       uint           `json:"value"`

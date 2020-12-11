@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"mybook/app/account"
+	"mybook/app/category"
 	"mybook/app/common"
 	"mybook/app/common/web"
-	"mybook/app/service"
 )
 
 var (
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	if printCategory {
-		service.PrintCategory()
+		category.PrintCategory()
 	}
 
 	if printAccount {

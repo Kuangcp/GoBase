@@ -1,17 +1,17 @@
 package record
 
 import (
-	"github.com/kuangcp/gobase/pkg/ghelp"
 	"mybook/app/account"
+	"mybook/app/category"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
-	"mybook/app/domain"
-	"mybook/app/service"
 	"sort"
 	"strconv"
 	"time"
 	"unsafe"
+
+	"github.com/kuangcp/gobase/pkg/ghelp"
 
 	"github.com/wonderivan/logger"
 )
@@ -23,8 +23,8 @@ func addRecord(record *RecordEntity) {
 	db.Create(record)
 }
 
-func checkParam(record *RecordEntity) (ghelp.ResultVO, *domain.Category, *account.Account) {
-	category := service.FindCategoryById(record.CategoryId)
+func checkParam(record *RecordEntity) (ghelp.ResultVO, *category.Category, *account.Account) {
+	category := category.FindCategoryById(record.CategoryId)
 	if category == nil || !category.Leaf {
 		return ghelp.FailedWithMsg("分类id无效"), nil, nil
 	}
@@ -189,7 +189,7 @@ func findRecord(param QueryRecordParam) []RecordDTO {
 	}
 
 	accountMap := account.ListAccountMap()
-	categoryMap := service.ListCategoryMap()
+	categoryMap := category.ListCategoryMap()
 	var result []RecordDTO
 	for i := range lists {
 		record := lists[i]

@@ -1,9 +1,9 @@
 package report
 
 import (
+	"mybook/app/category"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
-	"mybook/app/service"
 	"sort"
 	"time"
 
@@ -122,10 +122,10 @@ func CategoryPeriodReport(c *gin.Context) {
 
 		lines = buildLinesForOverview(periodList, periodNumMap, param)
 	} else {
-		categoryList := service.FindLeafCategoryByTypeId(int8(param.TypeId))
+		categoryList := category.FindLeafCategoryByTypeId(int8(param.TypeId))
 		var categoryNameMap = make(map[uint]string)
-		for _, category := range *categoryList {
-			categoryNameMap[category.ID] = category.Name
+		for _, entity := range *categoryList {
+			categoryNameMap[entity.ID] = entity.Name
 		}
 
 		for _, sum := range sumResult {

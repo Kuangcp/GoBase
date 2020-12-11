@@ -1,4 +1,4 @@
-package domain
+package category
 
 import "github.com/jinzhu/gorm"
 
