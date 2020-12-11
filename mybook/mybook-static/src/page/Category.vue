@@ -41,8 +41,8 @@
       </el-form-item>
     </el-form>
 
-    <el-dialog title="明细" :visible.sync="dialogTableVisible">
-      <el-table :data="detailData" stripe style="width: 100%" height="480">
+    <el-dialog title="明细" :visible.sync="dialogTableVisible" width="760px">
+      <el-table :data="detailData" stripe style="width: 100%" height="660">
         <el-table-column sortable prop="ID" label="ID" width="60" align="right">
         </el-table-column>
         <el-table-column
@@ -78,9 +78,9 @@
             <span>{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
           </template>
         </el-table-column>
-        <el-table-column sortable prop="RecordTime" label="时间" width="190">
+        <el-table-column sortable prop="RecordTime" label="时间" width="100">
         </el-table-column>
-        <el-table-column prop="Comment" label="备注" width="200">
+        <el-table-column prop="Comment" label="备注" width="180">
         </el-table-column>
       </el-table>
     </el-dialog>
@@ -150,8 +150,12 @@
 </template>
 
 <style scoped>
-.el-dialog__body {
-  padding: 0 0 0 30px;
+/deep/ .el-dialog__body {
+  padding: 0 0 0 10px;
+}
+
+/deep/ .el-dialog__header{
+  padding-bottom: 0;
 }
 
 .form-nav {

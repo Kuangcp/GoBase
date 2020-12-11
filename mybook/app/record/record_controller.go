@@ -44,7 +44,7 @@ func CategoryDetailRecord(c *gin.Context) {
 	var param QueryRecordParam
 	_ = c.ShouldBind(&param)
 	result := findRecord(param)
-	ghelp.GinResult(c, result)
+	ghelp.GinResult(c, convertToVOList(result))
 }
 
 func WeekCategoryDetailRecord(c *gin.Context) {

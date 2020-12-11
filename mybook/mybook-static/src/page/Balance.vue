@@ -64,7 +64,6 @@ export default {
   methods: {
     async loadBalanceData() {
       const res = await this.$http.get(window.api.record.balance);
-      console.log("ren", res.data);
       this.tableData = [];
       this.totalAmount = 0;
       if (res.data && res.data.Data && res.data.Data.length > 0) {
