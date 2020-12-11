@@ -1,12 +1,12 @@
-package service
+package book
 
 import (
 	"mybook/app/common/dal"
-	"mybook/app/domain"
+
 	"github.com/wonderivan/logger"
 )
 
-func AddBookkeeping(book *domain.BookKeeping) {
+func AddBookkeeping(book *BookKeeping) {
 	db := dal.GetDB()
 
 	create := db.Create(book)

@@ -7,8 +7,6 @@ import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 )
 
-// 简单查询
-
 func HealthCheck(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "pong",
