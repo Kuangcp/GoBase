@@ -8,6 +8,7 @@ import (
 	"mybook/app/common/util"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -89,11 +90,15 @@ func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
 			logger.Error(e)
 			return ghelp.FailedWithMsg("date 参数错误")
 		}
+		parseResult := parseAmount(param.Amount)
+		if parseResult.IsFailed() {
+			return parseResult
+		}
 		record := &RecordEntity{
 			AccountId:  uint(param.AccountId),
 			CategoryId: uint(param.CategoryId),
 			Type:       param.TypeId,
-			Amount:     param.Amount,
+			Amount:     parseResult.Data.(int),
 			RecordTime: recordDate,
 		}
 		if param.Comment != "" {
@@ -103,6 +108,46 @@ func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
 	}
 
 	return ghelp.SuccessWith(recordList)
+}
+
+func parseAmount(amount string) ghelp.ResultVO {
+	floatAmount, e := strconv.ParseFloat(amount, 64)
+	if e != nil {
+		return ghelp.FailedWithMsg("amount 参数错误")
+	}
+	values := strings.Split(amount, ".")
+	if len(values) > 1 {
+		p := values[0]
+		v := values[1]
+		vLen := len(v)
+		if vLen > 2 {
+			return ghelp.FailedWithMsg("amount 仅保留两位小数")
+		} else if vLen == 2 {
+			pInt, e := strconv.Atoi(p)
+			if e != nil {
+				return ghelp.FailedWithMsg("amount 参数错误")
+			}
+			vInt, e := strconv.Atoi(v)
+			if e != nil {
+				return ghelp.FailedWithMsg("amount 参数错误")
+			}
+			return ghelp.SuccessWith(pInt*100 + vInt)
+		} else if vLen == 1 {
+			pInt, e := strconv.Atoi(p)
+			if e != nil {
+				return ghelp.FailedWithMsg("amount 参数错误")
+			}
+			vInt, e := strconv.Atoi(v)
+			if e != nil {
+				return ghelp.FailedWithMsg("amount 参数错误")
+			}
+			return ghelp.SuccessWith(pInt*100 + vInt*10)
+		} else {
+			return ghelp.FailedWithMsg("amount 参数错误")
+		}
+	} else {
+		return ghelp.SuccessWith(int(floatAmount) * 100)
+	}
 }
 
 func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
