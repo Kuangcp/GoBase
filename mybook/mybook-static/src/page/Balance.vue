@@ -28,6 +28,9 @@
           width="120"
           align="right"
       >
+        <template slot-scope="scope">
+          <span>{{ (scope.row.InitAmount / 100.0).toFixed(2) }}</span>
+        </template>
       </el-table-column>
       <el-table-column
           sortable

@@ -27,7 +27,7 @@
 
       <el-form-item label="金额" required>
         <el-input
-            v-model.number="amount"
+            v-model="amount"
             size="mini"
             clearable
             min="0"
