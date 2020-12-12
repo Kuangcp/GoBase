@@ -115,6 +115,9 @@ func parseAmount(amount string) ghelp.ResultVO {
 	if e != nil {
 		return ghelp.FailedWithMsg("amount 参数错误")
 	}
+	if floatAmount <= 0 {
+		return ghelp.FailedWithMsg("amount 无效")
+	}
 	values := strings.Split(amount, ".")
 	if len(values) > 1 {
 		p := values[0]

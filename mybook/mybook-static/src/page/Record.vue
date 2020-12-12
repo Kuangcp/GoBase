@@ -38,10 +38,20 @@
       <el-form-item label="时间" required>
         <el-date-picker
             v-model="recordDate"
+            type="date"
+            size="mini"
+            clearable
+            style="width: 140px"
+            placeholder="选择日期"
+        >
+        </el-date-picker>
+        OR
+        <el-date-picker
+            v-model="recordDates"
             type="dates"
             size="mini"
             clearable
-            style="width: 200px"
+            style="width: 140px"
             placeholder="选择日期"
         >
         </el-date-picker>
@@ -70,15 +80,17 @@ export default {
     return {
       accountId: 2,
       targetAccountId: 1,
-      amount: 0,
-      recordDate: [],
+      amount: "",
+      recordDate: "",
+      recordDates: [],
       comment: "",
     };
   },
   methods: {
     async onSubmit() {
       let ids = this.$refs.categoryCom.categoryId;
-      if (this.recordDate.length === 0) {
+      if ((!this.recordDates || this.recordDates.length === 0)
+          && (!this.recordDate || this.recordDate.length === 0)) {
         this.$message({
           message: "时间为空",
           type: "warning",
@@ -86,7 +98,10 @@ export default {
         return;
       }
 
-      let resultDate = this.recordDate.map((v) => formatter(v).formatDate());
+      let resultDate = [formatter(this.recordDate).formatDate()]
+      if (!this.recordDate || this.recordDate.length === 0) {
+        resultDate = this.recordDates.map((v) => formatter(v).formatDate());
+      }
 
       let param = {
         typeId: ids[0],
