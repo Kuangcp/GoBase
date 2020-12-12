@@ -196,8 +196,10 @@ func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) 
 			Group("type, period").Find(&sumResult)
 	} else {
 		where := db.Table("record").
-			Select("category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
-			Where(" type = ?", param.TypeId)
+			Select("category_id, sum(amount)/100.0 sum, strftime('" + param.sqlTimeFmt + "',record_time) as period")
+		if param.TypeId != 0 {
+			where = where.Where(" type = ?", param.TypeId)
+		}
 		if param.CategoryId != 0 {
 			where = where.Where(" category_id = ?", param.CategoryId)
 		}
@@ -233,7 +235,7 @@ func buildParam(c *gin.Context) ghelp.ResultVO {
 	if err != nil {
 		return ghelp.FailedWithMsg("参数解析失败")
 	}
-	if param.StartDate == "" || param.EndDate == "" || param.ChartType == "" || param.TypeId == 0 {
+	if param.StartDate == "" || param.EndDate == "" || param.ChartType == "" || (param.TypeId == 0 && param.CategoryId == 0) {
 		return ghelp.FailedWithMsg("参数含空值")
 	}
 	param.timeFmt, param.sqlTimeFmt = getTimeFmt(param.Period)

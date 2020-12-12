@@ -57,16 +57,6 @@
             </el-dropdown-item>
             <el-dropdown-item>
               <div class="k-flex">
-                <span>求和</span>
-                <el-switch
-                    v-model="showSumLabel"
-                    active-color="#13ce66"
-                    inactive-color="#ff4949">
-                </el-switch>
-              </div>
-            </el-dropdown-item>
-            <el-dropdown-item>
-              <div class="k-flex">
                 <span>柱/线</span>
                 <el-switch
                     v-model="lineChartType"
@@ -123,7 +113,15 @@
 </style>
 
 <script>
-import {dateShortCut, formatter} from "@/util/DateUtil";
+import {
+  dateShortCut,
+  dayPeriod,
+  formatter,
+  getFormatByPeriod,
+  monthPeriod,
+  weekPeriod,
+  yearPeriod
+} from "@/util/DateUtil";
 import Echart from "../components/Echart";
 
 export default {
@@ -182,13 +180,13 @@ export default {
       monthChart: "",
       lineChartType: false,
       detailLabel: false,
-      showSumLabel: false,
-      timePeriod: "month",
+      showSumLabel: true,
+      timePeriod: monthPeriod,
       timePeriods: [
-        {ID: "year", Name: "年"},
-        {ID: "month", Name: "月"},
-        {ID: "week", Name: "周"},
-        {ID: "day", Name: "日"},
+        {ID: yearPeriod, Name: "年"},
+        {ID: monthPeriod, Name: "月"},
+        {ID: weekPeriod, Name: "周"},
+        {ID: dayPeriod, Name: "日"},
       ],
       pickerOptions: {
         shortcuts: dateShortCut
@@ -199,22 +197,11 @@ export default {
   mounted() {
   },
   methods: {
-    getFormat() {
-      switch (this.timePeriod) {
-        case "year":
-          return "YYYY"
-        case "month":
-          return "YYYY-MM"
-        case "day":
-          return "YYYY-MM-dd"
-      }
-    },
-
     async drawLine() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
-      let start = (startTime && formatter(startTime).format(this.getFormat())) || "";
-      let end = (endTime && formatter(endTime).format(this.getFormat())) || "";
+      let start = (startTime && formatter(startTime).format(getFormatByPeriod(this.timePeriod))) || "";
+      let end = (endTime && formatter(endTime).format(getFormatByPeriod(this.timePeriod))) || "";
 
       this.showChart = false
       let resp = await this.$http.get(window.api.report.categoryPeriod, {
@@ -230,25 +217,17 @@ export default {
       this.showChart = true
 
       let respData = resp.data;
-      if (respData.Code !== 0) {
+      if (respData.Code !== 0 || respData.Data == null || !respData.Data.lines) {
         this.$message({
-          message: respData.Msg,
-          type: "warning",
-        });
-        return;
-      }
-      if (respData.Data == null || !respData.Data.lines) {
-        this.$message({
-          message: "分类统计数据为空",
+          message: "分类统计数据为空 " + respData.Msg,
           type: "warning",
         });
         return;
       }
 
-      // console.log(this.echartOption)
       this.$nextTick(() => {
         let finalLines = respData.Data.lines
-        if (this.showSumLabel) {
+        if (this.accountType !== 9 && this.showSumLabel) {
           finalLines = this.$refs.echart.appendSumLine(finalLines)
         }
 

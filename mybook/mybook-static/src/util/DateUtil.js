@@ -79,6 +79,22 @@ const dateShortCut = [
     },
 ]
 
+const yearPeriod = 'year'
+const monthPeriod = 'month'
+const weekPeriod = 'week'
+const dayPeriod = 'day'
+
+const getFormatByPeriod = function (period) {
+    switch (period) {
+        case yearPeriod:
+            return "YYYY"
+        case monthPeriod:
+            return "YYYY-MM"
+        case dayPeriod:
+            return "YYYY-MM-dd"
+    }
+}
+
 export {
-    formatter, dateShortCut
+    formatter, dateShortCut, getFormatByPeriod, yearPeriod, monthPeriod, dayPeriod, weekPeriod
 }

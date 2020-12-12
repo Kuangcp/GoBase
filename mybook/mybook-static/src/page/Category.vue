@@ -41,7 +41,7 @@
       </el-form-item>
     </el-form>
 
-    <el-dialog title="明细" :visible.sync="dialogTableVisible" width="760px">
+    <el-dialog title="明细" :visible.sync="detailTableDialogVisible" width="760px">
       <el-table :data="detailData" stripe style="width: 100%" height="660">
         <el-table-column sortable prop="ID" label="ID" width="60" align="right">
         </el-table-column>
@@ -83,6 +83,10 @@
         <el-table-column prop="Comment" label="备注" width="180">
         </el-table-column>
       </el-table>
+    </el-dialog>
+
+    <el-dialog title="报表" :visible.sync="reportDialogVisible" width="1600px">
+      <Echart ref="echart" class="categoryMonth"/>
     </el-dialog>
 
     <el-table :data="tableData" stripe height="860" class="main-box">
@@ -167,15 +171,24 @@
   margin-left: 2vw;
   border-radius: 4px;
 }
+
+.categoryMonth {
+  width: 1580px;
+  height: 650px;
+}
 </style>
 <script>
-import {dateShortCut, formatter} from "@/util/DateUtil";
+import {dateShortCut, formatter, getFormatByPeriod, monthPeriod} from "@/util/DateUtil";
+import Echart from "../components/Echart";
 
 export default {
-  components: {},
+  components: {
+    Echart,
+  },
   data: function () {
     return {
-      dialogTableVisible: false,
+      detailTableDialogVisible: false,
+      reportDialogVisible: false,
       accountId: null,
       pickerOptions: {
         shortcuts: dateShortCut
@@ -192,6 +205,45 @@ export default {
         {ID: 4, Name: "转入"},
       ],
       totalAmount: 0,
+      echartOption: {
+        title: {
+          text: '',
+        },
+        tooltip: {
+          trigger: 'axis',
+        },
+        color: ['#409EFF'],
+        legend: {
+          data: [],
+        },
+        toolbox: {
+          show: true,
+          feature: {
+            // mark: { show: true },
+            // dataView: { show: true, readOnly: false },
+            // magicType: { show: true, type: ['line', 'bar'] },
+            // restore: { show: true },
+            saveAsImage: {show: true},
+          },
+        },
+        calculable: true,
+        xAxis: [
+          {
+            type: 'category',
+            boundaryGap: true,
+            data: [],
+          },
+        ],
+        yAxis: [
+          {
+            type: 'value',
+            axisLabel: {
+              formatter: '{value}',
+            },
+          },
+        ],
+        series: [],
+      },
     };
   },
   mounted() {
@@ -234,7 +286,7 @@ export default {
       this.accountId = val;
     },
     async detail(categoryId) {
-      this.dialogTableVisible = true;
+      this.detailTableDialogVisible = true;
       const {start, end} = this.getFormatDate();
       const res = await this.$http.get(window.api.record.categoryDetail, {
         params: {
@@ -247,11 +299,49 @@ export default {
       this.detailData = [];
       this.detailData = res.data.Data;
     },
+    async report(categoryId, period) {
+      this.reportDialogVisible = true;
+      let startTime = this.dateArray[0];
+      let endTime = this.dateArray[1];
+      let start = (startTime && formatter(startTime).format(getFormatByPeriod(period))) || "";
+      let end = (endTime && formatter(endTime).format(getFormatByPeriod(period))) || "";
+
+      let resp = await this.$http.get(window.api.report.categoryPeriod, {
+        params: {
+          startDate: start,
+          endDate: end,
+          chartType: 'line',
+          categoryId: categoryId,
+          showLabel: false,
+          period: period,
+        },
+      });
+
+      let respData = resp.data;
+      if (respData.Code !== 0 || respData.Data == null || !respData.Data.lines) {
+        this.$message({
+          message: "分类统计数据为空 " + respData.Msg,
+          type: "warning",
+        });
+        return;
+      }
+
+      this.$nextTick(() => {
+        let finalLines = respData.Data.lines
+        finalLines = this.$refs.echart.appendSumLine(finalLines)
+
+        this.echartOption.xAxis[0].data = respData.Data.xAxis
+        this.echartOption.legend.data = respData.Data.legends
+        this.echartOption.series = finalLines
+
+        this.$refs.echart.setOption(this.echartOption);
+      })
+    },
     weekDetail(categoryId) {
       console.log(categoryId);
     },
-    monthDetail(categoryId) {
-      console.log(categoryId);
+    async monthDetail(categoryId) {
+      this.report(categoryId, monthPeriod)
     },
   },
 };
