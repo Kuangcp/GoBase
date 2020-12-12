@@ -15,17 +15,17 @@ var ECategoryExpense = NewBaseEnum(CategoryExpense, "支出")
 var ECategoryIncome = NewBaseEnum(CategoryIncome, "收入")
 var ECategoryTransfer = NewBaseEnum(CategoryTransfer, "转账")
 
-var categoryTypeMap map[int8]*BaseEnum
-var categoryTypeList []*BaseEnum
+var categoryTypeMap map[int8]Enum
+var categoryTypeList []Enum
 
-func GetCategoryTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
+func GetCategoryTypeMap() (map[int8]Enum, []Enum) {
 	if categoryTypeMap == nil {
 		categoryTypeMap, categoryTypeList = MakeMap(ECategoryExpense, ECategoryIncome, ECategoryTransfer)
 	}
 	return categoryTypeMap, categoryTypeList
 }
 
-func GetCategoryTypeByIndex(index int8) *BaseEnum {
+func GetCategoryTypeByIndex(index int8) Enum {
 	maps, _ := GetCategoryTypeMap()
 	return maps[index]
 }

@@ -96,8 +96,8 @@ func PrintCategory() {
 	for i := range categories {
 		enum := categories[i]
 		value := ""
-		for i := range resultMap[enum.Index] {
-			category := resultMap[enum.Index][i]
+		for i := range resultMap[enum.GetIndex()] {
+			category := resultMap[enum.GetIndex()][i]
 
 			chFormat := util.BuildCHCharFormat(10, category.Name)
 			value += fmt.Sprintf("%3d %s"+chFormat, category.ID, category.Name, "")
@@ -105,8 +105,8 @@ func PrintCategory() {
 				value += "\n"
 			}
 		}
-		if len(resultMap[enum.Index]) != 0 {
-			fmt.Printf(cuibase.Cyan.String()+"> %v  "+cuibase.End.String()+"\n%v\n\n", enum.Name, value)
+		if len(resultMap[enum.GetIndex()]) != 0 {
+			fmt.Printf(cuibase.Cyan.String()+"> %v  "+cuibase.End.String()+"\n%v\n\n", enum.GetName(), value)
 		}
 	}
 }

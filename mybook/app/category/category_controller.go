@@ -16,14 +16,14 @@ func ListCategoryTree(c *gin.Context) {
 	for _, enum := range list {
 		var temp []Category
 		for _, entity := range categories {
-			if entity.TypeId == enum.Index {
+			if entity.TypeId == enum.GetIndex() {
 				temp = append(temp, entity)
 			}
 		}
 		child := buildTreeRoot(temp)
 		result = append(result, &CategoryTree{
-			ID:       uint(enum.Index),
-			Name:     enum.Name,
+			ID:       uint(enum.GetIndex()),
+			Name:     enum.GetName(),
 			Children: child,
 		})
 	}

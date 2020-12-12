@@ -198,7 +198,7 @@ func findRecord(param QueryRecordParam) []RecordDTO {
 			RecordType:     record.Type,
 			AccountName:    accountMap[record.AccountId].Name,
 			CategoryName:   categoryMap[record.CategoryId].Name,
-			RecordTypeName: constant.GetRecordTypeByIndex(record.Type).Name,
+			RecordTypeName: constant.GetRecordTypeByIndex(record.Type).GetName(),
 			RecordTime:     record.RecordTime,
 			Amount:         record.Amount,
 			Comment:        record.Comment,
@@ -234,7 +234,7 @@ func queryCategoryRecord(param QueryRecordParam) *[]MonthCategoryRecordDTO {
 	for i := range result {
 		recordDTO := &result[i]
 
-		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).Name
+		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).GetName()
 
 		temp = append(temp, *recordDTO)
 	}

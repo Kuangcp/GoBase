@@ -56,6 +56,6 @@ func PrintAccount() {
 		account := lists[i]
 		chFormat := util.BuildCHCharFormat(12, account.Name)
 		fmt.Printf("  %d  %s "+chFormat+" %-7d %s \n", account.ID, account.Name, "",
-			account.CurrentAmount, constant.GetAccountTypeByIndex(account.TypeId).Name)
+			account.CurrentAmount, constant.GetAccountTypeByIndex(account.TypeId).GetName())
 	}
 }

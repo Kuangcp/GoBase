@@ -11,69 +11,17 @@ import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 )
 
-type (
-	RecordQueryParam struct {
-		StartDate string `form:"startDate" json:"startDate"`
-		EndDate   string `form:"endDate" json:"endDate"`
-		TypeId    int    `form:"typeId" json:"typeId"`
-		ChartType string `form:"chartType" json:"chartType"`
-		ShowLabel bool   `form:"showLabel" json:"showLabel"`
-		Period    string `form:"period" json:"period"`
-
-		startDate  time.Time
-		endDate    time.Time
-		timeFmt    string
-		sqlTimeFmt string
-	}
-
-	LineChartVO struct {
-		Lines   []LineVO `json:"lines"`
-		XAxis   []string `json:"xAxis"`
-		Legends []string `json:"legends"`
-	}
-	LineVO struct {
-		Type      string    `json:"type"`
-		Name      string    `json:"name"`
-		Stack     string    `json:"stack"`
-		Data      []float32 `json:"data"`
-		Color     string    `json:"color"`
-		AreaStyle string    `json:"areaStyle"`
-		Label     LabelVO   `json:"label"`
-	}
-	LabelVO struct {
-		Show     bool   `json:"show"`
-		Position string `json:"position"`
-	}
-)
-
-var colorSet = [...]string{
-	"#c23531",
-	"#2f4554",
-	"#61a0a8",
-	"#d48265",
-	"#91c7ae",
-	"#749f83",
-	"#ca8622",
-	"#bda29a",
-	"#6e7074",
-	"#546570",
-	"#c4ccd3",
-}
-
-const (
-	yearPeriod  = "year"
-	monthPeriod = "month"
-	dayPeriod   = "day"
-)
-
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
-func gerTimeFmt(period string) (string, string) {
+// go时间格式，sqlite时间格式
+func getTimeFmt(period string) (string, string) {
 	switch period {
 	case yearPeriod:
 		return "2006", "%Y"
 	case monthPeriod:
 		return "2006-01", "%Y-%m"
+	//case weekPeriod:
+	//	return "", "%Y-%W"
 	case dayPeriod:
 		return "2006-01-02", "%Y-%m-%d"
 	}
@@ -187,11 +135,8 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 	var lines []LineVO
 	var balanceData []int32
 
-	expenseColor := "#DD8047"
-	incomeColor := "#548BB7"
-	balanceColor := "#7BA79D"
-
-	for _, categoryId := range []uint{uint(constant.RecordExpense), uint(constant.RecordIncome)} {
+	for _, typeId := range []constant.RecordTypeEnum{constant.ERecordExpense, constant.ERecordIncome} {
+		categoryId := uint(typeId.Index)
 		var data []float32
 		for i, period := range periodList {
 			key := BuildKey(categoryId, period)
@@ -203,26 +148,23 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 
 			// 计算结余
 			data = append(data, temp)
+			if len(balanceData) <= i {
+				balanceData = append(balanceData, 0)
+			}
 			if categoryId == uint(constant.RecordExpense) {
-				balanceData = append(balanceData, -int32(temp*100))
+				balanceData[i] += -int32(temp * 100)
 			} else {
 				balanceData[i] += int32(temp * 100)
 			}
 		}
 
-		name := constant.ERecordExpense.Name
-		color := expenseColor
-		if categoryId == uint(constant.RecordIncome) {
-			name = constant.ERecordIncome.Name
-			color = incomeColor
-		}
 		line := LineVO{
 			Type:      param.ChartType,
-			Name:      name,
+			Name:      typeId.Name,
 			Data:      data,
 			AreaStyle: "{normal: {}}",
 			Label:     commonLabel,
-			Color:     color,
+			Color:     typeId.Color,
 		}
 		lines = append(lines, line)
 	}
@@ -237,7 +179,7 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 		Data:      finalBalanceData,
 		AreaStyle: "{normal: {}}",
 		Label:     commonLabel,
-		Color:     balanceColor,
+		Color:     "#97B552",
 	}
 	lines = append(lines, line)
 	return lines
@@ -291,7 +233,7 @@ func buildParam(c *gin.Context) ghelp.ResultVO {
 	if param.StartDate == "" || param.EndDate == "" || param.ChartType == "" || param.TypeId == 0 {
 		return ghelp.FailedWithMsg("参数含空值")
 	}
-	param.timeFmt, param.sqlTimeFmt = gerTimeFmt(param.Period)
+	param.timeFmt, param.sqlTimeFmt = getTimeFmt(param.Period)
 
 	startDate, err := time.Parse(param.timeFmt, param.StartDate)
 	if err != nil {
@@ -302,7 +244,7 @@ func buildParam(c *gin.Context) ghelp.ResultVO {
 		return ghelp.FailedWithMsg(err.Error())
 	}
 	if startDate.After(endDate) {
-		return ghelp.FailedWithMsg("开始时间早于结束时间")
+		return ghelp.FailedWithMsg("开始时间晚于结束时间")
 	}
 	param.startDate = startDate
 	param.endDate = endDate

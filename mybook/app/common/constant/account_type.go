@@ -10,16 +10,16 @@ const (
 	AccountFinance int8 = 5
 )
 
-var EAccountCash = &BaseEnum{Index: AccountCash, Name: "现金"}
-var EAccountDeposit = &BaseEnum{Index: AccountDeposit, Name: "储蓄卡"}
-var EAccountCredit = &BaseEnum{Index: AccountCredit, Name: "信用卡"}
-var EAccountOnline = &BaseEnum{Index: AccountOnline, Name: "在线支付"}
-var EAccountFinance = &BaseEnum{Index: AccountFinance, Name: "理财"}
+var EAccountCash = BaseEnum{Index: AccountCash, Name: "现金"}
+var EAccountDeposit = BaseEnum{Index: AccountDeposit, Name: "储蓄卡"}
+var EAccountCredit = BaseEnum{Index: AccountCredit, Name: "信用卡"}
+var EAccountOnline = BaseEnum{Index: AccountOnline, Name: "在线支付"}
+var EAccountFinance = BaseEnum{Index: AccountFinance, Name: "理财"}
 
-var accountTypeMap map[int8]*BaseEnum
-var accountTypeList []*BaseEnum
+var accountTypeMap map[int8]Enum
+var accountTypeList []Enum
 
-func GetAccountTypeByIndex(index int8) *BaseEnum {
+func GetAccountTypeByIndex(index int8) Enum {
 	if accountTypeMap == nil {
 		accountTypeMap, accountTypeList = MakeMap(EAccountCash, EAccountDeposit, EAccountCredit, EAccountOnline, EAccountFinance)
 	}

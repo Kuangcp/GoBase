@@ -1,5 +1,12 @@
 package constant
 
+type (
+	RecordTypeEnum struct {
+		*BaseEnum
+		Color string
+	}
+)
+
 const (
 	// 支出
 	RecordExpense int8 = 1
@@ -14,15 +21,15 @@ const (
 	RecordOverview int8 = 9
 )
 
-var ERecordExpense = NewBaseEnum(RecordExpense, "支出")
-var ERecordIncome = NewBaseEnum(RecordIncome, "收入")
-var ERecordTransferOut = NewBaseEnum(RecordTransferOut, "转出")
-var ERecordTransferIn = NewBaseEnum(RecordTransferIn, "转入")
+var ERecordExpense = RecordTypeEnum{NewBaseEnum(RecordExpense, "支出"), "#D87A80"}
+var ERecordIncome = RecordTypeEnum{NewBaseEnum(RecordIncome, "收入"), "#47ABF2"}
+var ERecordTransferOut = RecordTypeEnum{NewBaseEnum(RecordTransferOut, "转出"), ""}
+var ERecordTransferIn = RecordTypeEnum{NewBaseEnum(RecordTransferIn, "转入"), ""}
 
-var recordTypeMap map[int8]*BaseEnum
-var recordTypeList []*BaseEnum
+var recordTypeMap map[int8]Enum
+var recordTypeList []Enum
 
-func GetRecordTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
+func GetRecordTypeMap() (map[int8]Enum, []Enum) {
 	if recordTypeMap == nil {
 		recordTypeMap, recordTypeList = MakeMap(ERecordExpense, ERecordIncome,
 			ERecordTransferOut, ERecordTransferIn)
@@ -30,7 +37,7 @@ func GetRecordTypeMap() (map[int8]*BaseEnum, []*BaseEnum) {
 	return recordTypeMap, recordTypeList
 }
 
-func GetRecordTypeByIndex(index int8) *BaseEnum {
+func GetRecordTypeByIndex(index int8) Enum {
 	maps, _ := GetRecordTypeMap()
 	return maps[index]
 }
