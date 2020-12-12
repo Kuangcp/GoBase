@@ -71,6 +71,11 @@ export default {
         for (let v of this.tableData) {
           this.totalAmount += v.CurrentAmount;
         }
+      } else {
+        this.$message({
+          message: "数据为空",
+          type: "warning",
+        });
       }
     },
   },

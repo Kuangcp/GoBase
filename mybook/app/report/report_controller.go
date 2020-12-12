@@ -195,10 +195,13 @@ func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) 
 			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 			Group("type, period").Find(&sumResult)
 	} else {
-		db.Table("record").
+		where := db.Table("record").
 			Select("category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
-			Where(" type = ?", param.TypeId).
-			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
+			Where(" type = ?", param.TypeId)
+		if param.CategoryId != 0 {
+			where = where.Where(" category_id = ?", param.CategoryId)
+		}
+		where.Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 			Group("category_id, period").Find(&sumResult)
 	}
 	return sumResult

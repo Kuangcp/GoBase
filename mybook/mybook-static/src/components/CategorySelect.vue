@@ -6,6 +6,7 @@
         :props="{ expandTrigger: 'hover' }"
         @change="handleChange"
         size="mini"
+        clearable
     ></el-cascader>
 
     <!-- <span :key="index" v-for="(item, index) in categoryMap">
