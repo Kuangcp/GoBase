@@ -59,7 +59,7 @@ func CategoryPeriodReport(c *gin.Context) {
 	var lines []LineVO
 
 	if param.TypeId == int(constant.RecordOverview) {
-		legends = append(legends, "结余", constant.ERecordExpense.Name, constant.ERecordIncome.Name)
+		legends = append(legends, constant.ERecordIncome.Name, constant.ERecordExpense.Name, "结余")
 		for _, sum := range sumResult {
 			periodNumMap[sum.BuildKey()] = sum.Sum
 			_, ok := existCategoryMap[sum.CategoryId]
@@ -135,7 +135,7 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 	var lines []LineVO
 	var balanceData []int32
 
-	for _, typeId := range []constant.RecordTypeEnum{constant.ERecordExpense, constant.ERecordIncome} {
+	for _, typeId := range []constant.RecordTypeEnum{constant.ERecordIncome, constant.ERecordExpense} {
 		categoryId := uint(typeId.Index)
 		var data []float32
 		for i, period := range periodList {

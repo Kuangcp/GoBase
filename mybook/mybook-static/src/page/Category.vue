@@ -154,7 +154,7 @@
   padding: 0 0 0 10px;
 }
 
-/deep/ .el-dialog__header{
+/deep/ .el-dialog__header {
   padding-bottom: 0;
 }
 
@@ -169,14 +169,7 @@
 }
 </style>
 <script>
-import DateUtil from "../util/DateUtil.js";
-
-function fillDate(picker, offset) {
-  const end = new Date();
-  const start = new Date();
-  start.setTime(start.getTime() - offset);
-  picker.$emit("pick", [start, end]);
-}
+import {dateShortCut, formatter} from "@/util/DateUtil";
 
 export default {
   components: {},
@@ -185,32 +178,7 @@ export default {
       dialogTableVisible: false,
       accountId: null,
       pickerOptions: {
-        shortcuts: [
-          {
-            text: "最近一周",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 7);
-            },
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 30);
-            },
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 90);
-            },
-          },
-          {
-            text: "最近半年",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 180);
-            },
-          },
-        ],
+        shortcuts: dateShortCut
       },
       dateArray: [],
       visible: false,
@@ -232,8 +200,8 @@ export default {
     getFormatDate() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
-      let start = (startTime && DateUtil(startTime).formatDate()) || "";
-      let end = (endTime && DateUtil(endTime).formatDate()) || "";
+      let start = (startTime && formatter(startTime).formatDate()) || "";
+      let end = (endTime && formatter(endTime).formatDate()) || "";
       return {
         start,
         end,

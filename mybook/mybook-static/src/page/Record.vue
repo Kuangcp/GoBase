@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import DateUtil from "../util/DateUtil.js";
+import {formatter} from "@/util/DateUtil";
 import AccountSelect from "../components/AccountSelect";
 import CategorySelect from "../components/CategorySelect";
 
@@ -86,7 +86,7 @@ export default {
         return;
       }
 
-      let resultDate = this.recordDate.map((v) => DateUtil(v).formatDate());
+      let resultDate = this.recordDate.map((v) => formatter(v).formatDate());
 
       let param = {
         typeId: ids[0],

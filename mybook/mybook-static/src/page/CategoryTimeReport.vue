@@ -123,15 +123,8 @@
 </style>
 
 <script>
-import DateUtil from "../util/DateUtil.js";
+import {dateShortCut, formatter} from "@/util/DateUtil";
 import Echart from "../components/Echart";
-
-function fillDate(picker, offset) {
-  const end = new Date();
-  const start = new Date();
-  start.setTime(start.getTime() - offset);
-  picker.$emit("pick", [start, end]);
-}
 
 export default {
   components: {
@@ -198,38 +191,7 @@ export default {
         {ID: "day", Name: "日"},
       ],
       pickerOptions: {
-        shortcuts: [
-          {
-            text: "最近一周",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 7);
-            },
-          },
-          {
-            text: "最近一个月",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 30);
-            },
-          },
-          {
-            text: "最近三个月",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 90);
-            },
-          },
-          {
-            text: "最近半年",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 180);
-            },
-          },
-          {
-            text: "最近一年",
-            onClick(picker) {
-              fillDate(picker, 3600 * 1000 * 24 * 360);
-            },
-          },
-        ],
+        shortcuts: dateShortCut
       },
       dateArray: [],
     };
@@ -251,8 +213,8 @@ export default {
     async drawLine() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
-      let start = (startTime && DateUtil(startTime).format(this.getFormat())) || "";
-      let end = (endTime && DateUtil(endTime).format(this.getFormat())) || "";
+      let start = (startTime && formatter(startTime).format(this.getFormat())) || "";
+      let end = (endTime && formatter(endTime).format(this.getFormat())) || "";
 
       this.showChart = false
       let resp = await this.$http.get(window.api.report.categoryPeriod, {

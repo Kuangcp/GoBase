@@ -3,31 +3,82 @@
  * @param   {Number} timeStamp    待格式化的 unix 时间戳
  * @return  {String}              格式化后的日期字符串
  */
-export default function (timeStamp) {
-  const fixLen = function (num, len) {
-    let r = `${num}`;
-    while (r.length < len) {
-      r = `0${r}`;
-    }
-    return r;
-  };
-  const date = new Date(timeStamp);
-  return {
-    format(pattern) {
-      const str = typeof pattern === 'string' ? pattern : 'yyyy-MM-dd';
-      if (!isNaN(date.getTime())) {
-        return str
-          .replace(/yyyy/i, fixLen(date.getFullYear(), 4))
-          .replace(/MM/, fixLen(date.getMonth() + 1, 2))
-          .replace(/dd/i, fixLen(date.getDate(), 2))
-          .replace(/hh/i, fixLen(date.getHours(), 2))
-          .replace(/mm/, fixLen(date.getMinutes(), 2))
-          .replace(/ss/i, fixLen(date.getSeconds(), 2));
-      }
-      return '';
+
+const formatter = function (timeStamp) {
+    const fixLen = function (num, len) {
+        let r = `${num}`;
+        while (r.length < len) {
+            r = `0${r}`;
+        }
+        return r;
+    };
+    const date = new Date(timeStamp);
+    return {
+        format(pattern) {
+            const str = typeof pattern === 'string' ? pattern : 'yyyy-MM-dd';
+            if (!isNaN(date.getTime())) {
+                return str
+                    .replace(/yyyy/i, fixLen(date.getFullYear(), 4))
+                    .replace(/MM/, fixLen(date.getMonth() + 1, 2))
+                    .replace(/dd/i, fixLen(date.getDate(), 2))
+                    .replace(/hh/i, fixLen(date.getHours(), 2))
+                    .replace(/mm/, fixLen(date.getMinutes(), 2))
+                    .replace(/ss/i, fixLen(date.getSeconds(), 2));
+            }
+            return '';
+        },
+        formatDate() {
+            return this.format("YYYY-MM-dd")
+        }
+    };
+}
+
+const fillDate = function (picker, offset) {
+    const end = new Date();
+    const start = new Date();
+    start.setTime(start.getTime() - offset);
+    picker.$emit("pick", [start, end]);
+}
+
+const dateShortCut = [
+    {
+        text: "今年",
+        onClick(picker) {
+            fillDate(picker, new Date() - new Date(new Date().getFullYear().toString()));
+        },
     },
-    formatDate(){
-      return this.format("YYYY-MM-dd")
-    }
-  };
+    {
+        text: "最近一周",
+        onClick(picker) {
+            fillDate(picker, 3600 * 1000 * 24 * 7);
+        },
+    },
+    {
+        text: "最近一个月",
+        onClick(picker) {
+            fillDate(picker, 3600 * 1000 * 24 * 30);
+        },
+    },
+    {
+        text: "最近三个月",
+        onClick(picker) {
+            fillDate(picker, 3600 * 1000 * 24 * 90);
+        },
+    },
+    {
+        text: "最近半年",
+        onClick(picker) {
+            fillDate(picker, 3600 * 1000 * 24 * 180);
+        },
+    },
+    {
+        text: "最近一年",
+        onClick(picker) {
+            fillDate(picker, 3600 * 1000 * 24 * 365);
+        },
+    },
+]
+
+export {
+    formatter, dateShortCut
 }
