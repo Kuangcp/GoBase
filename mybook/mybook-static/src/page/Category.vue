@@ -86,7 +86,7 @@
     </el-dialog>
 
     <el-dialog title="报表" :visible.sync="reportDialogVisible" width="1600px">
-      <Echart ref="echart" class="categoryMonth"/>
+      <Echart ref="echart" v-if="reportDialogVisible" class="categoryMonth"/>
     </el-dialog>
 
     <el-table :data="tableData" stripe height="860" class="main-box">
@@ -311,6 +311,7 @@ export default {
           startDate: start,
           endDate: end,
           chartType: 'line',
+          typeId: this.accountType,
           categoryId: categoryId,
           showLabel: false,
           period: period,
