@@ -90,15 +90,22 @@ func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
 			logger.Error(e)
 			return ghelp.FailedWithMsg("date 参数错误")
 		}
-		parseResult := parseAmount(param.Amount)
-		if parseResult.IsFailed() {
-			return parseResult
+		param.Amount = strings.Replace(param.Amount, "，", ",", -1)
+		amountList := strings.Split(param.Amount, ",")
+		var totalAmount = 0
+		for _, one := range amountList {
+			parseResult := parseAmount(one)
+			if parseResult.IsFailed() {
+				return parseResult
+			}
+			totalAmount += parseResult.Data.(int)
 		}
+
 		record := &RecordEntity{
 			AccountId:  uint(param.AccountId),
 			CategoryId: uint(param.CategoryId),
 			Type:       param.TypeId,
-			Amount:     parseResult.Data.(int),
+			Amount:     totalAmount,
 			RecordTime: recordDate,
 		}
 		if param.Comment != "" {
