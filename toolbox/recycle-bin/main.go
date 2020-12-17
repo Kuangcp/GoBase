@@ -19,61 +19,6 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-const (
-	maxEmptyTrashCheck = 3
-)
-
-var (
-	mainDir       = "/.config/app-conf/recycle-bin"
-	configDir     string
-	logDir        string
-	trashDir      string
-	logFile       string
-	configFile    string
-	pidFile       string
-	retentionTime time.Duration
-	checkPeriod   time.Duration
-)
-
-type (
-	fileItem struct {
-		name      string
-		timestamp int64
-		file      os.FileInfo
-	}
-)
-
-func (t *fileItem) formatTime() string {
-	return time.Unix(t.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000")
-}
-
-func (t *fileItem) formatForList(current int64) string {
-	second := strconv.FormatInt((retentionTime.Nanoseconds()-current+t.timestamp)/1000000000, 10)
-
-	duration, err := time.ParseDuration(second + "s")
-	if err != nil {
-		duration = 0
-	}
-	if duration.Seconds() < 0 {
-		duration = 0
-	}
-	return fmt.Sprintln(t.formatTime(), cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(t.name))
-}
-
-func invokeWithCondition(flag bool, action func()) {
-	if flag {
-		action()
-		os.Exit(0)
-	}
-}
-
-func invokeWithStr(param string, action func(string)) {
-	if param != "" {
-		action(param)
-		os.Exit(0)
-	}
-}
-
 func main() {
 	invokeWithCondition(help, info.PrintHelp)
 	invokeWithCondition(initConfig, InitConfig)
@@ -410,8 +355,9 @@ func DeleteFiles(files []string) {
 		if err != nil {
 			continue
 		}
+
 		logger.Info("Prepare delete:", filepath)
-		// logger.Debug(filepath, trashDir+"/"+finalName)
+		//logger.Debug(filepath, trashDir+"/"+finalName)
 		cmd := exec.Command("mv", filepath, finalName)
 		execCmdWithQuite(cmd)
 	}
@@ -423,9 +369,11 @@ func buildTrashFileName(path string) (string, error) {
 		logger.Error("Invalid path", path)
 		return "", fmt.Errorf("")
 	}
+
 	if strings.HasSuffix(result, "/") {
 		result = result[:len(result)-1]
 	}
+
 	if strings.HasPrefix(result, "/") {
 		last := strings.LastIndex(result, "/")
 		if last != -1 && last < len(result)-1 {
@@ -435,9 +383,15 @@ func buildTrashFileName(path string) (string, error) {
 			return "", fmt.Errorf("")
 		}
 	}
+
 	if result == "/" || result == "" {
 		logger.Error("Invalid path", path)
 		return "", fmt.Errorf("")
+	}
+
+	if strings.Contains(result, "/") {
+		last := strings.LastIndex(result, "/")
+		result = result[last+1:]
 	}
 	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
 	return trashDir + "/" + result + ".T." + timestamp, nil

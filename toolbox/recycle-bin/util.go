@@ -256,3 +256,17 @@ func startProc(args []string, logFile string) (*exec.Cmd, error) {
 
 	return cmd, nil
 }
+
+func invokeWithCondition(flag bool, action func()) {
+	if flag {
+		action()
+		os.Exit(0)
+	}
+}
+
+func invokeWithStr(param string, action func(string)) {
+	if param != "" {
+		action(param)
+		os.Exit(0)
+	}
+}
