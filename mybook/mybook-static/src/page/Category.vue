@@ -84,8 +84,7 @@
         </el-table-column>
       </el-table>
     </el-dialog>
-
-    <el-dialog title="报表" :visible.sync="reportDialogVisible" width="1600px">
+    <el-dialog title="报表" :visible.sync="reportDialogVisible" width="1820px">
       <Echart ref="echart" v-if="reportDialogVisible" class="categoryMonth"/>
     </el-dialog>
 
@@ -173,7 +172,7 @@
 }
 
 .categoryMonth {
-  width: 1580px;
+  width: 1800px;
   height: 650px;
 }
 </style>

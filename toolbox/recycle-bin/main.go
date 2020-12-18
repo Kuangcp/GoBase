@@ -58,7 +58,7 @@ func main() {
 }
 
 func RestoreFile(restoreFile string) {
-	items := listfileItem(func(val string) bool {
+	items := listTrashFileItem(func(val string) bool {
 		return strings.Contains(val, restoreFile)
 	})
 
@@ -132,7 +132,7 @@ func restoreFileToCurDir(item fileItem) {
 	execCmdWithQuite(cmd)
 }
 
-func listfileItem(filter func(string) bool) []fileItem {
+func listTrashFileItem(filter func(string) bool) []fileItem {
 	var result []fileItem
 	dir, err := ioutil.ReadDir(trashDir)
 	if err != nil {
@@ -175,7 +175,7 @@ func ListTrashFiles() {
 		os.Exit(1)
 	}
 
-	items := listfileItem(func(s string) bool {
+	items := listTrashFileItem(func(s string) bool {
 		return true
 	})
 	current := time.Now().UnixNano()
