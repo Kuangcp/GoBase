@@ -4,11 +4,21 @@
     <meta charset="UTF-8">
     <title>Up</title>
 </head>
+<style>
+    body {
+        width: 40%;
+        font-size: 40px;
+        transform: scale(2, 2.5);
+    }
+</style>
 <body>
 
-<form action="/u" method="post" enctype="multipart/form-data">
-    <input type="file" name="file"/>
-    <button>Submit</button>
-</form>
+<div style="padding-left: 30%; padding-top: 30%">
+    <form action="/u" method="post" enctype="multipart/form-data" style="height: 50px;width: 40vw">
+        <input type="file" name="file"/>
+        <button>Submit</button>
+    </form>
+</div>
+
 </body>
 </html>

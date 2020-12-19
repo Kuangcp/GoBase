@@ -89,7 +89,7 @@ func startWebServer(port int) {
 
 	http.HandleFunc("/u", uploadHandler)
 	http.HandleFunc("/up", func(resp http.ResponseWriter, request *http.Request) {
-		resp.Write([]byte("<!DOCTYPE html><html lang=\"en\"><head>    <meta charset=\"UTF-8\">    <title>Up</title></head><body><form action=\"/u\" method=\"post\" enctype=\"multipart/form-data\">    <input type=\"file\" name=\"file\"/>    <button>Submit</button></form></body></html>"))
+		resp.Write([]byte("<!DOCTYPE html> <html lang=en> <head> <meta charset=UTF-8> <title>Up</title> </head> <style> body { width: 40%; font-size: 40px; transform: scale(2, 2.5); } </style> <body> <div style=padding-left: 30%; padding-top: 30%> <form action=/u method=post enctype=multipart/form-data style=height: 50px;width: 40vw> <input type=file name=file/> <button>Submit</button> </form> </div> </body> </html>"))
 	})
 
 	http.HandleFunc("/echo", func(resp http.ResponseWriter, req *http.Request) {
