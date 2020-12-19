@@ -54,47 +54,11 @@ func getInternalIP() string {
 	return ""
 }
 
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	// 接受文件
-	file, header, err := r.FormFile("file")
-	if err != nil || header == nil {
-		// ignore the error handler
-		log.Println(err)
-		return
-	}
-
-	log.Printf("upload: %s", header.Filename)
-	// 将文件拷贝到指定路径下，或者其他文件操作
-	dst, err := os.Create(header.Filename)
-	if err != nil {
-		// ignore
-		log.Println(err)
-		return
-	}
-
-	_, err = io.Copy(dst, file)
-	if err != nil {
-		// ignore
-		log.Println(err)
-	}
-	w.Write(success)
-}
-
-func startWebServer(port int) {
-	internalIP := getInternalIP()
-
-	// 绑定路由到当前目录
-	fs := http.FileServer(http.Dir("./"))
-	http.Handle("/", http.StripPrefix("/", fs))
-
-	http.HandleFunc("/u", uploadHandler)
-	http.HandleFunc("/up", func(resp http.ResponseWriter, request *http.Request) {
-		htmlContent := `
-<!DOCTYPE html>
+func showUploadPage(w http.ResponseWriter, r *http.Request) {
+	htmlContent := `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Up</title>
 </head>
 <style>
     body {
@@ -104,25 +68,59 @@ func startWebServer(port int) {
     }
 </style>
 <body>
-
 <div style="padding-left: 30%; padding-top: 30%">
     <form action="/u" method="post" enctype="multipart/form-data" style="height: 50px;width: 40vw">
-        <input type="file" name="file"/>
+        <input type="file" multiple name="file"/>
         <button>Submit</button>
     </form>
 </div>
-
 </body>
-</html>
-`
-		resp.Write([]byte(htmlContent))
-	})
+</html>`
+	w.Write([]byte(htmlContent))
+}
 
-	http.HandleFunc("/echo", func(resp http.ResponseWriter, req *http.Request) {
-		body, _ := ioutil.ReadAll(req.Body)
-		log.Printf(string(body))
-		resp.Write(success)
-	})
+func echoHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body)
+	log.Printf(string(body))
+	w.Write(success)
+}
+
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	var maxMib int64 = 10
+	r.ParseMultipartForm(maxMib << 20)
+	for _, headers := range r.MultipartForm.File {
+		for _, header := range headers {
+
+			log.Printf("upload: %s", header.Filename)
+			// 将文件拷贝到指定路径下，或者其他文件操作
+			dst, err := os.Create(header.Filename)
+			if err != nil {
+				// ignore
+				log.Println(err)
+				return
+			}
+
+			open, _ := header.Open()
+			_, err = io.Copy(dst, open)
+			if err != nil {
+				// ignore
+				log.Println(err)
+			}
+		}
+	}
+
+	w.Write(success)
+}
+
+func startWebServer(port int) {
+	internalIP := getInternalIP()
+
+	// 绑定路由到当前目录
+	fs := http.FileServer(http.Dir("./"))
+	http.Handle("/", http.StripPrefix("/", fs))
+	http.HandleFunc("/u", uploadHandler)
+	http.HandleFunc("/up", showUploadPage)
+	http.HandleFunc("/echo", echoHandler)
 
 	log.Printf("web server started.\n")
 	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port, cuibase.End)
