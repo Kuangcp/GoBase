@@ -89,7 +89,7 @@ func startWebServer(port int) {
 
 	http.HandleFunc("/u", uploadHandler)
 	http.HandleFunc("/up", func(resp http.ResponseWriter, request *http.Request) {
-		a := `
+		htmlContent := `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -115,7 +115,7 @@ func startWebServer(port int) {
 </body>
 </html>
 `
-		resp.Write([]byte(a))
+		resp.Write([]byte(htmlContent))
 	})
 
 	http.HandleFunc("/echo", func(resp http.ResponseWriter, req *http.Request) {
