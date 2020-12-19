@@ -423,7 +423,10 @@ func DeleteFileBySuffix(params []string) {
 		}
 	}
 
-	fmt.Printf("%v\nDelete the above file? (y/n):", files)
+	for _, file := range files {
+		fmt.Println("  ", file)
+	}
+	fmt.Printf("\nDelete the above file? (y/n):")
 	var input string
 	_, err = fmt.Scanf("%s", &input)
 	if err != nil {
