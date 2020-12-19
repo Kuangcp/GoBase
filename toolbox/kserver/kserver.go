@@ -87,7 +87,10 @@ func startWebServer(port int) {
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	http.HandleFunc("/up", uploadHandler)
+	http.HandleFunc("/u", uploadHandler)
+	http.HandleFunc("/up", func(resp http.ResponseWriter, request *http.Request) {
+		resp.Write([]byte("<!DOCTYPE html><html lang=\"en\"><head>    <meta charset=\"UTF-8\">    <title>Up</title></head><body><form action=\"/u\" method=\"post\" enctype=\"multipart/form-data\">    <input type=\"file\" name=\"file\"/>    <button>Submit</button></form></body></html>"))
+	})
 
 	http.HandleFunc("/echo", func(resp http.ResponseWriter, req *http.Request) {
 		body, _ := ioutil.ReadAll(req.Body)
@@ -96,12 +99,12 @@ func startWebServer(port int) {
 	})
 
 	log.Printf("web server started.\n")
-	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port,cuibase.End)
-	log.Printf("%vhttp://%v:%v%v\n", cuibase.Green, internalIP, port,cuibase.End)
-	log.Printf("%v/up%v   : upload file.    | curl -X POST -H 'Content-Type: multipart/form-data' -F 'file=@index.html' http://127.0.0.1:%v/up\n",
+	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port, cuibase.End)
+	log.Printf("%vhttp://%v:%v%v\n", cuibase.Green, internalIP, port, cuibase.End)
+	log.Printf("%v/up%v : upload view | http://127.0.0.1:8989/up\n", cuibase.Purple, cuibase.End)
+	log.Printf("%v/u%v  : upload file | curl -X POST -H 'Content-Type: multipart/form-data' -F 'file=@index.html' http://127.0.0.1:%v/u\n",
 		cuibase.Purple, cuibase.End, port)
-	log.Printf("%v/echo%v : echo. | curl -d 'hi' http://127.0.0.1:8989/echo\n",
-		cuibase.Purple, cuibase.End)
+	log.Printf("%v/e%v  : echo string | curl -d 'hi' http://127.0.0.1:8989/echo\n", cuibase.Purple, cuibase.End)
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
 		log.Fatal("error: ", err)
