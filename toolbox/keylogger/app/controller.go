@@ -530,15 +530,16 @@ func hotKey(dayList []string, top int64) map[string]bool {
 	return keyCodeMap
 }
 
+// 不超过今天
 func buildDayList(length int, offset int) []string {
 	now := time.Now()
 
 	var result []string
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
-		tempTime := start.AddDate(0, 0, i)
-		day := tempTime.Format(DateFormat)
-		if tempTime.After(now) {
+		cursor := start.AddDate(0, 0, i)
+		day := cursor.Format(DateFormat)
+		if cursor.After(now) {
 			return result
 		}
 		result = append(result, day)
