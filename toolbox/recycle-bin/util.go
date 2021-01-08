@@ -257,7 +257,7 @@ func startProc(args []string, logFile string) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func invokeWithCondition(flag bool, action func()) {
+func invokeWithBool(flag bool, action func()) {
 	if flag {
 		action()
 		os.Exit(0)

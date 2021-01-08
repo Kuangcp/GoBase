@@ -20,19 +20,19 @@ import (
 )
 
 func main() {
-	invokeWithCondition(help, info.PrintHelp)
-	invokeWithCondition(initConfig, InitConfig)
-	invokeWithCondition(listTrash, ListTrashFiles)
-	invokeWithCondition(exit, ExitCheckFileDaemon)
-	invokeWithCondition(log, func() {
+	invokeWithBool(help, info.PrintHelp)
+	invokeWithBool(initConfig, InitConfig)
+	invokeWithBool(listTrash, ListTrashFiles)
+	invokeWithBool(exit, ExitCheckFileDaemon)
+	invokeWithBool(log, func() {
 		fmt.Println(logFile)
 	})
-	invokeWithCondition(showConfig, func() {
+	invokeWithBool(showConfig, func() {
 		fmt.Println(configFile)
 	})
 
-	invokeWithCondition(illegalQuit, func() {
-		ActualDeleteFile(pidFile)
+	invokeWithBool(illegalQuit, func() {
+		DeleteFiles([]string{pidFile})
 	})
 	invokeWithStr(suffix, func(s string) {
 		DeleteFileBySuffix(strings.Split(s, ","))
@@ -201,15 +201,13 @@ func ListTrashFiles() {
 }
 
 func fmtDuration(d time.Duration) string {
-	d = d.Round(time.Second)
-	h := d / time.Hour
-	d -= h * time.Hour
-	m := d / time.Minute
-	d -= m * time.Minute
-	s := d / time.Second
-	return fmt.Sprintf("%03d:%02d:%02d", h, m, s)
+	return fmt.Sprintf("%03d:%02d:%02d",
+		int(d.Truncate(time.Hour).Hours()),
+		int(d.Truncate(time.Minute).Minutes())%60,
+		int(d.Truncate(time.Second).Seconds())%60)
 }
 
+// just start new process invoke CheckTrashDir()
 func CheckWithDaemon() {
 	params := fmt.Sprintf(" -c %s -r %s", checkStr, retentionStr)
 	proc, err := startProc([]string{"/usr/bin/bash", "-c", "recycle-bin -C" + params}, logFile)
@@ -261,7 +259,6 @@ func CheckTrashDir() {
 func doCheckTrashDir() {
 	emptyCount := 0
 	for true {
-		time.Sleep(checkPeriod)
 		logger.Debug("Check")
 		dir, err := ioutil.ReadDir(trashDir)
 		if err != nil {
@@ -277,6 +274,7 @@ func doCheckTrashDir() {
 		}
 
 		cleanFile(dir)
+		time.Sleep(checkPeriod)
 	}
 }
 
@@ -331,7 +329,7 @@ func deletePidFile(deleteFlag *int32) {
 	logger.Warn("Exit")
 	curDelete := atomic.AddInt32(deleteFlag, 1)
 	if curDelete == 1 {
-		ActualDeleteFile(pidFile)
+		DeleteFiles([]string{pidFile})
 	}
 }
 
@@ -455,14 +453,6 @@ func ExitCheckFileDaemon() {
 	logger.Info("kill ", pid)
 	cmd := exec.Command("kill", pid)
 	execCmdWithQuite(cmd)
-}
-
-func ActualDeleteFile(path string) {
-	err := os.Remove(path)
-	if err != nil {
-		logger.Error(path, err)
-		os.Exit(1)
-	}
 }
 
 // 静默执行 不关心返回值
