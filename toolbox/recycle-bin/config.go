@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
@@ -33,18 +32,17 @@ type (
 	}
 )
 
-func (t *fileItem) formatTime() string {
-	return time.Unix(t.timestamp/1000000000, 0).Format("2006-01-02 15:04:05.000")
+func (t *fileItem) seconds() int64 {
+	return t.timestamp / 1000_000_000
 }
 
-func (t *fileItem) formatForList(current int64) string {
-	second := strconv.FormatInt((retentionTime.Nanoseconds()-current+t.timestamp)/1000000000, 10)
+func (t *fileItem) formatTime() string {
+	return time.Unix(t.seconds(), 0).Format("2006-01-02 15:04:05.000")
+}
 
-	duration, err := time.ParseDuration(second + "s")
-	if err != nil {
-		duration = 0
-	}
-	if duration.Seconds() < 0 {
+func (t *fileItem) formatForList(currentNano int64) string {
+	duration := time.Duration(t.timestamp - currentNano + retentionTime.Nanoseconds())
+	if duration < 0 {
 		duration = 0
 	}
 	return fmt.Sprintln(t.formatTime(), cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(t.name))

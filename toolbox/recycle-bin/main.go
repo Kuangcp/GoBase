@@ -178,7 +178,7 @@ func ListTrashFiles() {
 	items := listTrashFileItem(func(s string) bool {
 		return true
 	})
-	current := time.Now().UnixNano()
+	currentNano := time.Now().UnixNano()
 	if len(items) != 0 {
 		fmt.Printf("%v%-23s %-10s %s%v\n", cuibase.Cyan, "DeleteTime", "Remaining", "File", cuibase.End)
 	}
@@ -191,11 +191,11 @@ func ListTrashFiles() {
 			return items[i].timestamp < items[j].timestamp
 		})
 		for _, item := range items {
-			fmt.Print(item.formatForList(current))
+			fmt.Print(item.formatForList(currentNano))
 		}
 	} else {
 		for _, item := range items {
-			fmt.Print(item.formatForList(current))
+			fmt.Print(item.formatForList(currentNano))
 		}
 	}
 }
