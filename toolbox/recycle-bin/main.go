@@ -190,12 +190,12 @@ func ListTrashFiles() {
 			}
 			return items[i].timestamp < items[j].timestamp
 		})
-		for _, item := range items {
-			fmt.Print(item.formatForList(currentNano))
+		for i, item := range items {
+			fmt.Print(item.formatForList(i, currentNano))
 		}
 	} else {
-		for _, item := range items {
-			fmt.Print(item.formatForList(currentNano))
+		for i, item := range items {
+			fmt.Print(item.formatForList(i, currentNano))
 		}
 	}
 }
