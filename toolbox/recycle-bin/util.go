@@ -28,7 +28,7 @@ var (
 	listOrder    int
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
-	checkStr     = "1h"
+	periodStr    = "1h"
 )
 
 type (
@@ -50,13 +50,13 @@ func init() {
 	flag.BoolVar(&illegalQuit, "q", false, "")
 	flag.BoolVar(&listTrash, "l", false, "")
 	flag.BoolVar(&log, "g", false, "")
-	flag.BoolVar(&showConfig, "f", false, "")
+	flag.BoolVar(&showConfig, "c", false, "")
 	flag.BoolVar(&initConfig, "i", false, "")
 	flag.IntVar(&listOrder, "o", 0, "")
 
 	flag.StringVar(&restore, "R", "", "")
 	flag.StringVar(&retentionStr, "r", retentionStr, "")
-	flag.StringVar(&checkStr, "c", checkStr, "")
+	flag.StringVar(&periodStr, "p", periodStr, "")
 	flag.StringVar(&suffix, "s", "", "")
 
 	flag.Usage = info.PrintHelp
@@ -93,36 +93,40 @@ func initConfigValue() {
 		},
 	})
 
-	err = loadConfig()
+	_, err = loadConfig()
 	cuibase.CheckIfError(err)
 }
 
-func loadConfig() error {
+func loadConfig() (*Setting, error) {
 	exists, err := isPathExists(configFile)
 	if err != nil {
 		logger.Error(err)
-		return err
+		return nil, err
 	}
-	if exists {
-		file, err := ioutil.ReadFile(configFile)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		setting := Setting{}
-		err = json.Unmarshal(file, &setting)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		if setting.Retention != "" {
-			retentionStr = setting.Retention
-		}
-		if setting.CheckPeriod != "" {
-			checkStr = setting.CheckPeriod
-		}
+	if !exists {
+		return nil, nil
 	}
-	return nil
+
+	file, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	setting := Setting{}
+	err = json.Unmarshal(file, &setting)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	if setting.Retention != "" {
+		retentionStr = setting.Retention
+	}
+	if setting.CheckPeriod != "" {
+		periodStr = setting.CheckPeriod
+	}
+	return &setting, nil
 }
 
 var info = cuibase.HelpInfo{
@@ -164,6 +168,10 @@ var info = cuibase.HelpInfo{
 			Value:   "",
 			Comment: "Show log file path",
 		}, {
+			Short:   "-c",
+			Value:   "",
+			Comment: "Show config file",
+		}, {
 			Short:   "-i",
 			Value:   "",
 			Comment: "Init dir and config",
@@ -191,9 +199,9 @@ var info = cuibase.HelpInfo{
 			Value:   "duration",
 			Comment: "File retention time, default " + retentionStr + ". (unit: ms/s/m/h) ",
 		}, {
-			Short:   "-c",
+			Short:   "-p",
 			Value:   "duration",
-			Comment: "Check trash period, default " + checkStr + ". (unit: ms/s/m/h)",
+			Comment: "Check trash period, default " + periodStr + ". (unit: ms/s/m/h)",
 		},
 	}}
 
@@ -208,7 +216,7 @@ func InitConfig() {
 	exist, err := isPathExists(configFile)
 	cuibase.CheckIfError(err)
 	if !exist {
-		result, err := json.Marshal(Setting{Retention: retentionStr, CheckPeriod: checkStr})
+		result, err := json.Marshal(Setting{Retention: retentionStr, CheckPeriod: periodStr})
 		cuibase.CheckIfError(err)
 		err = ioutil.WriteFile(configFile, result, 0644)
 		cuibase.CheckIfError(err)

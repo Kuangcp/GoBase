@@ -29,6 +29,9 @@ func main() {
 	})
 	invokeWithBool(showConfig, func() {
 		fmt.Println(configFile)
+		config, err := loadConfig()
+		cuibase.CheckIfError(err)
+		logger.Info("period:", config.CheckPeriod, "retention:", config.Retention)
 	})
 
 	invokeWithBool(illegalQuit, func() {
@@ -209,7 +212,7 @@ func fmtDuration(d time.Duration) string {
 
 // just start new process invoke CheckTrashDir()
 func CheckWithDaemon() {
-	params := fmt.Sprintf(" -c %s -r %s", checkStr, retentionStr)
+	params := fmt.Sprintf(" -p %s -r %s", periodStr, retentionStr)
 	proc, err := startProc([]string{"/usr/bin/bash", "-c", "recycle-bin -C" + params}, logFile)
 	if err != nil {
 		logger.Error(proc, err)
@@ -318,7 +321,7 @@ func parseTime() error {
 	}
 
 	retentionTime = duration
-	checkPeriod, err = time.ParseDuration(checkStr)
+	checkPeriod, err = time.ParseDuration(periodStr)
 	if err != nil {
 		return err
 	}
@@ -420,6 +423,8 @@ func DeleteFileBySuffix(params []string) {
 			}
 		}
 	}
+
+	fmt.Println()
 
 	for _, file := range files {
 		fmt.Println("  ", file)
