@@ -112,7 +112,7 @@ func doQueryBaidu(param QueryParam) {
 	bodyContent, err := ioutil.ReadAll(resp.Body)
 	//fmt.Printf("resp status code: %d\n", resp.StatusCode)
 	content := string(bodyContent)
-	if strings.Contains(content, "error") {
+	if strings.Contains(content, "\"error_code\"") {
 		fmt.Printf("response error: %s\n", content)
 		return
 	}
