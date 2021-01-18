@@ -11,10 +11,11 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/wonderivan/logger"
 )
 
 const (
-	width         = 140
+	width         = 128
 	height        = 24
 	refreshPeriod = time.Millisecond * 1688
 )
@@ -74,20 +75,20 @@ func createWindow(app *gtk.Application) {
 
 	// Event handlers
 	area.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
-		total, bpm, todayMax := buildTotalAndBPM()
+		total, bpm, todayMax := buildShowData()
 
-		cr.MoveTo(5, 18)
+		cr.MoveTo(3, 18)
 
 		cr.SetSourceRGB(0, 150, 0)
 		cr.SetFontSize(18)
 		cr.ShowText(fmt.Sprintf("%3d ", bpm))
 
 		cr.SetSourceRGB(255, 255, 255)
-		cr.SetFontSize(19)
+		cr.SetFontSize(18)
 		cr.ShowText(fmt.Sprintf("%-5d ", total))
 
 		cr.SetSourceRGB(150, 150, 0)
-		cr.SetFontSize(18)
+		cr.SetFontSize(13)
 		cr.ShowText(fmt.Sprintf("%-3d ", todayMax))
 
 		cr.Fill()
@@ -95,7 +96,8 @@ func createWindow(app *gtk.Application) {
 
 	refresh(win)
 }
-func buildTotalAndBPM() (int, int, int) {
+
+func buildShowData() (int, int, int) {
 	conn := GetConnection()
 	now := time.Now()
 	today := now.Format(DateFormat)
@@ -112,6 +114,7 @@ func buildTotalAndBPM() (int, int, int) {
 	if todayMax < bpm {
 		conn.Set(bpmKey, bpm, 0)
 		todayMax = bpm
+		logger.Info("bump to", bpm)
 	}
 
 	return int(total), bpm, todayMax
@@ -129,10 +132,11 @@ func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
 	lastTotal, err := conn.Get(lastKey).Float64()
 	if err == nil {
 		delta := total - lastTotal
-		if delta <= 0 {
+		result := int(delta * 60 / float64(now.Second()))
+		if result <= 0 {
 			return 0
 		}
-		return int(delta * 60 / float64(now.Second()))
+		return result
 	} else {
 		fmt.Println(err)
 	}
