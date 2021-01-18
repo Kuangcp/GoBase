@@ -21,6 +21,11 @@ const DateFormat = "2006:01:02"
 //KeyMap cache key code map HASH
 const KeyMap = Prefix + "key-map"
 
+// 奇数 分钟的 总数
+const OddKey = Prefix + "dashboard:oddCount"
+// 偶数 分钟的 总数
+const EvenKey = Prefix + "dashboard:evenCount"
+
 var connection *redis.Client
 
 //GetRankKey by time

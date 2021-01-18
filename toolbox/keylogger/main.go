@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/wonderivan/logger"
 	"keylogger/app"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+
+	"github.com/wonderivan/logger"
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
@@ -32,6 +33,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-R", Comment: "print daily rank by before x day ago and duration"},
 		{Short: "-r", Comment: "print total rank by before x day ago and duration"},
 		{Short: "-S", Comment: "web server"},
+		{Short: "-b", Comment: "open small window to show total and bpm(beat per minute)"},
 		{Short: "-d", Comment: "debug"},
 	},
 	Options: []cuibase.ParamVO{
@@ -56,6 +58,7 @@ var (
 	day                bool
 	dayRank            bool
 	totalRank          bool
+	dashboard          bool
 
 	targetDevice string
 	timePair     string
@@ -89,6 +92,7 @@ func init() {
 	flag.BoolVar(&day, "T", false, "")
 	flag.BoolVar(&dayRank, "R", false, "")
 	flag.BoolVar(&totalRank, "r", false, "")
+	flag.BoolVar(&dashboard, "b", false, "")
 
 	flag.StringVar(&timePair, "t", "1", "")
 
@@ -140,6 +144,10 @@ func main() {
 	app.InitConnection(option)
 	defer app.CloseConnection()
 
+	if dashboard {
+		app.ShowWindow()
+		return
+	}
 	if interactiveListen {
 		device, err := app.SelectDevice()
 		if err != nil {
