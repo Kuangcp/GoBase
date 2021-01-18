@@ -21,14 +21,24 @@ const DateFormat = "2006:01:02"
 //KeyMap cache key code map HASH
 const KeyMap = Prefix + "key-map"
 
+// dashboard
 // 奇数 分钟的 总数
+// string
 const OddKey = Prefix + "dashboard:oddCount"
+
 // 偶数 分钟的 总数
+// string
 const EvenKey = Prefix + "dashboard:evenCount"
 
 var connection *redis.Client
 
+// string max in today
+func GetMaxBPMKey(time time.Time) string {
+	return Prefix + time.Format(DateFormat) + ":bpm"
+}
+
 //GetRankKey by time
+// zset member keyCode score 按键数
 func GetRankKey(time time.Time) string {
 	return GetRankKeyByString(time.Format(DateFormat))
 }
@@ -39,6 +49,7 @@ func GetRankKeyByString(time string) string {
 }
 
 //GetDetailKey by time
+// zset member 时间戳 score keyCode
 func GetDetailKey(time time.Time) string {
 	return GetDetailKeyByString(time.Format(DateFormat))
 }

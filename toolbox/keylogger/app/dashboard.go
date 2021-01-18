@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	width         = 130
+	width         = 140
 	height        = 24
 	refreshPeriod = time.Millisecond * 1688
 )
@@ -74,29 +74,50 @@ func createWindow(app *gtk.Application) {
 
 	// Event handlers
 	area.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
+		total, bpm, todayMax := buildTotalAndBPM()
+
+		cr.MoveTo(5, 18)
+
 		cr.SetSourceRGB(0, 150, 0)
-		cr.MoveTo(2, 20)
-		cr.SetFontSize(20)
-		fillText(cr)
+		cr.SetFontSize(18)
+		cr.ShowText(fmt.Sprintf("%3d ", bpm))
+
+		cr.SetSourceRGB(255, 255, 255)
+		cr.SetFontSize(19)
+		cr.ShowText(fmt.Sprintf("%-5d ", total))
+
+		cr.SetSourceRGB(150, 150, 0)
+		cr.SetFontSize(18)
+		cr.ShowText(fmt.Sprintf("%-3d ", todayMax))
+
 		cr.Fill()
 	})
 
 	refresh(win)
 }
-func fillText(cr *cairo.Context) {
+func buildTotalAndBPM() (int, int, int) {
 	conn := GetConnection()
 	now := time.Now()
 	today := now.Format(DateFormat)
 	score := conn.ZScore(TotalCount, today)
 	total := score.Val()
 
-	bpm := calculateBPM(conn, total, now)
+	bpmKey := GetMaxBPMKey(now)
+	todayMax, err := conn.Get(bpmKey).Int()
+	if err != nil {
+		todayMax = 0
+	}
 
-	text := fmt.Sprintf("%5d | %3d", int(total), int(bpm))
-	cr.ShowText(text)
+	bpm := calculateBPM(conn, total, now)
+	if todayMax < bpm {
+		conn.Set(bpmKey, bpm, 0)
+		todayMax = bpm
+	}
+
+	return int(total), bpm, todayMax
 }
 
-func calculateBPM(conn *redis.Client, total float64, now time.Time) float64 {
+func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
 	lastKey := OddKey
 	curKey := EvenKey
 	if now.Minute()%2 == 1 {
@@ -111,7 +132,7 @@ func calculateBPM(conn *redis.Client, total float64, now time.Time) float64 {
 		if delta <= 0 {
 			return 0
 		}
-		return delta * 60 / float64(now.Second())
+		return int(delta * 60 / float64(now.Second()))
 	} else {
 		fmt.Println(err)
 	}
