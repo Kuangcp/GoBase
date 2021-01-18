@@ -15,9 +15,14 @@ import (
 )
 
 const (
-	width         = 128
-	height        = 24
-	refreshPeriod = time.Millisecond * 1688
+	width           = 128
+	height          = 24
+	refreshPeriod   = time.Millisecond * 300
+	recordThreshold = 58 // xx s后才存储 bpm
+)
+
+var (
+	firstStart = true
 )
 
 func ShowWindow() {
@@ -46,8 +51,8 @@ func createWindow(app *gtk.Application) {
 	win.SetPosition(gtk.WIN_POS_MOUSE)
 	win.ShowAll()
 
-	var x, y int
 	// 鼠标按下事件
+	var x, y int
 	win.SetEvents(int(gdk.BUTTON_PRESS_MASK | gdk.BUTTON1_MOTION_MASK))
 
 	//鼠标按下事件处理
@@ -73,30 +78,35 @@ func createWindow(app *gtk.Application) {
 		win.Move(int(event.XRoot())-x, int(event.YRoot())-y)
 	})
 
-	// Event handlers
-	area.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
-		total, bpm, todayMax := buildShowData()
+	area.Connect("draw", drawHandler)
 
-		cr.MoveTo(3, 18)
-
-		cr.SetSourceRGB(0, 150, 0)
-		cr.SetFontSize(18)
-		cr.ShowText(fmt.Sprintf("%3d ", bpm))
-
-		cr.SetSourceRGB(255, 255, 255)
-		cr.SetFontSize(18)
-		cr.ShowText(fmt.Sprintf("%-5d ", total))
-
-		cr.SetSourceRGB(150, 150, 0)
-		cr.SetFontSize(13)
-		cr.ShowText(fmt.Sprintf("%-3d ", todayMax))
-
-		cr.Fill()
-	})
-
-	refresh(win)
+	go func() {
+		for true {
+			time.Sleep(refreshPeriod)
+			win.QueueDraw()
+		}
+	}()
 }
 
+func drawHandler(da *gtk.DrawingArea, cr *cairo.Context) {
+	total, bpm, todayMax := buildShowData()
+
+	cr.MoveTo(3, 18)
+
+	cr.SetSourceRGB(0, 150, 0)
+	cr.SetFontSize(18)
+	cr.ShowText(fmt.Sprintf("%3d ", bpm))
+
+	cr.SetSourceRGB(255, 255, 255)
+	cr.SetFontSize(18)
+	cr.ShowText(fmt.Sprintf("%-5d ", total))
+
+	cr.SetSourceRGB(150, 150, 0)
+	cr.SetFontSize(13)
+	cr.ShowText(fmt.Sprintf("%-3d ", todayMax))
+
+	cr.Fill()
+}
 func buildShowData() (int, int, int) {
 	conn := GetConnection()
 	now := time.Now()
@@ -111,7 +121,7 @@ func buildShowData() (int, int, int) {
 	}
 
 	bpm := calculateBPM(conn, total, now)
-	if todayMax < bpm {
+	if todayMax < bpm && now.Second() > recordThreshold {
 		conn.Set(bpmKey, bpm, 0)
 		todayMax = bpm
 		logger.Info("bump to", bpm)
@@ -121,21 +131,26 @@ func buildShowData() (int, int, int) {
 }
 
 func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
-	lastKey := OddKey
-	curKey := EvenKey
-	if now.Minute()%2 == 1 {
-		lastKey = EvenKey
-		curKey = OddKey
+	if firstStart {
+		conn.Set(OddKey, total, 0)
+		conn.Set(EvenKey, total, 0)
+		firstStart = false
+		return 0
 	}
+
+	second := now.Second()
+	if second <= 1 {
+		return 0
+	}
+
+	lastKey, curKey := selectActualKey(now)
 
 	conn.Set(curKey, total, 0)
 	lastTotal, err := conn.Get(lastKey).Float64()
 	if err == nil {
 		delta := total - lastTotal
-		result := int(delta * 60 / float64(now.Second()))
-		if result <= 0 {
-			return 0
-		}
+		result := int(delta * 60 / float64(second))
+		//fmt.Println(delta, "* 60 / ", second, "=", result)
 		return result
 	} else {
 		fmt.Println(err)
@@ -143,11 +158,12 @@ func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
 	return 0
 }
 
-func refresh(win *gtk.Window) {
-	go func() {
-		for true {
-			time.Sleep(refreshPeriod)
-			win.QueueDraw()
-		}
-	}()
+func selectActualKey(now time.Time) (string, string) {
+	lastKey := OddKey
+	curKey := EvenKey
+	if now.Minute()%2 == 1 {
+		lastKey = EvenKey
+		curKey = OddKey
+	}
+	return lastKey, curKey
 }
