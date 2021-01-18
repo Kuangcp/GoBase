@@ -18,7 +18,7 @@ const (
 	width              = 120
 	height             = 24
 	refreshPeriod      = time.Millisecond * 980
-	recordSecThreshold = 58 // 当前秒数 > xx(s) 才存储 bpm
+	recordBPMThreshold = 57 // 当前秒数 > xx(s) 才存储 bpm
 )
 
 var (
@@ -77,10 +77,11 @@ func createWindow(app *gtk.Application) {
 	go func() {
 		for {
 			time.Sleep(refreshPeriod)
-			total, bpm, todayMax := buildShowData()
+			now := time.Now()
+			total, bpm, todayMax := buildShowData(now)
 
 			str := fmt.Sprintf("<span font_family='IBM Plex Mono'><span font_desc='10'>%s</span> <span foreground='green' font_desc='15'>%d</span> <span font_desc='14'>%d</span> <span foreground='yellow' font_desc='10'>%d</span></span>",
-				time.Now().Format(TimeFormat), bpm, total, todayMax)
+				now.Format(TimeFormat), bpm, total, todayMax)
 			_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
 			if err != nil {
 				log.Fatal("IdleAdd() failed:", err)
@@ -108,26 +109,26 @@ func windowWidget() *gtk.Widget {
 	return &grid.Container.Widget
 }
 
-func buildShowData() (int, int, int) {
+func buildShowData(now time.Time) (int, int, int) {
 	conn := GetConnection()
-	now := time.Now()
 	today := now.Format(DateFormat)
-	score := conn.ZScore(TotalCount, today)
-	total := score.Val()
+	total := conn.ZScore(TotalCount, today).Val()
 
-	bpmKey := GetMaxBPMKey(now)
-	todayMax, err := conn.Get(bpmKey).Int()
+	bpm := calculateBPM(conn, total, now)
+	if now.Second() < recordBPMThreshold {
+		return int(total), bpm, 0
+	}
+
+	maxBPMKey := GetTodayMaxBPMKey(now)
+	todayMax, err := conn.Get(maxBPMKey).Int()
 	if err != nil {
 		todayMax = 0
 	}
-
-	bpm := calculateBPM(conn, total, now)
-	if todayMax < bpm && now.Second() > recordSecThreshold {
-		conn.Set(bpmKey, bpm, 0)
+	if todayMax < bpm {
+		conn.Set(maxBPMKey, bpm, 0)
 		todayMax = bpm
-		logger.Info("bump to", bpm)
+		logger.Info("Today max BPM up to", bpm)
 	}
-
 	return int(total), bpm, todayMax
 }
 

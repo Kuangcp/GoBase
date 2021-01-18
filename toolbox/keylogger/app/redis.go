@@ -34,7 +34,7 @@ const EvenKey = Prefix + "dashboard:evenCount"
 var connection *redis.Client
 
 // string max in today
-func GetMaxBPMKey(time time.Time) string {
+func GetTodayMaxBPMKey(time time.Time) string {
 	return Prefix + time.Format(DateFormat) + ":bpm"
 }
 
