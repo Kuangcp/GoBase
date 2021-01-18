@@ -115,15 +115,17 @@ func buildShowData(now time.Time) (int, int, int) {
 	total := conn.ZScore(TotalCount, today).Val()
 
 	bpm := calculateBPM(conn, total, now)
-	if now.Second() < recordBPMThreshold {
-		return int(total), bpm, 0
-	}
 
 	maxBPMKey := GetTodayMaxBPMKey(now)
 	todayMax, err := conn.Get(maxBPMKey).Int()
 	if err != nil {
 		todayMax = 0
 	}
+
+	if now.Second() < recordBPMThreshold {
+		return int(total), bpm, todayMax
+	}
+
 	if todayMax < bpm {
 		conn.Set(maxBPMKey, bpm, 0)
 		todayMax = bpm
