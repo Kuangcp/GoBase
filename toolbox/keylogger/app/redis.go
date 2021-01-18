@@ -17,6 +17,7 @@ const LastInputEvent = Prefix + "last-event"
 //TotalCount total count ZSET
 const TotalCount = Prefix + "total"
 const DateFormat = "2006:01:02"
+const TimeFormat = "03:04:05"
 
 //KeyMap cache key code map HASH
 const KeyMap = Prefix + "key-map"

@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	width           = 128
-	height          = 24
-	refreshPeriod   = time.Millisecond * 520
-	recordThreshold = 58 // xx s后才存储 bpm
+	width              = 120
+	height             = 24
+	refreshPeriod      = time.Millisecond * 980
+	recordSecThreshold = 58 // 当前秒数 > xx(s) 才存储 bpm
 )
 
 var (
@@ -79,8 +79,8 @@ func createWindow(app *gtk.Application) {
 			time.Sleep(refreshPeriod)
 			total, bpm, todayMax := buildShowData()
 
-			str := fmt.Sprintf("<span foreground='green' font_desc='16'>%d</span> <span font_desc='15'>%d</span> <span foreground='yellow' font_desc='10'>%d</span>",
-				bpm, total, todayMax)
+			str := fmt.Sprintf("<span font_family='IBM Plex Mono'><span font_desc='10'>%s</span> <span foreground='green' font_desc='15'>%d</span> <span font_desc='14'>%d</span> <span foreground='yellow' font_desc='10'>%d</span></span>",
+				time.Now().Format(TimeFormat), bpm, total, todayMax)
 			_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
 			if err != nil {
 				log.Fatal("IdleAdd() failed:", err)
@@ -122,7 +122,7 @@ func buildShowData() (int, int, int) {
 	}
 
 	bpm := calculateBPM(conn, total, now)
-	if todayMax < bpm && now.Second() > recordThreshold {
+	if todayMax < bpm && now.Second() > recordSecThreshold {
 		conn.Set(bpmKey, bpm, 0)
 		todayMax = bpm
 		logger.Info("bump to", bpm)
