@@ -2,10 +2,11 @@ package app
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 	"log"
 	"time"
 	"unsafe"
+
+	"github.com/kuangcp/gobase/pkg/cuibase"
 
 	"github.com/go-redis/redis"
 	"github.com/gotk3/gotk3/gdk"
@@ -80,8 +81,13 @@ func createWindow(app *gtk.Application) {
 			now := time.Now()
 			total, bpm, todayMax := buildShowData(now)
 
-			str := fmt.Sprintf("<span font_family='IBM Plex Mono'><span font_desc='10'>%s</span> <span foreground='green' font_desc='15'>%d</span> <span font_desc='14'>%d</span> <span foreground='yellow' font_desc='10'>%d</span></span>",
-				now.Format(TimeFormat), bpm, total, todayMax)
+			// https://blog.csdn.net/bitscro/article/details/3874616
+			str := fmt.Sprintf("   %s\n%s %s %s",
+				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
+				fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
+				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
+				fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMax),
+			)
 			_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
 			if err != nil {
 				log.Fatal("IdleAdd() failed:", err)
@@ -103,7 +109,7 @@ func windowWidget() *gtk.Widget {
 	}
 
 	grid.Add(bpmLabel)
-	bpmLabel.SetHExpand(false)
+	bpmLabel.SetHExpand(true)
 	bpmLabel.SetVExpand(true)
 
 	return &grid.Container.Widget
