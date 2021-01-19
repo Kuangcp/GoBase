@@ -18,7 +18,7 @@ import (
 const (
 	width              = 120
 	height             = 24
-	refreshPeriod      = time.Millisecond * 980
+	refreshPeriod      = time.Millisecond * 955
 	recordBPMThreshold = 57 // 当前秒数 > xx(s) 才存储 bpm
 )
 
@@ -42,12 +42,10 @@ func createWindow(app *gtk.Application) {
 	win.Add(windowWidget())
 	app.AddWindow(win)
 
-	win.SetTitle("Dashboard")
 	win.SetDefaultSize(width, height)
 	_, err := win.Connect("destroy", gtk.MainQuit)
 	cuibase.CheckIfError(err)
 	win.SetPosition(gtk.WIN_POS_MOUSE)
-	win.ShowAll()
 
 	// 鼠标按下事件
 	var x, y int
@@ -57,13 +55,10 @@ func createWindow(app *gtk.Application) {
 	_, _ = win.Connect("button-press-event", func(widget *gtk.Window, ctx *gdk.Event) {
 		//获取鼠键按下属性结构体变量，系统内部的变量，不是用户传参变量
 		event := *(*gdk.EventButton)(unsafe.Pointer(&ctx))
-		//x, y = int(event.X()), int(event.Y())
-
 		if event.Button() == 1 { //左键
 			x, y = int(event.X()), int(event.Y()) //保存点击的起点坐标
 		} else if event.Button() == 3 { //右键
 			//右键，关闭窗口
-			//gtk.MainQuit()
 			app.Quit()
 		}
 	})
@@ -77,7 +72,6 @@ func createWindow(app *gtk.Application) {
 
 	go func() {
 		for {
-			time.Sleep(refreshPeriod)
 			now := time.Now()
 			total, bpm, todayMax := buildShowData(now)
 
@@ -92,8 +86,10 @@ func createWindow(app *gtk.Application) {
 			if err != nil {
 				log.Fatal("IdleAdd() failed:", err)
 			}
+			time.Sleep(refreshPeriod)
 		}
 	}()
+	win.ShowAll()
 }
 
 func windowWidget() *gtk.Widget {
