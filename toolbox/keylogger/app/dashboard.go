@@ -76,7 +76,7 @@ func createWindow(app *gtk.Application) {
 			total, bpm, todayMax := buildShowData(now)
 
 			// https://blog.csdn.net/bitscro/article/details/3874616
-			str := fmt.Sprintf("   %s\n%s %s %s",
+			str := fmt.Sprintf("🕒 %s\n%s %s %s",
 				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
 				fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
 				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
