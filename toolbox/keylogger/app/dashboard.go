@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	width              = 120
-	height             = 24
-	refreshPeriod      = time.Millisecond * 955
-	recordBPMThreshold = 57 // 当前秒数 > xx(s) 才存储 bpm
+	width              = 100
+	height             = 20
+	refreshPeriod      = time.Millisecond * 666
+	recordBPMThreshold = 58 // 当前秒数 > xx(s) 才存储 bpm
 )
 
 var (
@@ -47,6 +47,31 @@ func createWindow(app *gtk.Application) {
 	cuibase.CheckIfError(err)
 	win.SetPosition(gtk.WIN_POS_MOUSE)
 
+	bindMouseAction(app, win)
+
+	go func() {
+		for {
+			now := time.Now()
+			total, bpm, todayMax := buildShowData(now)
+
+			// https://blog.csdn.net/bitscro/article/details/3874616
+			str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
+				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
+				fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
+				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
+				fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMax),
+			)
+			_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
+			if err != nil {
+				log.Fatal("IdleAdd() failed:", err)
+			}
+			time.Sleep(refreshPeriod)
+		}
+	}()
+	win.ShowAll()
+}
+
+func bindMouseAction(app *gtk.Application, win *gtk.Window) {
 	// 鼠标按下事件
 	var x, y int
 	win.SetEvents(int(gdk.BUTTON_PRESS_MASK | gdk.BUTTON1_MOTION_MASK))
@@ -69,27 +94,6 @@ func createWindow(app *gtk.Application) {
 		event := *(*gdk.EventButton)(unsafe.Pointer(&ctx))
 		win.Move(int(event.XRoot())-x, int(event.YRoot())-y)
 	})
-
-	go func() {
-		for {
-			now := time.Now()
-			total, bpm, todayMax := buildShowData(now)
-
-			// https://blog.csdn.net/bitscro/article/details/3874616
-			str := fmt.Sprintf("🕒 %s\n%s %s %s",
-				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
-				fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
-				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
-				fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMax),
-			)
-			_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
-			if err != nil {
-				log.Fatal("IdleAdd() failed:", err)
-			}
-			time.Sleep(refreshPeriod)
-		}
-	}()
-	win.ShowAll()
 }
 
 func windowWidget() *gtk.Widget {
@@ -150,18 +154,25 @@ func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
 	}
 
 	lastKey, curKey := selectActualKey(now)
-
 	conn.Set(curKey, total, 0)
 	lastTotal, err := conn.Get(lastKey).Float64()
-	if err == nil {
-		delta := total - lastTotal
-		result := int(delta * 60 / float64(second))
-		//fmt.Println(delta, "* 60 / ", second, "=", result)
-		return result
-	} else {
+
+	if err != nil {
 		fmt.Println(err)
+		return 0
 	}
-	return 0
+
+	// everyDay first min
+	if lastTotal > total {
+		conn.Set(OddKey, total, 0)
+		conn.Set(EvenKey, total, 0)
+		return 0
+	}
+
+	delta := total - lastTotal
+	result := int(delta * 60 / float64(second))
+	//fmt.Println(delta, "* 60 / ", second, "=", result)
+	return result
 }
 
 func selectActualKey(now time.Time) (string, string) {

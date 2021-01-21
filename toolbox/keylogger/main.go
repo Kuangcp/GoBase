@@ -8,7 +8,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
@@ -77,8 +77,12 @@ var (
 	option redis.Options
 )
 
+var (
+	mainDir = "/.config/app-conf/keylogger"
+)
+
 func init() {
-	logger.SetLogPathTrim("/keylogger/")
+	configLogger()
 
 	flag.BoolVar(&help, "h", false, "")
 	flag.BoolVar(&help, "help", false, "")
@@ -114,6 +118,29 @@ func init() {
 		Password: pwd,
 		DB:       db,
 	}
+}
+
+func configLogger() {
+	logger.SetLogPathTrim("/keylogger/")
+
+	//home, err := cuibase.Home()
+	//cuibase.CheckIfError(err)
+	//mainDir = home + mainDir
+	//logDir := mainDir + "/log"
+	//logFile := logDir + "/main.log"
+	//_ = logger.SetLoggerConfig(&logger.LogConfig{
+	//	Console: &logger.ConsoleLogger{
+	//		Level:    logger.DebugDesc,
+	//		Colorful: true,
+	//	},
+	//	File: &logger.FileLogger{
+	//		Filename:   logFile,
+	//		Level:      logger.DebugDesc,
+	//		Colorful:   true,
+	//		Append:     true,
+	//		PermitMask: "0660",
+	//	},
+	//})
 }
 
 func pprofDebug() {
