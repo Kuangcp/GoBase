@@ -12,7 +12,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 const (
@@ -23,55 +23,61 @@ const (
 )
 
 var (
+	app        *gtk.Application
+	win        *gtk.Window
 	bpmLabel   *gtk.Label
 	firstStart = true
 )
 
-func ShowWindow() {
+func ShowPopWindow() {
 	gtk.Init(nil)
-	app, _ := gtk.ApplicationNew("com.github.kuangcp.keylogger", glib.APPLICATION_FLAGS_NONE)
-	_, err := app.Connect("activate", func() {
-		createWindow(app)
-	})
+	app, _ = gtk.ApplicationNew("com.github.kuangcp.keylogger5", glib.APPLICATION_FLAGS_NONE)
+	_, err := app.Connect("activate", createWindow)
 	cuibase.CheckIfError(err)
 	app.Run(nil)
 }
 
-func createWindow(app *gtk.Application) {
-	win, _ := gtk.WindowNew(gtk.WINDOW_POPUP)
-	win.Add(windowWidget())
-	app.AddWindow(win)
-
+func createWindow() {
+	win, _ = gtk.WindowNew(gtk.WINDOW_POPUP)
+	win.Add(buildWidget())
 	win.SetDefaultSize(width, height)
+	win.SetPosition(gtk.WIN_POS_MOUSE)
 	_, err := win.Connect("destroy", gtk.MainQuit)
 	cuibase.CheckIfError(err)
-	win.SetPosition(gtk.WIN_POS_MOUSE)
-
-	bindMouseAction(app, win)
+	bindMouseActionForWindow()
 
 	go func() {
-		for {
+		ticker := time.NewTicker(refreshPeriod)
+		for range ticker.C {
 			now := time.Now()
-			total, bpm, todayMax := buildShowData(now)
-
-			// https://blog.csdn.net/bitscro/article/details/3874616
-			str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
-				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
-				fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
-				fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
-				fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMax),
-			)
-			_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
-			if err != nil {
-				log.Fatal("IdleAdd() failed:", err)
-			}
-			time.Sleep(refreshPeriod)
+			refreshLabel(now)
 		}
 	}()
+
+	app.AddWindow(win)
 	win.ShowAll()
 }
 
-func bindMouseAction(app *gtk.Application, win *gtk.Window) {
+func buildWidget() *gtk.Widget {
+	grid, err := gtk.GridNew()
+	if err != nil {
+		log.Fatal("Unable to create grid:", err)
+	}
+	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
+
+	bpmLabel, err = gtk.LabelNew("")
+	if err != nil {
+		log.Fatal("Unable to create label:", err)
+	}
+
+	grid.Add(bpmLabel)
+	bpmLabel.SetHExpand(true)
+	bpmLabel.SetVExpand(true)
+
+	return &grid.Container.Widget
+}
+
+func bindMouseActionForWindow() {
 	// 鼠标按下事件
 	var x, y int
 	win.SetEvents(int(gdk.BUTTON_PRESS_MASK | gdk.BUTTON1_MOTION_MASK))
@@ -96,23 +102,20 @@ func bindMouseAction(app *gtk.Application, win *gtk.Window) {
 	})
 }
 
-func windowWidget() *gtk.Widget {
-	grid, err := gtk.GridNew()
+func refreshLabel(now time.Time) {
+	total, bpm, todayMax := buildShowData(now)
+
+	// https://blog.csdn.net/bitscro/article/details/3874616
+	str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
+		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
+		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
+		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
+		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMax),
+	)
+	_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
 	if err != nil {
-		log.Fatal("Unable to create grid:", err)
+		log.Fatal("IdleAdd() failed:", err)
 	}
-	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
-
-	bpmLabel, err = gtk.LabelNew("")
-	if err != nil {
-		log.Fatal("Unable to create label:", err)
-	}
-
-	grid.Add(bpmLabel)
-	bpmLabel.SetHExpand(true)
-	bpmLabel.SetVExpand(true)
-
-	return &grid.Container.Widget
 }
 
 func buildShowData(now time.Time) (int, int, int) {
@@ -142,10 +145,8 @@ func buildShowData(now time.Time) (int, int, int) {
 
 func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
 	if firstStart {
-		conn.Set(OddKey, total, 0)
-		conn.Set(EvenKey, total, 0)
 		firstStart = false
-		return 0
+		return coverOldValue(conn, total)
 	}
 
 	second := now.Second()
@@ -164,15 +165,19 @@ func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
 
 	// everyDay first min
 	if lastTotal > total {
-		conn.Set(OddKey, total, 0)
-		conn.Set(EvenKey, total, 0)
-		return 0
+		return coverOldValue(conn, total)
 	}
 
 	delta := total - lastTotal
-	result := int(delta * 60 / float64(second))
+	result := int(delta * 60 / float64(now.Second()))
 	//fmt.Println(delta, "* 60 / ", second, "=", result)
 	return result
+}
+
+func coverOldValue(conn *redis.Client, total float64) int {
+	conn.Set(OddKey, total, 0)
+	conn.Set(EvenKey, total, 0)
+	return 0
 }
 
 func selectActualKey(now time.Time) (string, string) {

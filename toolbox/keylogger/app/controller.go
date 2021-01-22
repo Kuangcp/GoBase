@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ginhelper"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 var colorSet = [...]string{

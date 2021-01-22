@@ -10,7 +10,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ginhelper"
 	"github.com/rakyll/statik/fs"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 func Server(debugStatic bool, port string) {

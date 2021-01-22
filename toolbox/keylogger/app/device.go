@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/manifoldco/promptui"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 
 	"github.com/go-redis/redis"
 	. "github.com/gvalkov/golang-evdev"

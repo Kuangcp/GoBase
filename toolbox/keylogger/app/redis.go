@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 //Prefix redis prefix

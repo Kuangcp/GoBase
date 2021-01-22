@@ -123,24 +123,24 @@ func init() {
 func configLogger() {
 	logger.SetLogPathTrim("/keylogger/")
 
-	//home, err := cuibase.Home()
-	//cuibase.CheckIfError(err)
-	//mainDir = home + mainDir
-	//logDir := mainDir + "/log"
-	//logFile := logDir + "/main.log"
-	//_ = logger.SetLoggerConfig(&logger.LogConfig{
-	//	Console: &logger.ConsoleLogger{
-	//		Level:    logger.DebugDesc,
-	//		Colorful: true,
-	//	},
-	//	File: &logger.FileLogger{
-	//		Filename:   logFile,
-	//		Level:      logger.DebugDesc,
-	//		Colorful:   true,
-	//		Append:     true,
-	//		PermitMask: "0660",
-	//	},
-	//})
+	home, err := cuibase.Home()
+	cuibase.CheckIfError(err)
+	mainDir = home + mainDir
+	logDir := mainDir + "/log"
+	logFile := logDir + "/main.log"
+	_ = logger.SetLoggerConfig(&logger.LogConfig{
+		Console: &logger.ConsoleLogger{
+			Level:    logger.DebugDesc,
+			Colorful: true,
+		},
+		File: &logger.FileLogger{
+			Filename:   logFile,
+			Level:      logger.DebugDesc,
+			Colorful:   true,
+			Append:     true,
+			PermitMask: "0660",
+		},
+	})
 }
 
 func pprofDebug() {
@@ -172,7 +172,7 @@ func main() {
 	defer app.CloseConnection()
 
 	if dashboard {
-		app.ShowWindow()
+		app.ShowPopWindow()
 		return
 	}
 	if interactiveListen {

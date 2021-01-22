@@ -14,7 +14,6 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/rakyll/statik v0.1.7
-	github.com/wonderivan/logger v1.0.0
 )
 
 replace github.com/kuangcp/gobase/pkg/cuibase => ./../../pkg/cuibase
