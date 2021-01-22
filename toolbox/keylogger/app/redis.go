@@ -35,7 +35,11 @@ var connection *redis.Client
 
 // string max in today
 func GetTodayMaxBPMKey(time time.Time) string {
-	return Prefix + time.Format(DateFormat) + ":bpm"
+	return GetTodayMaxBPMKeyByString(time.Format(DateFormat))
+}
+
+func GetTodayMaxBPMKeyByString(time string) string {
+	return Prefix + time + ":bpm"
 }
 
 //GetRankKey by time

@@ -393,13 +393,19 @@ func LineMap(c *gin.Context) {
 	// days
 	var days []string
 	showDayList := buildDayWithWeekdayList(param.Length, param.Offset)
+	conn := GetConnection()
 	for _, day := range showDayList {
-		score, err := GetConnection().ZScore(TotalCount, day.Day).Result()
+		score, err := conn.ZScore(TotalCount, day.Day).Result()
 		if err != nil {
-			days = append(days, day.Day+"#"+day.WeekDay+"#0")
-		} else {
-			days = append(days, day.Day+"#"+day.WeekDay+"#"+strconv.Itoa(int(score)))
+			score = 0
 		}
+		bpm, bpmErr := conn.Get(GetTodayMaxBPMKeyByString(day.Day)).Result()
+		if bpmErr != nil {
+			bpm = "0"
+		}
+
+		dayStr := fmt.Sprintf("%s|%s|%d|%s", strings.Replace(day.Day, ":", "-", 2), day.WeekDay, int(score), bpm)
+		days = append(days, dayStr)
 	}
 	if len(days) == 0 {
 		ginhelper.GinFailed(c)
@@ -414,7 +420,7 @@ func LineMap(c *gin.Context) {
 	for _, key := range sortHotKeys {
 		var hitPreDay []int
 		for _, day := range dayList {
-			result, err := GetConnection().ZScore(GetRankKeyByString(day), key).Result()
+			result, err := conn.ZScore(GetRankKeyByString(day), key).Result()
 			if err != nil {
 				result = 0
 			}
