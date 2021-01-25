@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/manifoldco/promptui"
 	"github.com/kuangcp/logger"
+	"github.com/manifoldco/promptui"
 
 	"github.com/go-redis/redis"
 	. "github.com/gvalkov/golang-evdev"
@@ -321,8 +321,18 @@ func PrintKeyMap(targetDevice string) {
 	}
 
 	fmt.Println(device)
-	fmt.Printf("\n%vkey map:  %v", cuibase.LightGreen, cuibase.End)
-	fmt.Println(device.Capabilities)
+	for capType, codes := range device.Capabilities {
+		fmt.Printf("\n\n %s%v %v%s\n", cuibase.Purple, capType.Type, capType.Name, cuibase.End)
+		for i, code := range codes {
+			if len(code.Name) == 0 {
+				continue
+			}
+			fmt.Printf("%s%4d%s %20s┃", cuibase.LightGreen, code.Code, cuibase.End, code.Name)
+			if i%5 == 4 {
+				fmt.Println()
+			}
+		}
+	}
 }
 
 func findActualBoardMap(dev *InputDevice) (*InputDevice, []CapabilityCode) {

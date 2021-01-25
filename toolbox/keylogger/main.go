@@ -59,6 +59,7 @@ var (
 	dayRank            bool
 	totalRank          bool
 	dashboard          bool
+	showLog            bool
 
 	targetDevice string
 	timePair     string
@@ -73,8 +74,9 @@ var (
 	webPort   string
 	webServer bool
 
-	debug  bool
-	option redis.Options
+	debug   bool
+	option  redis.Options
+	logPath string
 )
 
 var (
@@ -97,6 +99,7 @@ func init() {
 	flag.BoolVar(&dayRank, "R", false, "")
 	flag.BoolVar(&totalRank, "r", false, "")
 	flag.BoolVar(&dashboard, "b", false, "")
+	flag.BoolVar(&showLog, "g", false, "")
 
 	flag.StringVar(&timePair, "t", "1", "")
 
@@ -127,14 +130,14 @@ func configLogger() {
 	cuibase.CheckIfError(err)
 	mainDir = home + mainDir
 	logDir := mainDir + "/log"
-	logFile := logDir + "/main.log"
+	logPath = logDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,
 		},
 		File: &logger.FileLogger{
-			Filename:   logFile,
+			Filename:   logPath,
 			Level:      logger.DebugDesc,
 			Colorful:   true,
 			Append:     true,
@@ -166,6 +169,9 @@ func main() {
 	invokeThenExit(help, info.PrintHelp)
 	invokeThenExit(listKeyboardDevice, app.ListAllKeyBoardDevice)
 	invokeThenExit(listAllDevice, app.ListAllDevice)
+	invokeThenExit(showLog, func() {
+		fmt.Println(logPath)
+	})
 
 	targetDevice = app.FormatEvent(targetDevice)
 	app.InitConnection(option)
