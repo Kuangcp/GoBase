@@ -18,8 +18,9 @@ import (
 const (
 	width              = 100
 	height             = 20
-	refreshPeriod      = time.Millisecond * 666
-	recordBPMThreshold = 58 // 当前秒数 > xx(s) 才存储 bpm
+	refreshPeriod      = time.Millisecond * 512
+	recordBPMThreshold = 59 // 当前秒数 > xx(s) 才存储 bpm
+	appId              = "com.github.kuangcp.keylogger"
 )
 
 var (
@@ -31,7 +32,7 @@ var (
 
 func ShowPopWindow() {
 	gtk.Init(nil)
-	app, _ = gtk.ApplicationNew("com.github.kuangcp.keylogger5", glib.APPLICATION_FLAGS_NONE)
+	app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
 	_, err := app.Connect("activate", createWindow)
 	cuibase.CheckIfError(err)
 	app.Run(nil)
