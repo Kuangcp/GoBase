@@ -19,7 +19,7 @@ import (
 
 var (
 	targetDevice string
-	timeSegment string
+	timeSegment  string
 )
 
 func SetFormatTargetDevice(input string) {
@@ -27,7 +27,7 @@ func SetFormatTargetDevice(input string) {
 		targetDevice = "event" + input
 	}
 }
-func SetTimePair(timePair string){
+func SetTimePair(timePair string) {
 	timeSegment = timePair
 }
 
@@ -216,28 +216,38 @@ func PrintTotalRank() {
 	fmt.Printf("    %s → %s\n", firstDay.Format("2006-01-02"), lastDay.Format("2006-01-02"))
 
 	if len(keyMap) != 0 {
-		printWithTwoColumn(len(sortList), func(index int) string {
+		printByFourColumn(len(sortList), func(index int) string {
 			val := sortList[index]
 			return fmt.Sprintf("%7v → %-28v", val.Value, cuibase.LightGreen.Print(keyMap[val.Key]))
 		})
 	} else {
-		printWithTwoColumn(len(sortList), func(index int) string {
+		printByFourColumn(len(sortList), func(index int) string {
 			val := sortList[index]
 			return fmt.Sprintf("%7v → %-28v", val.Value, cuibase.LightGreen.Print(val.Key))
 		})
 	}
 }
 
-func printWithTwoColumn(dataLen int, toString func(index int) string) {
+func printByFourColumn(dataLen int, toString func(index int) string) {
+	printByColumn(4, dataLen, toString)
+}
+
+// printByColumn 从上往下，从左往右 多列展示
+func printByColumn(columnCount int, dataLen int, toString func(index int) string) {
 	var lines []string
-	row := dataLen/2 + 1
+	row := dataLen/columnCount + 1
 	for i := 0; i < dataLen; i++ {
 		var lineIdx = i % row
 		halfLine := toString(i)
+		if halfLine == "" {
+			continue
+		}
 		if len(lines) <= lineIdx {
 			lines = append(lines, halfLine)
 		} else {
-			lines[lineIdx] = lines[lineIdx] + halfLine
+			if lines != nil {
+				lines[lineIdx] = lines[lineIdx] + halfLine
+			}
 		}
 	}
 	fmt.Println()
@@ -262,13 +272,13 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
 		valList := keyRank.Val()
-		printWithTwoColumn(len(valList), func(index int) string {
+		printByFourColumn(len(valList), func(index int) string {
 			val := valList[index]
 			return fmt.Sprintf("%4v → %-26v", val.Score, cuibase.LightGreen.Print(keyMap[val.Member.(string)]))
 		})
 	} else {
 		valList := keyRank.Val()
-		printWithTwoColumn(len(valList), func(index int) string {
+		printByFourColumn(len(valList), func(index int) string {
 			val := valList[index]
 			return fmt.Sprintf("%4v → %-26v", val.Score, cuibase.LightGreen.Print(val.Member.(string)))
 		})
@@ -329,15 +339,12 @@ func PrintKeyMap() {
 	fmt.Println(device)
 	for capType, codes := range device.Capabilities {
 		fmt.Printf("\n\n %s%v %v%s\n", cuibase.Purple, capType.Type, capType.Name, cuibase.End)
-		for i, code := range codes {
-			if len(code.Name) == 0 {
-				continue
+		printByColumn(6, len(codes), func(index int) string {
+			if len(codes[index].Name) == 0 {
+				return ""
 			}
-			fmt.Printf("%s%4d%s %20s┃", cuibase.LightGreen, code.Code, cuibase.End, code.Name)
-			if i%5 == 4 {
-				fmt.Println()
-			}
-		}
+			return fmt.Sprintf("%s%4d%s %20s┃", cuibase.LightGreen, codes[index].Code, cuibase.End, codes[index].Name)
+		})
 	}
 }
 

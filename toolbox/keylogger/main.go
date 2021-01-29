@@ -55,9 +55,9 @@ var (
 	listAllDevice      bool
 	listenDevice       bool
 	interactiveListen  bool
-	day                bool
-	dayRank            bool
-	totalRank          bool
+	printDay           bool
+	printDayRank       bool
+	printTotalRank     bool
 	dashboard          bool
 	showLog            bool
 
@@ -95,9 +95,9 @@ func init() {
 	flag.BoolVar(&listAllDevice, "L", false, "")
 	flag.BoolVar(&listenDevice, "s", false, "")
 	flag.BoolVar(&interactiveListen, "i", false, "")
-	flag.BoolVar(&day, "T", false, "")
-	flag.BoolVar(&dayRank, "R", false, "")
-	flag.BoolVar(&totalRank, "r", false, "")
+	flag.BoolVar(&printDay, "T", false, "")
+	flag.BoolVar(&printDayRank, "R", false, "")
+	flag.BoolVar(&printTotalRank, "r", false, "")
 	flag.BoolVar(&dashboard, "b", false, "")
 	flag.BoolVar(&showLog, "g", false, "")
 
@@ -211,7 +211,7 @@ func main() {
 	}
 
 	invoke(printKeyMap, app.PrintKeyMap)
-	invoke(day, app.PrintDay)
-	invoke(dayRank, app.PrintDayRank)
-	invoke(totalRank, app.PrintTotalRank)
+	invoke(printDay, app.PrintDay)
+	invoke(printDayRank, app.PrintDayRank)
+	invoke(printTotalRank, app.PrintTotalRank)
 }
