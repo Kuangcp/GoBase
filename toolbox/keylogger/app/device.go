@@ -17,6 +17,20 @@ import (
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
+var (
+	targetDevice string
+	timeSegment string
+)
+
+func SetFormatTargetDevice(input string) {
+	if input != "" && !strings.Contains(input, "event") {
+		targetDevice = "event" + input
+	}
+}
+func SetTimePair(timePair string){
+	timeSegment = timePair
+}
+
 func closeDevice(device *InputDevice) {
 	if device == nil {
 		return
@@ -28,7 +42,7 @@ func closeDevice(device *InputDevice) {
 }
 
 // ListenDevice listen and record
-func ListenDevice(targetDevice string) {
+func ListenDevice() {
 	if connection == nil {
 		return
 	}
@@ -44,7 +58,6 @@ func ListenDevice(targetDevice string) {
 		}
 	}
 
-	targetDevice = FormatEvent(targetDevice)
 	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
 
 	device, err := Open("/dev/input/" + targetDevice)
@@ -73,13 +86,6 @@ func ListenDevice(targetDevice string) {
 			connection.Set(LastInputEvent, targetDevice, 0)
 		}
 	}
-}
-
-func FormatEvent(input string) string {
-	if input != "" && !strings.Contains(input, "event") {
-		return "event" + input
-	}
-	return input
 }
 
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
@@ -122,7 +128,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	return matchFlag
 }
 
-func OpenDevice(targetDevice string) *InputDevice {
+func OpenDevice() *InputDevice {
 	event := ""
 	if targetDevice == "" {
 		last := GetConnection().Get(LastInputEvent)
@@ -150,7 +156,7 @@ func OpenDevice(targetDevice string) *InputDevice {
 	return device
 }
 
-func PrintDay(timeSegment string) {
+func PrintDay() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
 	for i := 0; i < durationDay; i++ {
@@ -158,7 +164,7 @@ func PrintDay(timeSegment string) {
 	}
 }
 
-func PrintDayRank(timeSegment string) {
+func PrintDayRank() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
 	for i := 0; i < durationDay; i++ {
@@ -166,7 +172,7 @@ func PrintDayRank(timeSegment string) {
 	}
 }
 
-func PrintTotalRank(timeSegment string) {
+func PrintTotalRank() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
 	conn := GetConnection()
@@ -298,8 +304,8 @@ func handleTotalByDate(time time.Time, conn *redis.Client) {
 }
 
 //CacheKeyMap to redis
-func CacheKeyMap(targetDevice string) {
-	device := OpenDevice(targetDevice)
+func CacheKeyMap() {
+	device := OpenDevice()
 	if device == nil {
 		return
 	}
@@ -314,8 +320,8 @@ func CacheKeyMap(targetDevice string) {
 }
 
 //PrintKeyMap show
-func PrintKeyMap(targetDevice string) {
-	device := OpenDevice(targetDevice)
+func PrintKeyMap() {
+	device := OpenDevice()
 	if device == nil {
 		return
 	}

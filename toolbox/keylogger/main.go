@@ -38,7 +38,7 @@ var info = cuibase.HelpInfo{
 	},
 	Options: []cuibase.ParamVO{
 		{Short: "-t", Value: "x,duration", Comment: "before x day ago and duration. For -T and -R"},
-		{Short: "-e", Value: "device", Comment: "operation target device, work for -p -ca -s"},
+		{Short: "-e", Value: "device", Comment: "operation target device. For -p -ca -s"},
 		{Short: "-P", Value: "port", Comment: "web Server port. default 9902"},
 		{Short: "-host", Value: "host", Comment: "redis host"},
 		{Short: "-port", Value: "port", Comment: "redis port"},
@@ -116,7 +116,7 @@ func init() {
 	flag.Parse()
 
 	option = redis.Options{
-		PoolSize: 20,
+		PoolSize: 5,
 		Addr:     host + ":" + port,
 		Password: pwd,
 		DB:       db,
@@ -156,42 +156,52 @@ func pprofDebug() {
 	}
 }
 
-func invokeThenExit(condition bool, action func()) {
+func invokeThenExit(condition bool, action func(), clean func()) {
 	if condition {
 		action()
+		if clean != nil {
+			clean()
+		}
+
 		os.Exit(0)
+	}
+}
+
+func invoke(condition bool, action func()) {
+	if condition {
+		action()
 	}
 }
 
 func main() {
 	pprofDebug()
 
-	invokeThenExit(help, info.PrintHelp)
-	invokeThenExit(listKeyboardDevice, app.ListAllKeyBoardDevice)
-	invokeThenExit(listAllDevice, app.ListAllDevice)
-	invokeThenExit(showLog, func() {
+	if showLog {
 		fmt.Println(logPath)
-	})
+		return
+	}
 
-	targetDevice = app.FormatEvent(targetDevice)
+	invokeThenExit(help, info.PrintHelp, nil)
+	invokeThenExit(listKeyboardDevice, app.ListAllKeyBoardDevice, nil)
+	invokeThenExit(listAllDevice, app.ListAllDevice, nil)
+
+	// 以下逻辑都依赖Redis
+	app.SetFormatTargetDevice(targetDevice)
+	app.SetTimePair(timePair)
 	app.InitConnection(option)
 	defer app.CloseConnection()
 
-	if dashboard {
-		app.ShowPopWindow()
-		return
-	}
+	invokeThenExit(dashboard, app.ShowPopWindow, app.CloseConnection)
+	invokeThenExit(listenDevice, app.ListenDevice, app.CloseConnection)
+	invokeThenExit(cacheKeyMap, app.CacheKeyMap, app.CloseConnection)
+
 	if interactiveListen {
 		device, err := app.SelectDevice()
 		if err != nil {
 			return
 		}
-		app.ListenDevice(device)
-		return
-	}
-
-	if listenDevice {
-		app.ListenDevice(targetDevice)
+		app.SetFormatTargetDevice(device)
+		app.ListenDevice()
 		return
 	}
 
@@ -200,24 +210,8 @@ func main() {
 		return
 	}
 
-	if cacheKeyMap {
-		app.CacheKeyMap(targetDevice)
-		return
-	}
-
-	if printKeyMap {
-		app.PrintKeyMap(targetDevice)
-	}
-
-	if day {
-		app.PrintDay(timePair)
-	}
-
-	if dayRank {
-		app.PrintDayRank(timePair)
-	}
-
-	if totalRank {
-		app.PrintTotalRank(timePair)
-	}
+	invoke(printKeyMap, app.PrintKeyMap)
+	invoke(day, app.PrintDay)
+	invoke(dayRank, app.PrintDayRank)
+	invoke(totalRank, app.PrintTotalRank)
 }
