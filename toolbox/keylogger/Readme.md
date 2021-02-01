@@ -36,3 +36,7 @@
 - 1.0.4 remove thread pool(memory leak)
 - 1.0.3 import thread pool 
 - 1.0.2 GA
+
+## Debug
+> `go tool pprof -inuse_space http://localhost:8891/debug/pprof/heap`
+> `go tool pprof -inuse_space -cum -svg http://localhost:8891/debug/pprof/heap > heap_inuse.svg`
