@@ -18,8 +18,8 @@ import (
 const (
 	width              = 100
 	height             = 20
-	refreshPeriod      = time.Millisecond * 512
-	recordBPMThreshold = 59 // 当前秒数 > xx(s) 才存储 bpm
+	refreshPeriod      = time.Millisecond * 888
+	recordBPMThreshold = 58 // 当前秒数 > xx(s) 才存储 bpm
 	appId              = "com.github.kuangcp.keylogger"
 )
 

@@ -14,3 +14,10 @@ web:
 
 install:
 	statik -f -src=static/ -dest app/ && go install
+
+heap:
+	go tool pprof -inuse_space http://localhost:8891/debug/pprof/heap
+
+heapSvg:
+	go tool pprof -inuse_space -cum -svg http://localhost:8891/debug/pprof/heap > heap_inuse.svg
+

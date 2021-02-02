@@ -40,3 +40,7 @@
 ## Debug
 > `go tool pprof -inuse_space http://localhost:8891/debug/pprof/heap`
 > `go tool pprof -inuse_space -cum -svg http://localhost:8891/debug/pprof/heap > heap_inuse.svg`
+
+## TODO
+1. gtk 窗口有内存泄漏的问题，随着刷新次数的增多，内存也随之增长
+
