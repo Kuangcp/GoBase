@@ -147,24 +147,27 @@ func configLogger() {
 }
 
 func pprofDebug() {
-	if debug {
-		debugPort := "8891"
-		go func() {
-			fmt.Println("http://127.0.0.1:" + debugPort + "/debug/pprof/")
-			_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
-		}()
+	if !debug {
+		return
 	}
+
+	debugPort := "8891"
+	go func() {
+		fmt.Println("http://127.0.0.1:" + debugPort + "/debug/pprof/")
+		_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
+	}()
 }
 
 func invokeThenExit(condition bool, action func(), clean func()) {
-	if condition {
-		action()
-		if clean != nil {
-			clean()
-		}
-
-		os.Exit(0)
+	if !condition {
+		return
 	}
+	action()
+	if clean != nil {
+		clean()
+	}
+
+	os.Exit(0)
 }
 
 func invoke(condition bool, action func()) {

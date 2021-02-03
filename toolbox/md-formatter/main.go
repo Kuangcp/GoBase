@@ -35,6 +35,17 @@ var handleSuffix = [...]string{
 var deleteChar = [...]string{
 	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "＊", "。", "?", "？",
 }
+var headerTemplate = `---
+title: %s
+date: %s
+tags: 
+categories: 
+---
+
+%s
+%s
+****************************************
+`
 
 var (
 	help             bool
@@ -69,7 +80,7 @@ func init() {
 	flag.StringVar(&refreshChangeDir, "rc", "", "")
 	flag.StringVar(&appendFile, "a", "", "")
 
-	logger.SetLogPathTrim("/toolbox/")
+	logger.SetLogPathTrim("md-formatter/")
 	flag.Usage = info.PrintHelp
 	flag.Parse()
 }
@@ -226,7 +237,11 @@ func refreshCatalogWithCondition(filename string, condition func(filename string
 
 // 更新指定文件的目录
 func refreshCatalog(filename string) {
-	logger.Info("refresh:", filename)
+	if refreshChangeDir != "" {
+		logger.Info("refresh:", strings.TrimLeft(filename, refreshChangeDir))
+	} else {
+		logger.Info("refresh:", filename)
+	}
 
 	titleBlock := ""
 	titles := generateCatalog(filename)
@@ -267,7 +282,7 @@ func refreshCatalog(filename string) {
 	}
 	//logger.Info("index", startIdx, endIdx, result)
 	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
-		logger.Error("write error", filename)
+		logger.Error("Write error", filename)
 	}
 }
 
@@ -293,7 +308,7 @@ func printMindMap(filename string) {
 	}
 }
 
-// 更新指定目录的Git仓库里发成变更的文件
+// 更新指定目录的Git仓库中 发生变更 的文件
 func refreshChangeFile(dir string) {
 	r, err := git.PlainOpen(dir)
 	cuibase.CheckIfError(err)
@@ -305,9 +320,14 @@ func refreshChangeFile(dir string) {
 		return
 	}
 
+	showChange := false
 	for filePath := range status {
 		fileStatus := status.File(filePath)
 		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
+			if !showChange {
+				logger.Info("Repository:", refreshChangeDir)
+				showChange = true
+			}
 			refreshCatalogWithCondition(dir+filePath, isNeedHandleFile)
 		}
 	}
@@ -315,18 +335,7 @@ func refreshChangeFile(dir string) {
 
 func appendCatalogAndTitle(filename string) {
 	lines := readLinesWithFunc(filename, nil, nil)
-	template := `---
-title: %s
-date: %s
-tags: 
-categories: 
----
-
-%s
-%s
-****************************************
-`
-	var headerText = fmt.Sprintf(template, filename, time.Now().Format("2006-01-02 15:04:05"), startTag, endTag)
+	var headerText = fmt.Sprintf(headerTemplate, filename, time.Now().Format("2006-01-02 15:04:05"), startTag, endTag)
 	for i := range lines {
 		headerText += lines[i]
 	}
