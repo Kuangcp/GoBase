@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"container/list"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,7 +13,7 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/kuangcp/gobase/cuibase"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/wonderivan/logger"
 )
 
@@ -23,11 +24,10 @@ var startTag = "**目录 start**"
 var endTag = "**目录 end**"
 
 var ignoreDirs = [...]string{
-	".git", ".svn", ".vscode", ".idea", ".gradle",
-	"out", "build", "target", "log", "logs", "__pycache__", "ARTS",
+	".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__", "ARTS",
 }
 var ignoreFiles = [...]string{
-	"README.md", "Readme.md", "Readme_CN.md", "readme.md", "SUMMARY.md", "Process.md", "License.md",
+	"README", "Readme", "Readme_CN", "readme", "SUMMARY", "Process", "License", "LICENSE",
 }
 var handleSuffix = [...]string{
 	".md", ".markdown", ".txt",
@@ -36,65 +36,64 @@ var deleteChar = [...]string{
 	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "＊", "。", "?", "？",
 }
 
+var (
+	help             bool
+	refreshDir       string
+	mindMapFile      string
+	refreshChangeDir string
+	appendFile       string
+)
+
 var info = cuibase.HelpInfo{
-	Description: "Format markdown file, generate catalog",
-	Version:     "1.0.1",
-	VerbLen:     -3,
-	ParamLen:    -5,
-	Params: []cuibase.ParamInfo{
-		{
-			Verb:    "-h",
-			Param:   "",
-			Comment: "Help info",
-		}, {
-			Verb:    "",
-			Param:   "file",
-			Comment: "Refresh catalog for file",
-			Handler: func(params []string) {
-				cuibase.AssertParamCount(1, "must input filename ")
-				refreshCatalog(params[1])
-			},
-		}, {
-			Verb:    "-f",
-			Param:   "file",
-			Comment: "Refresh catalog for file",
-			Handler: func(params []string) {
-				cuibase.AssertParamCount(2, "must input filename ")
-				refreshCatalog(params[2])
-			},
-		}, {
-			Verb:    "-d",
-			Param:   "dir",
-			Comment: "Refresh catalog for file that recursive dir",
-			Handler: func(_ []string) {
-				refreshDirAllFiles("./")
-			},
-		}, {
-			Verb:    "-mm",
-			Param:   "file",
-			Comment: "Print mind map",
-			Handler: func(params []string) {
-				cuibase.AssertParamCount(2, "must input filename ")
-				printMindMap(params[2])
-			},
-		}, {
-			Verb:    "-rc",
-			Param:   "dir",
-			Comment: "Refresh git repo dir changed file",
-			Handler: func(params []string) {
-				cuibase.AssertParamCount(2, "must input repo dir ")
-				refreshChangeFile(params[2])
-			},
-		}, {
-			Verb:    "-a",
-			Param:   "file",
-			Comment: "Append catalog and title for file",
-			Handler: func(params []string) {
-				cuibase.AssertParamCount(2, "must input filename")
-				appendCatalogAndTitle(params[2])
-			},
-		},
-	}}
+	Description:   "Format markdown file, generate catalog",
+	Version:       "1.0.2",
+	SingleFlagLen: -3,
+	DoubleFlagLen: -3,
+	ValueLen:      -5,
+	Flags: []cuibase.ParamVO{
+		{Short: "-h", Comment: "Help info"},
+	},
+	Options: []cuibase.ParamVO{
+		{Short: "", Value: "file", Comment: "Refresh file catalog"},
+		{Short: "-d", Value: "dir", Comment: "Refresh file catalog that recursive dir, default current dir"},
+		{Short: "-mm", Value: "file", Comment: "Print mind map"},
+		{Short: "-rc", Value: "dir", Comment: "Refresh git repo dir changed file"},
+		{Short: "-a", Value: "file", Comment: "Append catalog and title for file"},
+	},
+}
+
+func init() {
+	flag.BoolVar(&help, "h", false, "")
+	flag.StringVar(&refreshDir, "d", "", "")
+	flag.StringVar(&mindMapFile, "mm", "", "")
+	flag.StringVar(&refreshChangeDir, "rc", "", "")
+	flag.StringVar(&appendFile, "a", "", "")
+
+	logger.SetLogPathTrim("/toolbox/")
+	flag.Usage = info.PrintHelp
+	flag.Parse()
+}
+
+func main() {
+	if help {
+		info.PrintHelp()
+		return
+	}
+
+	invokeWhen(refreshDir, refreshDirAllFiles)
+	invokeWhen(mindMapFile, printMindMap)
+	invokeWhen(refreshChangeDir, refreshChangeFile)
+	invokeWhen(appendFile, appendCatalogAndTitle)
+
+	refreshCatalog(os.Args[1])
+}
+
+func invokeWhen(param string, action func(string)) {
+	if param != "" {
+		action(param)
+		os.Exit(0)
+	}
+}
 
 func readFileLines(filename string) []string {
 	return readLinesWithFunc(filename,
@@ -109,7 +108,7 @@ func readFileLines(filename string) []string {
 func readLinesWithFunc(filename string, filterFunc filterFun, mapFunc mapFun) []string {
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
 	if err != nil {
-		logger.Error("Open file error!", err)
+		logger.Error(err)
 		return nil
 	}
 	defer file.Close()
@@ -119,7 +118,7 @@ func readLinesWithFunc(filename string, filterFunc filterFun, mapFunc mapFun) []
 		panic(err)
 	}
 	if stat.Size() == 0 {
-		logger.Info("file:%s is empty", filename)
+		logger.Warn("file:%s is empty", filename)
 		return nil
 	}
 
@@ -188,10 +187,7 @@ func refreshDirAllFiles(path string) {
 	}
 
 	for e := fileList.Front(); e != nil; e = e.Next() {
-		fileName := e.Value.(string)
-		if isNeedHandleFile(fileName) {
-			refreshCatalog(fileName)
-		}
+		refreshCatalogWithCondition(e.Value.(string), isNeedHandleFile)
 	}
 }
 
@@ -220,12 +216,23 @@ func generateCatalog(filename string) []string {
 		})
 }
 
+func refreshCatalogWithCondition(filename string, condition func(filename string) bool) {
+	if !condition(filename) {
+		return
+	}
+
+	refreshCatalog(filename)
+}
+
 // 更新指定文件的目录
 func refreshCatalog(filename string) {
 	logger.Info("refresh:", filename)
 
 	titleBlock := ""
 	titles := generateCatalog(filename)
+	if titles == nil {
+		return
+	}
 	for t := range titles {
 		titleBlock += titles[t]
 	}
@@ -236,6 +243,9 @@ func refreshCatalog(filename string) {
 
 	// replace title block
 	lines := readFileLines(filename)
+	if lines == nil {
+		return
+	}
 	for i, line := range lines {
 		if strings.Contains(line, startTag) {
 			startIdx = i
@@ -298,30 +308,31 @@ func refreshChangeFile(dir string) {
 	for filePath := range status {
 		fileStatus := status.File(filePath)
 		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
-			if isNeedHandleFile(dir + filePath) {
-				refreshCatalog(dir + filePath)
-			}
+			refreshCatalogWithCondition(dir+filePath, isNeedHandleFile)
 		}
 	}
 }
 
 func appendCatalogAndTitle(filename string) {
 	lines := readLinesWithFunc(filename, nil, nil)
-	var result = "---\ntitle: " + filename + "\ndate: " +
-		time.Now().Format("2006-01-02 15:04:05") +
-		"\ntags: \ncategories: \n---\n\n" + startTag + "\n" + endTag +
-		"\n****************************************\n"
+	template := `---
+title: %s
+date: %s
+tags: 
+categories: 
+---
+
+%s
+%s
+****************************************
+`
+	var headerText = fmt.Sprintf(template, filename, time.Now().Format("2006-01-02 15:04:05"), startTag, endTag)
 	for i := range lines {
-		result += lines[i]
+		headerText += lines[i]
 	}
 
-	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
+	if ioutil.WriteFile(filename, []byte(headerText), 0644) != nil {
 		logger.Error("write error", filename)
 	}
 	refreshCatalog(filename)
-}
-
-func main() {
-	logger.SetLogPathTrim("/toolbox/")
-	cuibase.RunActionFromInfo(info, nil)
 }
