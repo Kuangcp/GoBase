@@ -24,11 +24,11 @@ func init() {
 	flag.BoolVar(&webServer, "s", false, "start web server")
 	flag.BoolVar(&debugStatic, "d", false, "debug for static file")
 	flag.IntVar(&port, "p", 0, "web server port")
-
-	flag.Parse()
 }
 
 func main() {
+	flag.Parse()
+
 	if updateDb {
 		common.AutoMigrateAll()
 	}

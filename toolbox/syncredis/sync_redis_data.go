@@ -30,11 +30,11 @@ func init() {
 	flag.StringVar(&toAddr, "t.addr", "127.0.0.1:6379", "to redis address")
 	flag.StringVar(&toPwd, "t.pwd", "", "to redis password")
 	flag.IntVar(&toDB, "t.db", 3, "to redis db")
-
-	flag.Parse()
 }
 
 func main() {
+	flag.Parse()
+
 	Action(false,
 		&redis.Options{
 			Addr:     fromAddr,

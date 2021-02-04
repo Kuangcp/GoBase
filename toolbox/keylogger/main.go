@@ -113,14 +113,6 @@ func init() {
 	flag.BoolVar(&debug, "d", false, "")
 
 	flag.Usage = info.PrintHelp
-	flag.Parse()
-
-	option = redis.Options{
-		PoolSize: 5,
-		Addr:     host + ":" + port,
-		Password: pwd,
-		DB:       db,
-	}
 }
 
 func configLogger() {
@@ -177,6 +169,15 @@ func invoke(condition bool, action func()) {
 }
 
 func main() {
+	flag.Parse()
+
+	option = redis.Options{
+		PoolSize: 5,
+		Addr:     host + ":" + port,
+		Password: pwd,
+		DB:       db,
+	}
+
 	pprofDebug()
 
 	if showLog {

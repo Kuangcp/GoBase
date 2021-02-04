@@ -60,7 +60,6 @@ func init() {
 	flag.StringVar(&suffix, "s", "", "")
 
 	flag.Usage = info.PrintHelp
-	flag.Parse()
 }
 
 func initConfigValue() {
