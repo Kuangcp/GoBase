@@ -20,22 +20,25 @@ import (
 type filterFun = func(string) bool
 type mapFun func(string) string
 
-var startTag = "**目录 start**"
-var endTag = "**目录 end**"
+var (
+	ignoreDirs = [...]string{
+		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__", "ARTS",
+	}
+	ignoreFiles = [...]string{
+		"README", "Readme", "Readme_CN", "readme", "SUMMARY", "Process", "License", "LICENSE",
+	}
+	handleSuffix = [...]string{
+		".md", ".markdown", ".txt",
+	}
+	titleRemoveChar = []string{
+		".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "（", "）", "《", "》", "*", "＊", "。", "?", "？",
+	}
+)
 
-var ignoreDirs = [...]string{
-	".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__", "ARTS",
-}
-var ignoreFiles = [...]string{
-	"README", "Readme", "Readme_CN", "readme", "SUMMARY", "Process", "License", "LICENSE",
-}
-var handleSuffix = [...]string{
-	".md", ".markdown", ".txt",
-}
-var deleteChar = [...]string{
-	".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "《", "》", "*", "＊", "。", "?", "？",
-}
-var headerTemplate = `---
+var (
+	startTag       = "**目录 start**"
+	endTag         = "**目录 end**"
+	headerTemplate = `---
 title: %s
 date: %s
 tags: 
@@ -46,6 +49,7 @@ categories:
 %s
 ****************************************
 `
+)
 
 var (
 	help             bool
@@ -53,6 +57,8 @@ var (
 	mindMapFile      string
 	refreshChangeDir string
 	appendFile       string
+
+	titleReplace *strings.Replacer
 )
 
 var info = cuibase.HelpInfo{
@@ -82,10 +88,17 @@ func init() {
 
 	logger.SetLogPathTrim("md-formatter/")
 	flag.Usage = info.PrintHelp
-	flag.Parse()
+
+	var replacePairList []string
+	for i := range titleRemoveChar {
+		replacePairList = append(replacePairList, titleRemoveChar[i], "")
+	}
+	replacePairList = append(replacePairList, " ", "-")
+	titleReplace = strings.NewReplacer(replacePairList...)
 }
 
 func main() {
+	flag.Parse()
 	if help {
 		info.PrintHelp()
 		return
@@ -203,14 +216,8 @@ func refreshDirAllFiles(path string) {
 }
 
 func normalizeForTitle(title string) string {
-	title = strings.Replace(title, " ", "-", -1)
 	title = strings.ToLower(title)
-
-	for _, char := range deleteChar {
-		title = strings.Replace(title, char, "", -1)
-	}
-
-	return title
+	return titleReplace.Replace(title)
 }
 
 func generateCatalog(filename string) []string {
