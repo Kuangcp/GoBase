@@ -114,7 +114,8 @@ func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(s
 	return result
 }
 
-// Home 
+// Home
+// eg: /home/test
 func Home() (string, error) {
 	curUser, err := user.Current()
 	if nil == err {

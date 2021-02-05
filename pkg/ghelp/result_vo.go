@@ -14,10 +14,10 @@ const (
 
 type (
 	ResultVO struct {
-		Data    interface{}
-		Code    int8
-		Success bool
-		Msg     string
+		Data    interface{} `json:"data"`
+		Code    int8        `json:"code"`
+		Success bool        `json:"success"`
+		Msg     string      `json:"msg"`
 	}
 )
 

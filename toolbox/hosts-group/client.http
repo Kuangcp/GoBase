@@ -1,0 +1,19 @@
+
+###
+GET http://localhost:8066/api/v1.0/getFile?file=dev1
+
+###
+GET http://localhost:8066/api/v1.0/switch?file=dev1
+
+###
+GET http://localhost:8066/api/v1.0/listFile
+
+###
+POST http://localhost:8066/api/v1.0/postFile
+Content-Type:application/json; charset=UTF-8
+
+{
+  "name": "dev1",
+  "content": "127.0.0.1 api.server \n127.0.0.1 redis1",
+  "use": true
+}
