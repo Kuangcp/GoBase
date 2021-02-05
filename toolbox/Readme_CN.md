@@ -13,3 +13,4 @@
 | count       | 统计汉字 |
 | kserver     | Web服务器 |
 | pretty-json | JSON 高亮格式化 |
+| hosts-group | 切换 Hosts |
