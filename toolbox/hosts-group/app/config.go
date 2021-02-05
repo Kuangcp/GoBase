@@ -23,12 +23,11 @@ var (
 	bakFile     string
 	curHostFile string
 )
+var (
+	Debug bool
+)
 
-func init() {
-	initPrepare()
-}
-
-func initPrepare() {
+func InitPrepare() {
 	if "windows" == runtime.GOOS {
 		curHostFile = winHostFileStr
 	} else {
@@ -41,6 +40,10 @@ func initPrepare() {
 	mainDir = home + mainDir
 	groupDir = mainDir + groupDirStr
 	bakFile = mainDir + bakFileStr
+
+	if Debug {
+		curHostFile = mainDir + "hosts"
+	}
 
 	mkDir(groupDir)
 

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hosts Group</title>
+</head>
+<body>
+
+<div id="groupSet">
+    <select id="groupSelect">
+    </select>
+    <button id="queryFile">QueryFile</button>
+</div>
+
+<textarea id="content" style="height: 300px; width: 600px">
+</textarea>
+
+<button id="submit">submit</button>
+
+<script>
+    document.getElementById("queryFile").onclick = function (e) {
+        let selectObj = document.getElementById("groupSelect");
+        let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
+        let val = selectObj.options[index].value;
+        console.log(val)
+
+        get('/api/v1.0/getFile?file=' + val, function (req) {
+            let respTxt = req.responseText;//获取到json字符串，还需解析
+            let data = JSON.parse(respTxt);
+            console.log(data.data.content)
+            document.getElementById("content").innerHTML = data.data.content
+        })
+    }
+
+    document.getElementById("submit").onclick = function (e) {
+        let contentObj = document.getElementById("content");
+        console.log(contentObj.value)
+
+        let selectObj = document.getElementById("groupSelect");
+        let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
+        let val = selectObj.options[index].value;
+        console.log(val)
+
+        let fileItem = {
+            name: val,
+            content: contentObj.value,
+            use: true
+        };
+        console.log(fileItem)
+
+        let httpRequest = new XMLHttpRequest();
+        httpRequest.open("POST", '/api/v1.0/postFile', true);
+        httpRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+        httpRequest.send(JSON.stringify(fileItem))
+        // httpRequest.send("keyword="+keyword+"&name="+name);
+        httpRequest.onreadystatechange = () => {
+            if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                let data = JSON.parse(httpRequest.responseText);
+                console.log(data);
+            }
+        }
+    }
+
+    function get(url, handle) {
+        let httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
+        httpRequest.open('GET', url, true);//第二步：打开连接  将请求参数写在url中  ps:"./Ptest.php?name=test&nameone=testone"
+        httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+        /**
+         * 获取数据后的处理程序
+         */
+        httpRequest.onreadystatechange = function () {
+            if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                handle(httpRequest)
+
+            }
+        };
+    }
+
+    function listFiles() {
+        get('/api/v1.0/listFile', function (req) {
+            let respTxt = req.responseText;//获取到json字符串，还需解析
+            let data = JSON.parse(respTxt);
+            for (let ele in data.data) {
+                let datum = data.data[ele];
+                console.log(datum)
+                let selectObj = document.getElementById("groupSelect");
+                selectObj.options.add(new Option(datum.name, datum.name));
+            }
+        })
+    }
+
+    listFiles()
+</script>
+</body>
+</html>

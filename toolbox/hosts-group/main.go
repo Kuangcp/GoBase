@@ -1,9 +1,17 @@
 package main
 
 import (
+	"flag"
+
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app"
 )
 
+func init() {
+	flag.BoolVar(&app.Debug, "d", false, "")
+}
+
 func main() {
-	app.Server(true, "8066")
+	flag.Parse()
+	app.InitPrepare()
+	app.Server("8066")
 }

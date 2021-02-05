@@ -9,7 +9,7 @@ import (
 	"github.com/kuangcp/logger"
 )
 
-func Server(debugStatic bool, port string) {
+func Server(port string) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.GET("/ping", func(c *gin.Context) {
@@ -17,7 +17,7 @@ func Server(debugStatic bool, port string) {
 	})
 
 	// 是否读取 statik 打包后的静态文件
-	if debugStatic {
+	if Debug {
 		router.Static("/static", "./static")
 	} else {
 		//// static file mapping
@@ -44,7 +44,7 @@ func Server(debugStatic bool, port string) {
 
 	url := "http://localhost" + srv.Addr
 	logger.Info(url)
-	if !debugStatic {
+	if !Debug {
 		_ = cuibase.OpenBrowser(url)
 	}
 
