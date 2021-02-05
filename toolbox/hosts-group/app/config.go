@@ -8,13 +8,20 @@ import (
 	"runtime"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/kuangcp/logger"
+)
+
+const (
+	groupDirStr     = "group/"
+	bakFileStr      = "hosts.origin.bak"
+	winHostFileStr  = "C:\\Windows\\System32\\drivers\\etc\\hosts"
+	unixHostFileStr = "/etc/hosts"
 )
 
 var (
-	mainDir  = "/.hosts-group"
-	groupDir = "/group"
-	bakFile  = "/hosts.origin.bak"
+	mainDir     = "/.hosts-group/"
+	groupDir    string
+	bakFile     string
+	curHostFile string
 )
 
 func init() {
@@ -23,22 +30,24 @@ func init() {
 
 func initPrepare() {
 	if "windows" == runtime.GOOS {
-		logger.Fatal("not support")
+		curHostFile = winHostFileStr
+	} else {
+		curHostFile = unixHostFileStr
 	}
 
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
 
 	mainDir = home + mainDir
-	groupDir = mainDir + groupDir
-	bakFile = mainDir + bakFile
+	groupDir = mainDir + groupDirStr
+	bakFile = mainDir + bakFileStr
 
 	mkDir(groupDir)
 
 	exists, err := isPathExists(bakFile)
 	cuibase.CheckIfError(err)
 	if !exists {
-		CopyFile("/etc/hosts", bakFile)
+		CopyFile(curHostFile, bakFile)
 	}
 }
 

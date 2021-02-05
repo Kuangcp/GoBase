@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -21,7 +22,7 @@ type (
 	FileItemVO struct {
 		Name    string `json:"name"`
 		Use     bool   `json:"use"`
-		Content string `json:"content"`
+		Content string `json:"content,omitempty"`
 	}
 )
 
@@ -33,7 +34,7 @@ func SwitchFileState(c *gin.Context) {
 	}
 
 	for _, s := range stateList {
-		filePath := groupDir + "/" + file
+		filePath := groupDir + file
 		useState := filePath + s
 		exists, err := isPathExists(useState)
 		if err != nil {
@@ -43,10 +44,20 @@ func SwitchFileState(c *gin.Context) {
 
 		if exists {
 			// 当前为 not 才表示启用
-			switchState(filePath, s == not)
-			generateHost()
-			ghelp.GinSuccessWith(c, "")
-			return
+			_, err := switchState(filePath, s == not)
+			if err != nil {
+				ghelp.GinFailedWithMsg(c, err.Error())
+				return
+			}
+
+			err = generateHost()
+			if err != nil {
+				ghelp.GinFailedWithMsg(c, err.Error())
+				return
+			} else {
+				ghelp.GinSuccessWith(c, "")
+				return
+			}
 		}
 	}
 
@@ -70,7 +81,7 @@ func FileContent(c *gin.Context) {
 }
 
 func fillContentResult(c *gin.Context, file string, state string) bool {
-	filePath := groupDir + "/" + file + state
+	filePath := groupDir + file + state
 	exists, err := isPathExists(filePath)
 	if err != nil {
 		ghelp.GinFailedWithMsg(c, err.Error())
@@ -126,7 +137,12 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
-	targetFilePath := switchState(groupDir+"/"+param.Name, param.Use)
+	targetFilePath, err := switchState(groupDir+param.Name, param.Use)
+	if err != nil {
+		ghelp.GinFailedWithMsg(c, err.Error())
+		return
+	}
+
 	err = ioutil.WriteFile(targetFilePath, []byte(param.Content), 0644)
 	if err != nil {
 		ghelp.GinFailedWithMsg(c, err.Error())
@@ -134,14 +150,18 @@ func CreateOrUpdateFile(c *gin.Context) {
 	}
 
 	if param.Use {
-		generateHost()
+		err := generateHost()
+		if err != nil {
+			ghelp.GinFailedWithMsg(c, err.Error())
+			return
+		}
 	}
 
 	ghelp.GinSuccessWith(c, "")
 }
 
 // return final file path that contain state
-func switchState(absPath string, targetUse bool) string {
+func switchState(absPath string, targetUse bool) (string, error) {
 	origin := absPath + use
 	target := absPath + not
 	if targetUse {
@@ -151,25 +171,46 @@ func switchState(absPath string, targetUse bool) string {
 
 	exists, err := isPathExists(origin)
 	if !exists {
-		return target
+		return target, nil
 	}
 	if err != nil {
 		logger.Error(err)
+		return "", err
 	}
 
 	err = os.Rename(origin, target)
 	if err != nil {
 		logger.Error(err)
+		return "", err
 	}
-	return target
+	return target, nil
 }
 
-func generateHost() {
+func generateHost() error {
 	logger.Info("start reload host")
 	list := getFileList()
+	mergeResult := ""
 	for _, vo := range list {
 		if !vo.Use {
 			continue
 		}
+
+		readFile, err := ioutil.ReadFile(groupDir + vo.Name + use)
+		if err != nil {
+			logger.Warn(err.Error())
+			continue
+		}
+
+		mergeResult += "###########\n" +
+			"#  " + vo.Name + "\n" +
+			"###########\n" +
+			string(readFile) + "\n\n\n"
 	}
+
+	err := ioutil.WriteFile(curHostFile, []byte(mergeResult), 0644)
+	if err != nil {
+		logger.Error(err.Error())
+		return fmt.Errorf(err.Error())
+	}
+	return nil
 }
