@@ -13,7 +13,7 @@ import (
 
 const (
 	groupDirStr     = "group/"
-	bakFileStr      = "hosts.origin.bak"
+	bakFileStr      = "origin.hosts.bak"
 	winHostFileStr  = "C:\\Windows\\System32\\drivers\\etc\\hosts"
 	unixHostFileStr = "/etc/hosts"
 )
@@ -50,10 +50,19 @@ func InitPrepare() {
 
 	mkDir(groupDir)
 
+	backupOriginFile()
+}
+
+func backupOriginFile() {
 	exists, err := isPathExists(bakFile)
 	cuibase.CheckIfError(err)
 	if !exists {
 		CopyFile(curHostFile, bakFile)
+		CopyFile(curHostFile, groupDir+"origin-backup"+use)
+		err := generateHost()
+		if err != nil {
+			logger.Fatal(err.Error())
+		}
 	}
 }
 
