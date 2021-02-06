@@ -5,4 +5,5 @@ Just webserver, provide curd api to management hosts file.
 
 ## Install
 
-go install
+1. statik -f -src=static/ -dest app/
+1. go install

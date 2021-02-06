@@ -42,11 +42,11 @@ func InitPrepare() {
 	groupDir = mainDir + groupDirStr
 	bakFile = mainDir + bakFileStr
 
-	logger.Info("host file:", curHostFile)
 	if Debug {
-		logger.Info("debug mode")
+		logger.Info("using debug mode")
 		curHostFile = mainDir + "hosts"
 	}
+	logger.Info("current hosts file:", curHostFile)
 
 	mkDir(groupDir)
 

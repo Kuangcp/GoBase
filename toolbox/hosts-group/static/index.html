@@ -36,6 +36,7 @@
             if (data.code === 0) {
                 console.log(data.data.content)
                 document.getElementById("content").innerHTML = data.data.content
+                document.getElementById("state").checked = data.data.use
             } else {
                 console.log(fileName, "not exist")
             }
@@ -72,6 +73,7 @@
             if (httpRequest.readyState === 4 && httpRequest.status === 200) {
                 let data = JSON.parse(httpRequest.responseText);
                 console.log(data);
+                location.reload();
             }
         }
     }
@@ -99,7 +101,9 @@
                 let datum = data.data[ele];
                 console.log('list: ', datum)
                 let selectObj = document.getElementById("groupSelect");
-                selectObj.options.add(new Option(datum.name, datum.name));
+                let opt = new Option(datum.name, datum.name);
+                opt.style.color = datum.use ? 'green' : 'gray';
+                selectObj.options.add(opt);
             }
         })
     }
