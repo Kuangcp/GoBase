@@ -6,77 +6,35 @@
 </head>
 <body>
 
+<style>
+    .box {
+        height: 500px;
+        width: 600px;
+        float: left;
+        margin-right: 10px;
+        margin-top: 5px;
+    }
+</style>
 <div id="groupSet">
+    <button onclick="queryCurrent()"> Current Hosts</button>
     <label for="inputNew">New: </label>
     <input type="text" maxlength="30" minlength="1" id="inputNew">
 
     <label for="groupSelect">File: </label>
-    <select id="groupSelect">
+    <select id="groupSelect" onchange="selectChange()">
         <option></option>
     </select>
     <label for="state">Use: </label>
     <input type="checkbox" id="state">
+    <button id="submit" onclick="submitPost()">Submit</button>
 </div>
 
-<textarea id="content" style="height: 300px; width: 600px">
-</textarea>
+<textarea id="content" class="box"></textarea>
 
-<button id="submit">Submit</button>
+<div id="mergeResult" class="box"></div>
 
 <script>
-    document.getElementById("groupSelect").onchange = function (e) {
-        let selectObj = document.getElementById("groupSelect");
-        let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
-        let fileName = selectObj.options[index].value;
-        console.log(fileName)
-
-        get('/api/v1.0/getFile?file=' + fileName, function (req) {
-            let respTxt = req.responseText;//获取到json字符串，还需解析
-            let data = JSON.parse(respTxt);
-            if (data.code === 0) {
-                console.log(data.data.content)
-                document.getElementById("content").innerHTML = data.data.content
-                document.getElementById("state").checked = data.data.use
-            } else {
-                console.log(fileName, "not exist")
-            }
-        })
-    }
-
-    document.getElementById("submit").onclick = function (e) {
-        let contentObj = document.getElementById("content");
-        console.log(contentObj.value)
-
-        let newFile = document.getElementById("inputNew").value;
-        if (newFile.length <= 0) {
-            let selectObj = document.getElementById("groupSelect");
-            let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
-            newFile = selectObj.options[index].value;
-            console.log(newFile)
-        }
-
-        let isUse = document.getElementById("state").checked;
-
-        let fileItem = {
-            name: newFile,
-            content: contentObj.value,
-            use: isUse
-        };
-        console.log(fileItem)
-
-        let httpRequest = new XMLHttpRequest();
-        httpRequest.open("POST", '/api/v1.0/postFile', true);
-        httpRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-        httpRequest.send(JSON.stringify(fileItem))
-        // httpRequest.send("keyword="+keyword+"&name="+name);
-        httpRequest.onreadystatechange = () => {
-            if (httpRequest.readyState === 4 && httpRequest.status === 200) {
-                let data = JSON.parse(httpRequest.responseText);
-                console.log(data);
-                location.reload();
-            }
-        }
-    }
+    let basePath = '/api/v1.0/'
 
     function get(url, handle) {
         let httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
@@ -93,13 +51,86 @@
         };
     }
 
+    function queryCurrent() {
+        get(basePath + 'currentHosts', function (req) {
+            let respTxt = req.responseText;//获取到json字符串，还需解析
+            let data = JSON.parse(respTxt);
+            if (data.code === 0) {
+                console.log(data.data)
+                let result = document.getElementById("mergeResult");
+                result.style.backgroundColor = 'lightgray'
+                result.innerText = data.data
+            } else {
+                alert("current hosts not exist")
+            }
+        })
+    }
+
+    function selectChange() {
+        let selectObj = document.getElementById("groupSelect");
+        let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
+        let fileName = selectObj.options[index].value;
+        // console.log(fileName)
+
+        get(basePath + 'getFile?file=' + fileName, function (req) {
+            let respTxt = req.responseText;//获取到json字符串，还需解析
+            let data = JSON.parse(respTxt);
+            if (data.code === 0) {
+                // console.log(data.data.content)
+                document.getElementById("content").innerHTML = data.data.content
+                document.getElementById("state").checked = data.data.use
+            } else {
+                console.log(fileName, "not exist")
+            }
+        })
+    }
+
+    function submitPost() {
+        let contentObj = document.getElementById("content");
+        // console.log(contentObj.value)
+
+        let finalFileName = document.getElementById("inputNew").value;
+        let hasNew = true;
+        if (finalFileName.length <= 0) {
+            hasNew = false;
+            let selectObj = document.getElementById("groupSelect");
+            let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
+            finalFileName = selectObj.options[index].value;
+            // console.log(finalFileName)
+        }
+
+        let isUse = document.getElementById("state").checked;
+
+        let fileItem = {
+            name: finalFileName,
+            content: contentObj.value,
+            use: isUse
+        };
+        // console.log('post', fileItem)
+
+        let httpRequest = new XMLHttpRequest();
+        httpRequest.open("POST", basePath + 'postFile', true);
+        httpRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+        httpRequest.send(JSON.stringify(fileItem))
+        // httpRequest.send("keyword="+keyword+"&name="+name);
+        httpRequest.onreadystatechange = () => {
+            if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+                let data = JSON.parse(httpRequest.responseText);
+                console.log(data);
+                // todo clear textarea
+                document.getElementById("state").checked = false
+                location.reload();
+            }
+        }
+    }
+
     function listFiles() {
-        get('/api/v1.0/listFile', function (req) {
+        get(basePath + 'listFile', function (req) {
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
             for (let ele in data.data) {
                 let datum = data.data[ele];
-                console.log('list: ', datum)
+                // console.log('list: ', datum)
                 let selectObj = document.getElementById("groupSelect");
                 let opt = new Option(datum.name, datum.name);
                 opt.style.color = datum.use ? 'green' : 'gray';

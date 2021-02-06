@@ -54,6 +54,7 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildPath("/listFile"), ListFile)
 	router.POST(buildPath("/postFile"), CreateOrUpdateFile)
 	router.GET(buildPath("/getFile"), FileContent)
+	router.GET(buildPath("/currentHosts"), CurrentHosts)
 	router.GET(buildPath("/switch"), SwitchFileState)
 }
 

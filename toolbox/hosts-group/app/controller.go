@@ -65,6 +65,24 @@ func SwitchFileState(c *gin.Context) {
 	return
 }
 
+func CurrentHosts(c *gin.Context) {
+	exists, err := isPathExists(curHostFile)
+	if err != nil {
+		ghelp.GinFailedWithMsg(c, err.Error())
+		return
+	}
+	if !exists {
+		return
+	}
+	readFile, err := ioutil.ReadFile(curHostFile)
+	if err != nil {
+		ghelp.GinFailedWithMsg(c, err.Error())
+		return
+	}
+
+	content := string(readFile)
+	ghelp.GinSuccessWith(c, content)
+}
 func FileContent(c *gin.Context) {
 	file := c.Query("file")
 	if file == "" {
