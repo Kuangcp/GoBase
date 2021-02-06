@@ -7,28 +7,38 @@
 <body>
 
 <div id="groupSet">
+    <label for="inputNew">New: </label>
+    <input type="text" maxlength="30" minlength="1" id="inputNew">
+
+    <label for="groupSelect">File: </label>
     <select id="groupSelect">
+        <option></option>
     </select>
-    <button id="queryFile">QueryFile</button>
+    <label for="state">Use: </label>
+    <input type="checkbox" id="state">
 </div>
 
 <textarea id="content" style="height: 300px; width: 600px">
 </textarea>
 
-<button id="submit">submit</button>
+<button id="submit">Submit</button>
 
 <script>
-    document.getElementById("queryFile").onclick = function (e) {
+    document.getElementById("groupSelect").onchange = function (e) {
         let selectObj = document.getElementById("groupSelect");
         let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
-        let val = selectObj.options[index].value;
-        console.log(val)
+        let fileName = selectObj.options[index].value;
+        console.log(fileName)
 
-        get('/api/v1.0/getFile?file=' + val, function (req) {
+        get('/api/v1.0/getFile?file=' + fileName, function (req) {
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
-            console.log(data.data.content)
-            document.getElementById("content").innerHTML = data.data.content
+            if (data.code === 0) {
+                console.log(data.data.content)
+                document.getElementById("content").innerHTML = data.data.content
+            } else {
+                console.log(fileName, "not exist")
+            }
         })
     }
 
@@ -36,15 +46,20 @@
         let contentObj = document.getElementById("content");
         console.log(contentObj.value)
 
-        let selectObj = document.getElementById("groupSelect");
-        let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
-        let val = selectObj.options[index].value;
-        console.log(val)
+        let newFile = document.getElementById("inputNew").value;
+        if (newFile.length <= 0) {
+            let selectObj = document.getElementById("groupSelect");
+            let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
+            newFile = selectObj.options[index].value;
+            console.log(newFile)
+        }
+
+        let isUse = document.getElementById("state").checked;
 
         let fileItem = {
-            name: val,
+            name: newFile,
             content: contentObj.value,
-            use: true
+            use: isUse
         };
         console.log(fileItem)
 
@@ -82,7 +97,7 @@
             let data = JSON.parse(respTxt);
             for (let ele in data.data) {
                 let datum = data.data[ele];
-                console.log(datum)
+                console.log('list: ', datum)
                 let selectObj = document.getElementById("groupSelect");
                 selectObj.options.add(new Option(datum.name, datum.name));
             }
