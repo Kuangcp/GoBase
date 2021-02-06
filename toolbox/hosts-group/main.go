@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app"
 )
 
@@ -12,6 +11,8 @@ func init() {
 
 func main() {
 	flag.Parse()
+
 	app.InitPrepare()
-	app.Server("8066")
+
+	app.WebServer("8066")
 }

@@ -44,7 +44,7 @@ func SwitchFileState(c *gin.Context) {
 
 		if exists {
 			// 当前为 not 才表示启用
-			_, err := switchState(filePath, s == not)
+			_, _, err := switchState(filePath, s == not)
 			if err != nil {
 				ghelp.GinFailedWithMsg(c, err.Error())
 				return
@@ -137,7 +137,7 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
-	targetFilePath, err := switchState(groupDir+param.Name, param.Use)
+	targetFilePath, hasSwitch, err := switchState(groupDir+param.Name, param.Use)
 	if err != nil {
 		ghelp.GinFailedWithMsg(c, err.Error())
 		return
@@ -149,7 +149,7 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
-	if param.Use {
+	if param.Use || hasSwitch {
 		err := generateHost()
 		if err != nil {
 			ghelp.GinFailedWithMsg(c, err.Error())
@@ -161,7 +161,7 @@ func CreateOrUpdateFile(c *gin.Context) {
 }
 
 // return final file path that contain state
-func switchState(absPath string, targetUse bool) (string, error) {
+func switchState(absPath string, targetUse bool) (string, bool, error) {
 	origin := absPath + use
 	target := absPath + not
 	if targetUse {
@@ -171,23 +171,23 @@ func switchState(absPath string, targetUse bool) (string, error) {
 
 	exists, err := isPathExists(origin)
 	if !exists {
-		return target, nil
+		return target, false, nil
 	}
 	if err != nil {
 		logger.Error(err)
-		return "", err
+		return "", false, err
 	}
 
 	err = os.Rename(origin, target)
 	if err != nil {
 		logger.Error(err)
-		return "", err
+		return "", false, err
 	}
-	return target, nil
+	return target, true, nil
 }
 
 func generateHost() error {
-	logger.Info("start reload host")
+	logger.Info("start reload host", curHostFile)
 	list := getFileList()
 	mergeResult := ""
 	for _, vo := range list {

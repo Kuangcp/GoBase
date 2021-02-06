@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"fmt"
+	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"runtime"
@@ -41,7 +42,9 @@ func InitPrepare() {
 	groupDir = mainDir + groupDirStr
 	bakFile = mainDir + bakFileStr
 
+	logger.Info("host file:", curHostFile)
 	if Debug {
+		logger.Info("debug mode")
 		curHostFile = mainDir + "hosts"
 	}
 

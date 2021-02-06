@@ -1,15 +1,17 @@
 package app
 
 import (
+	"github.com/rakyll/statik/fs"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ghelp"
+	_ "github.com/kuangcp/gobase/toolbox/hosts-group/app/statik"
 	"github.com/kuangcp/logger"
 )
 
-func Server(port string) {
+func WebServer(port string) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.GET("/ping", func(c *gin.Context) {
@@ -20,18 +22,15 @@ func Server(port string) {
 	if Debug {
 		router.Static("/static", "./static")
 	} else {
-		//// static file mapping
-		//fileSystem, err := fs.New()
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
-		//router.StaticFS("/static", fileSystem)
+		// static file mapping
+		fileSystem, err := fs.New()
+		if err != nil {
+			logger.Fatal(err)
+		}
+		router.StaticFS("/static", fileSystem)
 	}
 	router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "static/")
-	})
-	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
 	})
 
 	// backend logic router
