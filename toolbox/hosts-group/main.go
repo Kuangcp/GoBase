@@ -33,9 +33,9 @@ func main() {
 
 func onReady() {
 	systray.SetTemplateIcon(icon.Data, icon.Data)
-	systray.SetTitle("hosts-group")
-	systray.SetTooltip("tips")
-	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
+	systray.SetTitle("Hosts Group")
+	systray.SetTooltip("Tips")
+	mQuitOrig := systray.AddMenuItem("Exit", "Exit the whole app")
 	go func() {
 		<-mQuitOrig.ClickedCh
 		fmt.Println("Requesting quit")
@@ -46,8 +46,8 @@ func onReady() {
 	// We can manipulate the systray in other goroutines
 	go func() {
 		systray.SetTemplateIcon(icon.Data, icon.Data)
-		systray.SetTitle("hosts-group")
-		systray.SetTooltip("tool tips")
+		systray.SetTitle("Hosts Group")
+		systray.SetTooltip("Hosts Group")
 
 		//subMenuTop := systray.AddMenuItem("Groups", "SubMenu Test (top)")
 		//mChecked := subMenuTop.AddSubMenuItemCheckbox("Unchecked", "Check Me", true)
