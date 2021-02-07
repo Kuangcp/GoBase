@@ -29,6 +29,7 @@ var (
 )
 
 func InitPrepare() {
+	logger.SetLogPathTrim("/hosts-group/")
 	if "windows" == runtime.GOOS {
 		curHostFile = winHostFileStr
 	} else {
@@ -110,7 +111,6 @@ func CopyFile(srcFileName string, dstFileName string) (written int64, err error)
 	defer func() {
 		writer.Flush() //把缓冲区的内容写入到文件
 		dstFile.Close()
-
 	}()
 
 	return io.Copy(writer, reader)

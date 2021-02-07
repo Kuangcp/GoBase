@@ -1,11 +1,11 @@
 package app
 
 import (
-	"github.com/rakyll/statik/fs"
 	"net/http"
 
+	"github.com/rakyll/statik/fs"
+
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ghelp"
 	_ "github.com/kuangcp/gobase/toolbox/hosts-group/app/statik"
 	"github.com/kuangcp/logger"
@@ -41,12 +41,7 @@ func WebServer(port string) {
 		Handler: router,
 	}
 
-	url := "http://localhost" + srv.Addr
-	logger.Info(url)
-	if !Debug {
-		_ = cuibase.OpenBrowser(url)
-	}
-
+	logger.Info("http://localhost" + srv.Addr)
 	ghelp.GracefulExit(srv)
 }
 
