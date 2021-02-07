@@ -3,7 +3,16 @@
 
 Just webserver, provide curd api to management hosts file.
 
+*******************
 ## Install
+> Linux
 
-1. statik -f -src=static/ -dest app/
-1. go install
+`make install`
+
+*******************
+
+> Windows
+
+`make buildExe`
+
+[blog: exe add icon](https://blog.csdn.net/u014633966/article/details/82984037)
