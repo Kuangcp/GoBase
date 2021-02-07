@@ -2,10 +2,24 @@
 
 # doc: https://github.com/getlantern/systray/tree/master/example
 
+imgFile=$1
+
 if [ -z "$GOPATH" ]; then
   echo GOPATH environment variable not set
   exit
 fi
+
+if [ ! -e "$GOPATH/bin/rsrc" ]; then
+  echo "Installing rsrc..."
+  go get github.com/akavel/rsrc
+  if [ $? -ne 0 ]; then
+    echo Failure executing go get github.com/akavel/rsrc
+    exit
+  fi
+fi
+
+rsrc -manifest hosts-group.exe.mainfest -ico $imgFile -o hosts.syso
+
 
 if [ ! -e "$GOPATH/bin/2goarray" ]; then
   echo "Installing 2goarray..."
@@ -16,13 +30,13 @@ if [ ! -e "$GOPATH/bin/2goarray" ]; then
   fi
 fi
 
-if [ -z "$1" ]; then
+if [ -z "$imgFile" ]; then
   echo Please specify a PNG file
   exit
 fi
 
-if [ ! -f "$1" ]; then
-  echo $1 is not a valid file
+if [ ! -f "$imgFile" ]; then
+  echo $imgFile is not a valid file
   exit
 fi
 
@@ -34,7 +48,7 @@ rm $OUTPUT
 
 echo Generating $OUTPUT
 
-cat "$1" | $GOPATH/bin/2goarray Data icon >>$OUTPUT
+cat "$imgFile" | $GOPATH/bin/2goarray Data icon >>$OUTPUT
 
 if [ $? -ne 0 ]; then
   echo Failure generating $OUTPUT
