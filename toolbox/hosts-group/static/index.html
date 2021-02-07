@@ -3,16 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <title>Hosts Group</title>
+
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+    <meta http-equiv="expires" content="0">
+
+    <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 </head>
 <body>
 
 <style>
+    body{
+        font-size: 16px;
+    }
     .box {
-        height: 500px;
-        width: 600px;
+        height: 90vh;
+        width: 500px;
         float: left;
-        margin-right: 10px;
+        margin-right: 20px;
         margin-top: 5px;
+        font-size: 15px;
     }
 </style>
 <div id="groupSet">
@@ -31,7 +41,7 @@
 
 <textarea id="content" class="box"></textarea>
 
-<div id="mergeResult" class="box"></div>
+<pre id="mergeResult" class="box"></pre>
 
 <script>
     let basePath = '/api/v1.0/'
@@ -58,7 +68,7 @@
             if (data.code === 0) {
                 console.log(data.data)
                 let result = document.getElementById("mergeResult");
-                result.style.backgroundColor = 'lightgray'
+                // result.style.backgroundColor = 'lightgray'
                 result.innerText = data.data
             } else {
                 alert("current hosts not exist")
@@ -116,10 +126,14 @@
         httpRequest.onreadystatechange = () => {
             if (httpRequest.readyState === 4 && httpRequest.status === 200) {
                 let data = JSON.parse(httpRequest.responseText);
-                console.log(data);
-                // todo clear textarea
+                if (data.code !==0){
+                    alert(data.msg)
+                    return
+                }
+                // console.log(data);
                 document.getElementById("state").checked = false
-                location.reload();
+                // clear textarea
+                location.replace('/static/?page=' + guid())
             }
         }
     }
@@ -132,11 +146,21 @@
                 let datum = data.data[ele];
                 // console.log('list: ', datum)
                 let selectObj = document.getElementById("groupSelect");
-                let opt = new Option(datum.name, datum.name);
+
+                let opt = new Option(datum.name + (datum.use ? '✔️' : ''), datum.name);
                 opt.style.color = datum.use ? 'green' : 'gray';
+
                 selectObj.options.add(opt);
             }
         })
+    }
+
+    function guid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            let r = Math.random() * 16 | 0;
+            let v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
 
     listFiles()

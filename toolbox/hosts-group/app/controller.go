@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,9 @@ import (
 const (
 	use = ".use"
 	not = ".not"
+
+	titleMaxLen   = 30
+	contentMaxLen = 3000
 )
 
 var stateList = []string{use, not}
@@ -150,7 +154,7 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
-	if param.Name == "" || param.Content == "" || len(param.Name) > 30 || len(param.Content) > 3000 {
+	if param.Name == "" || param.Content == "" || len(param.Name) > titleMaxLen || len(param.Content) > contentMaxLen {
 		ghelp.GinFailedWithMsg(c, "invalid param")
 		return
 	}
@@ -219,10 +223,7 @@ func generateHost() error {
 			continue
 		}
 
-		mergeResult += "###########\n" +
-			"#  " + vo.Name + "\n" +
-			"###########\n" +
-			string(readFile) + "\n\n\n"
+		mergeResult += buildOneFileBlock(vo.Name, string(readFile))
 	}
 
 	err := ioutil.WriteFile(curHostFile, []byte(mergeResult), 0644)
@@ -231,4 +232,17 @@ func generateHost() error {
 		return fmt.Errorf(err.Error())
 	}
 	return nil
+}
+
+func buildOneFileBlock(name, content string) string {
+	nameLen := len(name)
+	padding := (titleMaxLen - nameLen) / 2
+	paddingStr := strconv.Itoa(padding)
+	return "" +
+		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n" +
+		"#" + fmt.Sprintf("%"+paddingStr+"s%s%"+strconv.Itoa(titleMaxLen-padding-nameLen)+"s", "", name, "") + "┃\n" +
+		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n" +
+		content + "\n" +
+		//"#------------------------------#\n" +
+		"\n"
 }
