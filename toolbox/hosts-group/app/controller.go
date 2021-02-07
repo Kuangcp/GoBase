@@ -32,41 +32,50 @@ type (
 
 func SwitchFileState(c *gin.Context) {
 	file := c.Query("file")
-	if file == "" {
-		ghelp.GinFailed(c)
+	success, err := switchFileState(file)
+	if success {
+		ghelp.GinSuccessWith(c, "")
 		return
 	}
 
+	if err != nil {
+		ghelp.GinFailedWithMsg(c, err.Error())
+		return
+	}
+	ghelp.GinFailedWithMsg(c, "file not exist")
+	return
+}
+
+func switchFileState(fileName string) (bool, error) {
+	if fileName == "" {
+		return false, nil
+	}
+	logger.Info("switch:", fileName)
+
 	for _, s := range stateList {
-		filePath := groupDir + file
+		filePath := groupDir + fileName
 		useState := filePath + s
 		exists, err := isPathExists(useState)
 		if err != nil {
-			ghelp.GinFailedWithMsg(c, err.Error())
-			return
+			return false, err
 		}
 
 		if exists {
 			// 当前为 not 才表示启用
 			_, _, err := switchState(filePath, s == not)
 			if err != nil {
-				ghelp.GinFailedWithMsg(c, err.Error())
-				return
+				return false, err
 			}
 
 			err = generateHost()
 			if err != nil {
-				ghelp.GinFailedWithMsg(c, err.Error())
-				return
+				return false, err
 			} else {
-				ghelp.GinSuccessWith(c, "")
-				return
+				return true, nil
 			}
 		}
 	}
-
-	ghelp.GinFailedWithMsg(c, "file not exist")
-	return
+	return false, nil
 }
 
 func CurrentHosts(c *gin.Context) {
@@ -100,6 +109,20 @@ func FileContent(c *gin.Context) {
 		}
 	}
 	ghelp.GinFailedWithMsg(c, "file not exist")
+}
+
+func fileState(file string) (bool, error) {
+	for _, s := range stateList {
+		filePath := groupDir + file + s
+		exists, err := isPathExists(filePath)
+		if exists {
+			return s == use, nil
+		}
+		if err != nil {
+			return false, err
+		}
+	}
+	return false, fmt.Errorf("file not exist")
 }
 
 func fillContentResult(c *gin.Context, file string, state string) bool {
@@ -223,7 +246,7 @@ func generateHost() error {
 			continue
 		}
 
-		mergeResult += buildOneFileBlock(vo.Name, string(readFile))
+		mergeResult += buildFileBlock(vo.Name, string(readFile))
 	}
 
 	err := ioutil.WriteFile(curHostFile, []byte(mergeResult), 0644)
@@ -234,7 +257,7 @@ func generateHost() error {
 	return nil
 }
 
-func buildOneFileBlock(name, content string) string {
+func buildFileBlock(name, content string) string {
 	nameLen := len(name)
 	padding := (titleMaxLen - nameLen) / 2
 	paddingStr := strconv.Itoa(padding)
