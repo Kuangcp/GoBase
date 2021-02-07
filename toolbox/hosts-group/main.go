@@ -2,7 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
+
+	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app"
+	"github.com/kuangcp/gobase/toolbox/hosts-group/app/icon"
+	"github.com/kuangcp/logger"
+	"github.com/skratchdot/open-golang/open"
 )
 
 func init() {
@@ -14,5 +20,53 @@ func main() {
 
 	app.InitPrepare()
 
-	app.WebServer("8066")
+	go func() {
+		app.WebServer("8066")
+	}()
+
+	onExit := func() {
+		logger.Info("exit")
+	}
+
+	systray.Run(onReady, onExit)
+}
+
+func onReady() {
+	systray.SetTemplateIcon(icon.Data, icon.Data)
+	systray.SetTitle("hosts-group")
+	systray.SetTooltip("tips")
+	mQuitOrig := systray.AddMenuItem("Quit", "Quit the whole app")
+	go func() {
+		<-mQuitOrig.ClickedCh
+		fmt.Println("Requesting quit")
+		systray.Quit()
+		fmt.Println("Finished quitting")
+	}()
+
+	// We can manipulate the systray in other goroutines
+	go func() {
+		systray.SetTemplateIcon(icon.Data, icon.Data)
+		systray.SetTitle("hosts-group")
+		systray.SetTooltip("tool tips")
+
+		//subMenuTop := systray.AddMenuItem("Groups", "SubMenu Test (top)")
+		//mChecked := subMenuTop.AddSubMenuItemCheckbox("Unchecked", "Check Me", true)
+
+		mUrl := systray.AddMenuItem("Open UI", "my home")
+
+		for {
+			select {
+			//case <-mChecked.ClickedCh:
+			//	if mChecked.Checked() {
+			//		mChecked.Uncheck()
+			//		mChecked.SetTitle("Unchecked")
+			//	} else {
+			//		mChecked.Check()
+			//		mChecked.SetTitle("Checked")
+			//	}
+			case <-mUrl.ClickedCh:
+				open.Run("http://localhost:8066")
+			}
+		}
+	}()
 }
