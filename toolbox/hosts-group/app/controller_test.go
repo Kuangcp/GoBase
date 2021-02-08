@@ -6,6 +6,6 @@ import (
 )
 
 func Test_buildOneFileBlock(t *testing.T) {
-	result := buildOneFileBlock("tes", "fdsfsd\nfdsjsi\n\nfdsjk")
+	result := buildFileBlock("tes", "fdsfsd\nfdsjsi\n\nfdsjk")
 	fmt.Println(result)
 }
