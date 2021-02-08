@@ -194,6 +194,12 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
+	if !hasSwitch {
+		addFileItem(param)
+	} else {
+		updateFileItemState(param)
+	}
+
 	if param.Use || hasSwitch {
 		err := generateHost()
 		if err != nil {

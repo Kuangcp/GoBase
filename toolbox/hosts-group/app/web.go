@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 
+	"github.com/getlantern/systray"
 	"github.com/rakyll/statik/fs"
 
 	"github.com/gin-gonic/gin"
@@ -42,7 +43,9 @@ func WebServer(port string) {
 	}
 
 	logger.Info("http://localhost" + srv.Addr)
-	ghelp.GracefulExit(srv)
+	ghelp.GracefulExitWithHook(srv, func() {
+		systray.Quit()
+	})
 }
 
 func registerRouter(router *gin.Engine) {

@@ -12,6 +12,10 @@ import (
 )
 
 func GracefulExit(srv *http.Server) {
+	GracefulExitWithHook(srv, nil)
+}
+
+func GracefulExitWithHook(srv *http.Server, hook func()) {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
@@ -30,6 +34,9 @@ func GracefulExit(srv *http.Server) {
 	<-quit
 
 	fmt.Println("Shutting down server...")
+	if hook != nil {
+		hook()
+	}
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling

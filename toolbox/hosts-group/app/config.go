@@ -3,10 +3,11 @@ package app
 import (
 	"bufio"
 	"fmt"
-	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"runtime"
+
+	"github.com/kuangcp/logger"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
@@ -25,11 +26,13 @@ var (
 	curHostFile string
 )
 var (
-	Debug bool
+	Debug   bool
+	LogPath string
 )
 
-func InitPrepare() {
-	logger.SetLogPathTrim("/hosts-group/")
+func InitConfigAndEnv() {
+	initLogConfig()
+
 	if "windows" == runtime.GOOS {
 		curHostFile = winHostFileStr
 	} else {
@@ -52,6 +55,35 @@ func InitPrepare() {
 	mkDir(groupDir)
 
 	backupOriginFile()
+}
+
+func initLogConfig() {
+	logger.SetLogPathTrim("/hosts-group/")
+
+	if LogPath == "" {
+		return
+	}
+	exists, err := isPathExists(LogPath)
+	if !exists || err != nil {
+		logger.Fatal("log path invalid")
+	}
+
+	err = logger.SetLoggerConfig(&logger.LogConfig{
+		Console: &logger.ConsoleLogger{
+			Level:    logger.DebugDesc,
+			Colorful: true,
+		},
+		File: &logger.FileLogger{
+			Filename:   LogPath,
+			Level:      logger.DebugDesc,
+			Colorful:   true,
+			Append:     true,
+			PermitMask: "0660",
+		},
+	})
+	if err != nil {
+		logger.Fatal(err.Error())
+	}
 }
 
 func backupOriginFile() {
