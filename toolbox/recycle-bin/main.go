@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -20,6 +21,8 @@ import (
 )
 
 func main() {
+	flag.Parse()
+
 	invokeWithBool(help, info.PrintHelp)
 	invokeWithBool(initConfig, InitConfig)
 	invokeWithBool(listTrash, ListTrashFiles)

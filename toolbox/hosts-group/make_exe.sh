@@ -93,8 +93,10 @@ version=$(./hosts-group.bin -v)
 
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui" -o hosts-group.$version.exe
 
-echo
-upx hosts-group.$version.exe
-echo
+if [ -f hosts-group.$version.exe ]; then
+  echo
+  upx hosts-group.$version.exe
+  echo
 
-echo 6/6 Finish hosts-group.$version.exe
+  echo 6/6 Finish hosts-group.$version.exe
+fi

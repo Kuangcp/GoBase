@@ -3,157 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <title>Hosts Group</title>
-
-    <meta http-equiv="pragma" content="no-cache">
-    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
-    <meta http-equiv="expires" content="0">
-
     <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .nav {
+            height: 35px;
+        }
+
+        .group-list {
+            float: left;
+        }
+
+        .group-edit-box {
+            margin-left: 8px;
+            margin-right: 8px;
+            float: left;
+            width: 700px;
+            height: 500px;
+            resize: none;
+            font-size: 17px;
+            font-family: Consolas, serif;
+        }
+
+        .group-item {
+            /*background-color: #b3e19d;*/
+            width: 300px;
+            height: 35px;
+            padding-left: 10px;
+            font-size: 20px;
+            border-top: 1px dotted;
+            /*margin-bottom: 1px;*/
+        }
+
+        .group-item span, input {
+            margin-left: 10px;
+        }
+
+        .button-list {
+            float: left;
+
+        }
+
+        button {
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
 
-<style>
-    body{
-        font-size: 16px;
-        /*background-image: linear-gradient(25deg, #65b8b5, #96b4ae, #bbb0a7, #dcaaa0);*/
-        background-image: linear-gradient(25deg, #227495, #76859d, #b095a5, #e7a5ad)
-    }
-    .box {
-        height: 90vh;
-        width: 500px;
-        float: left;
-        margin-right: 20px;
-        margin-top: 10px;
-        font-size: 15px;
-    }
-</style>
-<div id="groupSet">
-    <button onclick="queryCurrent()"> Current Hosts</button>
-    <label for="inputNew">New: </label>
-    <input type="text" maxlength="30" minlength="1" id="inputNew">
+<nav class="nav">
+    <h3 style="text-align: center">Hosts Group</h3>
+</nav>
+<main>
+    <div id="groupList" class="group-list"></div>
 
-    <label for="groupSelect">File: </label>
-    <select id="groupSelect" onchange="selectChange()">
-        <option></option>
-    </select>
-    <label for="state">Use: </label>
-    <input type="checkbox" id="state"> &nbsp;&nbsp;&nbsp;
-    <button id="submit" onclick="submitPost()">Submit</button>
-</div>
+    <textarea id="content" class="group-edit-box"></textarea>
+    <pre id="mergeResult" style="display: none;" class="group-edit-box"></pre>
 
-<textarea id="content" class="box"></textarea>
+    <div class="button-list">
+        <button onclick="saveFile()">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
+        <br>
+        <button onclick="queryCurrent()">&nbsp;Current&nbsp;</button>
+    </div>
+</main>
 
-<pre id="mergeResult" class="box"></pre>
 
 <script>
     let basePath = '/api/v1.0/'
+    let curFileKey = 'cur-file'
+    let totalItem = []
 
     function get(url, handle) {
-        let httpRequest = new XMLHttpRequest();//第一步：建立所需的对象
-        httpRequest.open('GET', url, true);//第二步：打开连接  将请求参数写在url中  ps:"./Ptest.php?name=test&nameone=testone"
-        httpRequest.send();//第三步：发送请求  将请求参数写在URL中
+        let httpRequest = new XMLHttpRequest();
+        httpRequest.open('GET', url, true);
+        httpRequest.send();
         /**
          * 获取数据后的处理程序
          */
         httpRequest.onreadystatechange = function () {
             if (httpRequest.readyState === 4 && httpRequest.status === 200) {
                 handle(httpRequest)
-
             }
         };
     }
 
-    function queryCurrent() {
-        get(basePath + 'currentHosts', function (req) {
-            let respTxt = req.responseText;//获取到json字符串，还需解析
-            let data = JSON.parse(respTxt);
-            if (data.code === 0) {
-                console.log(data.data)
-                let result = document.getElementById("mergeResult");
-                // result.style.backgroundColor = 'lightgray'
-                result.innerText = data.data
-            } else {
-                alert("current hosts not exist")
-            }
-        })
-    }
 
-    function selectChange() {
-        let selectObj = document.getElementById("groupSelect");
-        let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
-        let fileName = selectObj.options[index].value;
-        // console.log(fileName)
+    function getFile(fileName) {
+        for (let i = 0; i < totalItem.length; i++) {
+            document.getElementById("group-item-" + totalItem[i]).style.backgroundColor = 'white';
+        }
 
+        document.getElementById("content").style.display = 'block';
+        document.getElementById("mergeResult").style.display = 'none';
         get(basePath + 'getFile?file=' + fileName, function (req) {
+            localStorage.setItem(curFileKey, fileName)
+            document.getElementById("group-item-" + fileName).style.backgroundColor = '#b3e19d';
+
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
-                // console.log(data.data.content)
                 document.getElementById("content").innerHTML = data.data.content
-                document.getElementById("state").checked = data.data.use
+                document.getElementById("group-item-check-" + fileName).checked = data.data.use
             } else {
                 console.log(fileName, "not exist")
             }
         })
     }
 
-    function submitPost() {
+    function queryCurrent() {
+        get(basePath + 'currentHosts', function (req) {
+            let respTxt = req.responseText;
+            let data = JSON.parse(respTxt);
+            if (data.code === 0) {
+                document.getElementById("content").style.display = 'none';
+                document.getElementById("mergeResult").style.display = 'block';
+                document.getElementById("mergeResult").innerText = data.data;
+            } else {
+                alert("current hosts not exist")
+            }
+        })
+    }
+
+    function switchFileState(fileName) {
+        get(basePath + 'switch?file=' + fileName, function (req) {
+            let respTxt = req.responseText;
+            let data = JSON.parse(respTxt);
+            if (data.code === 0) {
+                document.getElementById("group-item-check-" + fileName).checked = data.data
+            } else {
+                alert("current hosts not exist")
+            }
+        })
+    }
+
+    function saveFile() {
         let contentObj = document.getElementById("content");
         // console.log(contentObj.value)
 
-        let finalFileName = document.getElementById("inputNew").value;
-        let hasNew = true;
-        if (finalFileName.length <= 0) {
-            hasNew = false;
-            let selectObj = document.getElementById("groupSelect");
-            let index = selectObj.selectedIndex; //序号，取当前选中选项的序号
-            finalFileName = selectObj.options[index].value;
-            // console.log(finalFileName)
+        let finalFileName = document.getElementById("group-item-new-label").value;
+        let isUse = document.getElementById("group-item-new-check").checked;
+        if (!finalFileName || finalFileName.length <= 0) {
+            finalFileName = localStorage.getItem(curFileKey)
+            isUse = document.getElementById("group-item-check-" + finalFileName).checked;
         }
-
-        let isUse = document.getElementById("state").checked;
+        if (finalFileName.length <= 0) {
+            alert('not select any file')
+            return
+        }
 
         let fileItem = {
             name: finalFileName,
             content: contentObj.value,
             use: isUse
         };
-        // console.log('post', fileItem)
+        console.log('post', fileItem)
 
         let httpRequest = new XMLHttpRequest();
         httpRequest.open("POST", basePath + 'postFile', true);
         httpRequest.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
         httpRequest.send(JSON.stringify(fileItem))
-        // httpRequest.send("keyword="+keyword+"&name="+name);
         httpRequest.onreadystatechange = () => {
             if (httpRequest.readyState === 4 && httpRequest.status === 200) {
                 let data = JSON.parse(httpRequest.responseText);
-                if (data.code !==0){
+                if (data.code !== 0) {
                     alert(data.msg)
                     return
                 }
                 // console.log(data);
-                document.getElementById("state").checked = false
+                document.getElementById("group-item-new-check").checked = false
                 // clear textarea
                 location.replace('/static/?page=' + guid())
             }
         }
     }
 
+    function clearSelect() {
+        localStorage.removeItem(curFileKey)
+    }
+
     function listFiles() {
+        totalItem = []
         get(basePath + 'listFile', function (req) {
+            // console.log('list: ', datum)
+            let listEle = document.getElementById("groupList");
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
             for (let ele in data.data) {
                 let datum = data.data[ele];
-                // console.log('list: ', datum)
-                let selectObj = document.getElementById("groupSelect");
 
-                let opt = new Option(datum.name + (datum.use ? '✔️' : ''), datum.name);
-                opt.style.color = datum.use ? 'green' : 'gray';
-
-                selectObj.options.add(opt);
+                let name = datum.name;
+                totalItem.push(name)
+                listEle.innerHTML += '<div class="group-item" id="group-item-' + name + '">' +
+                    '<input type="checkbox" id="group-item-check-' + name +
+                    '" onclick="switchFileState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
+                    '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span></div>';
             }
+            listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
+                '<input type="checkbox" id="group-item-new-check"/>' +
+                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text"/></div>';
         })
     }
 
@@ -165,7 +224,7 @@
         });
     }
 
-    listFiles()
+    listFiles();
 </script>
 </body>
 </html>
