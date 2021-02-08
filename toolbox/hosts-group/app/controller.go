@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
@@ -16,7 +17,7 @@ const (
 	use = ".use"
 	not = ".not"
 
-	titleMaxLen   = 30
+	titleMaxLen   = 20
 	contentMaxLen = 3000
 )
 
@@ -186,7 +187,8 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
-	if param.Name == "" || param.Content == "" || len(param.Name) > titleMaxLen || len(param.Content) > contentMaxLen {
+	if param.Name == "" || param.Content == "" ||
+		utf8.RuneCountInString(param.Name) > titleMaxLen || utf8.RuneCountInString(param.Content) > contentMaxLen {
 		ghelp.GinFailedWithMsg(c, "invalid param")
 		return
 	}
@@ -275,13 +277,13 @@ func generateHost() error {
 }
 
 func buildFileBlock(name, content string) string {
-	nameLen := len(name)
+	nameLen := utf8.RuneCountInString(name)
 	padding := (titleMaxLen - nameLen) / 2
 	paddingStr := strconv.Itoa(padding)
 	return "" +
-		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+		"#━━━━━━━━━━━━━━━━━━━━\n" +
 		"#" + fmt.Sprintf("%"+paddingStr+"s%s%"+strconv.Itoa(titleMaxLen-padding-nameLen)+"s", "", name, "") + "\n" +
-		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+		//"#━━━━━━━━━━━━━━━━━━━━\n" +
 		content + "\n" +
 		"\n"
 }
