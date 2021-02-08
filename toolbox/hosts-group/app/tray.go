@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os"
+	"os/exec"
 	"sync"
 
 	"github.com/kuangcp/logger"
@@ -17,7 +19,7 @@ var (
 func OnReady() {
 	systray.SetTemplateIcon(icon.Data, icon.Data)
 	systray.SetTitle("Hosts Group")
-	systray.SetTooltip("Tips")
+	systray.SetTooltip("Hosts Group")
 
 	addPageLinkItem()
 
@@ -43,11 +45,18 @@ func OnReady() {
 }
 
 func addPageLinkItem() {
+	winItem := systray.AddMenuItem("Web", "Web")
 	pageURL := systray.AddMenuItem("Hosts Group", "page")
 	feedbackURL := systray.AddMenuItem("Feedback", "Feedback")
 	go func() {
 		for {
 			select {
+			case <-winItem.ClickedCh:
+				command := exec.Command(os.Args[0], "-w")
+				err := command.Start()
+				if err != nil {
+					logger.Fatal(err.Error())
+				}
 			case <-feedbackURL.ClickedCh:
 				err := open.Run("https://github.com/Kuangcp/GoBase/issues")
 				if err != nil {

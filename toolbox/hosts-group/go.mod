@@ -10,6 +10,7 @@ require (
 	github.com/kuangcp/logger v1.0.3
 	github.com/rakyll/statik v0.1.7
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+	github.com/webview/webview v0.0.0-20210201104136-ce27be3bc811
 )
 
 replace github.com/kuangcp/gobase/pkg/ghelp => ./../../pkg/ghelp
