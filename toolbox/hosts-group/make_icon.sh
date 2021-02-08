@@ -55,4 +55,6 @@ if [ $? -ne 0 ]; then
   exit
 fi
 
-echo Finished
+go mod tidy
+
+echo Finish exe icon, tray icon
