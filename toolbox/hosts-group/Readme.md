@@ -3,6 +3,10 @@
 
 Just webserver, provide curd api to management hosts file.
 
+support tray
+
+- [ ] independent window
+
 *******************
 ## Install
 > Linux
@@ -13,6 +17,6 @@ Just webserver, provide curd api to management hosts file.
 
 > Windows
 
-`make buildExe`
+`make buildExe` only support build by linux ...
 
 [blog: exe add icon](https://blog.csdn.net/u014633966/article/details/82984037)
