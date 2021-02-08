@@ -64,19 +64,28 @@ func addFileItem(vo FileItemVO) {
 		for {
 			select {
 			case <-checkbox.ClickedCh:
-				state, err := fileState(vo.Name)
+				useState, err := fileUseState(vo.Name)
 				if err != nil {
 					logger.Warn("switch failed", err)
 					break
 				}
-				if state {
-					checkbox.Uncheck()
-				} else {
-					checkbox.Check()
-				}
 				success, err := switchFileState(vo.Name)
 				if !success {
 					logger.Warn("switch failed", err)
+					systray.AddMenuItem("Error: "+err.Error(), "")
+					// rollback check action
+					if useState {
+						checkbox.Check()
+					} else {
+						checkbox.Uncheck()
+					}
+					break
+				}
+				logger.Info("update state")
+				if useState {
+					checkbox.Uncheck()
+				} else {
+					checkbox.Check()
 				}
 			}
 		}

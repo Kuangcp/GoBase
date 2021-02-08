@@ -69,6 +69,8 @@ func switchFileState(fileName string) (bool, error) {
 
 			err = generateHost()
 			if err != nil {
+				// rollback
+				_, _, _ = switchState(filePath, s != not)
 				return false, err
 			} else {
 				return true, nil
@@ -111,7 +113,7 @@ func FileContent(c *gin.Context) {
 	ghelp.GinFailedWithMsg(c, "file not exist")
 }
 
-func fileState(file string) (bool, error) {
+func fileUseState(file string) (bool, error) {
 	for _, s := range stateList {
 		filePath := groupDir + file + s
 		exists, err := isPathExists(filePath)

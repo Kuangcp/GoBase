@@ -32,8 +32,8 @@ var (
 )
 
 var Info = cuibase.HelpInfo{
-	Description:   "Hosts switch",
-	Version:       "1.3.0",
+	Description:   "Hosts switch tool",
+	Version:       "1.3.1",
 	SingleFlagLen: -2,
 	DoubleFlagLen: 0,
 	ValueLen:      -5,
