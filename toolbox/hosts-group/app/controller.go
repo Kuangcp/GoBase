@@ -34,7 +34,13 @@ func SwitchFileState(c *gin.Context) {
 	file := c.Query("file")
 	success, err := switchFileState(file)
 	if success {
-		ghelp.GinSuccessWith(c, "")
+		useState, err := fileUseState(file)
+		if err != nil {
+			logger.Warn("switch failed", err)
+			ghelp.GinFailedWithMsg(c, err.Error())
+			return
+		}
+		ghelp.GinSuccessWith(c, useState)
 		return
 	}
 
@@ -73,6 +79,7 @@ func switchFileState(fileName string) (bool, error) {
 				_, _, _ = switchState(filePath, s != not)
 				return false, err
 			} else {
+				updateFileItemState(FileItemVO{Name: fileName, Use: s == not})
 				return true, nil
 			}
 		}
@@ -183,6 +190,7 @@ func CreateOrUpdateFile(c *gin.Context) {
 		ghelp.GinFailedWithMsg(c, "invalid param")
 		return
 	}
+	param.Name = strings.TrimSpace(param.Name)
 
 	targetFilePath, hasSwitch, err := switchState(groupDir+param.Name, param.Use)
 	if err != nil {
@@ -224,7 +232,8 @@ func switchState(absPath string, targetUse bool) (string, bool, error) {
 
 	exists, err := isPathExists(origin)
 	if !exists {
-		return target, false, nil
+		already, _ := isPathExists(target)
+		return target, already, nil
 	}
 	if err != nil {
 		logger.Error(err)
@@ -270,10 +279,9 @@ func buildFileBlock(name, content string) string {
 	padding := (titleMaxLen - nameLen) / 2
 	paddingStr := strconv.Itoa(padding)
 	return "" +
-		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n" +
-		"#" + fmt.Sprintf("%"+paddingStr+"s%s%"+strconv.Itoa(titleMaxLen-padding-nameLen)+"s", "", name, "") + "┃\n" +
-		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n" +
+		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+		"#" + fmt.Sprintf("%"+paddingStr+"s%s%"+strconv.Itoa(titleMaxLen-padding-nameLen)+"s", "", name, "") + "\n" +
+		"#━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
 		content + "\n" +
-		//"#------------------------------#\n" +
 		"\n"
 }
