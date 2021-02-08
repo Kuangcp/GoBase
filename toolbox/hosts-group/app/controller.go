@@ -197,7 +197,7 @@ func CreateOrUpdateFile(c *gin.Context) {
 	}
 
 	if !hasSwitch {
-		addFileItem(param)
+		addFileItem(param, nil)
 	} else {
 		updateFileItemState(param)
 	}

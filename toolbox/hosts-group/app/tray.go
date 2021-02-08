@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	//groupMenu *systray.MenuItem
 	fileMap sync.Map
 )
 
@@ -20,6 +19,10 @@ func OnReady() {
 	systray.SetTitle("Hosts Group")
 	systray.SetTooltip("Tips")
 
+	addPageLinkItem()
+
+	versionItem := systray.AddMenuItem("v"+Info.Version, Info.Version)
+	versionItem.Disable()
 	exitItem := systray.AddMenuItem("Exit", "Exit the whole app")
 	go func() {
 		<-exitItem.ClickedCh
@@ -28,26 +31,29 @@ func OnReady() {
 		logger.Info("Finished quitting")
 	}()
 
-	systray.SetTemplateIcon(icon.Data, icon.Data)
-	systray.SetTitle("Hosts Group")
-	systray.SetTooltip("Hosts Group")
-
-	systray.AddMenuItem("v"+Info.Version, Info.Version)
-	addPageLinkItem()
 	systray.AddSeparator()
 
 	list := getFileList()
+	var latch sync.WaitGroup
 	for _, vo := range list {
-		addFileItem(vo)
+		latch.Add(1)
+		addFileItem(vo, &latch)
+		latch.Wait()
 	}
 }
 
 func addPageLinkItem() {
-	mUrl := systray.AddMenuItem("Open Page", "page")
+	pageURL := systray.AddMenuItem("Hosts Group", "page")
+	feedbackURL := systray.AddMenuItem("Feedback", "Feedback")
 	go func() {
 		for {
 			select {
-			case <-mUrl.ClickedCh:
+			case <-feedbackURL.ClickedCh:
+				err := open.Run("https://github.com/Kuangcp/GoBase/issues")
+				if err != nil {
+					logger.Fatal(err.Error())
+				}
+			case <-pageURL.ClickedCh:
 				err := open.Run("http://localhost:8066")
 				if err != nil {
 					logger.Fatal(err.Error())
@@ -57,10 +63,13 @@ func addPageLinkItem() {
 	}()
 }
 
-func addFileItem(vo FileItemVO) {
+func addFileItem(vo FileItemVO, s *sync.WaitGroup) {
 	go func() {
 		checkbox := systray.AddMenuItemCheckbox(vo.Name, "Check Me", vo.Use)
 		fileMap.Store(vo.Name, checkbox)
+		if s != nil {
+			s.Done()
+		}
 		for {
 			select {
 			case <-checkbox.ClickedCh:
@@ -74,22 +83,22 @@ func addFileItem(vo FileItemVO) {
 					logger.Warn("switch failed", err)
 					systray.AddMenuItem("Error: "+err.Error(), "")
 					// rollback check action
-					if useState {
-						checkbox.Check()
-					} else {
-						checkbox.Uncheck()
-					}
+					updateCheckBox(!useState, checkbox)
 					break
 				}
-				logger.Info("update state")
-				if useState {
-					checkbox.Uncheck()
-				} else {
-					checkbox.Check()
-				}
+				// Windows need this line, linux not need
+				updateCheckBox(useState, checkbox)
 			}
 		}
 	}()
+}
+
+func updateCheckBox(useState bool, checkbox *systray.MenuItem) {
+	if useState {
+		checkbox.Uncheck()
+	} else {
+		checkbox.Check()
+	}
 }
 
 func updateFileItemState(vo FileItemVO) {
