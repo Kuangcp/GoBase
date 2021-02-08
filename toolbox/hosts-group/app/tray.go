@@ -32,6 +32,7 @@ func OnReady() {
 	systray.SetTitle("Hosts Group")
 	systray.SetTooltip("Hosts Group")
 
+	systray.AddMenuItem("v"+Info.Version, Info.Version)
 	addPageLinkItem()
 	systray.AddSeparator()
 

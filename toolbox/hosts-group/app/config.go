@@ -27,8 +27,25 @@ var (
 )
 var (
 	Debug   bool
+	Version bool
 	LogPath string
 )
+
+var Info = cuibase.HelpInfo{
+	Description:   "Hosts switch",
+	Version:       "1.3.0",
+	SingleFlagLen: -2,
+	DoubleFlagLen: 0,
+	ValueLen:      -5,
+	Flags: []cuibase.ParamVO{
+		{Short: "-h", Comment: "help info"},
+		{Short: "-d", Comment: "debug"},
+		{Short: "-v", Comment: "version"},
+	},
+	Options: []cuibase.ParamVO{
+		{Short: "-l", Value: "path", Comment: "log path"},
+	},
+}
 
 func InitConfigAndEnv() {
 	initLogConfig()

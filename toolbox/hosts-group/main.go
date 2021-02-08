@@ -2,35 +2,25 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/getlantern/systray"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app"
 )
 
-var info = cuibase.HelpInfo{
-	Description:   "Hosts switch",
-	Version:       "1.0.2",
-	SingleFlagLen: -2,
-	DoubleFlagLen: 0,
-	ValueLen:      -5,
-	Flags: []cuibase.ParamVO{
-		{Short: "-h", Comment: "help info"},
-		{Short: "-d", Comment: "debug"},
-	},
-	Options: []cuibase.ParamVO{
-		{Short: "-l", Value: "path", Comment: "log path"},
-	},
-}
-
 func init() {
 	flag.BoolVar(&app.Debug, "d", false, "")
+	flag.BoolVar(&app.Version, "v", false, "")
 	flag.StringVar(&app.LogPath, "l", "", "")
-	flag.Usage = info.PrintHelp
+	flag.Usage = app.Info.PrintHelp
 }
 
 func main() {
 	flag.Parse()
+	if app.Version {
+		fmt.Println(app.Info.Version)
+		return
+	}
 
 	app.InitConfigAndEnv()
 
