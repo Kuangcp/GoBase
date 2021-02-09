@@ -36,18 +36,28 @@
             font-size: 15px;
             font-family: Consolas, serif;
         }
-
-        .group-item {
-            /*background-color: #b3e19d;*/
-            width: 300px;
-            height: 35px;
-            padding-left: 10px;
-            font-size: 18px;
-            border-top: 1px dotted;
-            /*margin-bottom: 1px;*/
+        .group-pre-box{
+            border: 1px dotted;
+            border-bottom: none;
         }
 
-        .group-item span, input {
+        .group-item {
+            width: 300px;
+            height: 35px;
+            padding-left: 8px;
+            font-size: 18px;
+            border-top: 1px dotted;
+        }
+
+        .group-item span {
+            margin-left: 8px;
+            width: 260px;
+            height: 35px;
+            padding-top: 8px;
+            display: inline-block;
+        }
+        .group-item input {
+            padding-top: 8px;
             margin-left: 10px;
         }
 
@@ -70,7 +80,7 @@
     <div id="groupList" class="group-list"></div>
 
     <textarea id="content" class="group-edit-box"></textarea>
-    <pre id="mergeResult" style="display: none;" class="group-edit-box"></pre>
+    <pre id="mergeResult" style="display: none;" class="group-edit-box group-pre-box"></pre>
 
     <div class="button-list">
         <button onclick="saveFile()">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
