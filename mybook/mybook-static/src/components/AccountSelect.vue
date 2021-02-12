@@ -33,7 +33,7 @@ export default {
     async queryAllAccount() {
       const res = await this.$http.get(window.api.account.listAll);
       // console.log("ren", res.data);
-      return res.data.Data;
+      return res.data.data;
     },
     async fillAccount() {
       this.accounts = [];

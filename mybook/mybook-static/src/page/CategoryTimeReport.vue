@@ -217,22 +217,22 @@ export default {
       this.showChart = true
 
       let respData = resp.data;
-      if (respData.Code !== 0 || respData.Data == null || !respData.Data.lines) {
+      if (respData.code !== 0 || respData.data == null || !respData.data.lines) {
         this.$message({
-          message: "分类统计数据为空 " + respData.Msg,
+          message: "分类统计数据为空 " + respData.msg,
           type: "warning",
         });
         return;
       }
 
       this.$nextTick(() => {
-        let finalLines = respData.Data.lines
+        let finalLines = respData.data.lines
         if (this.accountType !== 9 && this.showSumLabel) {
           finalLines = this.$refs.echart.appendSumLine(finalLines)
         }
 
-        this.echartOption.xAxis[0].data = respData.Data.xAxis
-        this.echartOption.legend.data = respData.Data.legends
+        this.echartOption.xAxis[0].data = respData.data.xAxis
+        this.echartOption.legend.data = respData.data.legends
         this.echartOption.series = finalLines
 
         this.$refs.echart.setOption(this.echartOption);

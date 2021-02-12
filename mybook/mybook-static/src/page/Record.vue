@@ -116,14 +116,14 @@ export default {
       console.log(param);
       let resp = await this.$http.post(window.api.record.create, param);
       console.log(resp);
-      if (resp.data.Code !== 0) {
+      if (resp.data.code !== 0) {
         this.$message({
-          message: resp.data.Msg,
+          message: resp.data.msg,
           type: "warning",
         });
       } else {
         this.$message({
-          message: "新增 " + resp.data.Data.length + " 条",
+          message: "新增 " + resp.data.data.length + " 条",
           type: "success",
         });
       }
