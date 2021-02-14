@@ -17,7 +17,7 @@ import (
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
-	Version:       "1.0.6",
+	Version:       "1.0.7",
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
@@ -33,7 +33,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-R", Comment: "print daily rank by before x day ago and duration"},
 		{Short: "-r", Comment: "print total rank by before x day ago and duration"},
 		{Short: "-S", Comment: "web server"},
-		{Short: "-b", Comment: "open small window to show total and bpm(beat per minute)"},
+		{Short: "-b", Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
 		{Short: "-d", Comment: "debug"},
 	},
 	Options: []cuibase.ParamVO{
@@ -121,9 +121,17 @@ func configLogger() {
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
 	mainDir = home + mainDir
+
+	err = os.MkdirAll(mainDir, 0755)
+	cuibase.CheckIfError(err)
 	logDir := mainDir + "/log"
+
+	err = os.MkdirAll(logDir, 0755)
+	cuibase.CheckIfError(err)
+
 	logPath = logDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
+		TimeFormat: "2006-01-02 15:04:05.000",
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,
