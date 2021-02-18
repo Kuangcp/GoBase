@@ -315,8 +315,17 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 	}
 	totalScore := conn.ZScore(TotalCount, today)
 
-	fmt.Printf("%s | %s | Total: %v\n", cuibase.Green.Printf("%-8s", time.Weekday()),
-		time.Format("2006-01-02"), cuibase.Yellow.Printf("%d", int64(totalScore.Val())))
+	maxKPMKey := GetTodayMaxKPMKey(time)
+	maxKPM, err := conn.Get(maxKPMKey).Result()
+	if err != nil {
+		maxKPM = "0"
+	}
+
+	fmt.Printf("\n%s | %s | Total: %-5d | %-3s\n",
+		cuibase.Green.Printf("%-9s", time.Weekday()),
+		time.Format("2006-01-02"),
+		int64(totalScore.Val()),
+		cuibase.Yellow.Printf("%3s", maxKPM))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
@@ -358,8 +367,15 @@ func parseTime(timeSegment string) (int, int) {
 func handleTotalByDate(time time.Time, conn *redis.Client) {
 	today := time.Format(DateFormat)
 	score := conn.ZScore(TotalCount, today)
-	fmt.Printf("%s %s %v\n", time.Format("2006-01-02"),
-		cuibase.Green.Printf("%-9s", time.Weekday()), int64(score.Val()))
+	maxKPMKey := GetTodayMaxKPMKey(time)
+	maxKPM, err := conn.Get(maxKPMKey).Result()
+	if err != nil {
+		maxKPM = "0"
+	}
+	fmt.Printf("%s %s %6v %s\n", time.Format("2006-01-02"),
+		cuibase.Green.Printf("%-9s", time.Weekday()),
+		int64(score.Val()),
+		cuibase.Yellow.Printf("%4s", maxKPM))
 }
 
 //CacheKeyMap to redis
