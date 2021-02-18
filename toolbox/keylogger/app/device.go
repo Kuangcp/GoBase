@@ -321,10 +321,10 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 		maxKPM = "0"
 	}
 
-	fmt.Printf("\n%s | %s | Total: %-5d | %-3s\n",
+	fmt.Printf("\n%s | %s | Total: %s | %-3s\n",
 		cuibase.Green.Printf("%-9s", time.Weekday()),
 		time.Format("2006-01-02"),
-		int64(totalScore.Val()),
+		cuibase.Green.Printf("%-5d", int64(totalScore.Val())),
 		cuibase.Yellow.Printf("%3s", maxKPM))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})

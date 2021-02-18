@@ -41,25 +41,12 @@ type (
 func init() {
 	initConfigValue()
 
-	flag.BoolVar(&help, "h", false, "")
-	flag.BoolVar(&help, "H", false, "")
-	flag.BoolVar(&debug, "D", false, "")
-	flag.BoolVar(&check, "C", false, "")
-	flag.BoolVar(&daemon, "d", false, "")
-	flag.BoolVar(&exit, "X", false, "")
-	flag.BoolVar(&illegalQuit, "q", false, "")
-	flag.BoolVar(&listTrash, "l", false, "")
-	flag.BoolVar(&log, "g", false, "")
-	flag.BoolVar(&showConfig, "c", false, "")
-	flag.BoolVar(&initConfig, "i", false, "")
 	flag.IntVar(&listOrder, "o", 0, "")
 
 	flag.StringVar(&restore, "R", "", "")
 	flag.StringVar(&retentionStr, "r", retentionStr, "")
 	flag.StringVar(&periodStr, "p", periodStr, "")
 	flag.StringVar(&suffix, "s", "", "")
-
-	flag.Usage = info.PrintHelp
 }
 
 func initConfigValue() {
@@ -134,47 +121,16 @@ var info = cuibase.HelpInfo{
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
-		{
-			Short:   "-h",
-			Value:   "",
-			Comment: "Help info",
-		}, {
-			Short:   "-D",
-			Value:   "",
-			Comment: "Debug mode",
-		}, {
-			Short:   "-X",
-			Value:   "",
-			Comment: "Exit daemon",
-		}, {
-			Short:   "-C",
-			Value:   "",
-			Comment: "Start check",
-		}, {
-			Short:   "-d",
-			Value:   "",
-			Comment: "Start check by daemon",
-		}, {
-			Short:   "-q",
-			Value:   "",
-			Comment: "Remove pid file",
-		}, {
-			Short:   "-l",
-			Value:   "",
-			Comment: "List trash",
-		}, {
-			Short:   "-g",
-			Value:   "",
-			Comment: "Show log file path",
-		}, {
-			Short:   "-c",
-			Value:   "",
-			Comment: "Show config file",
-		}, {
-			Short:   "-i",
-			Value:   "",
-			Comment: "Init dir and config",
-		},
+		{Short: "-h", BoolVar: &help, Comment: "Help info"},
+		{Short: "-D", BoolVar: &debug, Comment: "Debug mode"},
+		{Short: "-X", BoolVar: &exit, Comment: "Exit daemon"},
+		{Short: "-C", BoolVar: &check, Comment: "Start check"},
+		{Short: "-d", BoolVar: &daemon, Comment: "Start check by daemon"},
+		{Short: "-q", BoolVar: &illegalQuit, Comment: "Remove pid file"},
+		{Short: "-l", BoolVar: &listTrash, Comment: "List trash"},
+		{Short: "-g", BoolVar: &log, Comment: "Show log file path"},
+		{Short: "-c", BoolVar: &showConfig, Comment: "Show config file"},
+		{Short: "-i", BoolVar: &initConfig, Comment: "Init dir and config"},
 	},
 	Options: []cuibase.ParamVO{
 		{

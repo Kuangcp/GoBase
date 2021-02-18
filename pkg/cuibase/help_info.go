@@ -1,6 +1,9 @@
 package cuibase
 
-import "fmt"
+import (
+	"flag"
+	"fmt"
+)
 
 type (
 	ParamInfo struct {
@@ -14,6 +17,21 @@ type (
 		Long    string
 		Value   string
 		Comment string
+
+		DefaultVar interface{}
+
+		BoolType    bool
+		BoolVar     *bool
+		Float64Type bool
+		Float64Var  *float64
+		IntType     bool
+		IntVar      *int
+		Int64Type   bool
+		Int64Var    *int64
+		StringType  bool
+		StringVar   *string
+		UintType    bool
+		UintVar     *uint
 	}
 	HelpInfo struct {
 		Version       string
@@ -51,4 +69,13 @@ func (helpInfo HelpInfo) PrintHelp() {
 	if helpInfo.Version != "" {
 		fmt.Printf("\n%s  %v\n\n", LightCyan.Print("Version:"), helpInfo.Version)
 	}
+}
+
+func (helpInfo HelpInfo) Parse() {
+	flag.Usage = helpInfo.PrintHelp
+
+	for _, flagVO := range helpInfo.Flags {
+		flag.BoolVar(flagVO.BoolVar, flagVO.Short[1:], false, "")
+	}
+	flag.Parse()
 }
