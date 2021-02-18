@@ -90,6 +90,8 @@ const getFormatByPeriod = function (period) {
             return "YYYY"
         case monthPeriod:
             return "YYYY-MM"
+        case weekPeriod:
+            return "YYYY-MM-dd"
         case dayPeriod:
             return "YYYY-MM-dd"
     }

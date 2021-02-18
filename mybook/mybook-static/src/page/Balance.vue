@@ -69,8 +69,8 @@ export default {
       const res = await this.$http.get(window.api.record.balance);
       this.tableData = [];
       this.totalAmount = 0;
-      if (res.data && res.data.Data && res.data.Data.length > 0) {
-        this.tableData = res.data.Data;
+      if (res.data && res.data.data && res.data.data.length > 0) {
+        this.tableData = res.data.data;
         for (let v of this.tableData) {
           this.totalAmount += v.CurrentAmount;
         }

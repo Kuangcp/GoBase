@@ -13,21 +13,6 @@ import (
 
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
-// go时间格式，sqlite时间格式
-func getTimeFmt(period string) (string, string) {
-	switch period {
-	case yearPeriod:
-		return "2006", "%Y"
-	case monthPeriod:
-		return "2006-01", "%Y-%m"
-	//case weekPeriod:
-	//	return "", "%Y-%W"
-	case dayPeriod:
-		return "2006-01-02", "%Y-%m-%d"
-	}
-	return "2006-01", "%Y-%m"
-}
-
 func CategoryPeriodReport(c *gin.Context) {
 	paramResult := buildParam(c)
 	if paramResult.IsFailed() {
@@ -214,12 +199,14 @@ func buildPeriodList(param RecordQueryParam) []string {
 
 	var result []string
 	for !start.After(param.endDate) {
-		result = append(result, start.Format(param.timeFmt))
+		result = append(result, param.periodFunc(start))
 		switch param.Period {
 		case yearPeriod:
 			start = start.AddDate(1, 0, 0)
 		case monthPeriod:
 			start = start.AddDate(0, 1, 0)
+		case weekPeriod:
+			start = start.AddDate(0, 0, 7)
 		case dayPeriod:
 			start = start.AddDate(0, 0, 1)
 		default:
@@ -238,13 +225,14 @@ func buildParam(c *gin.Context) ghelp.ResultVO {
 	if param.StartDate == "" || param.EndDate == "" || param.ChartType == "" || (param.TypeId == 0 && param.CategoryId == 0) {
 		return ghelp.FailedWithMsg("参数含空值")
 	}
-	param.timeFmt, param.sqlTimeFmt = getTimeFmt(param.Period)
 
-	startDate, err := time.Parse(param.timeFmt, param.StartDate)
+	param.FillTimeFmt()
+
+	startDate, err := time.Parse(param.paramTimeFmt, param.StartDate)
 	if err != nil {
 		return ghelp.FailedWithMsg(err.Error())
 	}
-	endDate, err := time.Parse(param.timeFmt, param.EndDate)
+	endDate, err := time.Parse(param.paramTimeFmt, param.EndDate)
 	if err != nil {
 		return ghelp.FailedWithMsg(err.Error())
 	}

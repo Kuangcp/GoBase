@@ -37,7 +37,7 @@ export default {
   methods: {
     async queryAllAccount() {
       const res = await this.$http.get(window.api.category.tree);
-      return res.data.Data;
+      return res.data.data;
     },
     async fillAccount() {
       this.categoryMap = [];

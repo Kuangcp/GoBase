@@ -8,26 +8,22 @@ import (
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 
-	"github.com/go-redis/redis"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/kuangcp/logger"
 )
 
 const (
 	width              = 100
 	height             = 20
-	refreshPeriod      = time.Millisecond * 888
-	recordBPMThreshold = 58 // 当前秒数 > xx(s) 才存储 bpm
+	refreshLabelPeriod = time.Second
 	appId              = "com.github.kuangcp.keylogger"
 )
 
 var (
-	app        *gtk.Application
-	win        *gtk.Window
-	bpmLabel   *gtk.Label
-	firstStart = true
+	app      *gtk.Application
+	win      *gtk.Window
+	kpmLabel *gtk.Label
 )
 
 func ShowPopWindow() {
@@ -47,16 +43,20 @@ func createWindow() {
 	cuibase.CheckIfError(err)
 	bindMouseActionForWindow()
 
-	go func() {
-		ticker := time.NewTicker(refreshPeriod)
-		for range ticker.C {
-			now := time.Now()
-			refreshLabel(now)
-		}
-	}()
+	// init label
+	now := time.Now()
+	refreshLabel(now)
 
 	app.AddWindow(win)
 	win.ShowAll()
+
+	// 启动后的计算并刷新缓存
+	go func() {
+		ticker := time.NewTicker(refreshLabelPeriod)
+		for now := range ticker.C {
+			refreshLabel(now)
+		}
+	}()
 }
 
 func buildWidget() *gtk.Widget {
@@ -66,14 +66,14 @@ func buildWidget() *gtk.Widget {
 	}
 	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
 
-	bpmLabel, err = gtk.LabelNew("")
+	kpmLabel, err = gtk.LabelNew("")
 	if err != nil {
 		log.Fatal("Unable to create label:", err)
 	}
 
-	grid.Add(bpmLabel)
-	bpmLabel.SetHExpand(true)
-	bpmLabel.SetVExpand(true)
+	grid.Add(kpmLabel)
+	kpmLabel.SetHExpand(true)
+	kpmLabel.SetVExpand(true)
 
 	return &grid.Container.Widget
 }
@@ -103,90 +103,30 @@ func bindMouseActionForWindow() {
 	})
 }
 
+// 从缓存中更新窗口内面板
 func refreshLabel(now time.Time) {
-	total, bpm, todayMax := buildShowData(now)
+	conn := GetConnection()
+	tempValue, err := conn.Get(GetTodayTempKPMKey(now)).Result()
+	if err != nil {
+		return
+	}
+	maxValue, err := conn.Get(GetTodayMaxKPMKey(now)).Result()
+	if err != nil {
+		return
+	}
+
+	today := now.Format(DateFormat)
+	total := conn.ZScore(TotalCount, today).Val()
 
 	// https://blog.csdn.net/bitscro/article/details/3874616
 	str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
 		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
-		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", bpm),
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", total),
-		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMax),
+		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%s</span>", tempValue),
+		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", int(total)),
+		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%s</span>", maxValue),
 	)
-	_, err := glib.IdleAdd(bpmLabel.SetMarkup, str)
+	_, err = glib.IdleAdd(kpmLabel.SetMarkup, str)
 	if err != nil {
 		log.Fatal("IdleAdd() failed:", err)
 	}
-}
-
-func buildShowData(now time.Time) (int, int, int) {
-	conn := GetConnection()
-	today := now.Format(DateFormat)
-	total := conn.ZScore(TotalCount, today).Val()
-
-	bpm := calculateBPM(conn, total, now)
-
-	maxBPMKey := GetTodayMaxBPMKey(now)
-	todayMax, err := conn.Get(maxBPMKey).Int()
-	if err != nil {
-		todayMax = 0
-	}
-
-	if now.Second() < recordBPMThreshold {
-		return int(total), bpm, todayMax
-	}
-
-	if todayMax < bpm {
-		conn.Set(maxBPMKey, bpm, 0)
-		todayMax = bpm
-		logger.Info("Today max BPM up to", bpm)
-	}
-	return int(total), bpm, todayMax
-}
-
-func calculateBPM(conn *redis.Client, total float64, now time.Time) int {
-	if firstStart {
-		firstStart = false
-		return coverOldValue(conn, total)
-	}
-
-	second := now.Second()
-	if second <= 1 {
-		return 0
-	}
-
-	lastKey, curKey := selectActualKey(now)
-	conn.Set(curKey, total, 0)
-	lastTotal, err := conn.Get(lastKey).Float64()
-
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	// everyDay first min
-	if lastTotal > total {
-		return coverOldValue(conn, total)
-	}
-
-	delta := total - lastTotal
-	result := int(delta * 60 / float64(now.Second()))
-	//fmt.Println(delta, "* 60 / ", second, "=", result)
-	return result
-}
-
-func coverOldValue(conn *redis.Client, total float64) int {
-	conn.Set(OddKey, total, 0)
-	conn.Set(EvenKey, total, 0)
-	return 0
-}
-
-func selectActualKey(now time.Time) (string, string) {
-	lastKey := OddKey
-	curKey := EvenKey
-	if now.Minute()%2 == 1 {
-		lastKey = EvenKey
-		curKey = OddKey
-	}
-	return lastKey, curKey
 }

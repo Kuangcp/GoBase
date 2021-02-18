@@ -399,12 +399,12 @@ func LineMap(c *gin.Context) {
 		if err != nil {
 			score = 0
 		}
-		bpm, bpmErr := conn.Get(GetTodayMaxBPMKeyByString(day.Day)).Result()
-		if bpmErr != nil {
-			bpm = "0"
+		kpm, kpmErr := conn.Get(GetTodayMaxKPMKeyByString(day.Day)).Result()
+		if kpmErr != nil {
+			kpm = "0"
 		}
 
-		dayStr := fmt.Sprintf("%s|%s|%d|%s", strings.Replace(day.Day, ":", "-", 2), day.WeekDay, int(score), bpm)
+		dayStr := fmt.Sprintf("%s|%s|%d|%s", strings.Replace(day.Day, ":", "-", 2), day.WeekDay, int(score), kpm)
 		days = append(days, dayStr)
 	}
 	if len(days) == 0 {

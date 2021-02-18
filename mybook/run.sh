@@ -53,9 +53,11 @@ case $1 in
     run
     ;;
 -s)
+    # only backend
     install_server
     ;;
 *)
+    # contain front and backend
     install_app
     ;;
 esac

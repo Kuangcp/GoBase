@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
+	"keylogger/app/queue"
 	"log"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,9 +17,17 @@ import (
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
+const (
+	windowMs       int64 = 60_000
+	checkKPMPeriod       = time.Millisecond * 1000
+)
+
 var (
 	targetDevice string
 	timeSegment  string
+	kpmQueue     = queue.New() // ms
+	curKPM       = 0
+	todayMaxKPM  = 0
 )
 
 func SetFormatTargetDevice(input string) {
@@ -67,6 +75,8 @@ func ListenDevice() {
 		return
 	}
 
+	go calculateKPM(err)
+
 	success := false
 	for true {
 		inputEvents, err := device.Read()
@@ -88,6 +98,43 @@ func ListenDevice() {
 	}
 }
 
+func calculateKPM(err error) {
+	conn := GetConnection()
+	now := time.Now()
+	maxKPMKey := GetTodayMaxKPMKey(now)
+	tempKPMKey := GetTodayTempKPMKey(now)
+	todayMaxKPM, err = conn.Get(maxKPMKey).Int()
+	if err != nil {
+		todayMaxKPM = 0
+	}
+
+	ticker := time.NewTicker(checkKPMPeriod)
+	for now := range ticker.C {
+		nowMs := now.UnixNano() / 1000_000
+		for {
+			peek := kpmQueue.Peek()
+			if peek == nil {
+				break
+			}
+
+			peekVal := (*peek).(int64)
+			if nowMs-peekVal >= windowMs {
+				kpmQueue.Pop()
+			} else {
+				break
+			}
+		}
+		curKPM = kpmQueue.Len()
+		conn.Set(tempKPMKey, curKPM, 0)
+		if todayMaxKPM < curKPM {
+			conn.Set(maxKPMKey, curKPM, 0)
+			todayMaxKPM = curKPM
+			logger.Info("Today max kpm up to", curKPM)
+		}
+	}
+}
+
+// ns us ms s
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	today := time.Now()
 	todayStr := today.Format(DateFormat)
@@ -104,26 +151,28 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 
 		matchFlag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
-		result, err := conn.ZIncr(GetRankKey(today), redis.Z{Score: 1, Member: event.Scancode}).Result()
+		result, err := conn.ZIncr(GetRankKey(today),
+			redis.Z{Score: 1, Member: event.Scancode}).Result()
 		if err != nil {
-			fmt.Println("zincr: ", result, err)
-			CloseConnection()
-			os.Exit(1)
+			fmt.Println("key zincr: ", result, err)
+			CloseAndExit()
 		}
-		result, err = conn.ZIncr(TotalCount, redis.Z{Score: 1, Member: todayStr}).Result()
+		result, err = conn.ZIncr(TotalCount,
+			redis.Z{Score: 1, Member: todayStr}).Result()
 		if err != nil {
-			fmt.Println("zincr: ", result, err)
-			CloseConnection()
-			os.Exit(1)
+			fmt.Println("total zincr: ", result, err)
+			CloseAndExit()
 		}
 		// actual store us not ns
 		var num int64 = 0
-		num, err = conn.ZAdd(GetDetailKey(today), redis.Z{Score: float64(event.Scancode), Member: inputEvent.Time.Nano() / 1000}).Result()
+		keyNs := inputEvent.Time.Nano()
+		num, err = conn.ZAdd(GetDetailKey(today),
+			redis.Z{Score: float64(event.Scancode), Member: keyNs / 1000}).Result()
 		if err != nil {
-			fmt.Println("zadd: ", num, err)
-			CloseConnection()
-			os.Exit(1)
+			fmt.Println("detail zadd: ", num, err)
+			CloseAndExit()
 		}
+		kpmQueue.Push(keyNs / 1000_000)
 	}
 	return matchFlag
 }
