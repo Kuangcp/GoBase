@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"keylogger/app/queue"
 	"log"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -156,15 +155,13 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			redis.Z{Score: 1, Member: event.Scancode}).Result()
 		if err != nil {
 			fmt.Println("key zincr: ", result, err)
-			CloseConnection()
-			os.Exit(1)
+			CloseAndExit()
 		}
 		result, err = conn.ZIncr(TotalCount,
 			redis.Z{Score: 1, Member: todayStr}).Result()
 		if err != nil {
 			fmt.Println("total zincr: ", result, err)
-			CloseConnection()
-			os.Exit(1)
+			CloseAndExit()
 		}
 		// actual store us not ns
 		var num int64 = 0
@@ -173,8 +170,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			redis.Z{Score: float64(event.Scancode), Member: keyNs / 1000}).Result()
 		if err != nil {
 			fmt.Println("detail zadd: ", num, err)
-			CloseConnection()
-			os.Exit(1)
+			CloseAndExit()
 		}
 		kpmQueue.Push(keyNs / 1000_000)
 	}

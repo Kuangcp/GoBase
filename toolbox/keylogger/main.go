@@ -17,7 +17,7 @@ import (
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
-	Version:       "1.0.7",
+	Version:       "1.0.8",
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
@@ -179,15 +179,8 @@ func invoke(condition bool, action func()) {
 func main() {
 	flag.Parse()
 
-	option = redis.Options{
-		PoolSize: 5,
-		Addr:     host + ":" + port,
-		Password: pwd,
-		DB:       db,
-	}
-
 	pprofDebug()
-
+	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
 	if showLog {
 		fmt.Println(logPath)
 		return

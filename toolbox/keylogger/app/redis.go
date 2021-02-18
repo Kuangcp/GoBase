@@ -8,6 +8,10 @@ import (
 	"github.com/kuangcp/logger"
 )
 
+const (
+	poolSize = 5
+)
+
 var connection *redis.Client
 
 func GetConnection() *redis.Client {
@@ -15,6 +19,7 @@ func GetConnection() *redis.Client {
 }
 
 func InitConnection(option redis.Options) {
+	option.PoolSize = poolSize
 	connection = redis.NewClient(&option)
 	if !isValidConnection(connection) {
 		os.Exit(1)
@@ -37,6 +42,7 @@ func isValidConnection(client *redis.Client) bool {
 	}
 	return true
 }
+
 func CloseConnection() {
 	if connection == nil {
 		return
@@ -45,4 +51,9 @@ func CloseConnection() {
 	if err != nil {
 		logger.Error("close redis connection error: ", err)
 	}
+}
+
+func CloseAndExit() {
+	CloseConnection()
+	os.Exit(1)
 }
