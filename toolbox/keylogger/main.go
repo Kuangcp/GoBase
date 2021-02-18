@@ -131,7 +131,7 @@ func configLogger() {
 
 	logPath = logDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: "2006-01-02 15:04:05.000",
+		TimeFormat: "2006-01-02 15:04:05",
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,
