@@ -18,23 +18,28 @@ import (
 )
 
 const (
-	windowMs       int64 = 60_000
-	checkKPMPeriod       = time.Millisecond * 1000
+	slideWindowMs      = 60_000
+	calculateKPMPeriod = time.Millisecond * 1000
 )
 
 var (
 	targetDevice string
 	timeSegment  string
-	kpmQueue     = queue.New() // ms
-	curKPM       = 0
+	slideQueue   = queue.New() // key stroke timestamp(ms)
+	currentKPM   = 0
 	todayMaxKPM  = 0
 )
 
 func SetFormatTargetDevice(input string) {
-	if input != "" && !strings.Contains(input, "event") {
-		targetDevice = "event" + input
+	if input != "" {
+		if !strings.Contains(input, "event") {
+			targetDevice = "event" + input
+		} else {
+			targetDevice = input
+		}
 	}
 }
+
 func SetTimePair(timePair string) {
 	timeSegment = timePair
 }
@@ -108,28 +113,27 @@ func calculateKPM(err error) {
 		todayMaxKPM = 0
 	}
 
-	ticker := time.NewTicker(checkKPMPeriod)
+	ticker := time.NewTicker(calculateKPMPeriod)
 	for now := range ticker.C {
 		nowMs := now.UnixNano() / 1000_000
 		for {
-			peek := kpmQueue.Peek()
+			peek := slideQueue.Peek()
 			if peek == nil {
 				break
 			}
 
 			peekVal := (*peek).(int64)
-			if nowMs-peekVal >= windowMs {
-				kpmQueue.Pop()
-			} else {
+			if nowMs-peekVal < slideWindowMs {
 				break
 			}
+			slideQueue.Pop()
 		}
-		curKPM = kpmQueue.Len()
-		conn.Set(tempKPMKey, curKPM, 0)
-		if todayMaxKPM < curKPM {
-			conn.Set(maxKPMKey, curKPM, 0)
-			todayMaxKPM = curKPM
-			logger.Info("Today max kpm up to", curKPM)
+		currentKPM = slideQueue.Len()
+		conn.Set(tempKPMKey, currentKPM, 0)
+		if todayMaxKPM < currentKPM {
+			conn.Set(maxKPMKey, currentKPM, 0)
+			todayMaxKPM = currentKPM
+			logger.Info("Today max kpm up to", currentKPM)
 		}
 	}
 }
@@ -172,7 +176,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			fmt.Println("detail zadd: ", num, err)
 			CloseAndExit()
 		}
-		kpmQueue.Push(keyNs / 1000_000)
+		slideQueue.Push(keyNs / 1000_000)
 	}
 	return matchFlag
 }

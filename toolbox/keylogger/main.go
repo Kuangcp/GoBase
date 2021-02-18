@@ -89,6 +89,7 @@ func init() {
 
 	flag.BoolVar(&help, "help", false, "")
 	flag.StringVar(&timePair, "t", "1", "")
+	flag.StringVar(&targetDevice, "e", "", "")
 
 	flag.StringVar(&host, "host", "127.0.0.1", "")
 	flag.StringVar(&port, "port", "6667", "")
