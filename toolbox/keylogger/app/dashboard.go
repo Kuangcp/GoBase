@@ -8,19 +8,15 @@ import (
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 
-	"github.com/go-redis/redis"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/kuangcp/logger"
 )
 
 const (
 	width              = 100
 	height             = 20
-	refreshDataPeriod  = time.Millisecond * 600
 	refreshLabelPeriod = time.Second
-	lowestStoreKPMSec  = 59 // 达到该秒数才存储 kpm (Keystrokes Per Minute)
 	appId              = "com.github.kuangcp.keylogger"
 )
 
@@ -28,11 +24,6 @@ var (
 	app      *gtk.Application
 	win      *gtk.Window
 	kpmLabel *gtk.Label
-
-	firstStart  = true
-	curKPM      = 0
-	totalHits   = 0
-	todayMaxKPM = 0
 )
 
 func ShowPopWindow() {
@@ -54,7 +45,6 @@ func createWindow() {
 
 	// init label
 	now := time.Now()
-	calKPMAndRefreshCache(now)
 	refreshLabel(now)
 
 	app.AddWindow(win)
@@ -65,12 +55,6 @@ func createWindow() {
 		ticker := time.NewTicker(refreshLabelPeriod)
 		for now := range ticker.C {
 			refreshLabel(now)
-		}
-	}()
-	go func() {
-		ticker := time.NewTicker(refreshDataPeriod)
-		for now := range ticker.C {
-			calKPMAndRefreshCache(now)
 		}
 	}()
 }
@@ -121,85 +105,28 @@ func bindMouseActionForWindow() {
 
 // 从缓存中更新窗口内面板
 func refreshLabel(now time.Time) {
-	// https://blog.csdn.net/bitscro/article/details/3874616
-	str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
-		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%d</span>", curKPM),
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", totalHits),
-		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%d</span>", todayMaxKPM),
-	)
-	_, err := glib.IdleAdd(kpmLabel.SetMarkup, str)
-	if err != nil {
-		log.Fatal("IdleAdd() failed:", err)
-	}
-}
-
-func calKPMAndRefreshCache(now time.Time) {
 	conn := GetConnection()
+	tempValue, err := conn.Get(GetTodayTempKPMKey(now)).Result()
+	if err != nil {
+		return
+	}
+	maxValue, err := conn.Get(GetTodayMaxKPMKey(now)).Result()
+	if err != nil {
+		return
+	}
+
 	today := now.Format(DateFormat)
 	total := conn.ZScore(TotalCount, today).Val()
 
-	kpm := calculateKPM(conn, total, now)
-
-	maxKPMKey := GetTodayMaxKPMKey(now)
-	todayMax, err := conn.Get(maxKPMKey).Int()
+	// https://blog.csdn.net/bitscro/article/details/3874616
+	str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
+		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
+		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%s</span>", tempValue),
+		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", int(total)),
+		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%s</span>", maxValue),
+	)
+	_, err = glib.IdleAdd(kpmLabel.SetMarkup, str)
 	if err != nil {
-		todayMax = 0
+		log.Fatal("IdleAdd() failed:", err)
 	}
-
-	if now.Second() >= lowestStoreKPMSec && todayMax < kpm {
-		conn.Set(maxKPMKey, kpm, 0)
-		todayMax = kpm
-		logger.Info("Today max kpm up to", kpm)
-	}
-
-	totalHits = int(total)
-	curKPM = kpm
-	todayMaxKPM = todayMax
-}
-
-func calculateKPM(conn *redis.Client, total float64, now time.Time) int {
-	if firstStart {
-		firstStart = false
-		return coverOldValue(conn, total)
-	}
-
-	second := now.Second()
-	if second <= 1 {
-		return 0
-	}
-
-	lastKey, curKey := selectActualKey(now)
-	conn.Set(curKey, total, 0)
-	lastTotal, err := conn.Get(lastKey).Float64()
-
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
-
-	// everyDay first min
-	if lastTotal > total {
-		return coverOldValue(conn, total)
-	}
-	delta := total - lastTotal
-	result := int(delta * 60 / float64(now.Second()))
-	//logger.Info(delta, "* 60 / ", second, "=", result)
-	return result
-}
-
-func coverOldValue(conn *redis.Client, total float64) int {
-	conn.Set(OddKey, total, 0)
-	conn.Set(EvenKey, total, 0)
-	return 0
-}
-
-func selectActualKey(now time.Time) (string, string) {
-	lastKey := OddKey
-	curKey := EvenKey
-	if now.Minute()%2 == 1 {
-		lastKey = EvenKey
-		curKey = OddKey
-	}
-	return lastKey, curKey
 }
