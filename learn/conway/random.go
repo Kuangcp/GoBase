@@ -11,7 +11,7 @@ import (
 
 const (
 	wight  = 100
-	height = 50
+	height = 55
 	fps    = 120
 	loop   = 8000
 )
@@ -74,7 +74,8 @@ type Life struct {
 // NewLife returns a new Life game state with a random initial state.
 func NewLife(w, h int) *Life {
 	a := NewField(w, h)
-	for i := 0; i < (w * h / 4); i++ {
+	rand.Seed(time.Now().Unix())
+	for i := 0; i < (w * h / 3); i++ {
 		a.Set(rand.Intn(w), rand.Intn(h), true)
 	}
 	return &Life{
