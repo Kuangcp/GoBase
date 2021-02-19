@@ -19,7 +19,7 @@ import (
 
 const (
 	slideWindowMs      = 60_000
-	calculateKPMPeriod = time.Millisecond * 1000
+	calculateKPMPeriod = time.Millisecond * 500
 )
 
 var (
@@ -115,21 +115,24 @@ func calculateKPM() {
 			if peek == nil {
 				break
 			}
-
 			peekVal := (*peek).(int64)
 			if nowMs-peekVal < slideWindowMs {
 				break
 			}
 			slideQueue.Pop()
 		}
-		currentKPM = slideQueue.Len()
-		if currentKPM == 0 {
+
+		latestKPM := slideQueue.Len()
+		if latestKPM == currentKPM {
 			continue
 		}
 
+		// redis current kpm
+		currentKPM = latestKPM
 		tempKPMKey := GetTodayTempKPMKeyByString(day)
 		conn.Set(tempKPMKey, currentKPM, 0)
 
+		// redis max kpm
 		todayMaxKPM, err := conn.Get(maxKPMKey).Int()
 		if err != nil {
 			todayMaxKPM = 0

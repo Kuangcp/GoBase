@@ -106,16 +106,16 @@ func bindMouseActionForWindow() {
 // 从缓存中更新窗口内面板
 func refreshLabel(now time.Time) {
 	conn := GetConnection()
-	tempValue, err := conn.Get(GetTodayTempKPMKey(now)).Result()
+	today := now.Format(DateFormat)
+
+	tempValue, err := conn.Get(GetTodayTempKPMKeyByString(today)).Result()
 	if err != nil {
 		tempValue = "0"
 	}
-	maxValue, err := conn.Get(GetTodayMaxKPMKey(now)).Result()
+	maxValue, err := conn.Get(GetTodayMaxKPMKeyByString(today)).Result()
 	if err != nil {
 		maxValue = "0"
 	}
-
-	today := now.Format(DateFormat)
 	total := conn.ZScore(TotalCount, today).Val()
 
 	// https://blog.csdn.net/bitscro/article/details/3874616
