@@ -2,36 +2,29 @@ package app
 
 import "time"
 
-//Prefix redis prefix
-const Prefix = "keyboard:"
+const (
+	Prefix     = "keyboard:"
+	DateFormat = "2006:01:02"
+	TimeFormat = "15:04:05"
+)
 
-//LastInputEvent last use event
-const LastInputEvent = Prefix + "last-event"
-
-//TotalCount total count ZSET
-const TotalCount = Prefix + "total"
-const DateFormat = "2006:01:02"
-const TimeFormat = "15:04:05"
-
-//KeyMap cache key code map HASH
-const KeyMap = Prefix + "key-map"
+const (
+	LastInputEvent = Prefix + "last-event" // last use event. STRING
+	TotalCount     = Prefix + "total"      // total count. ZSET
+	KeyMap         = Prefix + "key-map"    // all key code map. HASH
+)
 
 // string max kpm in today
 func GetTodayMaxKPMKey(time time.Time) string {
 	return GetTodayMaxKPMKeyByString(time.Format(DateFormat))
 }
 
-// string temp kpm in today
-func GetTodayTempKPMKey(time time.Time) string {
-	return GetTodayTempKPMKeyByString(time.Format(DateFormat))
+func GetTodayTempKPMKeyByString(timeStr string) string {
+	return Prefix + timeStr + ":temp-kpm"
 }
 
-func GetTodayTempKPMKeyByString(time string) string {
-	return Prefix + time + ":temp-kpm"
-}
-
-func GetTodayMaxKPMKeyByString(time string) string {
-	return Prefix + time + ":kpm"
+func GetTodayMaxKPMKeyByString(timeStr string) string {
+	return Prefix + timeStr + ":kpm"
 }
 
 //GetRankKey by time
@@ -41,8 +34,8 @@ func GetRankKey(time time.Time) string {
 }
 
 //GetRankKeyByString
-func GetRankKeyByString(time string) string {
-	return Prefix + time + ":rank"
+func GetRankKeyByString(timeStr string) string {
+	return Prefix + timeStr + ":rank"
 }
 
 //GetDetailKey by time
@@ -51,6 +44,6 @@ func GetDetailKey(time time.Time) string {
 	return GetDetailKeyByString(time.Format(DateFormat))
 }
 
-func GetDetailKeyByString(time string) string {
-	return Prefix + time + ":detail"
+func GetDetailKeyByString(timeStr string) string {
+	return Prefix + timeStr + ":detail"
 }
