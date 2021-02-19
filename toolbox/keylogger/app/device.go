@@ -19,7 +19,7 @@ import (
 
 const (
 	slideWindowMs      = 60_000
-	calculateKPMPeriod = time.Millisecond * 500
+	calculateKPMPeriod = time.Millisecond * 900
 )
 
 var (
@@ -130,7 +130,7 @@ func calculateKPM() {
 		// redis current kpm
 		currentKPM = latestKPM
 		tempKPMKey := GetTodayTempKPMKeyByString(day)
-		conn.Set(tempKPMKey, currentKPM, 0)
+		conn.Set(tempKPMKey, currentKPM, time.Hour*12)
 
 		// redis max kpm
 		todayMaxKPM, err := conn.Get(maxKPMKey).Int()
