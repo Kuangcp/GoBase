@@ -27,7 +27,6 @@ var (
 	timeSegment  string
 	slideQueue   = queue.New() // key stroke timestamp(ms)
 	currentKPM   = 0
-	todayMaxKPM  = 0
 )
 
 func SetFormatTargetDevice(input string) {
@@ -80,9 +79,9 @@ func ListenDevice() {
 		return
 	}
 
-	go calculateKPM(err)
+	go calculateKPM()
 
-	success := false
+	hasSuccess := false
 	for true {
 		inputEvents, err := device.Read()
 		if err != nil {
@@ -95,26 +94,21 @@ func ListenDevice() {
 		}
 
 		handleResult := handleEvents(inputEvents, connection)
-		if !success && handleResult {
-			success = handleResult
+		if !hasSuccess && handleResult {
+			hasSuccess = true
 			fmt.Println(cuibase.Green.Print("\n    Listen success."))
 			connection.Set(LastInputEvent, targetDevice, 0)
 		}
 	}
 }
 
-func calculateKPM(err error) {
+func calculateKPM() {
 	conn := GetConnection()
-	now := time.Now()
-	maxKPMKey := GetTodayMaxKPMKey(now)
-	tempKPMKey := GetTodayTempKPMKey(now)
-	todayMaxKPM, err = conn.Get(maxKPMKey).Int()
-	if err != nil {
-		todayMaxKPM = 0
-	}
-
 	ticker := time.NewTicker(calculateKPMPeriod)
 	for now := range ticker.C {
+		day := now.Format(DateFormat)
+		maxKPMKey := GetTodayMaxKPMKeyByString(day)
+
 		nowMs := now.UnixNano() / 1000_000
 		for {
 			peek := slideQueue.Peek()
@@ -129,11 +123,21 @@ func calculateKPM(err error) {
 			slideQueue.Pop()
 		}
 		currentKPM = slideQueue.Len()
+		if currentKPM == 0 {
+			continue
+		}
+
+		tempKPMKey := GetTodayTempKPMKeyByString(day)
 		conn.Set(tempKPMKey, currentKPM, 0)
+
+		todayMaxKPM, err := conn.Get(maxKPMKey).Int()
+		if err != nil {
+			todayMaxKPM = 0
+		}
 		if todayMaxKPM < currentKPM {
-			conn.Set(maxKPMKey, currentKPM, 0)
 			todayMaxKPM = currentKPM
-			logger.Info("Today max kpm up to", currentKPM)
+			conn.Set(maxKPMKey, todayMaxKPM, 0)
+			logger.Info("Today max kpm up to", todayMaxKPM)
 		}
 	}
 }

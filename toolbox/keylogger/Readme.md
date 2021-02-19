@@ -32,6 +32,7 @@
 	- value: keyCode score: 当日按键数
 
 ## Version
+- 1.0.9 fix 00：00 cache problem
 - 1.0.8 transfer the task of calculating KPM to the listening input device process
 - 1.0.6 add interactive select device
 - 1.0.4 remove thread pool(memory leak)

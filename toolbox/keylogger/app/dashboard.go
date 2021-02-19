@@ -108,11 +108,11 @@ func refreshLabel(now time.Time) {
 	conn := GetConnection()
 	tempValue, err := conn.Get(GetTodayTempKPMKey(now)).Result()
 	if err != nil {
-		return
+		tempValue = "0"
 	}
 	maxValue, err := conn.Get(GetTodayMaxKPMKey(now)).Result()
 	if err != nil {
-		return
+		maxValue = "0"
 	}
 
 	today := now.Format(DateFormat)
