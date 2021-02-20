@@ -22,7 +22,9 @@ func init() {
 }
 func main() {
 	flag.Parse()
+
 	if useWebview {
+		//FIXME not support HTML5 notification 
 		w := webview.New(false)
 		defer w.Destroy()
 		w.SetTitle("Wechat")
