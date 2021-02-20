@@ -332,11 +332,11 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 		maxKPM = "0"
 	}
 
-	fmt.Printf("\n%s | %s | Total: %s | %-3s\n",
+	fmt.Printf("\n%s | %s | %-3s | Total: %s \n",
 		cuibase.Green.Printf("%-9s", time.Weekday()),
 		time.Format("2006-01-02"),
-		cuibase.Green.Printf("%-5d", int64(totalScore.Val())),
-		cuibase.Yellow.Printf("%3s", maxKPM))
+		cuibase.Yellow.Printf("%3s", maxKPM),
+		cuibase.Green.Printf("%-5d", int64(totalScore.Val())))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
@@ -383,10 +383,10 @@ func handleTotalByDate(time time.Time, conn *redis.Client) {
 	if err != nil {
 		maxKPM = "0"
 	}
-	fmt.Printf("%s %s %6v %s\n", time.Format("2006-01-02"),
+	fmt.Printf("%s %s %s %6v\n", time.Format("2006-01-02"),
 		cuibase.Green.Printf("%-9s", time.Weekday()),
-		int64(score.Val()),
-		cuibase.Yellow.Printf("%4s", maxKPM))
+		cuibase.Yellow.Printf("%4s", maxKPM),
+		int64(score.Val()))
 }
 
 //CacheKeyMap to redis
