@@ -34,7 +34,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-r", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration"},
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
 		{Short: "-b", BoolVar: &dashboard, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
-		{Short: "-d", BoolVar: &debug, Comment: "debug"},
+		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
 	Options: []cuibase.ParamVO{
