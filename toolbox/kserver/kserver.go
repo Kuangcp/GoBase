@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,19 +22,18 @@ var (
 )
 
 var info = cuibase.HelpInfo{
-	Description:   "Start simple http server on current path",
-	Version:       "1.0.4",
+	Description:   "Start static file web server on current path",
+	Version:       "1.0.5",
 	SingleFlagLen: -3,
 	ValueLen:      -7,
 	Flags: []cuibase.ParamVO{
-		{Short: "-h", Comment: "help"},
+		{Short: "-h", BoolVar: &help, Comment: "help"},
 	},
 	Options: []cuibase.ParamVO{
 		{Short: "-p", Value: "<port>", Comment: "web server port"},
 	}}
 
 func init() {
-	flag.BoolVar(&help, "h", false, "")
 	flag.IntVar(&port, "p", 8989, "")
 }
 
@@ -118,17 +118,19 @@ func startWebServer(port int) {
 	// 绑定路由到当前目录
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
-	http.HandleFunc("/u", uploadHandler)
+	http.HandleFunc("/f", uploadHandler)
 	http.HandleFunc("/up", showUploadPage)
-	http.HandleFunc("/echo", echoHandler)
+	http.HandleFunc("/e", echoHandler)
 
-	log.Printf("web server started.\n")
+	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
+
+	log.Printf("static file web server has started.\n")
 	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port, cuibase.End)
-	log.Printf("%vhttp://%v:%v%v\n", cuibase.Green, internalIP, port, cuibase.End)
-	log.Printf("%v/up%v : upload view | http://127.0.0.1:8989/up\n", cuibase.Purple, cuibase.End)
-	log.Printf("%v/u%v  : upload file | curl -X POST -H 'Content-Type: multipart/form-data' http://127.0.0.1:%v/u -F file=@index.html\n",
-		cuibase.Purple, cuibase.End, port)
-	log.Printf("%v/e%v  : echo string | curl http://127.0.0.1:8989/echo -d 'hi'\n", cuibase.Purple, cuibase.End)
+	log.Printf("%v%v%v\n", cuibase.Green, innerURL, cuibase.End)
+	log.Printf("%v/up%v : upload view | %v/up\n", cuibase.Purple, cuibase.End, innerURL)
+	log.Printf("%v/f%v  : upload file | curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
+		cuibase.Purple, cuibase.End, innerURL)
+	log.Printf("%v/e%v  : echo string | curl %v/e -d 'hi'\n", cuibase.Purple, cuibase.End, innerURL)
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
 		log.Fatal("error: ", err)
@@ -136,17 +138,17 @@ func startWebServer(port int) {
 }
 
 func main() {
-	flag.Parse()
+	info.Parse()
 	if help {
 		info.PrintHelp()
 		return
 	}
 
 	if port > 65535 || port == 0 {
-		log.Fatalf("Please input correct port [1, 65535]. input:%v", port)
+		log.Fatalf("Please input correct port [1, 65535]. now: %v", port)
 	}
 	if port < 1024 {
-		log.Print("Please run by root.")
+		log.Printf("%vWARN: [1-1024] need run by root user.%v", cuibase.Red, cuibase.End)
 	}
 
 	startWebServer(port)
