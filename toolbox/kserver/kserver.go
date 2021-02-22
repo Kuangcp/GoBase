@@ -126,9 +126,9 @@ func startWebServer(port int) {
 	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port, cuibase.End)
 	log.Printf("%vhttp://%v:%v%v\n", cuibase.Green, internalIP, port, cuibase.End)
 	log.Printf("%v/up%v : upload view | http://127.0.0.1:8989/up\n", cuibase.Purple, cuibase.End)
-	log.Printf("%v/u%v  : upload file | curl -X POST -H 'Content-Type: multipart/form-data' -F 'file=@index.html' http://127.0.0.1:%v/u\n",
+	log.Printf("%v/u%v  : upload file | curl -X POST -H 'Content-Type: multipart/form-data' http://127.0.0.1:%v/u -F file=@index.html\n",
 		cuibase.Purple, cuibase.End, port)
-	log.Printf("%v/e%v  : echo string | curl -d 'hi' http://127.0.0.1:8989/echo\n", cuibase.Purple, cuibase.End)
+	log.Printf("%v/e%v  : echo string | curl http://127.0.0.1:8989/echo -d 'hi'\n", cuibase.Purple, cuibase.End)
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
 		log.Fatal("error: ", err)
