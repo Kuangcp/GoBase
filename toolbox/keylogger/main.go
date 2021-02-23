@@ -10,6 +10,8 @@ import (
 
 	"github.com/kuangcp/logger"
 
+	"github.com/webview/webview"
+
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
@@ -74,6 +76,7 @@ var (
 	// web
 	webPort   string
 	webServer bool
+	webView   bool
 
 	debug   bool
 	option  redis.Options
@@ -87,6 +90,7 @@ var (
 func init() {
 	configLogger()
 
+	flag.BoolVar(&webView, "v", false, "start webview")
 	flag.BoolVar(&help, "help", false, "")
 	flag.StringVar(&timePair, "t", "1", "")
 	flag.StringVar(&targetDevice, "e", "", "")
@@ -194,8 +198,13 @@ func main() {
 		return
 	}
 
-	if webServer {
+	if webServer && !webView {
 		app.Server(debug, webPort)
+		return
+	}
+	if webServer && webView {
+		go app.Server(debug, webPort)
+		mainWin()
 		return
 	}
 
@@ -203,4 +212,13 @@ func main() {
 	invoke(printDay, app.PrintDay)
 	invoke(printDayRank, app.PrintDayRank)
 	invoke(printTotalRank, app.PrintTotalRank)
+}
+
+func mainWin() {
+	w := webview.New(false)
+	defer w.Destroy()
+	w.SetTitle("Keylogger webview")
+	w.SetSize(1800, 960, webview.HintNone)
+	w.Navigate("http://localhost:" + webPort)
+	w.Run()
 }
