@@ -1,9 +1,12 @@
 package report
 
 import (
+	"fmt"
+	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
+	"mybook/app/record"
 	"sort"
 	"time"
 
@@ -12,6 +15,143 @@ import (
 )
 
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
+
+func buildBalanceReportParam(c *gin.Context) ghelp.ResultVO {
+	var param RecordQueryParam
+	err := c.ShouldBind(&param)
+	if err != nil {
+		return ghelp.FailedWithMsg("参数解析失败")
+	}
+	if param.StartDate == "" || param.EndDate == "" {
+		return ghelp.FailedWithMsg("起止时间必填")
+	}
+	param.paramTimeFmt = "2006-01-02"
+	startDate, err := time.Parse(param.paramTimeFmt, param.StartDate)
+	if err != nil {
+		return ghelp.FailedWithMsg(err.Error())
+	}
+	endDate, err := time.Parse(param.paramTimeFmt, param.EndDate)
+	if err != nil {
+		return ghelp.FailedWithMsg(err.Error())
+	}
+	if startDate.After(endDate) {
+		return ghelp.FailedWithMsg("开始时间晚于结束时间")
+	}
+
+	param.startDate = startDate
+	param.endDate = endDate
+	if param.ChartType == "" {
+		param.ChartType = "line"
+	}
+
+	return ghelp.SuccessWith(param)
+}
+
+func BalanceReport(c *gin.Context) {
+	paramResult := buildBalanceReportParam(c)
+	if paramResult.IsFailed() {
+		ghelp.GinResultVO(c, paramResult)
+		return
+	}
+
+	param := paramResult.Data.(RecordQueryParam)
+	accountMap := account.ListAccountMap()
+	curAmount := 0
+	for _, a := range accountMap {
+		curAmount += a.InitAmount
+	}
+	fmt.Println("init:", curAmount)
+
+	records := record.QueryForBalance()
+	fmt.Println(len(records))
+	if len(records) == 0 {
+		ghelp.GinFailed(c)
+		return
+	}
+
+	// 按天生成数据
+	var sameDays []record.RecordDTO
+	lastTimeStr := ""
+	var lastTime = param.startDate
+	var data []float32
+	var periodList []string
+
+	for _, dto := range records {
+		// 仅计算余额
+		if dto.RecordTime.Unix() < param.startDate.Unix() {
+			if dto.RecordType == constant.RecordExpense {
+				curAmount -= dto.Amount
+			} else {
+				curAmount += dto.Amount
+			}
+			continue
+		}
+
+		curTime := dto.RecordTime.Format("2006-01-02")
+		if len(sameDays) == 0 {
+			sameDays = append(sameDays, dto)
+			lastTimeStr = curTime
+			lastTime = dto.RecordTime
+			continue
+		}
+
+		if curTime == lastTimeStr {
+			sameDays = append(sameDays, dto)
+			continue
+		}
+		lastTimeStr = curTime
+
+		// 以下为遇到不同天，清空缓存并计算
+
+		// 填入完全没有记录的数据
+		if lastTime.YearDay() != dto.RecordTime.YearDay() &&
+			lastTime.Unix() > param.startDate.Unix() && lastTime.Unix() < param.endDate.Unix() {
+			emptyTime := lastTime.AddDate(0, 0, 1)
+			for emptyTime.Unix() < dto.RecordTime.Unix() && emptyTime.Unix() < param.endDate.Unix() {
+				data = append(data, float32(curAmount)/100)
+				fillTime := emptyTime.Format("2006-01-02")
+				periodList = append(periodList, fillTime)
+				emptyTime = emptyTime.AddDate(0, 0, 1)
+			}
+		}
+
+		lastTime = dto.RecordTime
+		curAmount += sameDayTotal(sameDays)
+
+		if lastTime.Unix() > param.startDate.Unix() &&
+			lastTime.Unix() < param.endDate.Unix() {
+			data = append(data, float32(curAmount)/100)
+			periodList = append(periodList, curTime)
+		}
+		sameDays = nil
+	}
+
+	ghelp.GinSuccessWith(c, LineChartVO{
+		Lines: []LineVO{{
+			Type:      param.ChartType,
+			Name:      "余额",
+			Data:      data,
+			Stack:     "all",
+			AreaStyle: "{normal: {}}",
+			Label:     commonLabel,
+			Color:     colorSet[12%len(colorSet)],
+		}},
+		XAxis:   periodList,
+		Legends: []string{"余额"}},
+	)
+}
+
+func sameDayTotal(sameDays []record.RecordDTO) int {
+	dailyAmount := 0
+	for _, recordDTO := range sameDays {
+		if recordDTO.RecordType == constant.RecordExpense {
+			dailyAmount -= recordDTO.Amount
+		} else {
+			dailyAmount += recordDTO.Amount
+		}
+	}
+	return dailyAmount
+}
 
 func CategoryPeriodReport(c *gin.Context) {
 	paramResult := buildParam(c)

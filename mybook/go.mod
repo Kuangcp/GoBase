@@ -23,7 +23,6 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/ugorji/go v1.1.13 // indirect
-	github.com/ulule/deepcopier v0.0.0-20200430083143-45decc6639b6
 	github.com/wonderivan/logger v1.0.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
 	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
