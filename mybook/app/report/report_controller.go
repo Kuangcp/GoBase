@@ -160,8 +160,11 @@ func CategoryPeriodReport(c *gin.Context) {
 	finalStart := param.StartDate
 	finalEnd := param.EndDate
 	if param.Period == yearPeriod {
+		finalStart += "-01-01"
+		finalEnd += "-12-32"
+	} else if param.Period == monthPeriod {
 		finalStart += "-01"
-		finalEnd += "-01"
+		finalEnd += "-32"
 	}
 
 	var sumResult []CategorySumVO
@@ -309,7 +312,7 @@ func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) 
 	if param.TypeId == int(constant.RecordOverview) {
 		db.Table("record").
 			Select("type as category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
-			Where(" type in (?,?)", constant.RecordExpense, constant.RecordIncome).
+			Where("type in (?,?)", constant.RecordExpense, constant.RecordIncome).
 			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 			Group("type, period").Find(&sumResult)
 	} else {
