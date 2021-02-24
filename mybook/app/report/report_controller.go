@@ -14,6 +14,10 @@ import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 )
 
+const (
+	dayFmt = "2006-01-02"
+)
+
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
 func buildBalanceReportParam(c *gin.Context) ghelp.ResultVO {
@@ -60,70 +64,59 @@ func BalanceReport(c *gin.Context) {
 	for _, a := range accountMap {
 		curAmount += a.InitAmount
 	}
-	fmt.Println("init:", curAmount)
 
 	records := record.QueryForBalance()
-	fmt.Println(len(records))
-	if len(records) == 0 {
+	recordLen := len(records)
+	fmt.Println("init:", curAmount/100.0, "records:", recordLen)
+	if recordLen == 0 {
 		ghelp.GinFailed(c)
 		return
 	}
 
-	// 按天生成数据
 	var sameDays []record.RecordDTO
-	lastTimeStr := ""
-	var lastTime = param.startDate
 	var data []float32
 	var periodList []string
+	cursorTime := param.startDate
+	recordCursor := 0
 
+	// 仅计算起始时间的余额
 	for _, dto := range records {
-		// 仅计算余额
 		if dto.RecordTime.Unix() < param.startDate.Unix() {
 			if dto.RecordType == constant.RecordExpense {
 				curAmount -= dto.Amount
 			} else {
 				curAmount += dto.Amount
 			}
+			recordCursor++
 			continue
 		}
-
-		curTime := dto.RecordTime.Format("2006-01-02")
-		if len(sameDays) == 0 {
-			sameDays = append(sameDays, dto)
-			lastTimeStr = curTime
-			lastTime = dto.RecordTime
-			continue
-		}
-
-		if curTime == lastTimeStr {
-			sameDays = append(sameDays, dto)
-			continue
-		}
-		lastTimeStr = curTime
-
-		// 以下为遇到不同天，清空缓存并计算
-
-		// 填入完全没有记录的数据
-		if lastTime.YearDay() != dto.RecordTime.YearDay() &&
-			lastTime.Unix() > param.startDate.Unix() && lastTime.Unix() < param.endDate.Unix() {
-			emptyTime := lastTime.AddDate(0, 0, 1)
-			for emptyTime.Unix() < dto.RecordTime.Unix() && emptyTime.Unix() < param.endDate.Unix() {
-				data = append(data, float32(curAmount)/100)
-				fillTime := emptyTime.Format("2006-01-02")
-				periodList = append(periodList, fillTime)
-				emptyTime = emptyTime.AddDate(0, 0, 1)
-			}
-		}
-
-		lastTime = dto.RecordTime
-		curAmount += sameDayTotal(sameDays)
-
-		if lastTime.Unix() > param.startDate.Unix() &&
-			lastTime.Unix() < param.endDate.Unix() {
+		break
+	}
+	//fmt.Println("pre calculate", curAmount, recordCursor)
+	for cursorTime.Unix() <= param.endDate.Unix() {
+		if recordCursor == recordLen {
 			data = append(data, float32(curAmount)/100)
-			periodList = append(periodList, curTime)
+			fillTime := cursorTime.Format(dayFmt)
+			periodList = append(periodList, fillTime)
+			cursorTime = cursorTime.AddDate(0, 0, 1)
+			continue
 		}
+
+		cursorEndTime := cursorTime.AddDate(0, 0, 1)
+		for recordCursor != recordLen && records[recordCursor].RecordTime.Unix() < cursorEndTime.Unix() {
+			sameDays = append(sameDays, records[recordCursor])
+			recordCursor++
+		}
+
+		if len(sameDays) != 0 {
+			curAmount += sameDayBalance(sameDays)
+		}
+		fillTime := cursorTime.Format(dayFmt)
+		periodList = append(periodList, fillTime)
+		data = append(data, float32(curAmount)/100)
 		sameDays = nil
+
+		cursorTime = cursorTime.AddDate(0, 0, 1)
 	}
 
 	ghelp.GinSuccessWith(c, LineChartVO{
@@ -141,7 +134,7 @@ func BalanceReport(c *gin.Context) {
 	)
 }
 
-func sameDayTotal(sameDays []record.RecordDTO) int {
+func sameDayBalance(sameDays []record.RecordDTO) int {
 	dailyAmount := 0
 	for _, recordDTO := range sameDays {
 		if recordDTO.RecordType == constant.RecordExpense {
