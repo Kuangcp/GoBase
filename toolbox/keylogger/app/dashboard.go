@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	width              = 100
-	height             = 20
+	width              = 84
+	height             = 10
 	refreshLabelPeriod = time.Millisecond * 1000
 	appId              = "com.github.kuangcp.keylogger"
 )
@@ -117,12 +117,11 @@ func latestLabelStr(now time.Time) string {
 	total := conn.ZScore(TotalCount, today).Val()
 
 	// style https://blog.csdn.net/bitscro/article/details/3874616
-	return fmt.Sprintf(" 🕒 %s\n%s %s %s",
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
-		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%s</span>", tempValue),
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", int(total)),
-		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%s</span>", maxValue),
-	)
+	return "<span font_family='Cascadia Mono PL' font_desc='10'>" +
+		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(TimeFormat)) + "</span>\n" +
+		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
+		"<span foreground='gray'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
+		"<span foreground='white'>" + fmt.Sprintf("%-6d", int(total)) + "</span></span>"
 }
 
 // 从缓存中更新窗口内面板
