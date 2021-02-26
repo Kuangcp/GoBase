@@ -18,23 +18,27 @@ import (
 )
 
 const (
-	windowMs       int64 = 60_000
-	checkKPMPeriod       = time.Millisecond * 1000
+	slideWindowMs      = 60_000
+	calculateKPMPeriod = time.Millisecond * 900
 )
 
 var (
 	targetDevice string
 	timeSegment  string
-	kpmQueue     = queue.New() // ms
-	curKPM       = 0
-	todayMaxKPM  = 0
+	slideQueue   = queue.New() // key stroke timestamp(ms)
+	currentKPM   = 0
 )
 
 func SetFormatTargetDevice(input string) {
-	if input != "" && !strings.Contains(input, "event") {
-		targetDevice = "event" + input
+	if input != "" {
+		if !strings.Contains(input, "event") {
+			targetDevice = "event" + input
+		} else {
+			targetDevice = input
+		}
 	}
 }
+
 func SetTimePair(timePair string) {
 	timeSegment = timePair
 }
@@ -75,9 +79,9 @@ func ListenDevice() {
 		return
 	}
 
-	go calculateKPM(err)
+	go calculateKPM()
 
-	success := false
+	hasSuccess := false
 	for true {
 		inputEvents, err := device.Read()
 		if err != nil {
@@ -90,46 +94,53 @@ func ListenDevice() {
 		}
 
 		handleResult := handleEvents(inputEvents, connection)
-		if !success && handleResult {
-			success = handleResult
+		if !hasSuccess && handleResult {
+			hasSuccess = true
 			fmt.Println(cuibase.Green.Print("\n    Listen success."))
 			connection.Set(LastInputEvent, targetDevice, 0)
 		}
 	}
 }
 
-func calculateKPM(err error) {
+func calculateKPM() {
 	conn := GetConnection()
-	now := time.Now()
-	maxKPMKey := GetTodayMaxKPMKey(now)
-	tempKPMKey := GetTodayTempKPMKey(now)
-	todayMaxKPM, err = conn.Get(maxKPMKey).Int()
-	if err != nil {
-		todayMaxKPM = 0
-	}
-
-	ticker := time.NewTicker(checkKPMPeriod)
+	ticker := time.NewTicker(calculateKPMPeriod)
 	for now := range ticker.C {
+		day := now.Format(DateFormat)
+		maxKPMKey := GetTodayMaxKPMKeyByString(day)
+
 		nowMs := now.UnixNano() / 1000_000
 		for {
-			peek := kpmQueue.Peek()
+			peek := slideQueue.Peek()
 			if peek == nil {
 				break
 			}
-
 			peekVal := (*peek).(int64)
-			if nowMs-peekVal >= windowMs {
-				kpmQueue.Pop()
-			} else {
+			if nowMs-peekVal < slideWindowMs {
 				break
 			}
+			slideQueue.Pop()
 		}
-		curKPM = kpmQueue.Len()
-		conn.Set(tempKPMKey, curKPM, 0)
-		if todayMaxKPM < curKPM {
-			conn.Set(maxKPMKey, curKPM, 0)
-			todayMaxKPM = curKPM
-			logger.Info("Today max kpm up to", curKPM)
+
+		latestKPM := slideQueue.Len()
+		if latestKPM == currentKPM {
+			continue
+		}
+
+		// redis current kpm
+		currentKPM = latestKPM
+		tempKPMKey := GetTodayTempKPMKeyByString(day)
+		conn.Set(tempKPMKey, currentKPM, time.Hour*12)
+
+		// redis max kpm
+		todayMaxKPM, err := conn.Get(maxKPMKey).Int()
+		if err != nil {
+			todayMaxKPM = 0
+		}
+		if todayMaxKPM < currentKPM {
+			todayMaxKPM = currentKPM
+			conn.Set(maxKPMKey, todayMaxKPM, 0)
+			logger.Info("Today max kpm up to", todayMaxKPM)
 		}
 	}
 }
@@ -172,7 +183,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			fmt.Println("detail zadd: ", num, err)
 			CloseAndExit()
 		}
-		kpmQueue.Push(keyNs / 1000_000)
+		slideQueue.Push(keyNs / 1000_000)
 	}
 	return matchFlag
 }
@@ -315,8 +326,17 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 	}
 	totalScore := conn.ZScore(TotalCount, today)
 
-	fmt.Printf("%s | %s | Total: %v\n", cuibase.Green.Printf("%-8s", time.Weekday()),
-		time.Format("2006-01-02"), cuibase.Yellow.Printf("%d", int64(totalScore.Val())))
+	maxKPMKey := GetTodayMaxKPMKey(time)
+	maxKPM, err := conn.Get(maxKPMKey).Result()
+	if err != nil {
+		maxKPM = "0"
+	}
+
+	fmt.Printf("\n%s | %s | %-3s | Total: %s \n",
+		cuibase.Green.Printf("%-9s", time.Weekday()),
+		time.Format("2006-01-02"),
+		cuibase.Yellow.Printf("%3s", maxKPM),
+		cuibase.Green.Printf("%-5d", int64(totalScore.Val())))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
@@ -358,8 +378,15 @@ func parseTime(timeSegment string) (int, int) {
 func handleTotalByDate(time time.Time, conn *redis.Client) {
 	today := time.Format(DateFormat)
 	score := conn.ZScore(TotalCount, today)
-	fmt.Printf("%s %s %v\n", time.Format("2006-01-02"),
-		cuibase.Green.Printf("%-9s", time.Weekday()), int64(score.Val()))
+	maxKPMKey := GetTodayMaxKPMKey(time)
+	maxKPM, err := conn.Get(maxKPMKey).Result()
+	if err != nil {
+		maxKPM = "0"
+	}
+	fmt.Printf("%s %s %s %6v\n", time.Format("2006-01-02"),
+		cuibase.Green.Printf("%-9s", time.Weekday()),
+		cuibase.Yellow.Printf("%4s", maxKPM),
+		int64(score.Val()))
 }
 
 //CacheKeyMap to redis

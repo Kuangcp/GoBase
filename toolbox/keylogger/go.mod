@@ -14,6 +14,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/rakyll/statik v0.1.7
+	github.com/webview/webview v0.0.0-20210216142346-e0bfdf0e5d90
 )
 
 replace github.com/kuangcp/gobase/pkg/cuibase => ./../../pkg/cuibase

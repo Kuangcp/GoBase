@@ -1,9 +1,12 @@
 package report
 
 import (
+	"fmt"
+	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
+	"mybook/app/record"
 	"sort"
 	"time"
 
@@ -11,7 +14,137 @@ import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 )
 
+const (
+	dayFmt = "2006-01-02"
+)
+
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
+
+func buildBalanceReportParam(c *gin.Context) ghelp.ResultVO {
+	var param RecordQueryParam
+	err := c.ShouldBind(&param)
+	if err != nil {
+		return ghelp.FailedWithMsg("参数解析失败")
+	}
+	if param.StartDate == "" || param.EndDate == "" {
+		return ghelp.FailedWithMsg("起止时间必填")
+	}
+	param.paramTimeFmt = "2006-01-02"
+	startDate, err := time.Parse(param.paramTimeFmt, param.StartDate)
+	if err != nil {
+		return ghelp.FailedWithMsg(err.Error())
+	}
+	endDate, err := time.Parse(param.paramTimeFmt, param.EndDate)
+	if err != nil {
+		return ghelp.FailedWithMsg(err.Error())
+	}
+	if startDate.After(endDate) {
+		return ghelp.FailedWithMsg("开始时间晚于结束时间")
+	}
+
+	param.startDate = startDate
+	param.endDate = endDate
+	if param.ChartType == "" {
+		param.ChartType = "line"
+	}
+
+	return ghelp.SuccessWith(param)
+}
+
+func BalanceReport(c *gin.Context) {
+	paramResult := buildBalanceReportParam(c)
+	if paramResult.IsFailed() {
+		ghelp.GinResultVO(c, paramResult)
+		return
+	}
+
+	param := paramResult.Data.(RecordQueryParam)
+	accountMap := account.ListAccountMap()
+	curAmount := 0
+	for _, a := range accountMap {
+		curAmount += a.InitAmount
+	}
+
+	records := record.QueryForBalance()
+	recordLen := len(records)
+	fmt.Println("init:", curAmount/100.0, "records:", recordLen)
+	if recordLen == 0 {
+		ghelp.GinFailed(c)
+		return
+	}
+
+	var sameDays []record.RecordDTO
+	var data []float32
+	var periodList []string
+	cursorTime := param.startDate
+	recordCursor := 0
+
+	// 仅计算起始时间的余额
+	for _, dto := range records {
+		if dto.RecordTime.Unix() < param.startDate.Unix() {
+			if dto.RecordType == constant.RecordExpense {
+				curAmount -= dto.Amount
+			} else {
+				curAmount += dto.Amount
+			}
+			recordCursor++
+			continue
+		}
+		break
+	}
+	//fmt.Println("pre calculate", curAmount, recordCursor)
+	for cursorTime.Unix() <= param.endDate.Unix() {
+		if recordCursor == recordLen {
+			data = append(data, float32(curAmount)/100)
+			fillTime := cursorTime.Format(dayFmt)
+			periodList = append(periodList, fillTime)
+			cursorTime = cursorTime.AddDate(0, 0, 1)
+			continue
+		}
+
+		cursorEndTime := cursorTime.AddDate(0, 0, 1)
+		for recordCursor != recordLen && records[recordCursor].RecordTime.Unix() < cursorEndTime.Unix() {
+			sameDays = append(sameDays, records[recordCursor])
+			recordCursor++
+		}
+
+		if len(sameDays) != 0 {
+			curAmount += sameDayBalance(sameDays)
+		}
+		fillTime := cursorTime.Format(dayFmt)
+		periodList = append(periodList, fillTime)
+		data = append(data, float32(curAmount)/100)
+		sameDays = nil
+
+		cursorTime = cursorTime.AddDate(0, 0, 1)
+	}
+
+	ghelp.GinSuccessWith(c, LineChartVO{
+		Lines: []LineVO{{
+			Type:      param.ChartType,
+			Name:      "余额",
+			Data:      data,
+			Stack:     "all",
+			AreaStyle: "{normal: {}}",
+			Label:     commonLabel,
+			Color:     colorSet[12%len(colorSet)],
+		}},
+		XAxis:   periodList,
+		Legends: []string{"余额"}},
+	)
+}
+
+func sameDayBalance(sameDays []record.RecordDTO) int {
+	dailyAmount := 0
+	for _, recordDTO := range sameDays {
+		if recordDTO.RecordType == constant.RecordExpense {
+			dailyAmount -= recordDTO.Amount
+		} else {
+			dailyAmount += recordDTO.Amount
+		}
+	}
+	return dailyAmount
+}
 
 func CategoryPeriodReport(c *gin.Context) {
 	paramResult := buildParam(c)
@@ -27,8 +160,11 @@ func CategoryPeriodReport(c *gin.Context) {
 	finalStart := param.StartDate
 	finalEnd := param.EndDate
 	if param.Period == yearPeriod {
+		finalStart += "-01-01"
+		finalEnd += "-12-32"
+	} else if param.Period == monthPeriod {
 		finalStart += "-01"
-		finalEnd += "-01"
+		finalEnd += "-32"
 	}
 
 	var sumResult []CategorySumVO
@@ -176,7 +312,7 @@ func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) 
 	if param.TypeId == int(constant.RecordOverview) {
 		db.Table("record").
 			Select("type as category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
-			Where(" type in (?,?)", constant.RecordExpense, constant.RecordIncome).
+			Where("type in (?,?)", constant.RecordExpense, constant.RecordIncome).
 			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 			Group("type, period").Find(&sumResult)
 	} else {

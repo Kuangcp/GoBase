@@ -2,10 +2,10 @@ package main
 
 import (
 	"mybook/app/account"
+	"mybook/app/book"
+	"mybook/app/category"
 	"mybook/app/common"
 	"mybook/app/common/constant"
-	"mybook/app/domain"
-	"mybook/app/service"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ func TestInitDBAndTable(t *testing.T) {
 }
 
 func TestInitBook(t *testing.T) {
-	service.AddBookkeeping(&domain.BookKeeping{Name: "主账本1", Comment: ""})
+	book.AddBookkeeping(&book.BookKeeping{Name: "主账本1", Comment: ""})
 }
 
 func TestInitAccount(t *testing.T) {
@@ -31,9 +31,9 @@ func TestInitCategory(t *testing.T) {
 	var types = []string{"日常餐", "文娱", "日常开支", "交通"}
 	for e := range types {
 		expenseIndex++
-		category := &domain.Category{Name: types[e], Leaf: false, TypeId: constant.CategoryExpense}
-		category.ID = uint(expenseIndex)
-		service.AddCategory(category)
+		tmpCategory := &category.Category{Name: types[e], Leaf: false, TypeId: constant.CategoryExpense}
+		tmpCategory.ID = uint(expenseIndex)
+		category.AddCategory(tmpCategory)
 	}
 
 	types = []string{"早餐", "午餐", "晚餐", "餐厅", "零食", "日用品", "室外娱乐", "服饰", "云服务", "水果", "买菜",
@@ -41,9 +41,9 @@ func TestInitCategory(t *testing.T) {
 		"景点门票", "会员", "水电煤", "美容美发", "快递", "投资亏损", "电影", "保险", "打赏", "还贷", "己方借出"}
 	for e := range types {
 		expenseIndex++
-		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryExpense}
-		category.ID = uint(expenseIndex)
-		service.AddCategory(category)
+		tmpCategory := &category.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryExpense}
+		tmpCategory.ID = uint(expenseIndex)
+		category.AddCategory(tmpCategory)
 	}
 
 	incomeIndex := 200
@@ -51,21 +51,21 @@ func TestInitCategory(t *testing.T) {
 		"报销流入", "其他收入", "退款", "问题", "借贷", "对方归还"}
 	for e := range types {
 		incomeIndex++
-		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryIncome}
-		category.ID = uint(incomeIndex)
-		service.AddCategory(category)
+		tmpCategory := &category.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryIncome}
+		tmpCategory.ID = uint(incomeIndex)
+		category.AddCategory(tmpCategory)
 	}
 
 	transferIndex := 300
 	types = []string{"转账", "加仓", "平仓"}
 	for e := range types {
 		transferIndex++
-		category := &domain.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryTransfer}
-		category.ID = uint(transferIndex)
-		service.AddCategory(category)
+		tmpCategory := &category.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryTransfer}
+		tmpCategory.ID = uint(transferIndex)
+		category.AddCategory(tmpCategory)
 	}
 }
 
 func TestSetParentId(t *testing.T) {
-	service.SetParentId("早餐", 1)
+	category.SetParentId("早餐", 1)
 }

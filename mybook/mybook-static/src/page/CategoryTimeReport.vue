@@ -8,6 +8,7 @@
       <el-form-item label="类型">
         <el-select
             v-model="accountType"
+            @change="changeAccountType"
             size="mini"
             placeholder="请选择"
             style="width:90px"
@@ -173,6 +174,7 @@ export default {
       accountType: 9,
       accountTypes: [
         {ID: 9, Name: "收支图"},
+        {ID: 10, Name: "余额"},
         {ID: 1, Name: "支出"},
         {ID: 2, Name: "收入"},
         {ID: 3, Name: "转帐"},
@@ -197,23 +199,41 @@ export default {
   mounted() {
   },
   methods: {
+    changeAccountType() {
+      this.lineChartType = this.accountType === 10 || this.accountType === 9;
+    },
     async drawLine() {
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
-      let start = (startTime && formatter(startTime).format(getFormatByPeriod(this.timePeriod))) || "";
-      let end = (endTime && formatter(endTime).format(getFormatByPeriod(this.timePeriod))) || "";
 
       this.showChart = false
-      let resp = await this.$http.get(window.api.report.categoryPeriod, {
-        params: {
-          startDate: start,
-          endDate: end,
-          typeId: this.accountType,
-          chartType: this.lineChartType ? 'line' : 'bar',
-          showLabel: this.detailLabel,
-          period: this.timePeriod,
-        },
-      });
+      let resp
+      if (this.accountType === 10) {
+        let start = (startTime && formatter(startTime).format(getFormatByPeriod(this.dayPeriod))) || "";
+        let end = (endTime && formatter(endTime).format(getFormatByPeriod(this.dayPeriod))) || "";
+
+        resp = await this.$http.get(window.api.report.balanceReport, {
+          params: {
+            startDate: start,
+            endDate: end,
+            chartType: this.lineChartType ? 'line' : 'bar',
+          },
+        });
+      } else {
+        let start = (startTime && formatter(startTime).format(getFormatByPeriod(this.timePeriod))) || "";
+        let end = (endTime && formatter(endTime).format(getFormatByPeriod(this.timePeriod))) || "";
+
+        resp = await this.$http.get(window.api.report.categoryPeriod, {
+          params: {
+            startDate: start,
+            endDate: end,
+            typeId: this.accountType,
+            chartType: this.lineChartType ? 'line' : 'bar',
+            showLabel: this.detailLabel,
+            period: this.timePeriod,
+          },
+        });
+      }
       this.showChart = true
 
       let respData = resp.data;
@@ -227,7 +247,7 @@ export default {
 
       this.$nextTick(() => {
         let finalLines = respData.data.lines
-        if (this.accountType !== 9 && this.showSumLabel) {
+        if (this.accountType !== 9 && this.accountType !== 10 && this.showSumLabel) {
           finalLines = this.$refs.echart.appendSumLine(finalLines)
         }
 

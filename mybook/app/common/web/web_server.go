@@ -125,8 +125,8 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildApi("/record/categoryWeekDetail"), record.WeekCategoryDetailRecord)
 	router.GET(buildApi("/record/categoryMonthDetail"), record.MonthCategoryDetailRecord)
 
-	// 各分类周期报表
-	router.GET(buildApi("/report/categoryPeriod"), report.CategoryPeriodReport)
+	router.GET(buildApi("/report/categoryPeriod"), report.CategoryPeriodReport) // 各分类周期报表
+	router.GET(buildApi("/report/balanceReport"), report.BalanceReport)         // 余额报表
 }
 
 func buildApi(path string) string {

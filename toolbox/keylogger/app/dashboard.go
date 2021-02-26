@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	width              = 100
-	height             = 20
-	refreshLabelPeriod = time.Second
+	width              = 84
+	height             = 10
+	refreshLabelPeriod = time.Millisecond * 1000
 	appId              = "com.github.kuangcp.keylogger"
 )
 
@@ -36,16 +36,13 @@ func ShowPopWindow() {
 
 func createWindow() {
 	win, _ = gtk.WindowNew(gtk.WINDOW_POPUP)
-	win.Add(buildWidget())
 	win.SetDefaultSize(width, height)
 	win.SetPosition(gtk.WIN_POS_MOUSE)
+	label := createLabelWidget()
+	win.Add(label)
 	_, err := win.Connect("destroy", gtk.MainQuit)
 	cuibase.CheckIfError(err)
 	bindMouseActionForWindow()
-
-	// init label
-	now := time.Now()
-	refreshLabel(now)
 
 	app.AddWindow(win)
 	win.ShowAll()
@@ -59,7 +56,8 @@ func createWindow() {
 	}()
 }
 
-func buildWidget() *gtk.Widget {
+// https://developer.gnome.org/gtk4/unstable/GtkLabel.html
+func createLabelWidget() *gtk.Widget {
 	grid, err := gtk.GridNew()
 	if err != nil {
 		log.Fatal("Unable to create grid:", err)
@@ -72,6 +70,7 @@ func buildWidget() *gtk.Widget {
 	}
 
 	grid.Add(kpmLabel)
+	kpmLabel.SetMarkup(latestLabelStr(time.Now()))
 	kpmLabel.SetHExpand(true)
 	kpmLabel.SetVExpand(true)
 
@@ -79,7 +78,7 @@ func buildWidget() *gtk.Widget {
 }
 
 func bindMouseActionForWindow() {
-	// 鼠标按下事件
+	// 鼠标最后点击坐标
 	var x, y int
 	win.SetEvents(int(gdk.BUTTON_PRESS_MASK | gdk.BUTTON1_MOTION_MASK))
 
@@ -103,29 +102,37 @@ func bindMouseActionForWindow() {
 	})
 }
 
-// 从缓存中更新窗口内面板
-func refreshLabel(now time.Time) {
+func latestLabelStr(now time.Time) string {
 	conn := GetConnection()
-	tempValue, err := conn.Get(GetTodayTempKPMKey(now)).Result()
-	if err != nil {
-		return
-	}
-	maxValue, err := conn.Get(GetTodayMaxKPMKey(now)).Result()
-	if err != nil {
-		return
-	}
-
 	today := now.Format(DateFormat)
+
+	tempValue, err := conn.Get(GetTodayTempKPMKeyByString(today)).Result()
+	if err != nil {
+		tempValue = "0"
+	}
+	maxValue, err := conn.Get(GetTodayMaxKPMKeyByString(today)).Result()
+	if err != nil {
+		maxValue = "0"
+	}
 	total := conn.ZScore(TotalCount, today).Val()
 
-	// https://blog.csdn.net/bitscro/article/details/3874616
-	str := fmt.Sprintf(" 🕒 %s\n%s %s %s",
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='10'>%s</span>", now.Format(TimeFormat)),
-		fmt.Sprintf("<span foreground='#5AFF00' font_desc='14'>%s</span>", tempValue),
-		fmt.Sprintf("<span foreground='#F2F3F5' font_desc='12'>%d</span>", int(total)),
-		fmt.Sprintf("<span foreground='yellow' font_desc='9'>%s</span>", maxValue),
-	)
-	_, err = glib.IdleAdd(kpmLabel.SetMarkup, str)
+	// style https://blog.csdn.net/bitscro/article/details/3874616
+	return "<span font_family='Cascadia Mono PL' font_desc='10'>" +
+		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(TimeFormat)) + "</span>\n" +
+		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
+		"<span foreground='gray'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
+		"<span foreground='white'>" + fmt.Sprintf("%-6d", int(total)) + "</span></span>"
+}
+
+// 从缓存中更新窗口内面板
+func refreshLabel(now time.Time) {
+	str := latestLabelStr(now)
+
+	// TODO memory leak even block!
+	//kpmLabel.SetMarkup(str)
+
+	// TODO memory leak!
+	_, err := glib.IdleAdd(kpmLabel.SetMarkup, str)
 	if err != nil {
 		log.Fatal("IdleAdd() failed:", err)
 	}

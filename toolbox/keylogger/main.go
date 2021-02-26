@@ -10,6 +10,8 @@ import (
 
 	"github.com/kuangcp/logger"
 
+	"github.com/webview/webview"
+
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
@@ -17,24 +19,25 @@ import (
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
-	Version:       "1.0.8",
+	Version:       "1.0.9",
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
 	Flags: []cuibase.ParamVO{
-		{Short: "-h", Comment: "help info"},
-		{Short: "-l", Comment: user + " list keyboard device"},
-		{Short: "-L", Comment: user + " list all device"},
-		{Short: "-p", Comment: user + " print key map"},
-		{Short: "-c", Comment: user + " cache key map"},
-		{Short: "-s", Comment: user + " listen keyboard with last device or specific device"},
-		{Short: "-i", Comment: user + " listen keyboard with interactive select device"},
-		{Short: "-T", Comment: "print daily total by before x day ago and duration"},
-		{Short: "-R", Comment: "print daily rank by before x day ago and duration"},
-		{Short: "-r", Comment: "print total rank by before x day ago and duration"},
-		{Short: "-S", Comment: "web server"},
-		{Short: "-b", Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
-		{Short: "-d", Comment: "debug"},
+		{Short: "-h", BoolVar: &help, Comment: "help info"},
+		{Short: "-l", BoolVar: &listKeyboardDevice, Comment: user + " list keyboard device"},
+		{Short: "-L", BoolVar: &listAllDevice, Comment: user + " list all device"},
+		{Short: "-p", BoolVar: &printKeyMap, Comment: user + " print key map"},
+		{Short: "-c", BoolVar: &cacheKeyMap, Comment: user + " cache key map"},
+		{Short: "-s", BoolVar: &listenDevice, Comment: user + " listen keyboard with last device or specific device"},
+		{Short: "-i", BoolVar: &interactiveListen, Comment: user + " listen keyboard with interactive select device"},
+		{Short: "-T", BoolVar: &printDay, Comment: "print daily total by before x day ago and duration"},
+		{Short: "-R", BoolVar: &printDayRank, Comment: "print daily rank by before x day ago and duration"},
+		{Short: "-r", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration"},
+		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
+		{Short: "-b", BoolVar: &dashboard, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
+		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
+		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
 	Options: []cuibase.ParamVO{
 		{Short: "-t", Value: "x,duration", Comment: "before x day ago and duration. For -T and -R"},
@@ -73,6 +76,7 @@ var (
 	// web
 	webPort   string
 	webServer bool
+	webView   bool
 
 	debug   bool
 	option  redis.Options
@@ -86,22 +90,10 @@ var (
 func init() {
 	configLogger()
 
-	flag.BoolVar(&help, "h", false, "")
+	flag.BoolVar(&webView, "v", false, "start webview")
 	flag.BoolVar(&help, "help", false, "")
-	flag.BoolVar(&printKeyMap, "p", false, "")
-	flag.StringVar(&targetDevice, "e", "", "")
-	flag.BoolVar(&cacheKeyMap, "c", false, "")
-	flag.BoolVar(&listKeyboardDevice, "l", false, "")
-	flag.BoolVar(&listAllDevice, "L", false, "")
-	flag.BoolVar(&listenDevice, "s", false, "")
-	flag.BoolVar(&interactiveListen, "i", false, "")
-	flag.BoolVar(&printDay, "T", false, "")
-	flag.BoolVar(&printDayRank, "R", false, "")
-	flag.BoolVar(&printTotalRank, "r", false, "")
-	flag.BoolVar(&dashboard, "b", false, "")
-	flag.BoolVar(&showLog, "g", false, "")
-
 	flag.StringVar(&timePair, "t", "1", "")
+	flag.StringVar(&targetDevice, "e", "", "")
 
 	flag.StringVar(&host, "host", "127.0.0.1", "")
 	flag.StringVar(&port, "port", "6667", "")
@@ -109,10 +101,6 @@ func init() {
 	flag.IntVar(&db, "db", 5, "")
 
 	flag.StringVar(&webPort, "P", "9902", "")
-	flag.BoolVar(&webServer, "S", false, "")
-	flag.BoolVar(&debug, "d", false, "")
-
-	flag.Usage = info.PrintHelp
 }
 
 func configLogger() {
@@ -177,7 +165,7 @@ func invoke(condition bool, action func()) {
 }
 
 func main() {
-	flag.Parse()
+	info.Parse()
 
 	pprofDebug()
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
@@ -210,8 +198,13 @@ func main() {
 		return
 	}
 
-	if webServer {
+	if webServer && !webView {
 		app.Server(debug, webPort)
+		return
+	}
+	if webServer && webView {
+		go app.Server(debug, webPort)
+		mainWin()
 		return
 	}
 
@@ -219,4 +212,13 @@ func main() {
 	invoke(printDay, app.PrintDay)
 	invoke(printDayRank, app.PrintDayRank)
 	invoke(printTotalRank, app.PrintTotalRank)
+}
+
+func mainWin() {
+	w := webview.New(false)
+	defer w.Destroy()
+	w.SetTitle("Keylogger webview")
+	w.SetSize(1800, 960, webview.HintNone)
+	w.Navigate("http://localhost:" + webPort)
+	w.Run()
 }

@@ -63,13 +63,26 @@
             margin-left: 10px;
         }
 
-        .button-list {
-            float: left;
+        .new-input {
+            width: 260px;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            font-size: 16px;
+        }
 
+        .button-list{
+            margin-bottom: 10px;
+        }
+
+        .button-list button {
+            width: 120px;
+            margin-left: 20px;
+            height: 30px;
         }
 
         button {
-            border-radius: 4px;
+            border-radius: 9px;
         }
     </style>
 </head>
@@ -79,16 +92,17 @@
     <h3 style="text-align: center">Hosts Group</h3>
 </nav>
 <main>
-    <div id="groupList" class="group-list"></div>
+    <div class="group-list">
+        <div class="button-list">
+            <button onclick="saveFile()">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
+            <button onclick="queryCurrent()">&nbsp;Current&nbsp;</button>
+        </div>
 
+        <div id="groupList"></div>
+    </div>
     <textarea id="content" class="group-edit-box"></textarea>
     <pre id="mergeResult" style="display: none;" class="group-edit-box group-pre-box"></pre>
 
-    <div class="button-list">
-        <button onclick="saveFile()">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
-        <br>
-        <button onclick="queryCurrent()">&nbsp;Current&nbsp;</button>
-    </div>
 </main>
 
 <script>
@@ -223,7 +237,7 @@
             }
             listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
                 '<input type="checkbox" id="group-item-new-check"/>' +
-                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text"/></div>';
+                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="input new group"/></div>';
         })
     }
 

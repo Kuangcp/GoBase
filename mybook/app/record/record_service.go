@@ -216,6 +216,17 @@ func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
 	return ghelp.SuccessWith(successList)
 }
 
+func QueryForBalance() []RecordDTO {
+	db := dal.GetDB()
+	var lists []RecordEntity
+	query := db.Where("deleted_at IS NULL AND type IN (?,?)", constant.RecordExpense, constant.RecordIncome)
+	query.Order("record_time", true).Find(&lists)
+	if len(lists) < 1 {
+		return nil
+	}
+	return entityToDTO(lists)
+}
+
 func findRecord(param QueryRecordParam) []RecordDTO {
 	db := dal.GetDB()
 	var lists []RecordEntity
@@ -243,6 +254,11 @@ func findRecord(param QueryRecordParam) []RecordDTO {
 		return nil
 	}
 
+	result := entityToDTO(lists)
+	return result
+}
+
+func entityToDTO(lists []RecordEntity) []RecordDTO {
 	accountMap := account.ListAccountMap()
 	categoryMap := category.ListCategoryMap()
 	var result []RecordDTO
