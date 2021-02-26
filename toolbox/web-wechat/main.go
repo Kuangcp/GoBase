@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	width  = 998
+	width  = 995
 	height = 795
 	url    = "https://wx2.qq.com/"
 )

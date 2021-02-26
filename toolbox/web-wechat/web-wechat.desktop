@@ -1,0 +1,9 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Categories=Development;
+Exec=web-wechat
+Icon=web-wechat.svg
+Name=web-wechat
+Terminal=false
+Type=Application
+
