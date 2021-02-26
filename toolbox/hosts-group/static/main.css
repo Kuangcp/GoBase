@@ -1,0 +1,79 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-size: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.nav {
+    height: 35px;
+}
+
+.group-list {
+    float: left;
+}
+
+.group-edit-box {
+    margin-left: 8px;
+    margin-right: 8px;
+    float: left;
+    width: 700px;
+    height: 500px;
+    resize: none;
+    font-size: 15px;
+    font-family: Consolas, serif;
+    border: 1px dashed;
+    padding: 3px;
+}
+
+.group-pre-box {
+    border-bottom: none;
+}
+
+.group-item {
+    width: 300px;
+    height: 35px;
+    padding-left: 8px;
+    font-size: 18px;
+    border-top: 1px dotted;
+}
+
+.group-item span {
+    margin-left: 8px;
+    width: 260px;
+    height: 35px;
+    padding-top: 8px;
+    display: inline-block;
+}
+
+.group-item input {
+    padding-top: 8px;
+    margin-left: 10px;
+}
+
+.new-input {
+    width: 260px;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-size: 16px;
+}
+
+.button-list {
+    margin-bottom: 10px;
+}
+
+.button-list button {
+    width: 120px;
+    margin-left: 20px;
+    height: 30px;
+}
+
+button {
+    border-radius: 9px;
+}

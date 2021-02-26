@@ -4,93 +4,14 @@
     <meta charset="UTF-8">
     <title>Hosts Group</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-size: 16px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .nav {
-            height: 35px;
-        }
-
-        .group-list {
-            float: left;
-        }
-
-        .group-edit-box {
-            margin-left: 8px;
-            margin-right: 8px;
-            float: left;
-            width: 700px;
-            height: 500px;
-            resize: none;
-            font-size: 15px;
-            font-family: Consolas, serif;
-        }
-
-        .group-pre-box {
-            border: 1px dotted;
-            border-bottom: none;
-        }
-
-        .group-item {
-            width: 300px;
-            height: 35px;
-            padding-left: 8px;
-            font-size: 18px;
-            border-top: 1px dotted;
-        }
-
-        .group-item span {
-            margin-left: 8px;
-            width: 260px;
-            height: 35px;
-            padding-top: 8px;
-            display: inline-block;
-        }
-
-        .group-item input {
-            padding-top: 8px;
-            margin-left: 10px;
-        }
-
-        .new-input {
-            width: 260px;
-            border-top: none;
-            border-left: none;
-            border-right: none;
-            font-size: 16px;
-        }
-
-        .button-list{
-            margin-bottom: 10px;
-        }
-
-        .button-list button {
-            width: 120px;
-            margin-left: 20px;
-            height: 30px;
-        }
-
-        button {
-            border-radius: 9px;
-        }
-    </style>
+    <link rel="stylesheet" href="main.css"/>
 </head>
 <body>
 
 <nav class="nav">
     <h3 style="text-align: center">Hosts Group</h3>
 </nav>
+
 <main>
     <div class="group-list">
         <div class="button-list">
@@ -102,29 +23,10 @@
     </div>
     <textarea id="content" class="group-edit-box"></textarea>
     <pre id="mergeResult" style="display: none;" class="group-edit-box group-pre-box"></pre>
-
 </main>
 
+<script src="main.js"></script>
 <script>
-    let basePath = '/api/v1.0/'
-    let curFileKey = 'cur-file'
-    let totalItem = []
-
-    function get(url, handle) {
-        let httpRequest = new XMLHttpRequest();
-        httpRequest.open('GET', url, true);
-        httpRequest.send();
-        /**
-         * 获取数据后的处理程序
-         */
-        httpRequest.onreadystatechange = function () {
-            if (httpRequest.readyState === 4 && httpRequest.status === 200) {
-                handle(httpRequest)
-            }
-        };
-    }
-
-
     function getFile(fileName) {
         for (let i = 0; i < totalItem.length; i++) {
             document.getElementById("group-item-" + totalItem[i]).style.backgroundColor = 'white';
@@ -241,13 +143,7 @@
         })
     }
 
-    function guid() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            let r = Math.random() * 16 | 0;
-            let v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
+
 
     listFiles();
 </script>
