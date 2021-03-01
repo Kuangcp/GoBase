@@ -60,7 +60,7 @@
         })
     }
 
-    function switchFileState(fileName) {
+    function switchGroupState(fileName) {
         get(basePath + 'switch?file=' + fileName, function (req) {
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
@@ -115,7 +115,7 @@
         localStorage.removeItem(curFileKey)
     }
 
-    function listFiles() {
+    function listGroups() {
         totalItem = []
         get(basePath + 'listFile', function (req) {
             // console.log('list: ', datum)
@@ -129,7 +129,7 @@
                 totalItem.push(name)
                 listEle.innerHTML += '<div class="group-item" id="group-item-' + name + '">' +
                     '<input type="checkbox" id="group-item-check-' + name +
-                    '" onclick="switchFileState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
+                    '" onclick="switchGroupState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
                     '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span></div>';
             }
             listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
@@ -138,7 +138,7 @@
         })
     }
 
-    listFiles();
+    listGroups();
 </script>
 </body>
 
