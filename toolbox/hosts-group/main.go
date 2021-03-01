@@ -30,7 +30,7 @@ func main() {
 		w := webview.New(false)
 		defer w.Destroy()
 		w.SetTitle("Hosts group")
-		w.SetSize(1035, 600, webview.HintFixed)
+		w.SetSize(1035, 650, webview.HintFixed)
 		w.Navigate("http://localhost:8066/")
 		w.Run()
 		return
