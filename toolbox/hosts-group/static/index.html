@@ -21,7 +21,7 @@
 
         <div id="groupList"></div>
     </div>
-    <div id="content" class="group-edit-box" contenteditable></div>
+    <div id="content" class="group-edit-box" contenteditable="true"></div>
 </main>
 
 <script src="main.js"></script>
@@ -37,17 +37,19 @@
 
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
+
             if (data.code === 0) {
                 document.getElementById("content").innerText = data.data.content
                 document.getElementById("group-item-check-" + fileName).checked = data.data.use
             } else {
-                console.log(fileName, "not exist")
+                alert(fileName + "not exist")
             }
         })
     }
 
     function queryCurrent() {
         get(basePath + 'currentHosts', function (req) {
+            clearSelect();
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
