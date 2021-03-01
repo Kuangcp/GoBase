@@ -23,16 +23,13 @@ body {
     margin-right: 8px;
     float: left;
     width: 700px;
-    height: 500px;
+    height: 600px;
     resize: none;
     font-size: 15px;
     font-family: Consolas, serif;
     border: 1px dashed;
     padding: 3px;
-}
-
-.group-pre-box {
-    border-bottom: none;
+    overflow: auto;
 }
 
 .group-item {
