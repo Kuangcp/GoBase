@@ -15,14 +15,13 @@
 <main>
     <div class="group-list">
         <div class="button-list">
-            <button onclick="saveFile()">&nbsp;&nbsp;Save&nbsp;&nbsp;</button>
-            <button onclick="queryCurrent()">&nbsp;Current&nbsp;</button>
+            <button onclick="saveFile()">Save</button>
+            <button onclick="queryCurrent()">Current</button>
         </div>
 
         <div id="groupList"></div>
     </div>
-    <textarea id="content" class="group-edit-box"></textarea>
-    <pre id="mergeResult" style="display: none;" class="group-edit-box group-pre-box"></pre>
+    <div id="content" class="group-edit-box" contenteditable></div>
 </main>
 
 <script src="main.js"></script>
@@ -32,8 +31,6 @@
             document.getElementById("group-item-" + totalItem[i]).style.backgroundColor = 'white';
         }
 
-        document.getElementById("content").style.display = 'block';
-        document.getElementById("mergeResult").style.display = 'none';
         get(basePath + 'getFile?file=' + fileName, function (req) {
             localStorage.setItem(curFileKey, fileName)
             document.getElementById("group-item-" + fileName).style.backgroundColor = '#b3e19d';
@@ -41,7 +38,7 @@
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
-                document.getElementById("content").innerHTML = data.data.content
+                document.getElementById("content").innerText = data.data.content
                 document.getElementById("group-item-check-" + fileName).checked = data.data.use
             } else {
                 console.log(fileName, "not exist")
@@ -54,9 +51,7 @@
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
-                document.getElementById("content").style.display = 'none';
-                document.getElementById("mergeResult").style.display = 'block';
-                document.getElementById("mergeResult").innerText = data.data;
+                document.getElementById("content").innerText = data.data;
             } else {
                 alert("current hosts not exist")
             }
@@ -92,7 +87,7 @@
 
         let fileItem = {
             name: finalFileName,
-            content: contentObj.value,
+            content: contentObj.innerText,
             use: isUse
         };
         console.log('post', fileItem)
@@ -110,8 +105,6 @@
                 }
                 // console.log(data);
                 document.getElementById("group-item-new-check").checked = false
-                // clear textarea
-                location.replace('/static/?page=' + guid())
             }
         }
     }
@@ -139,11 +132,9 @@
             }
             listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
                 '<input type="checkbox" id="group-item-new-check"/>' +
-                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="input new group"/></div>';
+                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="new group"/></div>';
         })
     }
-
-
 
     listFiles();
 </script>
