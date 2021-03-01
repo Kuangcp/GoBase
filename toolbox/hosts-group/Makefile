@@ -1,7 +1,7 @@
 BIN=hosts-group.bin
 
 buildExe:
-	sh make_exe.sh
+	bash make_exe.sh
 install:
 	statik -f -src=static/ -dest app && go install
 build:

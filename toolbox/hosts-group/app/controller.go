@@ -251,7 +251,7 @@ func switchState(absPath string, targetUse bool) (string, bool, error) {
 }
 
 func generateHost() error {
-	logger.Info("start reload host", curHostFile)
+	logger.Info("start generate", curHostFile)
 	list := getFileList()
 	mergeResult := ""
 	for _, vo := range list {
