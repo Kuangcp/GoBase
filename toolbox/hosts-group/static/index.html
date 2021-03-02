@@ -50,6 +50,10 @@
     function queryCurrent() {
         get(basePath + 'currentHosts', function (req) {
             clearSelect();
+            for (let i = 0; i < totalItem.length; i++) {
+                document.getElementById("group-item-" + totalItem[i]).style.backgroundColor = 'white';
+            }
+
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
