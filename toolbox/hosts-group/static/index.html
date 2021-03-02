@@ -21,7 +21,7 @@
 
         <div id="groupList"></div>
     </div>
-    <div id="content" class="group-edit-box" contenteditable></div>
+    <div id="content" class="group-edit-box" contenteditable="true"></div>
 </main>
 
 <script src="main.js"></script>
@@ -37,17 +37,23 @@
 
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
+
             if (data.code === 0) {
                 document.getElementById("content").innerText = data.data.content
                 document.getElementById("group-item-check-" + fileName).checked = data.data.use
             } else {
-                console.log(fileName, "not exist")
+                alert(fileName + "not exist")
             }
         })
     }
 
     function queryCurrent() {
         get(basePath + 'currentHosts', function (req) {
+            clearSelect();
+            for (let i = 0; i < totalItem.length; i++) {
+                document.getElementById("group-item-" + totalItem[i]).style.backgroundColor = 'white';
+            }
+
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
@@ -58,7 +64,7 @@
         })
     }
 
-    function switchFileState(fileName) {
+    function switchGroupState(fileName) {
         get(basePath + 'switch?file=' + fileName, function (req) {
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
@@ -113,7 +119,7 @@
         localStorage.removeItem(curFileKey)
     }
 
-    function listFiles() {
+    function listGroups() {
         totalItem = []
         get(basePath + 'listFile', function (req) {
             // console.log('list: ', datum)
@@ -127,7 +133,7 @@
                 totalItem.push(name)
                 listEle.innerHTML += '<div class="group-item" id="group-item-' + name + '">' +
                     '<input type="checkbox" id="group-item-check-' + name +
-                    '" onclick="switchFileState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
+                    '" onclick="switchGroupState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
                     '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span></div>';
             }
             listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
@@ -136,7 +142,7 @@
         })
     }
 
-    listFiles();
+    listGroups();
 </script>
 </body>
 
