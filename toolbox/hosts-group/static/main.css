@@ -30,6 +30,8 @@ body {
     border: 1px dashed;
     padding: 3px;
     overflow: auto;
+    /*background: linear-gradient(darkorange 10%, white 10%);*/
+    /*background-size: 100% 18px;*/
 }
 
 .group-item {

@@ -43,7 +43,7 @@
       <el-form-item>
         <el-dropdown size="mini">
           <el-button type="primary" size="mini">
-            标记<i class="el-icon-arrow-down el-icon--right"></i>
+            标记<em class="el-icon-arrow-down el-icon--right"></em>
           </el-button>
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item>
