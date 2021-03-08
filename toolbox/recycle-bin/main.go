@@ -369,7 +369,7 @@ func DeleteFiles(files []string) {
 func buildTrashFileName(path string) (string, error) {
 	var result = path
 	if strings.HasSuffix(result, "//") || strings.HasPrefix(result, "//") {
-		logger.Error("Invalid path", path)
+		logger.Error(InvalidPath, path)
 		return "", fmt.Errorf("")
 	}
 
@@ -382,13 +382,13 @@ func buildTrashFileName(path string) (string, error) {
 		if last != -1 && last < len(result)-1 {
 			result = result[last+1:]
 		} else {
-			logger.Error("Invalid path", path)
+			logger.Error(InvalidPath, path)
 			return "", fmt.Errorf("")
 		}
 	}
 
 	if result == "/" || result == "" {
-		logger.Error("Invalid path", path)
+		logger.Error(InvalidPath, path)
 		return "", fmt.Errorf("")
 	}
 

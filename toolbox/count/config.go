@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/go-redis/redis/v7"
-	"github.com/kuangcp/gobase/cuibase"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/go-redis/redis/v7"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
-var charRankKey = "total_char_rank"
+var charRankKey = "count:total_char_rank"
 var redisConfigFile = os.Getenv("HOME") + "/.config/app-conf/count-char/redis.json"
 
 var ignoreDirs = []string{".git", ".svn", ".vscode", ".idea", ".gradle",
@@ -19,62 +20,39 @@ var handleFiles = []string{".md", ".markdown", ".txt"}
 var (
 	handleFileSuffix string
 	ignoreDir        string
+	rankPair         string
+	targetFile       string
+
+	printAllChar bool
+	countSummary bool
+	help         bool
+	delCache     bool
+	allFile      bool
+)
+var (
+	startIdx int64 = 0
+	endIdx   int64 = 0
 )
 
 var info = cuibase.HelpInfo{
 	Description: "Count chinese char(UTF8) from file that current dir recursive",
-	Version:     "1.0.0",
-	VerbLen:     -5,
-	ParamLen:    -15,
-	Params: []cuibase.ParamInfo{
-		{
-			Verb:    "-h",
-			Param:   "",
-			Comment: "Help",
-		}, {
-			Verb:    "",
-			Param:   "",
-			Comment: "Count all file chinese char",
-		}, {
-			Verb:    "-w",
-			Param:   "",
-			Comment: "Print all chinese char",
-			Handler: func(_ []string) {
-				showChineseChar(showChar, false)
-			},
-		}, {
-			Verb:    "-f",
-			Param:   "",
-			Comment: "Read target file",
-			Handler: readTargetFile,
-		}, {
-			Verb:    "-s",
-			Param:   "",
-			Comment: "Count all file chinese char, show with simplify",
-			Handler: func(_ []string) {
-				showChineseChar(nil, false)
-			},
-		}, {
-			Verb:    "-a",
-			Param:   "file redisKey",
-			Comment: "Count chinese char for target file, save. (redis)",
-		}, {
-			Verb:    "-all",
-			Param:   "showNum",
-			Comment: "Count, calculate rank data, save. (redis)",
-			Handler: readAllSaveIntoRedis,
-		}, {
-			Verb:    "-del",
-			Param:   "",
-			Comment: "Del rank data. (redis)",
-			Handler: delRank,
-		}, {
-			Verb:    "-show",
-			Param:   "start stop",
-			Comment: "Show rank data. (redis)",
-			Handler: showRank,
-		},
-	}}
+	Version:     "1.1.0",
+	ValueLen:    12,
+	Flags: []cuibase.ParamVO{
+		{Short: "-h", BoolVar: &help, Comment: "help"},
+		{Short: "-s", BoolVar: &countSummary, Comment: "count all files, print summary"},
+		{Short: "-p", BoolVar: &printAllChar, Comment: "print all chinese char"},
+		{Short: "-d", BoolVar: &delCache, Comment: "delete rank data"},
+		{Short: "-a", BoolVar: &allFile, Comment: "count chinese char on current dir"},
+	},
+	Options: []cuibase.ParamVO{
+		{Short: "-c", Value: "start,end", Comment: "cursor"},
+		{Short: "-f", Value: "file", Comment: "file"},
+
+		{Short: "-S", Value: "suffix", Comment: ""},
+		{Short: "-D", Value: "dir", Comment: ""},
+	},
+}
 
 func readRedisConfig() *redis.Options {
 	config := redis.Options{}
