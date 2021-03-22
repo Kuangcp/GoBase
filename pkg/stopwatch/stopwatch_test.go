@@ -8,7 +8,7 @@ import (
 )
 
 func TestStopWatch_PrettyPrint(t *testing.T) {
-	stopWatch := NewWithName("action")
+	stopWatch := NewWithName("action1")
 	stopWatch.Start("task1")
 	time.Sleep(time.Second * 1)
 	stopWatch.Stop()
@@ -21,7 +21,7 @@ func TestStopWatch_PrettyPrint(t *testing.T) {
 	stopWatch.Stop()
 	fmt.Println(stopWatch.PrettyPrint())
 
-	stopWatch = NewWithName("action")
+	stopWatch = NewWithName("action2")
 	stopWatch.Start("1")
 	http.Get("http://jd.com")
 	stopWatch.Stop()

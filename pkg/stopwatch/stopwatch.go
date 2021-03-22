@@ -37,9 +37,9 @@ func (s *StopWatch) PrettyPrint() string {
 	for _, task := range s.tasks {
 		taskStr += fmt.Sprintf("%13s : %v\n", task.name, task.elapsedTime.String())
 	}
-	return fmt.Sprintf("%s  %v -> %v\n%v", s.name,
-		s.firstTime.Format("2006-01-02 15:04:05.000"),
-		s.stopTime.Format("2006-01-02 15:04:05.000"), taskStr)
+	return fmt.Sprintf("%s : %v   %v %v\n%v", s.name, s.stopTime.Sub(s.firstTime),
+		s.firstTime.Format("15:04:05.000"),
+		s.stopTime.Format("15:04:05.000"), taskStr)
 }
 
 func (s *StopWatch) Start(name string) {
