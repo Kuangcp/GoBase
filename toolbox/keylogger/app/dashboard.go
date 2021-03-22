@@ -6,8 +6,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
-
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -16,7 +14,7 @@ import (
 const (
 	width              = 84
 	height             = 10
-	refreshLabelPeriod = time.Millisecond * 1000
+	refreshLabelPeriod = time.Millisecond * 50
 	appId              = "com.github.kuangcp.keylogger"
 )
 
@@ -29,8 +27,8 @@ var (
 func ShowPopWindow() {
 	gtk.Init(nil)
 	app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
-	_, err := app.Connect("activate", createWindow)
-	cuibase.CheckIfError(err)
+	app.Connect("activate", createWindow)
+	//cuibase.CheckIfError(err)
 	app.Run(nil)
 }
 
@@ -40,8 +38,8 @@ func createWindow() {
 	win.SetPosition(gtk.WIN_POS_MOUSE)
 	label := createLabelWidget()
 	win.Add(label)
-	_, err := win.Connect("destroy", gtk.MainQuit)
-	cuibase.CheckIfError(err)
+	win.Connect("destroy", gtk.MainQuit)
+	//cuibase.CheckIfError(err)
 	bindMouseActionForWindow()
 
 	app.AddWindow(win)
@@ -83,7 +81,7 @@ func bindMouseActionForWindow() {
 	win.SetEvents(int(gdk.BUTTON_PRESS_MASK | gdk.BUTTON1_MOTION_MASK))
 
 	//鼠标按下事件处理
-	_, _ = win.Connect("button-press-event", func(widget *gtk.Window, ctx *gdk.Event) {
+	win.Connect("button-press-event", func(widget *gtk.Window, ctx *gdk.Event) {
 		//获取鼠键按下属性结构体变量，系统内部的变量，不是用户传参变量
 		event := *(*gdk.EventButton)(unsafe.Pointer(&ctx))
 		if event.Button() == 1 { //左键
@@ -95,7 +93,7 @@ func bindMouseActionForWindow() {
 	})
 
 	//鼠标移动事件处理
-	_, _ = win.Connect("motion-notify-event", func(widget *gtk.Window, ctx *gdk.Event) {
+	win.Connect("motion-notify-event", func(widget *gtk.Window, ctx *gdk.Event) {
 		//获取鼠标移动属性结构体变量，系统内部的变量，不是用户传参变量
 		event := *(*gdk.EventButton)(unsafe.Pointer(&ctx))
 		win.Move(int(event.XRoot())-x, int(event.YRoot())-y)
@@ -126,14 +124,10 @@ func latestLabelStr(now time.Time) string {
 
 // 从缓存中更新窗口内面板
 func refreshLabel(now time.Time) {
-	str := latestLabelStr(now)
-
-	// TODO memory leak even block!
-	//kpmLabel.SetMarkup(str)
-
 	// TODO memory leak!
-	_, err := glib.IdleAdd(kpmLabel.SetMarkup, str)
-	if err != nil {
-		log.Fatal("IdleAdd() failed:", err)
-	}
+
+	glib.IdleAdd(func() {
+		str := latestLabelStr(now)
+		kpmLabel.SetMarkup(str)
+	})
 }
