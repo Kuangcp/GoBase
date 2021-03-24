@@ -22,9 +22,9 @@ func TestStopWatch_PrettyPrint(t *testing.T) {
 	fmt.Println(stopWatch.PrettyPrint())
 
 	stopWatch = NewWithName("action2")
-	stopWatch.Start("1")
+	stopWatch.Start("A")
 	http.Get("http://jd.com")
 	stopWatch.Stop()
-	stopWatch.Start("2")
+	stopWatch.Start("B")
 	fmt.Println(stopWatch.PrettyPrint())
 }

@@ -250,13 +250,13 @@ func refreshCatalog(filename string) {
 		logger.Info("refresh:", filename)
 	}
 
-	titleBlock := ""
-	titles := generateCatalog(filename)
-	if titles == nil {
+	tocBlock := ""
+	tocList := generateCatalog(filename)
+	if tocList == nil {
 		return
 	}
-	for t := range titles {
-		titleBlock += titles[t]
+	for t := range tocList {
+		tocBlock += tocList[t]
 	}
 
 	startIdx := -1
@@ -275,7 +275,7 @@ func refreshCatalog(filename string) {
 		if strings.Contains(line, endTag) {
 			endIdx = i
 			timeStr := time.Now().Format("2006-01-02 15:04")
-			result += startTag + "\n\n" + titleBlock + "\n" + endTag + "|_" + timeStr + "_|\n"
+			result += startTag + "\n\n" + tocBlock + "\n" + endTag + "|_" + timeStr + "_|\n"
 			continue
 		}
 		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
