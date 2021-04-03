@@ -446,7 +446,7 @@ func DeleteFileBySuffix(params []string) {
 func ExitCheckFileDaemon() {
 	exists, err := isPathExists(pidFile)
 	if !exists {
-		logger.Error("no pid file")
+		logger.Error("no pid file", pidFile)
 		return
 	}
 	file, err := ioutil.ReadFile(pidFile)
@@ -455,11 +455,19 @@ func ExitCheckFileDaemon() {
 		os.Exit(1)
 	}
 
-	// TODO may kill error pid
 	pid := string(file)
-	logger.Info("kill ", pid)
-	cmd := exec.Command("kill", pid)
-	execCmdWithQuite(cmd)
+	processInfo := execCommand("ps -p " + pid)
+	lines := strings.Split(processInfo, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, pid) && strings.Contains(line, appName) {
+			logger.Info(line)
+			logger.Info("kill ", pid)
+			cmd := exec.Command("kill", pid)
+			execCmdWithQuite(cmd)
+			return
+		}
+	}
+	logger.Warn(pid, "is not", appName, "process")
 }
 
 // 静默执行 不关心返回值
@@ -472,4 +480,19 @@ func execCmdWithQuite(cmd *exec.Cmd) {
 		logger.Error(cmd, err)
 		os.Exit(1)
 	}
+}
+
+func execCommand(command string) string {
+	cmd := exec.Command("/usr/bin/bash", "-c", command)
+	var out bytes.Buffer
+
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
+
+	result := out.String()
+	return result
 }

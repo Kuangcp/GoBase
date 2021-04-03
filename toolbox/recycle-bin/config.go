@@ -10,10 +10,11 @@ import (
 
 const (
 	maxEmptyTrashCheck = 3
+	appName            = "recycle-bin"
 )
 
 var (
-	mainDir       = "/.config/app-conf/recycle-bin"
+	mainDir       = "/.config/app-conf/" + appName
 	configDir     string
 	logDir        string
 	trashDir      string

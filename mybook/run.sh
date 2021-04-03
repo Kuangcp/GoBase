@@ -41,7 +41,7 @@ help() {
     printf "$format" "-h" "" "帮助"
     printf "$format" "-i" "" "初始化配置"
     printf "$format" "-r" "" "运行已经本地编译前后端的应用"
-    printf "$format" "-s" "" "编译并运行后端应用"
+    printf "$format" "-s" "" "仅编译并运行后端应用"
     printf "$format" "" "" "编译前端，编译并运行后端应用"
 }
 
