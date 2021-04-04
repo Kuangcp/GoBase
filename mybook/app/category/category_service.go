@@ -106,7 +106,7 @@ func PrintCategory() {
 			}
 		}
 		if len(resultMap[enum.GetIndex()]) != 0 {
-			fmt.Printf(cuibase.Cyan.String()+"> %v  "+cuibase.End.String()+"\n%v\n\n", enum.GetName(), value)
+			fmt.Printf(cuibase.Cyan.Print("> %v  ")+"\n%v\n\n", enum.GetName(), value)
 		}
 	}
 }

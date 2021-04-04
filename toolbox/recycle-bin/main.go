@@ -63,8 +63,8 @@ func main() {
 }
 
 func RestoreFile(restoreFile string) {
-	items := listTrashFileItem(func(val string) bool {
-		return strings.Contains(val, restoreFile)
+	items := listTrashFileItem(func(name string) bool {
+		return strings.Contains(name, restoreFile)
 	})
 
 	length := len(items)
@@ -147,7 +147,7 @@ func listTrashFileItem(filter func(string) bool) []fileItem {
 
 	for _, fileInfo := range dir {
 		name := fileInfo.Name()
-		if !filter(name) {
+		if filter != nil && !filter(name) {
 			continue
 		}
 
@@ -180,12 +180,11 @@ func ListTrashFiles() {
 		os.Exit(1)
 	}
 
-	items := listTrashFileItem(func(s string) bool {
-		return true
-	})
+	items := listTrashFileItem(nil)
 	currentNano := time.Now().UnixNano()
 	if len(items) != 0 {
-		fmt.Printf("%v%-23s %-10s %s%v\n", cuibase.Cyan, "DeleteTime", "Remaining", "File", cuibase.End)
+		fmt.Printf("%v%-3s       %-17s %-10s %s%v\n",
+			cuibase.Cyan, "No.", "DeleteTime", "Remaining", "File", cuibase.End)
 	}
 
 	if listOrder > 0 {
