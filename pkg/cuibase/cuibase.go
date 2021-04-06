@@ -15,16 +15,6 @@ import (
 	"strings"
 )
 
-// AssertParamCount os.Args 参数构成: 0 go源文件; 1 参数1; 2 参数2; count 必填参数个数
-func AssertParamCount(count int, msg string) {
-	param := os.Args
-	flag := enoughCount(param, count)
-	if !flag {
-		log.Printf("param count less than %v \n", count)
-		log.Fatal(msg)
-	}
-}
-
 // BuildFormat
 func BuildFormat(info HelpInfo) string {
 	single := strconv.Itoa(info.SingleFlagLen)
@@ -195,8 +185,4 @@ func homeWindows() (string, error) {
 	}
 
 	return home, nil
-}
-
-func enoughCount(params []string, count int) bool {
-	return len(params) > count
 }

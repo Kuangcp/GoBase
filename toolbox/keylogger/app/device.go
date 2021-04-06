@@ -273,7 +273,7 @@ func PrintTotalRank() {
 		return sortList[i].Value > sortList[j].Value // 降序
 	})
 
-	fmt.Printf("    %s → %s\n", firstDay.Format("2006-01-02"), lastDay.Format("2006-01-02"))
+	fmt.Printf("    %s → %s\n", firstDay.Format(cuibase.YYYY_MM_DD), lastDay.Format(cuibase.YYYY_MM_DD))
 
 	if len(keyMap) != 0 {
 		printByFourColumn(len(sortList), func(index int) string {
@@ -334,7 +334,7 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 
 	fmt.Printf("\n%s | %s | %-3s | Total: %s \n",
 		cuibase.Green.Printf("%-9s", time.Weekday()),
-		time.Format("2006-01-02"),
+		time.Format(cuibase.YYYY_MM_DD),
 		cuibase.Yellow.Printf("%3s", maxKPM),
 		cuibase.Green.Printf("%-5d", int64(totalScore.Val())))
 
@@ -383,7 +383,7 @@ func handleTotalByDate(time time.Time, conn *redis.Client) {
 	if err != nil {
 		maxKPM = "0"
 	}
-	fmt.Printf("%s %s %s %6v\n", time.Format("2006-01-02"),
+	fmt.Printf("%s %s %s %6v\n", time.Format(cuibase.YYYY_MM_DD),
 		cuibase.Green.Printf("%-9s", time.Weekday()),
 		cuibase.Yellow.Printf("%4s", maxKPM),
 		int64(score.Val()))

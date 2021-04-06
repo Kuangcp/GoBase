@@ -119,7 +119,7 @@ func configLogger() {
 
 	logPath = logDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: "2006-01-02 15:04:05",
+		TimeFormat: cuibase.YYYY_MM_DD_HH_MM_SS_MS,
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,

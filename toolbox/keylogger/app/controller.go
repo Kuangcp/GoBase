@@ -200,7 +200,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 			max = score
 		}
 
-		result = append(result, [2]string{dayTime.Format("2006-01-02"), strconv.Itoa(score)})
+		result = append(result, [2]string{dayTime.Format(cuibase.YYYY_MM_DD), strconv.Itoa(score)})
 	}
 	return result, max
 }
@@ -212,7 +212,7 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 		return nil
 	}
 	for !indexDay.Equal(endDay) {
-		result = append(result, [2]string{indexDay.Format("2006-01-02"), "0"})
+		result = append(result, [2]string{indexDay.Format(cuibase.YYYY_MM_DD), "0"})
 		indexDay = indexDay.AddDate(0, 0, 1)
 	}
 	return result

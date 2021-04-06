@@ -23,6 +23,8 @@ var (
 	pidFile       string
 	retentionTime time.Duration
 	checkPeriod   time.Duration
+	sysDir        = [...]string{"/", "/home", "/home/", "/ect", "/etc/", "/boot", "/boot/", "/sys", "/sys/",
+		"/opt", "/opt/", "/bin", "/bin/"}
 )
 
 type (
@@ -38,7 +40,7 @@ func (t *fileItem) seconds() int64 {
 }
 
 func (t *fileItem) formatTime() string {
-	return time.Unix(t.seconds(), 0).Format("2006-01-02 15:04:05.000")
+	return time.Unix(t.seconds(), 0).Format(cuibase.YYYY_MM_DD_HH_MM_SS_MS)
 }
 
 func (t *fileItem) formatForList(index int, currentNano int64) string {

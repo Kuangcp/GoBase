@@ -306,13 +306,22 @@ func cleanFile(dir []os.FileInfo) {
 
 		logger.Warn("Delete: ", name[:index])
 		actualPath := trashDir + "/" + name
-		if actualPath == "/" {
-			logger.Error("danger error")
+		if matchAny(actualPath) {
+			logger.Error("danger error", name)
 			continue
 		}
 		cmd := exec.Command("rm", "-rf", actualPath)
 		execCmdWithQuite(cmd)
 	}
+}
+
+func matchAny(dir string) bool {
+	for _, s := range sysDir {
+		if s == dir {
+			return true
+		}
+	}
+	return false
 }
 
 func parseTime() error {
@@ -330,7 +339,7 @@ func parseTime() error {
 }
 
 func deletePidFile(deleteFlag *int32) {
-	logger.Warn("Exit")
+	logger.Warn("Exit App")
 	curDelete := atomic.AddInt32(deleteFlag, 1)
 	if curDelete == 1 {
 		DeleteFiles([]string{pidFile})
