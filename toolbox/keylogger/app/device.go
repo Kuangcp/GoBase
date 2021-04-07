@@ -18,8 +18,10 @@ import (
 )
 
 const (
+	// KPM 所以滑动窗口是一分钟
 	slideWindowMs      = 60_000
-	calculateKPMPeriod = time.Millisecond * 900
+	// 从KPM队列，计算得到最大KPM 操作的周期
+	calculateKPMPeriod = time.Millisecond * 50
 )
 
 var (
@@ -144,8 +146,9 @@ func calculateKPM() {
 
 			immutableKPM := currentKPM
 			go func() {
-				time.Sleep(time.Second * 6)
-				if immutableKPM == slideQueue.Len() {
+				time.Sleep(time.Millisecond * 4500)
+				//fmt.Println("cache:", immutableKPM, "now:", slideQueue.Len())
+				if immutableKPM >= slideQueue.Len() {
 					logger.Info("Today max kpm up to", todayMaxKPM)
 				}
 			}()
