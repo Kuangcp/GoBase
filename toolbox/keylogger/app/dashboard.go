@@ -14,7 +14,7 @@ import (
 const (
 	width              = 84
 	height             = 10
-	refreshLabelPeriod = time.Millisecond * 50
+	refreshLabelPeriod = time.Millisecond * 960
 	appId              = "com.github.kuangcp.keylogger"
 )
 
