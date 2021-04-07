@@ -137,10 +137,18 @@ func calculateKPM() {
 		if err != nil {
 			todayMaxKPM = 0
 		}
+
 		if todayMaxKPM < currentKPM {
 			todayMaxKPM = currentKPM
 			conn.Set(maxKPMKey, todayMaxKPM, 0)
-			logger.Info("Today max kpm up to", todayMaxKPM)
+
+			immutableKPM := currentKPM
+			go func() {
+				time.Sleep(time.Second * 6)
+				if immutableKPM == slideQueue.Len() {
+					logger.Info("Today max kpm up to", todayMaxKPM)
+				}
+			}()
 		}
 	}
 }
