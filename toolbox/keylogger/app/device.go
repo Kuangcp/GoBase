@@ -21,7 +21,7 @@ const (
 	// KPM 所以滑动窗口是一分钟
 	slideWindowMs      = 60_000
 	// 从KPM队列，计算得到最大KPM 操作的周期
-	calculateKPMPeriod = time.Millisecond * 50
+	calculateKPMPeriod = time.Millisecond * 888
 )
 
 var (
