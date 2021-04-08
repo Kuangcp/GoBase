@@ -53,7 +53,7 @@ func CloseConnection() {
 	}
 }
 
-func CloseAndExit() {
+func CloseRedisConnectionThenExit() {
 	CloseConnection()
 	os.Exit(1)
 }

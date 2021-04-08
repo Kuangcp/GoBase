@@ -18,10 +18,9 @@ import (
 )
 
 const (
-	// KPM 所以滑动窗口是一分钟
-	slideWindowMs      = 60_000
-	// 从KPM队列，计算得到最大KPM 操作的周期
-	calculateKPMPeriod = time.Millisecond * 888
+	slideWindowMs        = 60_000                  // KPM 所以滑动窗口是一分钟
+	calculateKPMPeriod   = time.Millisecond * 888  // 从KPM队列，计算得到最大KPM 操作的周期
+	printKPMWindowPeriod = time.Millisecond * 4500 // 输出日志频率控制
 )
 
 var (
@@ -111,6 +110,7 @@ func calculateKPM() {
 		day := now.Format(DateFormat)
 		maxKPMKey := GetTodayMaxKPMKeyByString(day)
 
+		// remove element that outer of time window
 		nowMs := now.UnixNano() / 1000_000
 		for {
 			peek := slideQueue.Peek()
@@ -128,31 +128,32 @@ func calculateKPM() {
 		if latestKPM == currentKPM {
 			continue
 		}
-
-		// redis current kpm
+		// refresh redis current kpm
 		currentKPM = latestKPM
 		tempKPMKey := GetTodayTempKPMKeyByString(day)
 		conn.Set(tempKPMKey, currentKPM, time.Hour*12)
 
-		// redis max kpm
+		// init redis max kpm
 		todayMaxKPM, err := conn.Get(maxKPMKey).Int()
 		if err != nil {
 			todayMaxKPM = 0
 		}
 
-		if todayMaxKPM < currentKPM {
-			todayMaxKPM = currentKPM
-			conn.Set(maxKPMKey, todayMaxKPM, 0)
-
-			immutableKPM := currentKPM
-			go func() {
-				time.Sleep(time.Millisecond * 4500)
-				//fmt.Println("cache:", immutableKPM, "now:", slideQueue.Len())
-				if immutableKPM >= slideQueue.Len() {
-					logger.Info("Today max kpm up to", todayMaxKPM)
-				}
-			}()
+		// set max kpm
+		if todayMaxKPM >= currentKPM {
+			continue
 		}
+		todayMaxKPM = currentKPM
+		conn.Set(maxKPMKey, todayMaxKPM, 0)
+
+		// delay log
+		go func(tempKPM int) {
+			time.Sleep(printKPMWindowPeriod)
+			//fmt.Println("cache:", tempKPM, "now:", slideQueue.Len())
+			if tempKPM >= slideQueue.Len() {
+				logger.Info("Today max kpm up to", todayMaxKPM)
+			}
+		}(currentKPM)
 	}
 }
 
@@ -177,13 +178,13 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			redis.Z{Score: 1, Member: event.Scancode}).Result()
 		if err != nil {
 			fmt.Println("key zincr: ", result, err)
-			CloseAndExit()
+			CloseRedisConnectionThenExit()
 		}
 		result, err = conn.ZIncr(TotalCount,
 			redis.Z{Score: 1, Member: todayStr}).Result()
 		if err != nil {
 			fmt.Println("total zincr: ", result, err)
-			CloseAndExit()
+			CloseRedisConnectionThenExit()
 		}
 		// actual store us not ns
 		var num int64 = 0
@@ -192,7 +193,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 			redis.Z{Score: float64(event.Scancode), Member: keyNs / 1000}).Result()
 		if err != nil {
 			fmt.Println("detail zadd: ", num, err)
-			CloseAndExit()
+			CloseRedisConnectionThenExit()
 		}
 		slideQueue.Push(keyNs / 1000_000)
 	}

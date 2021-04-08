@@ -28,7 +28,6 @@ func ShowPopWindow() {
 	gtk.Init(nil)
 	app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
 	app.Connect("activate", createWindow)
-	//cuibase.CheckIfError(err)
 	app.Run(nil)
 }
 
@@ -39,7 +38,6 @@ func createWindow() {
 	gridWidget := createLabelWidget()
 	win.Add(gridWidget)
 	win.Connect("destroy", gtk.MainQuit)
-	//cuibase.CheckIfError(err)
 	bindMouseActionForWindow()
 
 	app.AddWindow(win)
