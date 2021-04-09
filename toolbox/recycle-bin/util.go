@@ -27,6 +27,7 @@ var (
 	initConfig   bool
 	pipeline     bool
 	listOrder    int
+	buildVersion string
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
 	periodStr    = "1h"
@@ -118,7 +119,8 @@ func loadConfig() (*Setting, error) {
 
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
-	Version:       "1.0.6",
+	Version:       "1.0.7",
+	BuildVersion: buildVersion,
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
