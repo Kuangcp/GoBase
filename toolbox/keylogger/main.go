@@ -20,6 +20,7 @@ var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.0.9",
+	BuildVersion:  buildVersion,
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
@@ -82,7 +83,9 @@ var (
 	option  redis.Options
 	logPath string
 )
-
+var (
+	buildVersion string
+)
 var (
 	mainDir = "/.config/app-conf/keylogger"
 )
