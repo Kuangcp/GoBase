@@ -25,6 +25,7 @@ var (
 	log          bool
 	showConfig   bool
 	initConfig   bool
+	pipeline     bool
 	listOrder    int
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
@@ -122,6 +123,7 @@ var info = cuibase.HelpInfo{
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "Help info"},
+		{Short: "-P", BoolVar: &pipeline, Comment: "Pipeline"},
 		{Short: "-D", BoolVar: &debug, Comment: "Debug mode"},
 		{Short: "-X", BoolVar: &exit, Comment: "Exit daemon"},
 		{Short: "-C", BoolVar: &check, Comment: "Start check"},
@@ -180,6 +182,7 @@ func InitConfig() {
 
 func isPathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
+	//fmt.Println("stat:  ",path , err)
 	if err == nil {
 		return true, nil
 	}

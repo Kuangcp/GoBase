@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -37,12 +38,13 @@ func main() {
 	})
 
 	invokeWithBool(illegalQuit, func() {
-		DeleteFiles([]string{pidFile})
+		DeleteFile(pidFile)
 	})
 	invokeWithStr(suffix, func(s string) {
 		DeleteFileBySuffix(strings.Split(s, ","))
 	})
 	invokeWithStr(restore, RestoreFile)
+	invokeWithBool(pipeline, DeleteFromPipe)
 
 	if check {
 		if daemon {
@@ -342,8 +344,12 @@ func deletePidFile(deleteFlag *int32) {
 	logger.Warn("Exit App")
 	curDelete := atomic.AddInt32(deleteFlag, 1)
 	if curDelete == 1 {
-		DeleteFiles([]string{pidFile})
+		DeleteFile(pidFile)
 	}
+}
+
+func DeleteFile(file string) {
+	DeleteFiles([]string{file})
 }
 
 // deleteFies 移动文件到回收站
@@ -449,6 +455,16 @@ func DeleteFileBySuffix(params []string) {
 	if input == "y" {
 		DeleteFiles(files)
 	}
+}
+
+func DeleteFromPipe() {
+	reader := bufio.NewReader(os.Stdin)
+	result, err := reader.ReadString('\n')
+	for err == nil {
+		DeleteFile(strings.TrimSpace(result))
+		result, err = reader.ReadString('\n')
+	}
+	fmt.Println("read stdin error: ", err)
 }
 
 func ExitCheckFileDaemon() {
