@@ -21,7 +21,8 @@ type filterFun = func(string) bool
 type mapFun func(string) string
 
 var (
-	ignoreDirs = [...]string{
+	buildVersion string
+	ignoreDirs   = [...]string{
 		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__", "ARTS",
 	}
 	ignoreFiles = [...]string{
@@ -63,7 +64,8 @@ var (
 
 var info = cuibase.HelpInfo{
 	Description:   "Format markdown file, generate catalog",
-	Version:       "1.0.2",
+	Version:       "1.0.3",
+	BuildVersion: buildVersion,
 	SingleFlagLen: -3,
 	DoubleFlagLen: -3,
 	ValueLen:      -5,
@@ -295,8 +297,9 @@ func refreshCatalog(filename string) {
 
 // 打印 百度脑图支持的 MindMap 格式
 func printMindMap(filename string) {
-	cuibase.AssertParamCount(2, "must input filename ")
-
+	if filename == "" {
+		return
+	}
 	lines := readLinesWithFunc(filename,
 		func(s string) bool {
 			return strings.HasPrefix(s, "#")

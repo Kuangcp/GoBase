@@ -16,14 +16,16 @@ import (
 )
 
 var (
-	help    bool
-	port    int
-	success = []byte("ok\n")
+	help         bool
+	port         int
+	buildVersion string
+	success      = []byte("ok\n")
 )
 
 var info = cuibase.HelpInfo{
 	Description:   "Start static file web server on current path",
 	Version:       "1.0.5",
+	BuildVersion:  buildVersion,
 	SingleFlagLen: -3,
 	ValueLen:      -7,
 	Flags: []cuibase.ParamVO{
