@@ -15,16 +15,15 @@ import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kuangcp/logger"
 	"github.com/rakyll/statik/fs"
-	"github.com/wonderivan/logger"
 )
 
-func Server(debugStatic bool, port int) {
-	appConfig := config.GetAppConfig()
-	if !appConfig.Debug {
+func Server(debugStatic bool) {
+	if !config.AppConf.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	if appConfig.Path == config.DefaultDBPath {
+	if config.AppConf.DBFilePath == config.DefaultDBPath {
 		common.AutoMigrateAll()
 	}
 
@@ -56,12 +55,7 @@ func Server(debugStatic bool, port int) {
 	registerRouter(router)
 
 	// start web server by specific port
-	var finalPort string
-	if port == 0 {
-		finalPort = strconv.Itoa(appConfig.Port)
-	} else {
-		finalPort = strconv.Itoa(port)
-	}
+	var finalPort = strconv.Itoa(config.AppConf.Port)
 
 	srv := &http.Server{
 		Addr:    ":" + finalPort,

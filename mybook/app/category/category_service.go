@@ -8,7 +8,7 @@ import (
 	"mybook/app/common/util"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 func AddCategory(entity *Category) {

@@ -14,7 +14,7 @@ import (
 
 	"github.com/kuangcp/gobase/pkg/ghelp"
 
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 func addRecord(record *RecordEntity) {

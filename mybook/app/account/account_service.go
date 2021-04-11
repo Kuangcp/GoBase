@@ -3,7 +3,7 @@ package account
 import (
 	"fmt"
 
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
