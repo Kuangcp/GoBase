@@ -9,11 +9,11 @@ import (
 
 type (
 	AppConfig struct {
-		DBFilePath  string `json:"path"` // SQLite 文件绝对路径
-		DriverName  string `json:"driver"`
-		Debug       bool   `json:"debug"` // 是否 Debug 模式
+		DBFilePath  string // SQLite 文件绝对路径
+		DriverName  string
+		Release     bool // 是否 Release 模式
 		DebugStatic bool
-		Port        int `json:"port"`
+		Port        int
 	}
 )
 
@@ -23,44 +23,47 @@ var DefaultDriver = "sqlite3"
 var DefaultPort = 9090
 var DefaultUrlPath = "/api"
 
-var AppConf = &AppConfig{
+var AppConf *AppConfig = &AppConfig{
+	Release: false,
+	Port: DefaultPort,
 	DriverName: DefaultDriver,
 	DBFilePath: DefaultDBPath,
 }
 
 // InitAppConfig 初始化配置文件
 func InitAppConfig() *AppConfig {
-	configLogger()
+	logger.SetLogPathTrim("mybook/app/")
 
-	if AppConf.Debug {
-
-	} else {
+	fileLogger := &logger.FileLogger{
+		Filename:   "app.log",
+		Level:      logger.DebugDesc,
+		Colorful:   true,
+		Append:     true,
+		PermitMask: "0660",
+	}
+	consoleLogger := &logger.ConsoleLogger{
+		Level:    logger.DebugDesc,
+		Colorful: true,
+	}
+	if AppConf.Release {
+		fileLogger.Level = logger.InformationalDesc
+		consoleLogger.Level = logger.InformationalDesc
 		gin.SetMode(gin.ReleaseMode)
+	} else {
+		fileLogger.Level = logger.DebugDesc
+		consoleLogger.Level = logger.DebugDesc
+	}
+
+	err := logger.SetLoggerConfig(&logger.LogConfig{
+		TimeFormat: cuibase.YYYY_MM_DD_HH_MM_SS_MS,
+		Console:    consoleLogger,
+		File:       fileLogger,
+	})
+	if err != nil {
+		logger.Fatal(err)
 	}
 
 	show, _ := json.Marshal(AppConf)
 	logger.Info("Final config: %v", string(show))
 	return AppConf
-}
-
-func configLogger() {
-	logger.SetLogPathTrim("mybook/app/")
-
-	err := logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: cuibase.YYYY_MM_DD_HH_MM_SS_MS,
-		Console: &logger.ConsoleLogger{
-			Level:    logger.DebugDesc,
-			Colorful: true,
-		},
-		File: &logger.FileLogger{
-			Filename:   "app.log",
-			Level:      logger.DebugDesc,
-			Colorful:   true,
-			Append:     true,
-			PermitMask: "0660",
-		},
-	})
-	if err != nil {
-		logger.Fatal(err)
-	}
 }

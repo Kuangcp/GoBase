@@ -58,7 +58,7 @@ func getConnectionWithConfig() *gorm.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.LogMode(config.AppConf.Debug)
+	db.LogMode(!config.AppConf.Release)
 
 	return db
 }

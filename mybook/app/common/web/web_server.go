@@ -19,19 +19,16 @@ import (
 	"github.com/rakyll/statik/fs"
 )
 
-func Server(debugStatic bool) {
-	if !config.AppConf.Debug {
-		gin.SetMode(gin.ReleaseMode)
-	}
-	if config.AppConf.DBFilePath == config.DefaultDBPath {
-		common.AutoMigrateAll()
-	}
+func Server() {
+	//if config.AppConf.DBFilePath == config.DefaultDBPath {
+	//	common.AutoMigrateAll()
+	//}
 
 	router := gin.Default()
 	router.GET("/ping", common.HealthCheck)
 
 	// 是否读取 statik 打包后的静态文件
-	if debugStatic {
+	if config.AppConf.DebugStatic {
 		router.Static("/s", "./mybook-static/dist")
 		router.StaticFile("/favicon.ico", "./conf/static/favicon.ico")
 	} else {

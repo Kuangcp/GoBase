@@ -126,7 +126,7 @@ var info = cuibase.HelpInfo{
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "Help info"},
 		{Short: "-P", BoolVar: &pipeline, Comment: "Pipeline"},
-		{Short: "-D", BoolVar: &debug, Comment: "Debug mode"},
+		{Short: "-D", BoolVar: &debug, Comment: "Release mode"},
 		{Short: "-X", BoolVar: &exit, Comment: "Exit daemon"},
 		{Short: "-C", BoolVar: &check, Comment: "Start check"},
 		{Short: "-d", BoolVar: &daemon, Comment: "Start check by daemon"},

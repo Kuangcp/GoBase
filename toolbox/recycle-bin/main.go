@@ -301,7 +301,7 @@ func cleanFile(dir []os.FileInfo) {
 			return
 		}
 
-		//logger.Debug(current, parseInt, current-parseInt)
+		//logger.Release(current, parseInt, current-parseInt)
 		if current-parseInt <= retentionTime.Nanoseconds() {
 			continue
 		}
@@ -374,7 +374,7 @@ func DeleteFiles(files []string) {
 		}
 
 		logger.Info("Prepare delete:", filepath)
-		//logger.Debug(filepath, trashDir+"/"+finalName)
+		//logger.Release(filepath, trashDir+"/"+finalName)
 		cmd := exec.Command("mv", filepath, finalName)
 		execCmdWithQuite(cmd)
 	}

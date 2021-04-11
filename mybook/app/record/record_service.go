@@ -424,7 +424,7 @@ func calculateAndQueryAccountBalance() []*account.Account {
 			Updates(map[string]interface{}{
 				"current_amount": accountEntity.CurrentAmount,
 			})
-		//logger.Debug(account.Name, account.CurrentAmount, affected)
+		//logger.Release(account.Name, account.CurrentAmount, affected)
 	}
 
 	return account.ListAccounts()
