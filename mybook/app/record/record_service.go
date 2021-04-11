@@ -1,6 +1,7 @@
 package record
 
 import (
+	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
@@ -401,14 +402,16 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time,
 
 func calculateAndQueryAccountBalance() []*account.Account {
 	db := dal.GetDB()
-	var list []RecordEntity
 
 	accountMap := account.ListAccountMap()
-	db.Where("1=1").Find(&list)
 	for _, accountEntity := range accountMap {
 		accountEntity.CurrentAmount = accountEntity.InitAmount
 	}
 
+	var list []RecordEntity
+	watch := stopwatch.NewWithName("calculate balance")
+	watch.Start("query list")
+	db.Where("1=1").Find(&list)
 	for _, record := range list {
 		accountEntity := accountMap[record.AccountId]
 		if constant.IsExpense(record.Type) {
@@ -417,6 +420,8 @@ func calculateAndQueryAccountBalance() []*account.Account {
 			accountEntity.CurrentAmount += record.Amount
 		}
 	}
+	watch.Stop()
+	watch.Start("update")
 
 	for _, accountEntity := range accountMap {
 		db.Model(&accountEntity).
@@ -426,6 +431,8 @@ func calculateAndQueryAccountBalance() []*account.Account {
 			})
 		//logger.Release(account.Name, account.CurrentAmount, affected)
 	}
+	watch.Stop()
+	logger.Info(watch.PrettyPrint())
 
 	return account.ListAccounts()
 }

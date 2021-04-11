@@ -9,6 +9,7 @@ require (
 	github.com/gvalkov/golang-evdev v0.0.0-20191114124502-287e62b94bcb
 	github.com/kuangcp/gobase/pkg/cuibase v0.0.0-20201103041857-ea5c95ff0199
 	github.com/kuangcp/gobase/pkg/ginhelper v0.0.0-20201103041857-ea5c95ff0199
+	github.com/kuangcp/gobase/pkg/stopwatch v0.0.0-20210409094425-3f724b872d91
 	github.com/kuangcp/logger v1.0.3
 	github.com/manifoldco/promptui v0.8.0
 	github.com/onsi/ginkgo v1.12.0 // indirect
