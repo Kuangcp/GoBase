@@ -10,7 +10,7 @@ require (
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kuangcp/gobase/pkg/cuibase v0.0.0-20201103041857-ea5c95ff0199
 	github.com/kuangcp/gobase/pkg/ghelp v0.0.0-20201103041857-ea5c95ff0199
-	github.com/kuangcp/gobase/pkg/stopwatch v0.0.0-20210409094425-3f724b872d91 // indirect
+	github.com/kuangcp/gobase/pkg/stopwatch v0.0.0-20210409094425-3f724b872d91
 	github.com/kuangcp/logger v1.0.3
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/rakyll/statik v0.1.7
@@ -23,5 +23,5 @@ require (
 )
 
 replace github.com/kuangcp/gobase/pkg/cuibase => ./../pkg/cuibase
-
 replace github.com/kuangcp/gobase/pkg/ghelp => ./../pkg/ghelp
+replace github.com/kuangcp/gobase/pkg/stopwatch => ./../pkg/stopwatch

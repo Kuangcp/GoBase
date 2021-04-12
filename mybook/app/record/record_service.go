@@ -1,7 +1,6 @@
 package record
 
 import (
-	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/kuangcp/gobase/pkg/stopwatch"
 
 	"github.com/kuangcp/gobase/pkg/ghelp"
 
@@ -26,23 +27,23 @@ func addRecord(record *RecordEntity) {
 }
 
 func checkParam(record *RecordEntity) (ghelp.ResultVO, *category.Category, *account.Account) {
-	category := category.FindCategoryById(record.CategoryId)
-	if category == nil || !category.Leaf {
+	categoryEntity := category.FindCategoryById(record.CategoryId)
+	if categoryEntity == nil || !categoryEntity.Leaf {
 		return ghelp.FailedWithMsg("分类id无效"), nil, nil
 	}
 
 	accountEntity := account.FindAccountById(record.AccountId)
 	if accountEntity == nil {
-		return ghelp.FailedWithMsg("账户无效"), category, nil
+		return ghelp.FailedWithMsg("账户无效"), categoryEntity, nil
 	}
 
 	if record.Amount <= 0 {
-		return ghelp.FailedWithMsg("金额无效"), category, accountEntity
+		return ghelp.FailedWithMsg("金额无效"), categoryEntity, accountEntity
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return ghelp.FailedWithMsg("类别无效"), category, accountEntity
+		return ghelp.FailedWithMsg("类别无效"), categoryEntity, accountEntity
 	}
-	return ghelp.Success(), category, accountEntity
+	return ghelp.Success(), categoryEntity, accountEntity
 }
 
 func DoCreateRecord(record *RecordEntity) ghelp.ResultVO {
@@ -421,18 +422,18 @@ func calculateAndQueryAccountBalance() []*account.Account {
 		}
 	}
 	watch.Stop()
-	watch.Start("update")
 
 	for _, accountEntity := range accountMap {
+		watch.Start("update " + accountEntity.Name)
 		db.Model(&accountEntity).
 			Select("current_amount").
 			Updates(map[string]interface{}{
 				"current_amount": accountEntity.CurrentAmount,
 			})
 		//logger.Release(account.Name, account.CurrentAmount, affected)
+		watch.Stop()
 	}
-	watch.Stop()
-	logger.Info(watch.PrettyPrint())
+	logger.Info("\n", watch.PrettyPrint())
 
 	return account.ListAccounts()
 }

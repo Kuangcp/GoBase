@@ -9,7 +9,7 @@ import (
 
 func TestStopWatch_PrettyPrint(t *testing.T) {
 	stopWatch := NewWithName("action1")
-	stopWatch.Start("task1")
+	stopWatch.Start("task1 new request")
 	time.Sleep(time.Second * 1)
 	stopWatch.Stop()
 	stopWatch.Start("task2")

@@ -3,6 +3,7 @@ package stopwatch
 import (
 	"fmt"
 	"time"
+	"unicode/utf8"
 )
 
 type (
@@ -34,10 +35,18 @@ func (s *StopWatch) PrettyPrint() string {
 		return ""
 	}
 	taskStr := ""
-	for i, task := range s.tasks {
-		taskStr += fmt.Sprintf("%3d %13s : %v\n", i+1, task.name, task.elapsedTime.String())
+	maxNameLen := 0
+	for _, task := range s.tasks {
+		curLen := utf8.RuneCountInString(task.name)
+		if maxNameLen < curLen {
+			maxNameLen = curLen
+		}
 	}
-	return fmt.Sprintf("%s : %v   %v %v\n%v", s.name, s.stopTime.Sub(s.firstTime),
+	for i, task := range s.tasks {
+		taskStr += fmt.Sprintf("%3d %-"+fmt.Sprint(maxNameLen)+"s : %v\n",
+			i+1, task.name, task.elapsedTime.String())
+	}
+	return fmt.Sprintf("\n%s : %v   %v %v\n%v", s.name, s.stopTime.Sub(s.firstTime),
 		s.firstTime.Format("15:04:05.000"),
 		s.stopTime.Format("15:04:05.000"), taskStr)
 }
