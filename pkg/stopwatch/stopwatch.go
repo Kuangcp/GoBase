@@ -34,6 +34,9 @@ func (s *StopWatch) PrettyPrint() string {
 	if s.first {
 		return ""
 	}
+	if s.hasStart {
+		s.Stop()
+	}
 	taskStr := ""
 	maxNameLen := 0
 	for _, task := range s.tasks {
@@ -56,6 +59,9 @@ func (s *StopWatch) Start(name string) {
 	if s.first {
 		s.firstTime = now
 		s.first = false
+	}
+	if s.hasStart {
+		s.Stop()
 	}
 	s.startTime = now
 	s.hasStart = true

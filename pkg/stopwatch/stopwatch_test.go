@@ -28,3 +28,20 @@ func TestStopWatch_PrettyPrint(t *testing.T) {
 	stopWatch.Start("B")
 	fmt.Println(stopWatch.PrettyPrint())
 }
+
+func TestRepeatStart(t *testing.T) {
+	watch := NewWithName("task")
+	watch.Start("a")
+	http.Get("http://jd.com")
+	watch.Start("b")
+	http.Get("http://jd.com")
+	watch.Stop()
+	println(watch.PrettyPrint())
+}
+
+func TestMissingLastStop(t *testing.T) {
+	watch := NewWithName("task")
+	watch.Start("a")
+	http.Get("http://jd.com")
+	println(watch.PrettyPrint())
+}
