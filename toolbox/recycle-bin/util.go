@@ -52,7 +52,7 @@ func init() {
 }
 
 func initConfigValue() {
-	logger.SetLogPathTrim("recycle-bin")
+	logger.SetLogPathTrim("recycle-bin/")
 
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
