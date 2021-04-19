@@ -1,7 +1,9 @@
 package cuibase
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestHelpInfo_PrintHelp(t *testing.T) {
@@ -22,6 +24,14 @@ func TestHelpInfo_PrintHelp(t *testing.T) {
 
 func TestColor(t *testing.T) {
 	PrintWithColorful()
-    println()
+	println()
 	print(Red.Print("Red"))
+}
+
+func TestProcessBar(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	for i := 0; i <= 100; i++ {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(300)))
+		DrawProgressBar("task name", float32(i)/100.0, 40)
+	}
 }
