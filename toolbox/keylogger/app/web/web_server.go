@@ -2,7 +2,7 @@ package web
 
 import (
 	"embed"
-	"fmt"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/logger"
 	"net/http"
 
@@ -10,7 +10,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/ghelp"
 )
 
-func Server(f embed.FS, debugStatic bool, port string) {
+func Server(f embed.FS, debugStatic, notOpenPage bool, port string) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.GET("/ping", func(c *gin.Context) {
@@ -21,7 +21,6 @@ func Server(f embed.FS, debugStatic bool, port string) {
 	if debugStatic {
 		router.Static("/s", "./static")
 	} else {
-		fmt.Println("use fs")
 		resource := &ghelp.StaticResource{
 			StaticFS: f,
 			Path:     "static",
@@ -45,9 +44,9 @@ func Server(f embed.FS, debugStatic bool, port string) {
 
 	url := "http://localhost" + srv.Addr
 	logger.Info(url)
-	//if !debugStatic {
-	//	_ = cuibase.OpenBrowser(url)
-	//}
+	if !notOpenPage {
+		_ = cuibase.OpenBrowser(url)
+	}
 
 	ghelp.GracefulExit(srv)
 }

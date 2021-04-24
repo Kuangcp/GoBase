@@ -44,6 +44,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
 		{Short: "-b", BoolVar: &dashboard, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
 		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
+		{Short: "-O", BoolVar: &notOpenPage, Comment: "not open url by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
 	Options: []cuibase.ParamVO{
@@ -85,9 +86,10 @@ var (
 	webServer bool
 	webView   bool
 
-	debug   bool
-	option  redis.Options
-	logPath string
+	debug       bool
+	notOpenPage bool
+	option      redis.Options
+	logPath     string
 )
 var (
 	buildVersion string
@@ -208,11 +210,11 @@ func main() {
 	}
 
 	if webServer && !webView {
-		web.Server(fs, debug, webPort)
+		web.Server(fs, debug, notOpenPage, webPort)
 		return
 	}
 	if webServer && webView {
-		go web.Server(fs, debug, webPort)
+		go web.Server(fs, debug, notOpenPage, webPort)
 		mainWin()
 		return
 	}
