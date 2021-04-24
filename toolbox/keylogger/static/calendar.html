@@ -5,11 +5,11 @@
     <title>Calendar</title>
     <!-- https://echarts.apache.org/examples/zh/editor.html?c=calendar-heatmap -->
 
-    <script src="/static/js/lib/jquery.min.js"></script>
-    <script src="/static/js/lib/echarts.min.js"></script>
+    <script src="/s/js/lib/jquery.min.js"></script>
+    <script src="/s/js/lib/echarts.min.js"></script>
 
-    <script src="/static/js/chart.js"></script>
-    <link rel="stylesheet" href="/static/css/common.css">
+    <script src="/s/js/chart.js"></script>
+    <link rel="stylesheet" href="/s/css/common.css">
 </head>
 
 <style>
@@ -21,7 +21,7 @@
 
 <body>
 <nav class="nav">
-    <button onclick="window.location='/static'">首页</button>
+    <button onclick="window.location='/s'">首页</button>
 </nav>
 <div id="calendarMap" class="calendar-map"></div>
 
@@ -44,11 +44,10 @@
     let chart = echarts.init(document.getElementById('calendarMap'));
 
     handleGet('/calendarMap', function (response) {
-        // console.log(data.Data)
-
+        // console.log(data.data)
         let calendar = []
         let topVal = -140
-        for (let idx in response.Data.styles) {
+        for (let idx in response.data.styles) {
             topVal += 220
             calendar.push({
                 left: '17%',
@@ -57,7 +56,7 @@
                 height: 170,
                 width: 1300,
                 cellSize: ['auto', 13],
-                range: response.Data.styles[idx].range,
+                range: response.data.styles[idx].range,
                 itemStyle: {
                     borderWidth: 4.1
                 },
@@ -67,11 +66,11 @@
         }
         option.calendar = calendar
 
-        option.series = response.Data.maps
+        option.series = response.data.maps
 
         option.visualMap = {
             min: 0,
-            max: response.Data.max,
+            max: response.data.max,
             // type: 'piecewise',
             calculable: true,
             orient: 'vertical',

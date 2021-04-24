@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <title>Weeks</title>
 
-    <script src="/static/js/lib/jquery.min.js"></script>
-    <script src="/static/js/lib/echarts.min.js"></script>
+    <script src="/s/js/lib/jquery.min.js"></script>
+    <script src="/s/js/lib/echarts.min.js"></script>
 
-    <script src="/static/js/chart.js"></script>
-    <link rel="stylesheet" href="/static/css/common.css">
+    <script src="/s/js/chart.js"></script>
+    <link rel="stylesheet" href="/s/css/common.css">
     <style>
         .heatmap-chart {
             width: 100%;
@@ -24,7 +24,7 @@
 </head>
 <body>
 <nav class="nav">
-    <button onclick="window.location='/static'">首页</button>
+    <button onclick="window.location='/s'">首页</button>
     <label for="heatMapWeeks">展示</label><input type="number" min="1" id="heatMapWeeks" value="1" style="width: 40px">周
     <button onclick="heatMapMultipleWithMerge()">合并生成</button>
     <button onclick="heatMapMultiple()">独立生成</button>
@@ -55,8 +55,8 @@
 
         handleGet('/weeksHeatMap?weeks=' + weeks, function (heatMaps) {
             console.log(heatMaps)
-            for (let i = 0; i < heatMaps.Data.length; i++) {
-                let heatMap = heatMaps.Data[i]
+            for (let i = 0; i < heatMaps.data.length; i++) {
+                let heatMap = heatMaps.data[i]
                 let weekDom = document.createElement('div')
                 weekDom.className = 'heatmap-box'
                 let chartDom = document.createElement('div')
@@ -109,7 +109,7 @@
         let chart = echarts.init(document.getElementById(elementId));
         created.push(chart)
         handleGet('/heatMap' + param, function (heatMap) {
-            fillChartData(chart, heatMap.Data);
+            fillChartData(chart, heatMap.data);
         });
         return chart
     }

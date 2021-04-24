@@ -1,41 +1,38 @@
-package app
+package web
 
 import (
-	"log"
+	"embed"
+	"fmt"
+	"github.com/kuangcp/logger"
 	"net/http"
 
-	_ "keylogger/app/statik"
-
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/kuangcp/gobase/pkg/ginhelper"
-	"github.com/rakyll/statik/fs"
-	"github.com/kuangcp/logger"
+	"github.com/kuangcp/gobase/pkg/ghelp"
 )
 
-func Server(debugStatic bool, port string) {
+func Server(f embed.FS, debugStatic bool, port string) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.GET("/ping", func(c *gin.Context) {
-		ginhelper.GinSuccessWith(c, "ok")
+		ghelp.GinSuccessWith(c, "ok")
 	})
 
-	// 是否读取 statik 打包后的静态文件
+	// 是否读取构建后静态目录
 	if debugStatic {
-		router.Static("/static", "./static")
+		router.Static("/s", "./static")
 	} else {
-		// static file mapping
-		fileSystem, err := fs.New()
-		if err != nil {
-			log.Fatal(err)
+		fmt.Println("use fs")
+		resource := &ghelp.StaticResource{
+			StaticFS: f,
+			Path:     "static",
 		}
-		router.StaticFS("/static", fileSystem)
+		router.StaticFS("/s", http.FS(resource))
 	}
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "static/")
+		c.Redirect(http.StatusMovedPermanently, "s/")
 	})
 	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "static/favicon.ico")
+		c.Redirect(http.StatusMovedPermanently, "s/favicon.ico")
 	})
 
 	// backend logic router
@@ -48,11 +45,11 @@ func Server(debugStatic bool, port string) {
 
 	url := "http://localhost" + srv.Addr
 	logger.Info(url)
-	if !debugStatic {
-		_ = cuibase.OpenBrowser(url)
-	}
+	//if !debugStatic {
+	//	_ = cuibase.OpenBrowser(url)
+	//}
 
-	ginhelper.GracefulExit(srv)
+	ghelp.GracefulExit(srv)
 }
 
 func registerRouter(router *gin.Engine) {

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"keylogger/app/store"
 	"log"
 	"time"
 	"unsafe"
@@ -99,22 +100,22 @@ func bindMouseActionForWindow() {
 }
 
 func latestLabelStr(now time.Time) string {
-	conn := GetConnection()
-	today := now.Format(DateFormat)
+	conn := store.GetConnection()
+	today := now.Format(store.DateFormat)
 
-	tempValue, err := conn.Get(GetTodayTempKPMKeyByString(today)).Result()
+	tempValue, err := conn.Get(store.GetTodayTempKPMKeyByString(today)).Result()
 	if err != nil {
 		tempValue = "0"
 	}
-	maxValue, err := conn.Get(GetTodayMaxKPMKeyByString(today)).Result()
+	maxValue, err := conn.Get(store.GetTodayMaxKPMKeyByString(today)).Result()
 	if err != nil {
 		maxValue = "0"
 	}
-	total := conn.ZScore(TotalCount, today).Val()
+	total := conn.ZScore(store.TotalCount, today).Val()
 
 	// style https://blog.csdn.net/bitscro/article/details/3874616
 	return "<span font_family='Cascadia Mono PL' font_desc='10'>" +
-		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(TimeFormat)) + "</span>\n" +
+		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(store.TimeFormat)) + "</span>\n" +
 		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
 		"<span foreground='gray'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
 		"<span foreground='white'>" + fmt.Sprintf("%-6d", int(total)) + "</span></span>"

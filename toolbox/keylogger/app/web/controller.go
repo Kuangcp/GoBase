@@ -1,7 +1,8 @@
-package app
+package web
 
 import (
 	"fmt"
+	"keylogger/app/store"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,7 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/kuangcp/gobase/pkg/ginhelper"
+	"github.com/kuangcp/gobase/pkg/ghelp"
 	"github.com/kuangcp/logger"
 )
 
@@ -119,10 +120,10 @@ func valueOf(value string) (LineTimeUnit, error) {
 var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 
 func CalendarMap(c *gin.Context) {
-	conn := GetConnection()
-	data, err := conn.ZRange(TotalCount, 0, -1).Result()
+	conn := store.GetConnection()
+	data, err := conn.ZRange(store.TotalCount, 0, -1).Result()
 	cuibase.CheckIfError(err)
-	totalData, err := conn.ZRangeWithScores(TotalCount, 0, -1).Result()
+	totalData, err := conn.ZRangeWithScores(store.TotalCount, 0, -1).Result()
 	cuibase.CheckIfError(err)
 	sort.Strings(data)
 
@@ -174,7 +175,7 @@ func CalendarMap(c *gin.Context) {
 		}
 	}
 
-	ginhelper.GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max})
+	ghelp.GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: max})
 }
 
 func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
@@ -182,7 +183,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 	max := 0
 	var lastTime *time.Time = nil
 	for _, day := range data {
-		var dayTime, err = time.Parse(DateFormat, day)
+		var dayTime, err = time.Parse(store.DateFormat, day)
 		cuibase.CheckIfError(err)
 
 		if lastTime == nil {
@@ -221,7 +222,7 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 func MultipleHeatMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
-		ginhelper.GinFailedWithMsg(c, err.Error())
+		ghelp.GinFailedWithMsg(c, err.Error())
 		return
 	}
 
@@ -246,18 +247,18 @@ func MultipleHeatMap(c *gin.Context) {
 	for _, vo := range weeksMap {
 		vo.Max = max
 	}
-	ginhelper.GinSuccessWith(c, weeksMap)
+	ghelp.GinSuccessWith(c, weeksMap)
 }
 
 //HeatMap 热力图
 func HeatMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
-		ginhelper.GinFailedWithMsg(c, err.Error())
+		ghelp.GinFailedWithMsg(c, err.Error())
 		return
 	}
 	mapVO := buildDataByDatePeriod(param.Length, param.Offset)
-	ginhelper.GinSuccessWith(c, mapVO)
+	ghelp.GinSuccessWith(c, mapVO)
 }
 
 func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
@@ -316,8 +317,8 @@ func readDetailToMap(
 
 	totalCount := 0
 	for lastCursor != 0 || first {
-		result, cursor, err := GetConnection().
-			ZScan(GetDetailKeyByString(curDay), lastCursor, "", 600).Result()
+		result, cursor, err := store.GetConnection().
+			ZScan(store.GetDetailKeyByString(curDay), lastCursor, "", 600).Result()
 		cuibase.CheckIfError(err)
 		lastCursor = cursor
 		first = false
@@ -361,7 +362,7 @@ func HourLineChart(c *gin.Context, param *QueryParam) {
 func LineMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
-		ginhelper.GinFailedWithMsg(c, err.Error())
+		ghelp.GinFailedWithMsg(c, err.Error())
 		return
 	}
 
@@ -373,7 +374,7 @@ func LineMap(c *gin.Context) {
 	dayList := buildDayList(param.Length, param.Offset)
 	hotKey := hotKey(dayList, param.Top)
 	if len(hotKey) == 0 {
-		ginhelper.GinFailed(c)
+		ghelp.GinFailed(c)
 		return
 	}
 
@@ -386,20 +387,20 @@ func LineMap(c *gin.Context) {
 	}
 	sort.Strings(keyNames)
 	if len(keyNames) == 0 {
-		ginhelper.GinFailed(c)
+		ghelp.GinFailed(c)
 		return
 	}
 
 	// days
 	var days []string
 	showDayList := buildDayWithWeekdayList(param.Length, param.Offset)
-	conn := GetConnection()
+	conn := store.GetConnection()
 	for _, day := range showDayList {
-		score, err := conn.ZScore(TotalCount, day.Day).Result()
+		score, err := conn.ZScore(store.TotalCount, day.Day).Result()
 		if err != nil {
 			score = 0
 		}
-		kpm, kpmErr := conn.Get(GetTodayMaxKPMKeyByString(day.Day)).Result()
+		kpm, kpmErr := conn.Get(store.GetTodayMaxKPMKeyByString(day.Day)).Result()
 		if kpmErr != nil {
 			kpm = "0"
 		}
@@ -408,7 +409,7 @@ func LineMap(c *gin.Context) {
 		days = append(days, dayStr)
 	}
 	if len(days) == 0 {
-		ginhelper.GinFailed(c)
+		ghelp.GinFailed(c)
 		return
 	}
 
@@ -420,7 +421,7 @@ func LineMap(c *gin.Context) {
 	for _, key := range sortHotKeys {
 		var hitPreDay []int
 		for _, day := range dayList {
-			result, err := conn.ZScore(GetRankKeyByString(day), key).Result()
+			result, err := conn.ZScore(store.GetRankKeyByString(day), key).Result()
 			if err != nil {
 				result = 0
 			}
@@ -440,7 +441,7 @@ func LineMap(c *gin.Context) {
 		})
 	}
 	//logger.Info(lines)
-	ginhelper.GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
+	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
 }
 
 func getMapKeys(m map[string]bool) []string {
@@ -508,7 +509,7 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 func keyNameMap(keyCode map[string]bool) map[string]string {
 	result := make(map[string]string)
 	for k := range keyCode {
-		name, err := GetConnection().HGet(KeyMap, k).Result()
+		name, err := store.GetConnection().HGet(store.KeyMap, k).Result()
 		if err != nil {
 			result[k] = "unknown"
 		}
@@ -521,7 +522,7 @@ func hotKey(dayList []string, top int64) map[string]bool {
 	//start := time.Now().UnixNano()
 	keyCodeMap := make(map[string]bool)
 	for i := range dayList {
-		result, err := GetConnection().ZRevRange(GetRankKeyByString(dayList[i]), 0, top).Result()
+		result, err := store.GetConnection().ZRevRange(store.GetRankKeyByString(dayList[i]), 0, top).Result()
 		if err != nil {
 			logger.Warn("get hot key error", err)
 			continue
@@ -544,7 +545,7 @@ func buildDayList(length int, offset int) []string {
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
 		cursor := start.AddDate(0, 0, i)
-		day := cursor.Format(DateFormat)
+		day := cursor.Format(store.DateFormat)
 		if cursor.After(now) {
 			return result
 		}
@@ -560,7 +561,7 @@ func buildDayWithWeekdayList(length int, offset int) []DayBO {
 	start := now.AddDate(0, 0, -offset)
 	for i := 0; i < length; i++ {
 		tempTime := start.AddDate(0, 0, i)
-		day := tempTime.Format(DateFormat)
+		day := tempTime.Format(store.DateFormat)
 		if tempTime.After(now) {
 			return result
 		}

@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"keylogger/app/queue"
+	"keylogger/app/store"
 	"log"
 	"sort"
 	"strconv"
@@ -56,12 +57,13 @@ func closeDevice(device *InputDevice) {
 
 // ListenDevice listen and record
 func ListenDevice() {
+	connection := store.GetConnection()
 	if connection == nil {
 		return
 	}
 
 	if targetDevice == "" {
-		last := connection.Get(LastInputEvent)
+		last := connection.Get(store.LastInputEvent)
 		if last == nil {
 			return
 		}
@@ -98,17 +100,17 @@ func ListenDevice() {
 		if !hasSuccess && handleResult {
 			hasSuccess = true
 			fmt.Println(cuibase.Green.Print("\n    Listen success."))
-			connection.Set(LastInputEvent, targetDevice, 0)
+			connection.Set(store.LastInputEvent, targetDevice, 0)
 		}
 	}
 }
 
 func calculateKPM() {
-	conn := GetConnection()
+	conn := store.GetConnection()
 	ticker := time.NewTicker(calculateKPMPeriod)
 	for now := range ticker.C {
-		day := now.Format(DateFormat)
-		maxKPMKey := GetTodayMaxKPMKeyByString(day)
+		day := now.Format(store.DateFormat)
+		maxKPMKey := store.GetTodayMaxKPMKeyByString(day)
 
 		// remove element that outer of time window
 		nowMs := now.UnixNano() / 1000_000
@@ -130,7 +132,7 @@ func calculateKPM() {
 		}
 		// refresh redis current kpm
 		currentKPM = latestKPM
-		tempKPMKey := GetTodayTempKPMKeyByString(day)
+		tempKPMKey := store.GetTodayTempKPMKeyByString(day)
 		conn.Set(tempKPMKey, currentKPM, time.Hour*12)
 
 		// init redis max kpm
@@ -160,7 +162,7 @@ func calculateKPM() {
 // ns us ms s
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	today := time.Now()
-	todayStr := today.Format(DateFormat)
+	todayStr := today.Format(store.DateFormat)
 	matchFlag := false
 	for _, inputEvent := range inputEvents {
 		if inputEvent.Code == 0 {
@@ -174,26 +176,26 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 
 		matchFlag = true
 		//fmt.Printf("%v           %v\n", event, inputEvent)
-		result, err := conn.ZIncr(GetRankKey(today),
+		result, err := conn.ZIncr(store.GetRankKey(today),
 			redis.Z{Score: 1, Member: event.Scancode}).Result()
 		if err != nil {
 			fmt.Println("key zincr: ", result, err)
-			CloseRedisConnectionThenExit()
+			store.CloseRedisConnectionThenExit()
 		}
-		result, err = conn.ZIncr(TotalCount,
+		result, err = conn.ZIncr(store.TotalCount,
 			redis.Z{Score: 1, Member: todayStr}).Result()
 		if err != nil {
 			fmt.Println("total zincr: ", result, err)
-			CloseRedisConnectionThenExit()
+			store.CloseRedisConnectionThenExit()
 		}
 		// actual store us not ns
 		var num int64 = 0
 		keyNs := inputEvent.Time.Nano()
-		num, err = conn.ZAdd(GetDetailKey(today),
+		num, err = conn.ZAdd(store.GetDetailKey(today),
 			redis.Z{Score: float64(event.Scancode), Member: keyNs / 1000}).Result()
 		if err != nil {
 			fmt.Println("detail zadd: ", num, err)
-			CloseRedisConnectionThenExit()
+			store.CloseRedisConnectionThenExit()
 		}
 		slideQueue.Push(keyNs / 1000_000)
 	}
@@ -203,7 +205,7 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 func OpenDevice() *InputDevice {
 	event := ""
 	if targetDevice == "" {
-		last := GetConnection().Get(LastInputEvent)
+		last := store.GetConnection().Get(store.LastInputEvent)
 		if last == nil {
 			return nil
 		}
@@ -232,7 +234,7 @@ func PrintDay() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
 	for i := 0; i < durationDay; i++ {
-		handleTotalByDate(now.AddDate(0, 0, -indexDay+i), GetConnection())
+		handleTotalByDate(now.AddDate(0, 0, -indexDay+i), store.GetConnection())
 	}
 }
 
@@ -240,15 +242,15 @@ func PrintDayRank() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
 	for i := 0; i < durationDay; i++ {
-		handleRankByDate(now.AddDate(0, 0, -indexDay+i), GetConnection())
+		handleRankByDate(now.AddDate(0, 0, -indexDay+i), store.GetConnection())
 	}
 }
 
 func PrintTotalRank() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
-	conn := GetConnection()
-	all := conn.HGetAll(KeyMap)
+	conn := store.GetConnection()
+	all := conn.HGetAll(store.KeyMap)
 	var keyMap map[string]string
 	if all != nil {
 		keyMap = all.Val()
@@ -260,7 +262,7 @@ func PrintTotalRank() {
 	for i := 0; i < durationDay; i++ {
 		timeIndex := now.AddDate(0, 0, -indexDay+i)
 
-		keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(timeIndex), redis.ZRangeBy{Min: "0", Max: "50000"})
+		keyRank := conn.ZRevRangeByScoreWithScores(store.GetRankKey(timeIndex), redis.ZRangeBy{Min: "0", Max: "50000"})
 		for _, v := range keyRank.Val() {
 			keyCode := v.Member.(string)
 			val, ok := result[keyCode]
@@ -329,16 +331,16 @@ func printByColumn(columnCount int, dataLen int, toString func(index int) string
 }
 
 func handleRankByDate(time time.Time, conn *redis.Client) {
-	today := time.Format(DateFormat)
+	today := time.Format(store.DateFormat)
 
-	all := conn.HGetAll(KeyMap)
+	all := conn.HGetAll(store.KeyMap)
 	var keyMap map[string]string
 	if all != nil {
 		keyMap = all.Val()
 	}
-	totalScore := conn.ZScore(TotalCount, today)
+	totalScore := conn.ZScore(store.TotalCount, today)
 
-	maxKPMKey := GetTodayMaxKPMKey(time)
+	maxKPMKey := store.GetTodayMaxKPMKey(time)
 	maxKPM, err := conn.Get(maxKPMKey).Result()
 	if err != nil {
 		maxKPM = "0"
@@ -350,7 +352,7 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 		cuibase.Yellow.Printf("%3s", maxKPM),
 		cuibase.Green.Printf("%-5d", int64(totalScore.Val())))
 
-	keyRank := conn.ZRevRangeByScoreWithScores(GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
+	keyRank := conn.ZRevRangeByScoreWithScores(store.GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
 		valList := keyRank.Val()
 		printByFourColumn(len(valList), func(index int) string {
@@ -388,9 +390,9 @@ func parseTime(timeSegment string) (int, int) {
 }
 
 func handleTotalByDate(time time.Time, conn *redis.Client) {
-	today := time.Format(DateFormat)
-	score := conn.ZScore(TotalCount, today)
-	maxKPMKey := GetTodayMaxKPMKey(time)
+	today := time.Format(store.DateFormat)
+	score := conn.ZScore(store.TotalCount, today)
+	maxKPMKey := store.GetTodayMaxKPMKey(time)
 	maxKPM, err := conn.Get(maxKPMKey).Result()
 	if err != nil {
 		maxKPM = "0"
@@ -412,7 +414,7 @@ func CacheKeyMap() {
 		return
 	}
 	for _, code := range codes {
-		GetConnection().HSet(KeyMap, strconv.Itoa(code.Code), code.Name[4:])
+		store.GetConnection().HSet(store.KeyMap, strconv.Itoa(code.Code), code.Name[4:])
 		fmt.Printf("%v -> %v \n", code.Code, code.Name)
 	}
 }

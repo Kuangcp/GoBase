@@ -1,9 +1,12 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"keylogger/app"
+	"keylogger/app/store"
+	"keylogger/app/web"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -15,6 +18,9 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
+
+//go:embed static
+var fs embed.FS
 
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
@@ -184,12 +190,12 @@ func main() {
 	// 以下逻辑都依赖Redis
 	app.SetFormatTargetDevice(targetDevice)
 	app.SetTimePair(timePair)
-	app.InitConnection(option)
-	defer app.CloseConnection()
+	store.InitConnection(option)
+	defer store.CloseConnection()
 
-	invokeThenExit(dashboard, app.ShowPopWindow, app.CloseConnection)
-	invokeThenExit(listenDevice, app.ListenDevice, app.CloseConnection)
-	invokeThenExit(cacheKeyMap, app.CacheKeyMap, app.CloseConnection)
+	invokeThenExit(dashboard, app.ShowPopWindow, store.CloseConnection)
+	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
+	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
 
 	if interactiveListen {
 		device, err := app.SelectDevice()
@@ -202,11 +208,11 @@ func main() {
 	}
 
 	if webServer && !webView {
-		app.Server(debug, webPort)
+		web.Server(fs, debug, webPort)
 		return
 	}
 	if webServer && webView {
-		go app.Server(debug, webPort)
+		go web.Server(fs, debug, webPort)
 		mainWin()
 		return
 	}

@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <title>分析按键</title>
 
-    <script src="/static/js/lib/jquery.min.js"></script>
-    <script src="/static/js/lib/echarts.min.js"></script>
+    <script src="/s/js/lib/jquery.min.js"></script>
+    <script src="/s/js/lib/echarts.min.js"></script>
 
-    <script src="/static/js/chart.js"></script>
-    <link rel="stylesheet" href="/static/css/common.css">
+    <script src="/s/js/chart.js"></script>
+    <link rel="stylesheet" href="/s/css/common.css">
 
     <style>
         .line-chart {
@@ -48,8 +48,8 @@
     <button onclick="barChart()">柱状图</button>
     <button onclick="heatmapChart()">热力图</button>
 
-    <button onclick="window.location='/static/weeks.html'" >每周热力图</button>
-    <button onclick="window.location='/static/calendar.html'" >年视图</button>
+    <button onclick="window.location='/s/weeks.html'" >每周热力图</button>
+    <button onclick="window.location='/s/calendar.html'" >年视图</button>
 </div>
 
 <div id="main" class="line-chart"></div>
@@ -197,11 +197,11 @@
         let chart = echarts.init(document.getElementById(elementId));
         handleGet('/heatMap' + param, function (heatMap) {
             // weekday, hour, count
-            let data = heatMap.Data.data.map(function (item) {
+            let data = heatMap.data.data.map(function (item) {
                 return [item[1], item[0], item[2] || '-'];
             });
 
-            let title = heatMap.Data.start + " ➡️ " + heatMap.Data.end + " [" + heatMap.Data.total + "]"
+            let title = heatMap.data.start + " ➡️ " + heatMap.data.end + " [" + heatMap.data.total + "]"
             let option = {
                 title: {
                     text: title,
@@ -232,7 +232,7 @@
                 },
                 visualMap: {
                     min: 0,
-                    max: heatMap.Data.max,
+                    max: heatMap.data.max,
                     calculable: true,
                     orient: 'horizontal',
                     left: 'center',
@@ -263,12 +263,12 @@
         handleGet(url, function (response) {
             chart.setOption({
                 xAxis: {
-                    data: response.Data.days
+                    data: response.data.days
                 },
                 legend: {
-                    data: response.Data.keyNames
+                    data: response.data.keyNames
                 },
-                series: appendSumLine(response.Data.lines)
+                series: appendSumLine(response.data.lines)
             });
         }, function (data) {
             alert('连接失败' + data.responseText)
