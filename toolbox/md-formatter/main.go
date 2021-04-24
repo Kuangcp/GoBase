@@ -22,8 +22,9 @@ type mapFun func(string) string
 
 var (
 	buildVersion string
+	ignoreDirMap = make(map[string]int8)
 	ignoreDirs   = [...]string{
-		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__", "ARTS",
+		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__",
 	}
 	ignoreFiles = [...]string{
 		"README", "Readme", "Readme_CN", "readme", "SUMMARY", "Process", "License", "LICENSE",
@@ -65,7 +66,7 @@ var (
 var info = cuibase.HelpInfo{
 	Description:   "Format markdown file, generate catalog",
 	Version:       "1.0.3",
-	BuildVersion: buildVersion,
+	BuildVersion:  buildVersion,
 	SingleFlagLen: -3,
 	DoubleFlagLen: -3,
 	ValueLen:      -5,
@@ -97,6 +98,10 @@ func init() {
 	}
 	replacePairList = append(replacePairList, " ", "-")
 	titleReplace = strings.NewReplacer(replacePairList...)
+
+	for _, dir := range ignoreDirs {
+		ignoreDirMap[dir] = 1
+	}
 }
 
 func main() {
@@ -175,7 +180,7 @@ func readLinesWithFunc(filename string, filterFunc filterFun, mapFunc mapFun) []
 
 func isNeedHandleFile(filename string) bool {
 	for _, file := range ignoreFiles {
-		if strings.HasSuffix(filename, file) {
+		if strings.Contains(filename, file) {
 			return false
 		}
 	}
@@ -197,10 +202,9 @@ func refreshDirAllFiles(path string) {
 		}
 
 		if info.IsDir() {
-			for _, dir := range ignoreDirs {
-				if path == dir {
-					return filepath.SkipDir
-				}
+			_, ok := ignoreDirMap[path]
+			if ok {
+				return filepath.SkipDir
 			}
 			return nil
 		}
