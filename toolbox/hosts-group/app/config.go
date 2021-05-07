@@ -33,13 +33,13 @@ var (
 
 var Info = cuibase.HelpInfo{
 	Description:   "Hosts switch tool",
-	Version:       "1.3.6",
+	Version:       "1.3.7",
 	SingleFlagLen: -2,
 	DoubleFlagLen: 0,
 	ValueLen:      -5,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", Comment: "help info"},
-		{Short: "-d", Comment: "debug"},
+		{Short: "-d", Comment: "debug mode, use test hosts file"},
 		{Short: "-v", Comment: "version"},
 	},
 	Options: []cuibase.ParamVO{

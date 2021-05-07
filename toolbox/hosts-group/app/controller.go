@@ -200,7 +200,8 @@ func CreateOrUpdateFile(c *gin.Context) {
 		return
 	}
 
-	err = ioutil.WriteFile(targetFilePath, []byte(param.Content), 0644)
+	finalContent := normalizeContent(param.Content)
+	err = ioutil.WriteFile(targetFilePath, []byte(finalContent), 0644)
 	if err != nil {
 		ghelp.GinFailedWithMsg(c, err.Error())
 		return
@@ -221,6 +222,12 @@ func CreateOrUpdateFile(c *gin.Context) {
 	}
 
 	ghelp.GinSuccessWith(c, "")
+}
+
+func normalizeContent(content string) string {
+	result := strings.TrimSpace(content)
+	result = strings.ReplaceAll(content, " ", " ")
+	return result
 }
 
 // return final file path that contain state

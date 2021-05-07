@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/getlantern/systray v1.1.0
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.1
 	github.com/kuangcp/gobase/pkg/cuibase v0.0.0-20201103041857-ea5c95ff0199
 	github.com/kuangcp/gobase/pkg/ghelp v0.0.0-20201103041857-ea5c95ff0199
 	github.com/kuangcp/logger v1.0.3
