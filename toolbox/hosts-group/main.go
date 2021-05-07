@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 
@@ -8,8 +9,12 @@ import (
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app"
 )
 
+//go:embed static
+var staticFS embed.FS
+
 func init() {
 	flag.BoolVar(&app.Debug, "d", false, "")
+	flag.BoolVar(&app.DebugStatic, "D", false, "")
 	flag.BoolVar(&app.Version, "v", false, "")
 	flag.StringVar(&app.LogPath, "l", "", "")
 	flag.Usage = app.Info.PrintHelp
@@ -25,7 +30,7 @@ func main() {
 	app.InitConfigAndEnv()
 
 	go func() {
-		app.WebServer("8066")
+		app.WebServer(staticFS, "8066")
 	}()
 
 	systray.Run(app.OnReady, app.OnExit)

@@ -26,20 +26,22 @@ var (
 	curHostFile string
 )
 var (
-	Debug   bool
-	Version bool
-	LogPath string
+	Debug       bool
+	DebugStatic bool
+	Version     bool
+	LogPath     string
 )
 
 var Info = cuibase.HelpInfo{
 	Description:   "Hosts switch tool",
-	Version:       "1.3.7",
+	Version:       "1.3.8",
 	SingleFlagLen: -2,
 	DoubleFlagLen: 0,
 	ValueLen:      -5,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", Comment: "help info"},
 		{Short: "-d", Comment: "debug mode, use test hosts file"},
+		{Short: "-D", Comment: "debug static mode, use static dir not embed packaged"},
 		{Short: "-v", Comment: "version"},
 	},
 	Options: []cuibase.ParamVO{
