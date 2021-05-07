@@ -88,8 +88,7 @@ go mod tidy
 
 echo 5/6 Finish package exe icon, tray icon
 
-go build -o hosts-group.bin
-version=$(./hosts-group.bin -v)
+version=$(go run . -v)
 
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui" -o hosts-group.$version.exe
 
