@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
@@ -23,8 +24,10 @@ var (
 	pidFile       string
 	retentionTime time.Duration
 	checkPeriod   time.Duration
-	sysDir        = [...]string{"/", "/home", "/home/", "/ect", "/etc/", "/boot", "/boot/", "/sys", "/sys/",
-		"/opt", "/opt/", "/bin", "/bin/"}
+	sysMap        = make(map[string]int8)
+	sysDir        = [...]string{"/bin/", "/boot/", "/data/", "/dev/", "/etc/", "/home/", "/lib/", "/lib64/",
+		"/lost+found/", "/mnt/", "/opt/", "/proc/", "/root/", "/run/", "/sbin/", "/srv/", "/sys/", "/tmp/",
+		"/usr/", "/var/"}
 )
 
 type (
@@ -34,6 +37,23 @@ type (
 		file      os.FileInfo
 	}
 )
+
+func init() {
+	for _, s := range sysDir {
+		sysMap[s] = 0
+	}
+}
+
+// 高危动作目录
+func isDangerDir(dir string) bool {
+	count := strings.Count(dir, "/")
+	if count == 1 {
+		return true
+	}
+
+	_, ok := sysMap[dir]
+	return ok
+}
 
 func (t *fileItem) seconds() int64 {
 	return t.timestamp / 1000_000_000

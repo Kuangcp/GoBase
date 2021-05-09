@@ -308,22 +308,13 @@ func cleanFile(dir []os.FileInfo) {
 
 		logger.Warn("Delete: ", name[:index])
 		actualPath := trashDir + "/" + name
-		if matchAny(actualPath) {
+		if isDangerDir(actualPath) {
 			logger.Error("danger error", name)
 			continue
 		}
 		cmd := exec.Command("rm", "-rf", actualPath)
 		execCmdWithQuite(cmd)
 	}
-}
-
-func matchAny(dir string) bool {
-	for _, s := range sysDir {
-		if s == dir {
-			return true
-		}
-	}
-	return false
 }
 
 func parseTime() error {
