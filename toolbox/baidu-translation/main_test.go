@@ -9,7 +9,7 @@ func TestMd5(t *testing.T) {
 
 	param := QueryParam{
 		app:       "1",
-		query:     "2",
+		query:     "2有",
 		secretKey: "3",
 	}
 
