@@ -7,8 +7,8 @@ import (
 
 func TestMd5(t *testing.T) {
 
-	param := QueryParam{
-		app:       "1",
+	param := queryParam{
+		appId:     "1",
 		query:     "2有",
 		secretKey: "3",
 	}
