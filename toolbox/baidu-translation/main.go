@@ -80,6 +80,7 @@ func handleToZh(params []string) {
 	handleTranslation(params, "en", "zh")
 }
 
+// FIXME 翻译 负载均衡 会导致终端卡死或闪退
 func handleToEn(params []string) {
 	handleTranslation(params, "zh", "en")
 }
