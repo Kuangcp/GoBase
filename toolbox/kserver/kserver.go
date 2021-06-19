@@ -59,6 +59,7 @@ func getInternalIP() string {
 	return ""
 }
 
+// TODO 使用缓冲区 刷盘，实现低内存处理大文件
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	var maxMib int64 = 10
 	err := r.ParseMultipartForm(maxMib << 20)

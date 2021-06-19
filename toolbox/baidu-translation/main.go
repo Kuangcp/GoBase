@@ -5,13 +5,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/kuangcp/gobase/cuibase"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/kuangcp/gobase/cuibase"
 )
 
 type (
@@ -55,7 +54,7 @@ func (t *queryParam) buildFinalURL() string {
 
 var info = cuibase.HelpInfo{
 	Description: "Translation between Chinese and English By Baidu API",
-	Version:     "1.0.4",
+	Version:     "1.0.5",
 	VerbLen:     -3,
 	ParamLen:    -21,
 	Params: []cuibase.ParamInfo{
@@ -80,7 +79,7 @@ func handleToZh(params []string) {
 	handleTranslation(params, "en", "zh")
 }
 
-// FIXME 翻译 负载均衡 会导致终端卡死或闪退
+// FIXME 翻译 负载均衡 会导致 zsh 5.8.1 发生 core dump
 func handleToEn(params []string) {
 	handleTranslation(params, "zh", "en")
 }
@@ -114,11 +113,20 @@ func doQueryBaidu(param queryParam) {
 		log.Fatalln(cuibase.Red.Println(" Param exist empty string"))
 	}
 
-	resp, err := http.Get(param.buildFinalURL())
-	cuibase.CheckIfError(err)
+	finalURL := param.buildFinalURL()
+	fmt.Println(finalURL)
+	resp, err := http.Get(finalURL)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	defer resp.Body.Close()
 
 	bodyContent, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	//fmt.Printf("resp status code: %d\n", resp.StatusCode)
 	content := string(bodyContent)
 	if strings.Contains(content, "\"error_code\"") {
@@ -128,7 +136,10 @@ func doQueryBaidu(param queryParam) {
 
 	var v resultVO
 	err = json.Unmarshal(bodyContent, &v)
-	cuibase.CheckIfError(err)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	fmt.Printf("%s %v %s\n", cuibase.LightGreen, strings.Trim(v.TransResult[0].Dst, "[]"), cuibase.End)
 }

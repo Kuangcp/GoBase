@@ -37,9 +37,6 @@ func main() {
 		logger.Info("period:", config.CheckPeriod, "retention:", config.Retention)
 	})
 
-	invokeWithBool(illegalQuit, func() {
-		DeleteFile(pidFile)
-	})
 	invokeWithStr(suffix, func(s string) {
 		DeleteFileBySuffix(strings.Split(s, ","))
 	})
@@ -225,11 +222,11 @@ func CheckWithDaemon() {
 func CheckTrashDir() {
 	err := parseTime()
 	if err != nil {
+		logger.Warn("invalid check time param", err)
 		return
 	}
 
-	exists, err := isPathExists(pidFile)
-	if err != nil || exists {
+	if isRepeatEnterCheck() {
 		return
 	}
 
@@ -246,7 +243,7 @@ func CheckTrashDir() {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 
-		logger.Warn("Killed")
+		logger.Warn("receive signal:", syscall.SIGINT, "or", syscall.SIGTERM)
 		deletePidFile(&deleteFlag)
 		os.Exit(1)
 	}()
@@ -260,6 +257,48 @@ func CheckTrashDir() {
 
 	defer deletePidFile(&deleteFlag)
 	doCheckTrashDir()
+}
+
+func isRepeatEnterCheck() bool {
+	exists, err := isPathExists(pidFile)
+	if err != nil {
+		return true
+	}
+	if !exists {
+		return false
+	}
+
+	pidVal, err := ioutil.ReadFile(pidFile)
+	if err != nil {
+		logger.Error(err)
+		return true
+	}
+
+	lastPidVal := string(pidVal)
+	cmdPath := "/proc/" + lastPidVal + "/cmdline"
+	pathExists, err := isPathExists(cmdPath)
+	if err != nil {
+		return true
+	}
+	if !pathExists {
+		logger.Warn("The check daemon " + lastPidVal + " process been exit")
+		DeleteFile(pidFile)
+		return false
+	}
+
+	file, err := ioutil.ReadFile(cmdPath)
+	if err != nil {
+		return true
+	}
+
+	cmdLine := string(file)
+	if strings.Contains(cmdLine, appName) {
+		return true
+	}
+
+	logger.Warn(lastPidVal + " process has change to " + cmdLine)
+	DeleteFile(pidFile)
+	return false
 }
 
 func doCheckTrashDir() {
@@ -332,7 +371,7 @@ func parseTime() error {
 }
 
 func deletePidFile(deleteFlag *int32) {
-	logger.Warn("Exit App")
+	logger.Warn("Prepare exit, clean pid file")
 	curDelete := atomic.AddInt32(deleteFlag, 1)
 	if curDelete == 1 {
 		DeleteFile(pidFile)
@@ -471,18 +510,21 @@ func ExitCheckFileDaemon() {
 	}
 
 	pid := string(file)
-	processInfo := execCommand("ps -p " + pid)
-	lines := strings.Split(processInfo, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, pid) && strings.Contains(line, appName) {
-			logger.Info(line)
-			logger.Info("kill ", pid)
-			cmd := exec.Command("kill", pid)
-			execCmdWithQuite(cmd)
-			return
-		}
+	cmdPath := "/proc/" + pid + "/cmdline"
+	cmdFile, err := ioutil.ReadFile(cmdPath)
+	if err != nil {
+		return
 	}
-	logger.Warn(pid, "is not", appName, "process")
+
+	cmdLine := string(cmdFile)
+	if !strings.Contains(cmdLine, appName) {
+		logger.Warn(pid, "is not", appName, "process:", cmdLine)
+		return
+	}
+
+	logger.Info("kill ", pid)
+	cmd := exec.Command("kill", pid)
+	execCmdWithQuite(cmd)
 }
 
 // 静默执行 不关心返回值

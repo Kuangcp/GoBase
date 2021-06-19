@@ -20,7 +20,6 @@ var (
 	daemon       bool
 	debug        bool
 	exit         bool
-	illegalQuit  bool
 	listTrash    bool
 	log          bool
 	showConfig   bool
@@ -130,7 +129,6 @@ var info = cuibase.HelpInfo{
 		{Short: "-X", BoolVar: &exit, Comment: "Exit daemon"},
 		{Short: "-C", BoolVar: &check, Comment: "Start check"},
 		{Short: "-d", BoolVar: &daemon, Comment: "Start check by daemon"},
-		{Short: "-q", BoolVar: &illegalQuit, Comment: "Remove pid file"},
 		{Short: "-l", BoolVar: &listTrash, Comment: "List trash"},
 		{Short: "-g", BoolVar: &log, Comment: "Show log file path"},
 		{Short: "-c", BoolVar: &showConfig, Comment: "Show config file"},
@@ -191,7 +189,7 @@ func isPathExists(path string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return false, err
+	return true, err
 }
 
 func newSysProcAttr() *syscall.SysProcAttr {

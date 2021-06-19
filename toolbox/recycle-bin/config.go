@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	maxEmptyTrashCheck = 3
+	maxEmptyTrashCheck = 2
 	appName            = "recycle-bin"
 )
 
@@ -56,7 +56,7 @@ func isDangerDir(dir string) bool {
 }
 
 func (t *fileItem) seconds() int64 {
-	return t.timestamp / 1000_000_000
+	return int64(time.Duration(t.timestamp).Seconds())
 }
 
 func (t *fileItem) formatTime() string {
