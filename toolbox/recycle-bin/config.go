@@ -12,6 +12,7 @@ import (
 const (
 	maxEmptyTrashCheck = 2
 	appName            = "recycle-bin"
+	timeSeparate       = ".T."
 )
 
 var (
