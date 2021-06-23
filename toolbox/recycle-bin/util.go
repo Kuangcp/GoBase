@@ -20,12 +20,13 @@ var (
 	daemon       bool
 	debug        bool
 	exit         bool
-	illegalQuit  bool
 	listTrash    bool
 	log          bool
 	showConfig   bool
 	initConfig   bool
+	pipeline     bool
 	listOrder    int
+	buildVersion string
 	restore      string
 	retentionStr = "168h" // time.ParseDuration()
 	periodStr    = "1h"
@@ -50,7 +51,7 @@ func init() {
 }
 
 func initConfigValue() {
-	logger.SetLogPathTrim("recycle-bin")
+	logger.SetLogPathTrim("recycle-bin/")
 
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
@@ -117,16 +118,17 @@ func loadConfig() (*Setting, error) {
 
 var info = cuibase.HelpInfo{
 	Description:   "Recycle bin",
-	Version:       "1.0.6",
+	Version:       "1.0.7",
+	BuildVersion: buildVersion,
 	SingleFlagLen: -3,
 	ValueLen:      -10,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "Help info"},
-		{Short: "-D", BoolVar: &debug, Comment: "Debug mode"},
+		{Short: "-P", BoolVar: &pipeline, Comment: "Pipeline"},
+		{Short: "-D", BoolVar: &debug, Comment: "Release mode"},
 		{Short: "-X", BoolVar: &exit, Comment: "Exit daemon"},
 		{Short: "-C", BoolVar: &check, Comment: "Start check"},
 		{Short: "-d", BoolVar: &daemon, Comment: "Start check by daemon"},
-		{Short: "-q", BoolVar: &illegalQuit, Comment: "Remove pid file"},
 		{Short: "-l", BoolVar: &listTrash, Comment: "List trash"},
 		{Short: "-g", BoolVar: &log, Comment: "Show log file path"},
 		{Short: "-c", BoolVar: &showConfig, Comment: "Show config file"},
@@ -180,13 +182,14 @@ func InitConfig() {
 
 func isPathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
+	//fmt.Println("stat:  ",path , err)
 	if err == nil {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return false, err
+	return true, err
 }
 
 func newSysProcAttr() *syscall.SysProcAttr {

@@ -11,7 +11,7 @@ import (
 var db *gorm.DB
 
 func OpenDB() *gorm.DB {
-	return getConnectionWithConfig(config.GetAppConfig())
+	return getConnectionWithConfig()
 }
 
 func GetDB() *gorm.DB {
@@ -53,12 +53,12 @@ func Close(db *gorm.DB) {
 	}
 }
 
-func getConnectionWithConfig(config *config.AppConfig) *gorm.DB {
-	db, err := gorm.Open(config.DriverName, config.Path)
+func getConnectionWithConfig() *gorm.DB {
+	db, err := gorm.Open(config.AppConf.DriverName, config.AppConf.DBFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.LogMode(config.Debug)
+	db.LogMode(!config.AppConf.Release)
 
 	return db
 }

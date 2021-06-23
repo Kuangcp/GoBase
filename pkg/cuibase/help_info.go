@@ -35,6 +35,7 @@ type (
 	}
 	HelpInfo struct {
 		Version       string
+		BuildVersion  string
 		Description   string
 		SingleFlagLen int
 		DoubleFlagLen int
@@ -67,8 +68,12 @@ func (helpInfo HelpInfo) PrintHelp() {
 	}
 
 	if helpInfo.Version != "" {
-		fmt.Printf("\n%s  %v\n\n", LightCyan.Print("Version:"), helpInfo.Version)
+		fmt.Printf("\n%s  %v", LightCyan.Print("Version:"), helpInfo.Version)
 	}
+	if helpInfo.BuildVersion != "" {
+		fmt.Printf("\n%s  %v", LightCyan.Print("Build:"), helpInfo.BuildVersion)
+	}
+	fmt.Println()
 }
 
 func (helpInfo HelpInfo) Parse() {

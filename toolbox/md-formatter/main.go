@@ -21,8 +21,10 @@ type filterFun = func(string) bool
 type mapFun func(string) string
 
 var (
-	ignoreDirs = [...]string{
-		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__", "ARTS",
+	buildVersion string
+	ignoreDirMap = make(map[string]int8)
+	ignoreDirs   = [...]string{
+		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__",
 	}
 	ignoreFiles = [...]string{
 		"README", "Readme", "Readme_CN", "readme", "SUMMARY", "Process", "License", "LICENSE",
@@ -63,7 +65,8 @@ var (
 
 var info = cuibase.HelpInfo{
 	Description:   "Format markdown file, generate catalog",
-	Version:       "1.0.2",
+	Version:       "1.0.3",
+	BuildVersion:  buildVersion,
 	SingleFlagLen: -3,
 	DoubleFlagLen: -3,
 	ValueLen:      -5,
@@ -95,6 +98,10 @@ func init() {
 	}
 	replacePairList = append(replacePairList, " ", "-")
 	titleReplace = strings.NewReplacer(replacePairList...)
+
+	for _, dir := range ignoreDirs {
+		ignoreDirMap[dir] = 1
+	}
 }
 
 func main() {
@@ -173,7 +180,7 @@ func readLinesWithFunc(filename string, filterFunc filterFun, mapFunc mapFun) []
 
 func isNeedHandleFile(filename string) bool {
 	for _, file := range ignoreFiles {
-		if strings.HasSuffix(filename, file) {
+		if strings.Contains(filename, file) {
 			return false
 		}
 	}
@@ -195,10 +202,9 @@ func refreshDirAllFiles(path string) {
 		}
 
 		if info.IsDir() {
-			for _, dir := range ignoreDirs {
-				if path == dir {
-					return filepath.SkipDir
-				}
+			_, ok := ignoreDirMap[path]
+			if ok {
+				return filepath.SkipDir
 			}
 			return nil
 		}
@@ -250,13 +256,13 @@ func refreshCatalog(filename string) {
 		logger.Info("refresh:", filename)
 	}
 
-	titleBlock := ""
-	titles := generateCatalog(filename)
-	if titles == nil {
+	tocBlock := ""
+	tocList := generateCatalog(filename)
+	if tocList == nil {
 		return
 	}
-	for t := range titles {
-		titleBlock += titles[t]
+	for t := range tocList {
+		tocBlock += tocList[t]
 	}
 
 	startIdx := -1
@@ -275,7 +281,7 @@ func refreshCatalog(filename string) {
 		if strings.Contains(line, endTag) {
 			endIdx = i
 			timeStr := time.Now().Format("2006-01-02 15:04")
-			result += startTag + "\n\n" + titleBlock + "\n" + endTag + "|_" + timeStr + "_|\n"
+			result += startTag + "\n\n" + tocBlock + "\n" + endTag + "|_" + timeStr + "_|\n"
 			continue
 		}
 		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
@@ -295,8 +301,9 @@ func refreshCatalog(filename string) {
 
 // 打印 百度脑图支持的 MindMap 格式
 func printMindMap(filename string) {
-	cuibase.AssertParamCount(2, "must input filename ")
-
+	if filename == "" {
+		return
+	}
 	lines := readLinesWithFunc(filename,
 		func(s string) bool {
 			return strings.HasPrefix(s, "#")

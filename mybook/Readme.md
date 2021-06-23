@@ -1,4 +1,5 @@
 # bookkeeping
+> 2020.1.19 
 
 1. 前端：Vue Element-UI Echarts
 1. 后端：Gin Gorm SQLite
@@ -16,6 +17,4 @@
 ## IDE开发
 
 IDE内运行时默认使用当前目录旁data目录的配置文件
-
-在IDE内执行单元测试 需创建 ~/.config/mybook.yml 文件，其中 db.file 为绝对路径
 

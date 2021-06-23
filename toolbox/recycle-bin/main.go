@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bytes"
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"syscall"
 	"time"
 
@@ -36,13 +36,11 @@ func main() {
 		logger.Info("period:", config.CheckPeriod, "retention:", config.Retention)
 	})
 
-	invokeWithBool(illegalQuit, func() {
-		DeleteFiles([]string{pidFile})
-	})
 	invokeWithStr(suffix, func(s string) {
 		DeleteFileBySuffix(strings.Split(s, ","))
 	})
 	invokeWithStr(restore, RestoreFile)
+	invokeWithBool(pipeline, DeleteFromPipe)
 
 	if check {
 		if daemon {
@@ -63,8 +61,8 @@ func main() {
 }
 
 func RestoreFile(restoreFile string) {
-	items := listTrashFileItem(func(val string) bool {
-		return strings.Contains(val, restoreFile)
+	items := listTrashFileItem(func(name string) bool {
+		return strings.Contains(name, restoreFile)
 	})
 
 	length := len(items)
@@ -147,11 +145,11 @@ func listTrashFileItem(filter func(string) bool) []fileItem {
 
 	for _, fileInfo := range dir {
 		name := fileInfo.Name()
-		if !filter(name) {
+		if filter != nil && !filter(name) {
 			continue
 		}
 
-		index := strings.Index(name, ".T.")
+		index := strings.Index(name, timeSeparate)
 		if index == -1 {
 			continue
 		}
@@ -180,12 +178,11 @@ func ListTrashFiles() {
 		os.Exit(1)
 	}
 
-	items := listTrashFileItem(func(s string) bool {
-		return true
-	})
+	items := listTrashFileItem(nil)
 	currentNano := time.Now().UnixNano()
 	if len(items) != 0 {
-		fmt.Printf("%v%-23s %-10s %s%v\n", cuibase.Cyan, "DeleteTime", "Remaining", "File", cuibase.End)
+		fmt.Printf("%v%-3s       %-17s %-10s %s%v\n",
+			cuibase.Cyan, "No.", "DeleteTime", "Remaining", "File", cuibase.End)
 	}
 
 	if listOrder > 0 {
@@ -224,16 +221,15 @@ func CheckWithDaemon() {
 func CheckTrashDir() {
 	err := parseTime()
 	if err != nil {
+		logger.Warn("invalid check time param", err)
 		return
 	}
 
-	exists, err := isPathExists(pidFile)
-	if err != nil || exists {
+	if isRepeatEnterCheck() {
 		return
 	}
 
-	// avoid repeat delete
-	var deleteFlag int32 = 0
+	once := sync.Once{}
 	logger.Info("Start check daemon. check:", checkPeriod, "retention:", retentionTime, "pid:", os.Getpid())
 
 	go func() {
@@ -245,8 +241,8 @@ func CheckTrashDir() {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 
-		logger.Warn("Killed")
-		deletePidFile(&deleteFlag)
+		logger.Warn("receive signal:", syscall.SIGINT, "or", syscall.SIGTERM)
+		deletePidFile(&once)
 		os.Exit(1)
 	}()
 
@@ -257,8 +253,50 @@ func CheckTrashDir() {
 		return
 	}
 
-	defer deletePidFile(&deleteFlag)
+	defer deletePidFile(&once)
 	doCheckTrashDir()
+}
+
+func isRepeatEnterCheck() bool {
+	exists, err := isPathExists(pidFile)
+	if err != nil {
+		return true
+	}
+	if !exists {
+		return false
+	}
+
+	pidVal, err := ioutil.ReadFile(pidFile)
+	if err != nil {
+		logger.Error(err)
+		return true
+	}
+
+	lastPidVal := string(pidVal)
+	cmdPath := "/proc/" + lastPidVal + "/cmdline"
+	pathExists, err := isPathExists(cmdPath)
+	if err != nil {
+		return true
+	}
+	if !pathExists {
+		logger.Warn("The check daemon " + lastPidVal + " process been exit")
+		DeleteFile(pidFile)
+		return false
+	}
+
+	file, err := ioutil.ReadFile(cmdPath)
+	if err != nil {
+		return true
+	}
+
+	cmdLine := string(file)
+	if strings.Contains(cmdLine, appName) {
+		return true
+	}
+
+	logger.Warn(lastPidVal + " process has change to " + cmdLine)
+	DeleteFile(pidFile)
+	return false
 }
 
 func doCheckTrashDir() {
@@ -287,7 +325,7 @@ func cleanFile(dir []os.FileInfo) {
 	current := time.Now().UnixNano()
 	for _, fileInfo := range dir {
 		name := fileInfo.Name()
-		index := strings.Index(name, ".T.")
+		index := strings.Index(name, timeSeparate)
 		if index == -1 {
 			continue
 		}
@@ -300,15 +338,15 @@ func cleanFile(dir []os.FileInfo) {
 			return
 		}
 
-		//logger.Debug(current, parseInt, current-parseInt)
+		//logger.Release(current, parseInt, current-parseInt)
 		if current-parseInt <= retentionTime.Nanoseconds() {
 			continue
 		}
 
 		logger.Warn("Delete: ", name[:index])
 		actualPath := trashDir + "/" + name
-		if actualPath == "/" {
-			logger.Error("danger error")
+		if isDangerDir(actualPath) {
+			logger.Error("danger remove name:", name, "path:", actualPath)
 			continue
 		}
 		cmd := exec.Command("rm", "-rf", actualPath)
@@ -330,12 +368,15 @@ func parseTime() error {
 	return nil
 }
 
-func deletePidFile(deleteFlag *int32) {
-	logger.Warn("Exit")
-	curDelete := atomic.AddInt32(deleteFlag, 1)
-	if curDelete == 1 {
-		DeleteFiles([]string{pidFile})
-	}
+func deletePidFile(once *sync.Once) {
+	logger.Warn("Prepare exit, clean pid file")
+	once.Do(func() {
+		DeleteFile(pidFile)
+	})
+}
+
+func DeleteFile(file string) {
+	DeleteFiles([]string{file})
 }
 
 // deleteFies 移动文件到回收站
@@ -360,7 +401,7 @@ func DeleteFiles(files []string) {
 		}
 
 		logger.Info("Prepare delete:", filepath)
-		//logger.Debug(filepath, trashDir+"/"+finalName)
+		//logger.Release(filepath, trashDir+"/"+finalName)
 		cmd := exec.Command("mv", filepath, finalName)
 		execCmdWithQuite(cmd)
 	}
@@ -369,7 +410,7 @@ func DeleteFiles(files []string) {
 func buildTrashFileName(path string) (string, error) {
 	var result = path
 	if strings.HasSuffix(result, "//") || strings.HasPrefix(result, "//") {
-		logger.Error("Invalid path", path)
+		logger.Error(InvalidPath, path)
 		return "", fmt.Errorf("")
 	}
 
@@ -382,13 +423,13 @@ func buildTrashFileName(path string) (string, error) {
 		if last != -1 && last < len(result)-1 {
 			result = result[last+1:]
 		} else {
-			logger.Error("Invalid path", path)
+			logger.Error(InvalidPath, path)
 			return "", fmt.Errorf("")
 		}
 	}
 
 	if result == "/" || result == "" {
-		logger.Error("Invalid path", path)
+		logger.Error(InvalidPath, path)
 		return "", fmt.Errorf("")
 	}
 
@@ -397,7 +438,7 @@ func buildTrashFileName(path string) (string, error) {
 		result = result[last+1:]
 	}
 	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
-	return trashDir + "/" + result + ".T." + timestamp, nil
+	return trashDir + "/" + result + timeSeparate + timestamp, nil
 }
 
 func DeleteFileBySuffix(params []string) {
@@ -417,20 +458,21 @@ func DeleteFileBySuffix(params []string) {
 	}
 
 	var files []string
+	fmt.Println()
 	for _, fileInfo := range dir {
 		name := fileInfo.Name()
 		for _, suffix := range params {
 			if strings.HasSuffix(name, "."+suffix) {
+				fmt.Println("  ", name)
 				files = append(files, name)
 			}
 		}
 	}
-
-	fmt.Println()
-
-	for _, file := range files {
-		fmt.Println("  ", file)
+	if len(files) == 0 {
+		logger.Warn("not match any file", suffix)
+		os.Exit(1)
 	}
+
 	fmt.Printf("\nDelete the above file? (y/n):")
 	var input string
 	_, err = fmt.Scanf("%s", &input)
@@ -443,10 +485,20 @@ func DeleteFileBySuffix(params []string) {
 	}
 }
 
+func DeleteFromPipe() {
+	reader := bufio.NewReader(os.Stdin)
+	result, err := reader.ReadString('\n')
+	for err == nil {
+		DeleteFile(strings.TrimSpace(result))
+		result, err = reader.ReadString('\n')
+	}
+	fmt.Println("read stdin error: ", err)
+}
+
 func ExitCheckFileDaemon() {
 	exists, err := isPathExists(pidFile)
 	if !exists {
-		logger.Error("no pid file")
+		logger.Error("no pid file", pidFile)
 		return
 	}
 	file, err := ioutil.ReadFile(pidFile)
@@ -455,21 +507,20 @@ func ExitCheckFileDaemon() {
 		os.Exit(1)
 	}
 
-	// TODO may kill error pid
 	pid := string(file)
+	cmdPath := "/proc/" + pid + "/cmdline"
+	cmdFile, err := ioutil.ReadFile(cmdPath)
+	if err != nil {
+		return
+	}
+
+	cmdLine := string(cmdFile)
+	if !strings.Contains(cmdLine, appName) {
+		logger.Warn(pid, "is not", appName, "process:", cmdLine)
+		return
+	}
+
 	logger.Info("kill ", pid)
 	cmd := exec.Command("kill", pid)
 	execCmdWithQuite(cmd)
-}
-
-// 静默执行 不关心返回值
-func execCmdWithQuite(cmd *exec.Cmd) {
-	var out bytes.Buffer
-
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		logger.Error(cmd, err)
-		os.Exit(1)
-	}
 }

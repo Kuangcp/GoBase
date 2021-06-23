@@ -1,7 +1,7 @@
 package report
 
 import (
-	"fmt"
+	"github.com/kuangcp/logger"
 	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
@@ -67,7 +67,7 @@ func BalanceReport(c *gin.Context) {
 
 	records := record.QueryForBalance()
 	recordLen := len(records)
-	fmt.Println("init:", curAmount/100.0, "records:", recordLen)
+	logger.Debug("init amount:", curAmount/100.0, ", total records:", recordLen)
 	if recordLen == 0 {
 		ghelp.GinFailed(c)
 		return

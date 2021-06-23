@@ -12,9 +12,11 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/kuangcp/gobase/pkg/stopwatch"
+
 	"github.com/kuangcp/gobase/pkg/ghelp"
 
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 func addRecord(record *RecordEntity) {
@@ -25,23 +27,23 @@ func addRecord(record *RecordEntity) {
 }
 
 func checkParam(record *RecordEntity) (ghelp.ResultVO, *category.Category, *account.Account) {
-	category := category.FindCategoryById(record.CategoryId)
-	if category == nil || !category.Leaf {
+	categoryEntity := category.FindCategoryById(record.CategoryId)
+	if categoryEntity == nil || !categoryEntity.Leaf {
 		return ghelp.FailedWithMsg("分类id无效"), nil, nil
 	}
 
 	accountEntity := account.FindAccountById(record.AccountId)
 	if accountEntity == nil {
-		return ghelp.FailedWithMsg("账户无效"), category, nil
+		return ghelp.FailedWithMsg("账户无效"), categoryEntity, nil
 	}
 
 	if record.Amount <= 0 {
-		return ghelp.FailedWithMsg("金额无效"), category, accountEntity
+		return ghelp.FailedWithMsg("金额无效"), categoryEntity, accountEntity
 	}
 	if !constant.IsValidRecordType(record.Type) {
-		return ghelp.FailedWithMsg("类别无效"), category, accountEntity
+		return ghelp.FailedWithMsg("类别无效"), categoryEntity, accountEntity
 	}
-	return ghelp.Success(), category, accountEntity
+	return ghelp.Success(), categoryEntity, accountEntity
 }
 
 func DoCreateRecord(record *RecordEntity) ghelp.ResultVO {
@@ -401,14 +403,16 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time,
 
 func calculateAndQueryAccountBalance() []*account.Account {
 	db := dal.GetDB()
-	var list []RecordEntity
 
 	accountMap := account.ListAccountMap()
-	db.Where("1=1").Find(&list)
 	for _, accountEntity := range accountMap {
 		accountEntity.CurrentAmount = accountEntity.InitAmount
 	}
 
+	var list []RecordEntity
+	watch := stopwatch.NewWithName("calculate balance")
+	watch.Start("query list")
+	db.Where("1=1").Find(&list)
 	for _, record := range list {
 		accountEntity := accountMap[record.AccountId]
 		if constant.IsExpense(record.Type) {
@@ -417,15 +421,19 @@ func calculateAndQueryAccountBalance() []*account.Account {
 			accountEntity.CurrentAmount += record.Amount
 		}
 	}
+	watch.Stop()
 
 	for _, accountEntity := range accountMap {
+		watch.Start("update " + accountEntity.Name)
 		db.Model(&accountEntity).
 			Select("current_amount").
 			Updates(map[string]interface{}{
 				"current_amount": accountEntity.CurrentAmount,
 			})
-		//logger.Debug(account.Name, account.CurrentAmount, affected)
+		//logger.Release(account.Name, account.CurrentAmount, affected)
+		watch.Stop()
 	}
+	logger.Info("\n", watch.PrettyPrint())
 
 	return account.ListAccounts()
 }

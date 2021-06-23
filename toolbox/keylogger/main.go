@@ -1,9 +1,12 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"keylogger/app"
+	"keylogger/app/store"
+	"keylogger/app/web"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -16,10 +19,14 @@ import (
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
+//go:embed static
+var fs embed.FS
+
 var user = cuibase.Red.Print("root")
 var info = cuibase.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.0.9",
+	BuildVersion:  buildVersion,
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
@@ -37,6 +44,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
 		{Short: "-b", BoolVar: &dashboard, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
 		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
+		{Short: "-O", BoolVar: &notOpenPage, Comment: "not open url by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
 	Options: []cuibase.ParamVO{
@@ -78,11 +86,14 @@ var (
 	webServer bool
 	webView   bool
 
-	debug   bool
-	option  redis.Options
-	logPath string
+	debug       bool
+	notOpenPage bool
+	option      redis.Options
+	logPath     string
 )
-
+var (
+	buildVersion string
+)
 var (
 	mainDir = "/.config/app-conf/keylogger"
 )
@@ -119,7 +130,7 @@ func configLogger() {
 
 	logPath = logDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: "2006-01-02 15:04:05",
+		TimeFormat: cuibase.YYYY_MM_DD_HH_MM_SS_MS,
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,
@@ -181,12 +192,12 @@ func main() {
 	// 以下逻辑都依赖Redis
 	app.SetFormatTargetDevice(targetDevice)
 	app.SetTimePair(timePair)
-	app.InitConnection(option)
-	defer app.CloseConnection()
+	store.InitConnection(option)
+	defer store.CloseConnection()
 
-	invokeThenExit(dashboard, app.ShowPopWindow, app.CloseConnection)
-	invokeThenExit(listenDevice, app.ListenDevice, app.CloseConnection)
-	invokeThenExit(cacheKeyMap, app.CacheKeyMap, app.CloseConnection)
+	invokeThenExit(dashboard, app.ShowPopWindow, store.CloseConnection)
+	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
+	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
 
 	if interactiveListen {
 		device, err := app.SelectDevice()
@@ -199,11 +210,11 @@ func main() {
 	}
 
 	if webServer && !webView {
-		app.Server(debug, webPort)
+		web.Server(fs, debug, notOpenPage, webPort)
 		return
 	}
 	if webServer && webView {
-		go app.Server(debug, webPort)
+		go web.Server(fs, debug, notOpenPage, webPort)
 		mainWin()
 		return
 	}

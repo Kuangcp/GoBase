@@ -3,7 +3,7 @@ package record
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 	"mybook/app/common/util"
 )
 

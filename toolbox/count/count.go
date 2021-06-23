@@ -2,7 +2,7 @@ package main
 
 import (
 	"container/list"
-	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,72 +20,6 @@ var totalChineseChar = 0
 var fileList = list.New()
 
 var client *redis.Client
-var charRankKey = "total_char_rank"
-
-var ignoreDirs = [...]string{
-	".git", ".svn", ".vscode", ".idea", ".gradle",
-	"out", "build", "target", "log", "logs", "__pycache__",
-}
-var redisConfigFile = os.Getenv("HOME") + "/.config/app-conf/count-char/redis.json"
-
-var handleFiles = [...]string{
-	".md", ".markdown", ".txt", ".java", ".groovy", ".go", ".c", ".cpp", ".py",
-}
-
-var info = cuibase.HelpInfo{
-	Description: "Count chinese char(UTF8) from file that current dir recursive",
-	Version:     "1.0.0",
-	VerbLen:     -5,
-	ParamLen:    -15,
-	Params: []cuibase.ParamInfo{
-		{
-			Verb:    "-h",
-			Param:   "",
-			Comment: "Help",
-		}, {
-			Verb:    "",
-			Param:   "",
-			Comment: "Count all file chinese char",
-		}, {
-			Verb:    "-w",
-			Param:   "",
-			Comment: "Print all chinese char",
-			Handler: func(_ []string) {
-				showChineseChar(showChar, false)
-			},
-		}, {
-			Verb:    "-f",
-			Param:   "",
-			Comment: "Read target file",
-			Handler: readTargetFile,
-		}, {
-			Verb:    "-s",
-			Param:   "",
-			Comment: "Count all file chinese char, show with simplify",
-			Handler: func(_ []string) {
-				showChineseChar(nil, false)
-			},
-		}, {
-			Verb:    "-a",
-			Param:   "file redisKey",
-			Comment: "Count chinese char for target file, save. (redis)",
-		}, {
-			Verb:    "-all",
-			Param:   "showNum",
-			Comment: "Count, calculate rank data, save. (redis)",
-			Handler: readAllSaveIntoRedis,
-		}, {
-			Verb:    "-del",
-			Param:   "",
-			Comment: "Del rank data. (redis)",
-			Handler: delRank,
-		}, {
-			Verb:    "-show",
-			Param:   "start stop",
-			Comment: "Show rank data. (redis)",
-			Handler: showRank,
-		},
-	}}
 
 func initRedisClient() {
 	config := readRedisConfig()
@@ -153,7 +87,7 @@ func showChar(CNChar string) {
 }
 
 // 根据字节流  统计中文字符
-func handleFile(fileName string, handleChineseChar func(string)) int {
+func handleFile(fileName string, chineseCharHandler func(string)) int {
 	bytes := readToBytes(fileName)
 	var totalChar = 0
 	var count = 0
@@ -175,8 +109,8 @@ func handleFile(fileName string, handleChineseChar func(string)) int {
 		}
 		// 缓存满了三个字节, 就可以确定为一个汉字了
 		if count == 3 {
-			if handleChineseChar != nil {
-				handleChineseChar(string(temp[0:3]))
+			if chineseCharHandler != nil {
+				chineseCharHandler(string(temp[0:3]))
 			}
 			totalChar++
 			count = 0
@@ -211,8 +145,8 @@ func countWithRedis() {
 	}
 }
 
-func showChineseChar(handler func(string), showFileInfo bool) {
-	if showFileInfo {
+func showChineseChar(perCharHandler func(string), printFileInfo bool) {
+	if printFileInfo {
 		fmt.Printf("%v%-3v %-5v %-5v %v%v\n", cuibase.Yellow, "No", "Total", "Cur", "File", cuibase.End)
 	}
 	err := filepath.Walk("./", handlerDir)
@@ -227,9 +161,9 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 
 		totalFile++
 		var total = 0
-		total = handleFile(fileName, handler)
+		total = handleFile(fileName, perCharHandler)
 		totalChineseChar += total
-		if showFileInfo {
+		if printFileInfo {
 			fmt.Printf("%-3v %-5v %s %v \n",
 				totalFile, totalChineseChar, cuibase.Green.Printf("%-5v", total), fileName)
 		}
@@ -238,80 +172,89 @@ func showChineseChar(handler func(string), showFileInfo bool) {
 		cuibase.Yellow, totalFile, cuibase.End, cuibase.Yellow, totalChineseChar, cuibase.End)
 }
 
-func readTargetFile(params []string) {
-	cuibase.AssertParamCount(3, "Please input param: filename keyName")
-
-	fileName := params[2]
-	charRankKey = params[3]
-
-	log.Printf("%vread file: %v, redis key: %v%v\n",
-		cuibase.Green, fileName, charRankKey, cuibase.End)
-	initRedisClient()
-	handleFile(fileName, increaseCharNum)
-
-	if len(params) == 5 {
-		num, err := strconv.ParseInt(params[4], 10, 64)
-		if err == nil {
-			showCharRank(0, num-1)
-			return
-		}
-	}
-	showCharRank(0, 15)
-}
-
-func readAllSaveIntoRedis(params []string) {
-	initRedisClient()
-	countWithRedis()
-	if len(params) == 3 {
-		num, err := strconv.ParseInt(params[2], 10, 64)
-		if err == nil {
-			showCharRank(0, num-1)
-			return
-		}
-	}
-
-	showCharRank(0, 10)
-}
-
-func showRank(params []string) {
-	cuibase.AssertParamCount(3, "Please input all param: start stop")
-	start, err1 := strconv.ParseInt(params[2], 10, 64)
-	stop, err2 := strconv.ParseInt(params[3], 10, 64)
-	if err1 != nil || err2 != nil {
-		log.Fatal("please input correct param: start, stop")
-	}
-	initRedisClient()
-	showCharRank(start, stop)
-}
-
-func delRank(_ []string) {
+func delRank() {
 	initRedisClient()
 	client.Del(charRankKey)
 	log.Printf("del %v%v%v", cuibase.Green, charRankKey, cuibase.End)
 }
 
-func readRedisConfig() *redis.Options {
-	config := redis.Options{}
-	data, e := ioutil.ReadFile(redisConfigFile)
-	if e != nil {
-		log.Fatal("read config file failed")
-		return nil
-	}
-	e = json.Unmarshal(data, &config)
-	if e != nil {
-		log.Fatal("unmarshal config file failed")
-		return nil
-	}
-	log.Println("redis ", config.Addr, config.DB)
-	return &config
-}
-
-func main() {
-	param := os.Args
-	if len(param) <= 1 {
-		showChineseChar(nil, true)
+func printRank() {
+	nums := strings.Split(rankPair, ",")
+	if len(nums) == 1 {
+		end, err := strconv.ParseInt(nums[0], 10, 64)
+		cuibase.CheckIfError(err)
+		endIdx = end
+	} else if len(nums) == 2 {
+		start, err1 := strconv.ParseInt(nums[0], 10, 64)
+		cuibase.CheckIfError(err1)
+		stop, err2 := strconv.ParseInt(nums[1], 10, 64)
+		cuibase.CheckIfError(err2)
+		startIdx = start
+		endIdx = stop
+	} else {
+		fmt.Println("error rank format eg: 1,2")
 		return
 	}
 
-	cuibase.RunActionFromInfo(info, nil)
+	initRedisClient()
+	showCharRank(startIdx, endIdx)
+}
+
+func init() {
+	flag.StringVar(&handleFileSuffix, "S", "", "")
+	flag.StringVar(&ignoreDir, "D", "", "")
+	flag.StringVar(&rankPair, "r", "", "")
+	flag.StringVar(&targetFile, "f", "", "")
+}
+
+func main() {
+	info.Parse()
+	if help {
+		info.PrintHelp()
+		return
+	}
+	if delCache {
+		delRank()
+		return
+	}
+
+	if handleFileSuffix != "" {
+		handleFiles = strings.Split(handleFileSuffix, ",")
+	}
+	if ignoreDir != "" {
+		ignoreDirs = strings.Split(handleFileSuffix, ",")
+	}
+
+	if rankPair != "" {
+		printRank()
+		return
+	}
+
+	if targetFile != "" {
+		log.Printf("%vread file: %v, redis key: %v%v\n",
+			cuibase.Green, targetFile, charRankKey, cuibase.End)
+		initRedisClient()
+		handleFile(targetFile, increaseCharNum)
+
+		showCharRank(0, 15)
+		return
+	}
+
+	if allFile {
+		initRedisClient()
+		countWithRedis()
+		showCharRank(0, 15)
+		return
+	}
+
+	if printAllChar {
+		showChineseChar(showChar, false)
+		return
+	}
+	if countSummary {
+		showChineseChar(nil, false)
+		return
+	}
+
+	showChineseChar(nil, true)
 }

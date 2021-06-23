@@ -8,7 +8,7 @@ import (
 	"mybook/app/common/util"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 func AddCategory(entity *Category) {
@@ -106,7 +106,7 @@ func PrintCategory() {
 			}
 		}
 		if len(resultMap[enum.GetIndex()]) != 0 {
-			fmt.Printf(cuibase.Cyan.String()+"> %v  "+cuibase.End.String()+"\n%v\n\n", enum.GetName(), value)
+			fmt.Printf(cuibase.Cyan.Print("> %v  ")+"\n%v\n\n", enum.GetName(), value)
 		}
 	}
 }

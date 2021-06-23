@@ -30,8 +30,9 @@ func TestWithChannel(t *testing.T) {
 	var latch sync.WaitGroup
 	latch.Add(1000)
 	for i := 0; i < 1000; i++ {
+		j := i
 		go func() {
-			target := 6541367000 + i
+			target := 6541367000 + j
 			findTwoPrimeFactor(target)
 			latch.Done()
 		}()

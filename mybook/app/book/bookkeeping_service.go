@@ -3,7 +3,7 @@ package book
 import (
 	"mybook/app/common/dal"
 
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 func AddBookkeeping(book *BookKeeping) {

@@ -1,34 +1,31 @@
 package app
 
 import (
+	"embed"
 	"net/http"
 
 	"github.com/getlantern/systray"
-	"github.com/rakyll/statik/fs"
-
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
-	_ "github.com/kuangcp/gobase/toolbox/hosts-group/app/statik"
 	"github.com/kuangcp/logger"
 )
 
-func WebServer(port string) {
+func WebServer(f embed.FS, port string) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.GET("/ping", func(c *gin.Context) {
 		ghelp.GinSuccessWith(c, "ok")
 	})
 
-	// 是否读取 statik 打包后的静态文件
-	if Debug {
+	// 是否读取 embed 打包后的静态文件
+	if DebugStatic {
 		router.Static("/static", "./static")
 	} else {
-		// static file mapping
-		fileSystem, err := fs.New()
-		if err != nil {
-			logger.Fatal(err)
+		resource := &ghelp.StaticResource{
+			StaticFS: f,
+			Path:     "static",
 		}
-		router.StaticFS("/static", fileSystem)
+		router.StaticFS("/static", http.FS(resource))
 	}
 	router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "static/")

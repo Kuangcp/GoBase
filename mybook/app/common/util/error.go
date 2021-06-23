@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 	"log"
 )
 
