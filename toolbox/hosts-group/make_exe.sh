@@ -33,7 +33,6 @@ function isCmdExist() {
 # install dep
 #############################
 down_dep rsrc github.com/akavel/rsrc
-down_dep statik github.com/rakyll/statik
 down_dep 2goarray github.com/cratonica/2goarray
 
 isCmdExist convert imagemagick
@@ -43,8 +42,7 @@ isCmdExist upx upx
 # start build
 #############################
 
-statik -f -src=static/ -dest app
-echo 1/6 Finish statik
+echo 1/6 Start build
 
 if [ ! -f static/favicon.ico ]; then
   convert -density 300 static/favicon.svg -background transparent -colors 256 -define icon:auto-resize static/favicon.ico
