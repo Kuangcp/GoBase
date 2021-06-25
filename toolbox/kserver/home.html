@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Home</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+</head>
+
+<body>
+<style>
+
+    #dir button {
+        width: 100px;
+        height: 30px;
+        margin-top: 10px;
+    }
+
+    #echoForm textarea {
+        width: 300px;
+        height: 99px;
+    }
+</style>
+
+
+<form id="echoForm" action="/e" method="post" target="targetIfr">
+    <textarea name="content"></textarea>
+    <br>
+    <button>Echo</button>
+</form>
+<iframe name="targetIfr" style="display:none"></iframe>
+
+<a id="dir" href="/d">
+    <button>static dir</button>
+</a>
+
+</body>
+</html>

@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <title>Up</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
 </head>
 <style>
-    body {
-        width: 40%;
-        font-size: 40px;
-        transform: scale(2, 2.5);
+    #uploadBox {
+        padding-left: 10%;
+        padding-top: 40%;
     }
 </style>
 <body>
-<div style="padding-left: 30%; padding-top: 30%">
-    <form action="/f" method="post" enctype="multipart/form-data" style="height: 50px;width: 40vw">
+
+<div id="uploadBox">
+    <form id="uploadForm" action="/f" method="post" enctype="multipart/form-data">
         <input type="file" multiple name="file"/>
-        <button>Submit</button>
+        <button id="submitUpload">Submit</button>
     </form>
 </div>
+
 </body>
 </html>

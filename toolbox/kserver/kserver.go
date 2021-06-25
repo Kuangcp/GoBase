@@ -8,8 +8,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	_ "embed"
 
@@ -18,6 +20,9 @@ import (
 
 //go:embed up.html
 var uploadStaticPage string
+
+//go:embed home.html
+var homeStaticPage string
 
 var (
 	help         bool
@@ -59,6 +64,11 @@ func getInternalIP() string {
 	return ""
 }
 
+func isFileExist(filename string) bool {
+	_, err := os.Stat(filename)
+	return err == nil
+}
+
 // TODO 使用缓冲区 刷盘，实现低内存处理大文件
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	var maxMib int64 = 10
@@ -68,11 +78,16 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, headers := range r.MultipartForm.File {
 		for _, header := range headers {
-			log.Printf("upload: %s", header.Filename)
-			// 将文件拷贝到指定路径下，或者其他文件操作
-			dst, err := os.Create(header.Filename)
+			filename := header.Filename
+			log.Printf("upload: %s", filename)
+
+			exist := isFileExist(filename)
+			if exist {
+				filename = fmt.Sprint(time.Now().Nanosecond()) + "-" + filename
+			}
+
+			dst, err := os.Create(filename)
 			if err != nil {
-				// ignore
 				log.Println(err)
 				return
 			}
@@ -80,7 +95,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			open, _ := header.Open()
 			_, err = io.Copy(dst, open)
 			if err != nil {
-				// ignore
 				log.Println(err)
 			}
 		}
@@ -95,9 +109,15 @@ func startWebServer(port int) {
 	// 绑定路由到当前目录
 	fs := http.FileServer(http.Dir("./"))
 
-	http.Handle("/", http.StripPrefix("/", fs))
-
+	http.Handle("/d/", http.StripPrefix("/d", fs))
 	http.HandleFunc("/f", uploadHandler)
+
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		_, err := writer.Write([]byte(homeStaticPage))
+		if err != nil {
+			log.Println(err)
+		}
+	})
 
 	http.HandleFunc("/up", func(writer http.ResponseWriter, request *http.Request) {
 		_, err := writer.Write([]byte(uploadStaticPage))
@@ -108,10 +128,21 @@ func startWebServer(port int) {
 
 	http.HandleFunc("/e", func(writer http.ResponseWriter, request *http.Request) {
 		body, _ := ioutil.ReadAll(request.Body)
-		log.Printf(string(body))
+		content := string(body)
+		content = content[8:]
+		decode, _ := url.QueryUnescape("Content: \n\n" + content)
+		log.Print(decode)
 	})
 
-	// log
+	startLog(port, internalIP)
+
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err != nil {
+		log.Fatal("error: ", err)
+	}
+}
+
+func startLog(port int, internalIP string) {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
 	log.Printf("static file web server has started.\n")
 	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port, cuibase.End)
@@ -120,11 +151,6 @@ func startWebServer(port int) {
 	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
 		cuibase.Purple, cuibase.End, innerURL)
 	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", cuibase.Purple, cuibase.End, innerURL)
-
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		log.Fatal("error: ", err)
-	}
 }
 
 func main() {
