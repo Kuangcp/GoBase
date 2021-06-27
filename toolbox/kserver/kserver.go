@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
@@ -32,7 +33,7 @@ var (
 
 var info = cuibase.HelpInfo{
 	Description:   "Start static file web server on current path",
-	Version:       "1.0.6",
+	Version:       "1.0.7",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -2,
 	ValueLen:      -6,
@@ -69,33 +70,17 @@ func isFileExist(filename string) bool {
 	return err == nil
 }
 
-// TODO 使用缓冲区 刷盘，实现低内存处理大文件
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	var maxMib int64 = 10
 	err := r.ParseMultipartForm(maxMib << 20)
 	if err != nil {
 		log.Println(err)
 	}
+
 	for _, headers := range r.MultipartForm.File {
 		for _, header := range headers {
-			filename := header.Filename
-			log.Printf("upload: %s", filename)
-
-			exist := isFileExist(filename)
-			if exist {
-				filename = fmt.Sprint(time.Now().Nanosecond()) + "-" + filename
-			}
-
-			dst, err := os.Create(filename)
-			if err != nil {
-				log.Println(err)
+			if err := receiveFile(header); err != nil {
 				return
-			}
-
-			open, _ := header.Open()
-			_, err = io.Copy(dst, open)
-			if err != nil {
-				log.Println(err)
 			}
 		}
 	}
@@ -103,46 +88,76 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/up", http.StatusMovedPermanently)
 }
 
-func startWebServer(port int) {
-	internalIP := getInternalIP()
+func receiveFile(header *multipart.FileHeader) error {
+	filename := header.Filename
+	log.Printf("upload: %s", filename)
 
-	// 绑定路由到当前目录
-	fs := http.FileServer(http.Dir("./"))
+	exist := isFileExist(filename)
+	if exist {
+		filename = fmt.Sprint(time.Now().Nanosecond()) + "-" + filename
+	}
 
-	http.Handle("/d/", http.StripPrefix("/d", fs))
-	http.HandleFunc("/f", uploadHandler)
-
-	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := writer.Write([]byte(homeStaticPage))
-		if err != nil {
-			log.Println(err)
-		}
-	})
-
-	http.HandleFunc("/up", func(writer http.ResponseWriter, request *http.Request) {
-		_, err := writer.Write([]byte(uploadStaticPage))
-		if err != nil {
-			log.Println(err)
-		}
-	})
-
-	http.HandleFunc("/e", func(writer http.ResponseWriter, request *http.Request) {
-		body, _ := ioutil.ReadAll(request.Body)
-		content := string(body)
-		content = content[8:]
-		decode, _ := url.QueryUnescape("Content: \n\n" + content)
-		log.Print(decode)
-	})
-
-	startLog(port, internalIP)
-
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	dst, err := os.Create(filename)
 	if err != nil {
-		log.Fatal("error: ", err)
+		log.Println(err)
+		return err
+	}
+
+	open, err := header.Open()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	defer func() {
+		err := dst.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	defer func() {
+		err := open.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	_, err = io.Copy(dst, open)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func uploadPageHandler(writer http.ResponseWriter, _ *http.Request) {
+	_, err := writer.Write([]byte(uploadStaticPage))
+	if err != nil {
+		log.Println(err)
 	}
 }
 
-func startLog(port int, internalIP string) {
+func homePageHandler(writer http.ResponseWriter, _ *http.Request) {
+	_, err := writer.Write([]byte(homeStaticPage))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func echoHandler(_ http.ResponseWriter, request *http.Request) {
+	body, _ := ioutil.ReadAll(request.Body)
+	content := string(body)
+
+	decode, _ := url.QueryUnescape(content)
+	if strings.HasPrefix(decode, "content") {
+		decode = decode[8:]
+	}
+	decode = "Content: \n" + decode
+	log.Print(decode)
+}
+
+func printStartUpLog(port int, internalIP string) {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
 	log.Printf("static file web server has started.\n")
 	log.Printf("%vhttp://127.0.0.1:%v%v\n", cuibase.Green, port, cuibase.End)
@@ -167,5 +182,19 @@ func main() {
 		log.Printf("%vWARN: [1-1024] need run by root user.%v", cuibase.Red, cuibase.End)
 	}
 
-	startWebServer(port)
+	printStartUpLog(port, getInternalIP())
+
+	// 绑定路由 与 当前目录
+	fs := http.FileServer(http.Dir("./"))
+	http.Handle("/d/", http.StripPrefix("/d", fs))
+
+	http.HandleFunc("/", homePageHandler)
+	http.HandleFunc("/f", uploadHandler)
+	http.HandleFunc("/up", uploadPageHandler)
+	http.HandleFunc("/e", echoHandler)
+
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err != nil {
+		log.Fatal("error: ", err)
+	}
 }
