@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"socket2http/request"
 	"strings"
 	"time"
 )
@@ -23,6 +24,7 @@ func readRequest(conn *net.TCPConn) []byte {
 	return maxBuf
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
 func buildAuthResponse() string {
 	// Key:Value 的形式表示Header属性
 	var header = []string{
@@ -52,6 +54,10 @@ func buildResponse() string {
 	response += "\r\n\r\n"
 	response = response + time.Now().Format("15:04:05.000")
 	return response
+}
+
+func parseRequest() request.HttpRequest {
+	return request.MythHttpRequest{}
 }
 
 func httpResponse(conn *net.TCPConn) {
