@@ -27,6 +27,7 @@ var homeStaticPage string
 
 var (
 	help         bool
+	pureStatic   bool
 	port         int
 	buildVersion string
 )
@@ -39,6 +40,7 @@ var info = cuibase.HelpInfo{
 	ValueLen:      -6,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
+		{Short: "-s", BoolVar: &pureStatic, Comment: "pure static"},
 	},
 	Options: []cuibase.ParamVO{
 		{Short: "-p", Value: "port", Comment: "web server port"},
@@ -186,9 +188,14 @@ func main() {
 
 	// 绑定路由 与 当前目录
 	fs := http.FileServer(http.Dir("./"))
-	http.Handle("/d/", http.StripPrefix("/d", fs))
+	if pureStatic {
+		http.Handle("/", http.StripPrefix("/", fs))
+		http.HandleFunc("/h", homePageHandler)
+	} else {
+		http.Handle("/d/", http.StripPrefix("/d", fs))
+		http.HandleFunc("/", homePageHandler)
+	}
 
-	http.HandleFunc("/", homePageHandler)
 	http.HandleFunc("/f", uploadHandler)
 	http.HandleFunc("/up", uploadPageHandler)
 	http.HandleFunc("/e", echoHandler)
