@@ -4,4 +4,4 @@ COPY kserver /bin
 
 WORKDIR /data
 
-CMD ["kserver"]
+CMD ["kserver", "-s"]
