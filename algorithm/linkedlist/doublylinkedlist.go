@@ -5,14 +5,10 @@ import (
 	"log"
 )
 
-type LinkedList struct {
+type DoublyLinkedList struct {
 	head *DoublyLinkedNode
 	tail *DoublyLinkedNode
 	len  int
-}
-
-func NewLinkedList(head *DoublyLinkedNode, tail *DoublyLinkedNode) *LinkedList {
-	return &LinkedList{head: head, tail: tail}
 }
 
 type DoublyLinkedNode struct {
@@ -21,16 +17,33 @@ type DoublyLinkedNode struct {
 	next *DoublyLinkedNode
 }
 
-func NewDoublyLinkedNode(pre *DoublyLinkedNode, data interface{}, next *DoublyLinkedNode) *DoublyLinkedNode {
+func NewEmptyDoublyLinkedList() *DoublyLinkedList {
+	return &DoublyLinkedList{head: nil, tail: nil}
+}
+
+func NewDoublyLinkedList(head, tail *DoublyLinkedNode) *DoublyLinkedList {
+	return &DoublyLinkedList{head: head, tail: tail}
+}
+
+func NewEmptyDoublyLinkedNode(data interface{}) *DoublyLinkedNode {
+	return &DoublyLinkedNode{pre: nil, data: data, next: nil}
+}
+
+func NewDoublyLinkedNode(pre, next *DoublyLinkedNode, data interface{}) *DoublyLinkedNode {
 	return &DoublyLinkedNode{pre: pre, data: data, next: next}
 }
 
-func (list *LinkedList) IsEmpty() bool {
+func (list *DoublyLinkedList) IsEmpty() bool {
 	return list.head == nil
 }
 
-func (list *LinkedList) Add(data interface{}) {
-	node := NewDoublyLinkedNode(nil, data, nil)
+func (list *DoublyLinkedList) AddToHead(data interface{}) {
+
+}
+
+// Add to tail
+func (list *DoublyLinkedList) Add(data interface{}) {
+	node := NewEmptyDoublyLinkedNode(data)
 	if list.head == nil {
 		list.head = node
 		list.tail = node
@@ -42,7 +55,7 @@ func (list *LinkedList) Add(data interface{}) {
 	list.len++
 }
 
-func (list *LinkedList) Find(data interface{}) *DoublyLinkedNode {
+func (list *DoublyLinkedList) Find(data interface{}) *DoublyLinkedNode {
 	if list.IsEmpty() {
 		return nil
 	}
@@ -61,13 +74,13 @@ func (list *LinkedList) Find(data interface{}) *DoublyLinkedNode {
 	return nil
 }
 
-func (list *LinkedList) Clear() {
+func (list *DoublyLinkedList) Clear() {
 	list.head = nil
 	list.tail = nil
 	list.len = 0
 }
 
-func (list *LinkedList) Remove(data interface{}) {
+func (list *DoublyLinkedList) Remove(data interface{}) {
 	if list.IsEmpty() {
 		return
 	}
@@ -103,7 +116,7 @@ func (list *LinkedList) Remove(data interface{}) {
 }
 
 // 单链表反转 三个指针前进
-func (list *LinkedList) ReverseBySingle() *LinkedList {
+func (list *DoublyLinkedList) ReverseBySingle() *DoublyLinkedList {
 	if list.IsEmpty() || list.len == 1 {
 		return list
 	}
@@ -136,25 +149,25 @@ func (list *LinkedList) ReverseBySingle() *LinkedList {
 	}
 }
 
-func (list *LinkedList) PrintList() {
+func (list *DoublyLinkedList) PrintList() {
 	list.PrintListWithDetail(false)
 }
 
-func (list *LinkedList) PrintListWithDetail(needDetail bool) {
+func (list *DoublyLinkedList) PrintListWithDetail(needDetail bool) {
 	if list.IsEmpty() {
 		log.Println("list is empty")
 		return
 	}
 
 	node := list.head
-	println()
-	log.Println("head=", list.head, "tail=", list.tail, "len=", list.len)
+	log.Println("len:", list.len, ",head:", list.head, ",tail:", list.tail)
 
 	for {
 		if needDetail {
-			print("cur=", node, " ")
-			log.Println(cuibase.Green, "pre=", node.pre, cuibase.End,
-				"data=", node.data, cuibase.Green, "next=", node.next, cuibase.End)
+			log.Println(
+				cuibase.Green, "pre=", node.pre, cuibase.End,
+				"data=", node.data,
+				cuibase.Green, "next=", node.next, cuibase.End)
 		} else {
 			log.Println(node.data)
 		}
