@@ -5,7 +5,7 @@
     <title>Hosts Group</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
     <link rel="stylesheet" href="main.css"/>
-    <link rel="stylesheet" href="toast.css"/>
+    <link rel="stylesheet" href="msgTips.css"/>
 </head>
 <body>
 
@@ -14,8 +14,8 @@
 <main>
     <div class="group-list">
         <div class="button-list">
-            <button onclick="saveFile()">Save</button>
-            <button onclick="queryCurrent()">Current</button>
+            <button onclick="saveFile()" title="Ctrl S">Save</button>
+            <button onclick="queryCurrent()" title="Ctrl D">Current</button>
         </div>
 
         <div id="groupList"></div>
@@ -25,14 +25,26 @@
 
 <script src="main.js"></script>
 <script>
+    function fillParam(params) {
+        if (!params.time) {
+            params.time = 1500;
+        }
+
+        if (!params.type) {
+            params.type = 'tips'
+        }
+    }
+
     function msgTips(params) {
-        let time = params.time;
-        if (!time) {
-            time = 1500;
+        fillParam(params)
+        if (params.type === 'tips') {
+            params.message = '😀 ' + params.message;
+        } else if (params.type === 'error') {
+            params.message = '😅 ' + params.message
         }
 
         let el = document.createElement("div");
-        el.setAttribute("class", "web-toast");
+        el.setAttribute("class", "web-toast" + ' type-' + params.type);
         el.innerHTML = params.message;
         document.body.appendChild(el);
         el.classList.add("fadeIn");
@@ -46,7 +58,7 @@
             el.addEventListener("webkitAnimationEnd", function () {
                 document.body.removeChild(el);
             });
-        }, time)
+        }, params.time)
     }
 
     function getFile(fileName) {
@@ -109,14 +121,14 @@
         if (!finalFileName || finalFileName.length <= 0) {
             finalFileName = localStorage.getItem(curFileKey)
             if (!finalFileName) {
-                msgTips({message: "未选中分组"})
+                msgTips({message: "未选中分组", type: 'error'})
                 return
             }
 
             isUse = document.getElementById("group-item-check-" + finalFileName).checked;
         }
         if (finalFileName.length <= 0) {
-            msgTips({message: "未选中分组"})
+            msgTips({message: "未选中分组", type: 'error'})
             return
         }
 
@@ -126,7 +138,7 @@
             use: isUse
         };
         if (contentObj.innerText === "") {
-            msgTips({message: "未选中分组"})
+            msgTips({message: "未选中分组", type: 'error'})
             return
         }
         console.log('post', fileItem)
@@ -183,6 +195,11 @@
         if (event.ctrlKey === true && event.key === 's') {
             event.preventDefault();
             saveFile();
+        }
+        if (event.ctrlKey === true && event.key === 'd') {
+            event.preventDefault();
+            msgTips({message: "显示当前 hosts", time: 800})
+            queryCurrent();
         }
     }
 
