@@ -114,7 +114,6 @@ func doQueryBaidu(param queryParam) {
 	}
 
 	finalURL := param.buildFinalURL()
-	fmt.Println(finalURL)
 	resp, err := http.Get(finalURL)
 	if err != nil {
 		fmt.Println(err)

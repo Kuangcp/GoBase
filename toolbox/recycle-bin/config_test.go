@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestDangerDir(t *testing.T) {
 	if !isDangerDir("/") {

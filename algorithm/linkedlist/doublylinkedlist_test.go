@@ -22,7 +22,7 @@ func (car *Car) String() string {
 }
 
 func TestLinkedList_Add(t *testing.T) {
-	list := NewLinkedList(nil, nil)
+	list := NewEmptyDoublyLinkedList()
 	for i := 0; i < 4; i++ {
 		list.Add(i)
 	}
@@ -45,7 +45,7 @@ func TestLinkedList_Add(t *testing.T) {
 }
 
 func TestLinkedList_Reverse(t *testing.T) {
-	list := NewLinkedList(nil, nil)
+	list := NewEmptyDoublyLinkedList()
 	for i := 0; i < 2; i++ {
 		list.Add(i)
 	}
@@ -56,4 +56,14 @@ func TestLinkedList_Reverse(t *testing.T) {
 		list.Add(i)
 	}
 	list.ReverseBySingle().PrintList()
+}
+
+func TestAddRemove(t *testing.T) {
+	list := NewEmptyDoublyLinkedList()
+	for i := 0; i < 3; i++ {
+		list.Add(i)
+	}
+	list.PrintList()
+	list.Remove(1)
+	list.PrintListWithDetail(true)
 }
