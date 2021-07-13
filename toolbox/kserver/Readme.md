@@ -9,16 +9,16 @@
 
 ### use
 
-1. docker run --name ss -it -v `pwd`:/app -P ksever:1.0.7-alpine
+1. docker run --name ss -it -v `pwd`:/app -P ksever:1.0.8-alpine
 2. dockerfile
     ```dockerfile
-    FROM ksever:1.0.7-alpine
+    FROM ksever:1.0.8-alpine
 
-    COPY . /data
+    COPY . /app
 
-    WORKDIR /data
+    WORKDIR /app
 
-    CMD ["kserver","-s"]
+    CMD ["kserver"]
     ```
 
 ## change log
