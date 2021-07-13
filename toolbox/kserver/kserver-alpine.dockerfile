@@ -2,6 +2,6 @@ FROM alpine:3.10
 
 COPY kserver /bin
 
-WORKDIR /data
+WORKDIR /app
 
-CMD ["kserver", "-s"]
+CMD ["kserver"]

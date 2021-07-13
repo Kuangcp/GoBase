@@ -26,21 +26,22 @@ var uploadStaticPage string
 var homeStaticPage string
 
 var (
-	help         bool
-	pureStatic   bool
+	help          bool
+	defaultHome   bool
+
 	port         int
 	buildVersion string
 )
 
 var info = cuibase.HelpInfo{
 	Description:   "Start static file web server on current path",
-	Version:       "1.0.7",
+	Version:       "1.0.8",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -2,
 	ValueLen:      -6,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
-		{Short: "-s", BoolVar: &pureStatic, Comment: "pure static"},
+		{Short: "-g", BoolVar: &defaultHome, Comment: "default home page"},
 	},
 	Options: []cuibase.ParamVO{
 		{Short: "-p", Value: "port", Comment: "web server port"},
@@ -188,12 +189,12 @@ func main() {
 
 	// 绑定路由 与 当前目录
 	fs := http.FileServer(http.Dir("./"))
-	if pureStatic {
-		http.Handle("/", http.StripPrefix("/", fs))
-		http.HandleFunc("/h", homePageHandler)
-	} else {
+	if defaultHome {
 		http.Handle("/d/", http.StripPrefix("/d", fs))
 		http.HandleFunc("/", homePageHandler)
+	} else {
+		http.Handle("/", http.StripPrefix("/", fs))
+		http.HandleFunc("/h", homePageHandler)
 	}
 
 	http.HandleFunc("/f", uploadHandler)
