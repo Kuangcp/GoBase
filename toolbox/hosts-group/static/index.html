@@ -5,12 +5,11 @@
     <title>Hosts Group</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
     <link rel="stylesheet" href="main.css"/>
+    <link rel="stylesheet" href="toast.css"/>
 </head>
 <body>
 
-<nav class="nav">
-    <h3 style="text-align: center">Hosts Group</h3>
-</nav>
+<nav class="nav"></nav>
 
 <main>
     <div class="group-list">
@@ -26,6 +25,30 @@
 
 <script src="main.js"></script>
 <script>
+    function msgTips(params) {
+        let time = params.time;
+        if (!time) {
+            time = 1500;
+        }
+
+        let el = document.createElement("div");
+        el.setAttribute("class", "web-toast");
+        el.innerHTML = params.message;
+        document.body.appendChild(el);
+        el.classList.add("fadeIn");
+        setTimeout(function () {
+            el.classList.remove("fadeIn");
+            el.classList.add("fadeOut");
+            /*监听动画结束，移除提示信息元素*/
+            el.addEventListener("animationend", function () {
+                document.body.removeChild(el);
+            });
+            el.addEventListener("webkitAnimationEnd", function () {
+                document.body.removeChild(el);
+            });
+        }, time)
+    }
+
     function getFile(fileName) {
         for (let i = 0; i < totalItem.length; i++) {
             document.getElementById("group-item-" + totalItem[i]).style.backgroundColor = 'white';
@@ -69,7 +92,9 @@
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
-                document.getElementById("group-item-check-" + fileName).checked = data.data
+                let checked = data.data;
+                document.getElementById("group-item-check-" + fileName).checked = checked
+                msgTips({message: fileName + (checked ? " 已启用" : " 已禁用"), time: 500})
             } else {
                 alert("current hosts not exist")
             }
@@ -78,16 +103,20 @@
 
     function saveFile() {
         let contentObj = document.getElementById("content");
-        // console.log(contentObj.value)
 
         let finalFileName = document.getElementById("group-item-new-label").value;
         let isUse = document.getElementById("group-item-new-check").checked;
         if (!finalFileName || finalFileName.length <= 0) {
             finalFileName = localStorage.getItem(curFileKey)
+            if (!finalFileName) {
+                msgTips({message: "未选中分组"})
+                return
+            }
+
             isUse = document.getElementById("group-item-check-" + finalFileName).checked;
         }
         if (finalFileName.length <= 0) {
-            alert('not select any file')
+            msgTips({message: "未选中分组"})
             return
         }
 
@@ -96,6 +125,10 @@
             content: contentObj.innerText,
             use: isUse
         };
+        if (contentObj.innerText === "") {
+            msgTips({message: "未选中分组"})
+            return
+        }
         console.log('post', fileItem)
 
         let httpRequest = new XMLHttpRequest();
@@ -113,6 +146,10 @@
                 document.getElementById("group-item-new-check").checked = false
             }
         }
+        msgTips({
+            message: finalFileName + " 保存成功",
+            time: 700
+        })
     }
 
     function clearSelect() {
@@ -142,7 +179,15 @@
         })
     }
 
+    document.onkeydown = function (event) {
+        if (event.ctrlKey === true && event.key === 's') {
+            event.preventDefault();
+            saveFile();
+        }
+    }
+
     listGroups();
+    localStorage.removeItem(curFileKey);
 </script>
 </body>
 
