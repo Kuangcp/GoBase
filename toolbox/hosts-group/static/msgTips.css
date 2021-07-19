@@ -88,16 +88,29 @@
     }
 }
 
+.type-tips {
+    /*background: rgba(0, 0, 0, 0.618);*/
+    background: rgba(240, 249, 235, 1);
+    color: rgba(103, 194, 58, 1);
+    font-size: 14px;
+    left: 50%;
+    top: 6%;
+}
+
+.type-error {
+    /*background: rgba(0, 0, 0, 0.8);*/
+    background: rgba(255, 240, 240, 1);
+    color: rgba(245, 108, 108, 1);
+    font-size: 15px;
+    left: 50%;
+    top: 10%;
+}
+
 .web-toast {
     position: fixed;
-    background: rgba(0, 0, 0, 0.7);
-    color: #fff;
-    font-size: 14px;
     line-height: 1;
     padding: 10px;
     border-radius: 3px;
-    left: 50%;
-    top: 50%;
     transform: translate(-50%, -50%);
     -webkit-transform: translate(-50%, -50%);
     -moz-transform: translate(-50%, -50%);

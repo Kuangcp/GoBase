@@ -13,6 +13,9 @@ support tray
 
 `make install`
 
+## Dev
+go run . -d -D
+
 *******************
 
 > Windows
