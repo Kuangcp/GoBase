@@ -12,8 +12,7 @@ require (
 	github.com/kuangcp/gobase/pkg/stopwatch v0.0.0-20210713173722-7ca2e3616271
 	github.com/kuangcp/logger v1.0.4
 	github.com/manifoldco/promptui v0.8.0
-	github.com/onsi/ginkgo v1.12.0 // indirect
-	github.com/onsi/gomega v1.9.0 // indirect
+	github.com/onsi/gomega v1.14.0 // indirect
 	github.com/webview/webview v0.0.0-20210330151455-f540d88dde4e
 )
 
