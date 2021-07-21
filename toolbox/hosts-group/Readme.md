@@ -1,11 +1,21 @@
 # Hosts Group
-> like [SwitchHosts](https://oldj.github.io/SwitchHosts/)
+> inspire from [SwitchHosts](https://oldj.github.io/SwitchHosts/)
 
 Just webserver, provide curd api to management hosts file.
 
-support tray
+hosts file location:
+1. Windows `C:\Windows\System32\drivers\etc\hosts`
+1. Linux `/etc/hosts`
 
-- [ ] independent window
+Support nginx reload
+1. `sudo ./hosts-group -f /etc/nginx/conf.d/static.conf -m /.ng-group/ -cmd "nginx -s reload"`
+
+## Version
+1.4.0
+1. simple support nginx config
+
+## TODO
+1. independent window
 
 *******************
 ## Install
@@ -13,13 +23,15 @@ support tray
 
 `make install`
 
-## Dev
-go run . -d -D
-
 *******************
 
 > Windows
 
-`make buildExe` only support build by linux ...
+1. `make buildExe`
+    - only support build via linux ...
+1. run hosts-group.xxx.exe on Windows `Administer`
 
 [blog: exe add icon](https://blog.csdn.net/u014633966/article/details/82984037)
+
+## Dev Tips
+go run . -d -D

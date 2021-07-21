@@ -3,11 +3,10 @@ package app
 import (
 	"bufio"
 	"fmt"
+	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"runtime"
-
-	"github.com/kuangcp/logger"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
@@ -20,27 +19,33 @@ const (
 )
 
 var (
-	mainDir     = "/.hosts-group/"
+	mainDir     = "/.hosts-group/" // 用户目录下
 	groupDir    string
 	bakFile     string
 	curHostFile string
 )
 var (
-	Debug       bool
-	DebugStatic bool
-	Version     bool
-	LogPath     string
+	Debug            bool
+	DebugStatic      bool
+	Version          bool
+	LogPath          string
+	FinalHostFile    string // 入参指定hosts文件
+	MainPath         string
+	GenerateAfterCmd string
 )
 
 var Info = cuibase.HelpInfo{
-	Description:   "Hosts switch tool",
-	Version:       "1.3.9",
+	Description:   "Hosts Group, switch host tool",
+	Version:       "1.4.0",
 	SingleFlagLen: -2,
 	DoubleFlagLen: 0,
 	ValueLen:      -5,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", Comment: "help info"},
-		{Short: "-d", Comment: "debug mode, use test hosts file"},
+		{Short: "-f", Comment: "set main hosts file"},
+		{Short: "-m", Comment: "main config file"},
+		{Short: "-cmd", Comment: "the cmd run after generate hosts file"},
+		{Short: "-d", Comment: "debug mode, use test dir and host-file"},
 		{Short: "-D", Comment: "debug static mode, use static dir not embed packaged"},
 		{Short: "-v", Comment: "version"},
 	},
@@ -49,13 +54,12 @@ var Info = cuibase.HelpInfo{
 	},
 }
 
+// 初始化日志配置，目标hosts文件，应用配置目录
 func InitConfigAndEnv() {
 	initLogConfig()
 
-	if "windows" == runtime.GOOS {
-		curHostFile = winHostFileStr
-	} else {
-		curHostFile = unixHostFileStr
+	if MainPath != "" {
+		mainDir = MainPath
 	}
 
 	home, err := cuibase.Home()
@@ -64,18 +68,32 @@ func InitConfigAndEnv() {
 	mainDir = home + mainDir
 	groupDir = mainDir + groupDirStr
 	bakFile = mainDir + bakFileStr
-
-	if Debug {
-		logger.Info("using debug mode")
-		curHostFile = mainDir + "hosts"
-	}
-	logger.Info("current hosts file:", curHostFile)
-
 	mkDir(groupDir)
+
+	fillFinalHostsFile()
+	logger.Info("current hosts file:", curHostFile)
 
 	backupOriginFile()
 }
 
+func fillFinalHostsFile() {
+	if FinalHostFile != "" {
+		curHostFile = FinalHostFile
+		return
+	}
+
+	if Debug {
+		logger.Info("using debug mode")
+		curHostFile = mainDir + "hosts"
+		return
+	}
+
+	if runtime.GOOS == "windows" {
+		curHostFile = winHostFileStr
+	} else {
+		curHostFile = unixHostFileStr
+	}
+}
 func initLogConfig() {
 	logger.SetLogPathTrim("/hosts-group/")
 
@@ -105,6 +123,7 @@ func initLogConfig() {
 	}
 }
 
+// 备份原始 hosts 文件
 func backupOriginFile() {
 	exists, err := isPathExists(bakFile)
 	cuibase.CheckIfError(err)

@@ -17,6 +17,9 @@ func init() {
 	flag.BoolVar(&app.DebugStatic, "D", false, "")
 	flag.BoolVar(&app.Version, "v", false, "")
 	flag.StringVar(&app.LogPath, "l", "", "")
+	flag.StringVar(&app.FinalHostFile, "f", "", "")
+	flag.StringVar(&app.MainPath, "m", "", "")
+	flag.StringVar(&app.GenerateAfterCmd, "cmd", "", "")
 	flag.Usage = app.Info.PrintHelp
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -258,7 +259,7 @@ func switchState(absPath string, targetUse bool) (string, bool, error) {
 }
 
 func generateHost() error {
-	logger.Info("start generate", curHostFile)
+	logger.Info("Generate new:", curHostFile)
 	list := getFileList()
 	mergeResult := ""
 	for _, vo := range list {
@@ -280,7 +281,31 @@ func generateHost() error {
 		logger.Error(err.Error())
 		return fmt.Errorf(err.Error())
 	}
+
+	doAfterCmd()
 	return nil
+}
+
+func doAfterCmd() {
+	if GenerateAfterCmd == "" {
+		return
+	}
+	execCmdWithQuite(exec.Command("nginx", "-s", "reload"))
+	fields := strings.Fields(GenerateAfterCmd)
+	if len(fields) > 1 {
+		execCmdWithQuite(exec.Command(fields[0], fields[1:]...))
+	} else {
+		execCmdWithQuite(exec.Command(fields[0]))
+	}
+}
+
+// 静默执行 不关心返回值
+func execCmdWithQuite(cmd *exec.Cmd) {
+	err := cmd.Run()
+	if err != nil {
+		logger.Error(cmd, err)
+		os.Exit(1)
+	}
 }
 
 func buildFileBlock(name, content string) string {
