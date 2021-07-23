@@ -6,10 +6,11 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
     <link rel="stylesheet" href="main.css"/>
     <link rel="stylesheet" href="msgTips.css"/>
+
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="lib/codemirror.js"></script>
 </head>
 <body>
-
-<nav class="nav"></nav>
 
 <main>
     <div class="group-list">
@@ -20,11 +21,18 @@
 
         <div id="groupList"></div>
     </div>
-    <div id="content" class="group-edit-box" contenteditable="true"></div>
+<!--    <div id="content" class="group-edit-box" contenteditable="true"></div>-->
+    <textarea id="content"></textarea>
 </main>
 
 <script src="main.js"></script>
 <script>
+    //根据DOM元素的id构造出一个编辑器
+    let editor = CodeMirror.fromTextArea(document.getElementById("content"), {
+        mode: "text/x-java", //实现Java代码高亮
+        lineNumbers: true
+    });
+
     function fillParam(params) {
         if (!params.time) {
             params.time = 1500;
@@ -74,7 +82,7 @@
             let data = JSON.parse(respTxt);
 
             if (data.code === 0) {
-                document.getElementById("content").innerText = data.data.content
+                editor.setValue(data.data.content)
                 document.getElementById("group-item-check-" + fileName).checked = data.data.use
             } else {
                 alert(fileName + "not exist")
@@ -92,7 +100,7 @@
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
-                document.getElementById("content").innerText = data.data;
+                editor.setValue(data.data)
             } else {
                 alert("current hosts not exist")
             }
@@ -114,7 +122,7 @@
     }
 
     function saveFile() {
-        let contentObj = document.getElementById("content");
+        let contentObj = editor.getValue();
 
         let finalFileName = document.getElementById("group-item-new-label").value;
         let isUse = document.getElementById("group-item-new-check").checked;
@@ -134,10 +142,10 @@
 
         let fileItem = {
             name: finalFileName,
-            content: contentObj.innerText,
+            content: contentObj,
             use: isUse
         };
-        if (contentObj.innerText === "") {
+        if (contentObj === "") {
             msgTips({message: "未选中分组", type: 'error'})
             return
         }

@@ -10,12 +10,18 @@ body {
     justify-content: center;
 }
 
-.nav {
-    height: 16px;
+main {
+    padding-top: 20px;
+    height: calc(100vh - 20px);
 }
 
 .group-list {
     float: left;
+    height: 100%;
+}
+
+.CodeMirror {
+    height: 100% !important;
 }
 
 .group-edit-box {
