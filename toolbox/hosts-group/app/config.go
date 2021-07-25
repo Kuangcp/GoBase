@@ -23,14 +23,14 @@ const (
 )
 
 var (
-	Debug            bool
-	DebugStatic      bool
-	Version          bool
-	LogPath          string
-	FinalHostFile    string // 入参指定hosts文件
-	MainPath         string
-	GenerateAfterCmd string
-	SupportMode      string
+	DebugStatic    bool
+	Version        bool
+	LogPath        string
+	DebugHostFile  bool   // 使用默认Debug文件
+	FinalHostFile  string // 入参指定hosts文件
+	MainPath       string
+	ChangeFileHook string
+	SupportMode    string
 )
 
 var Info = cuibase.HelpInfo{
@@ -91,8 +91,8 @@ func InitConfigBuildEnv() {
 
 	fillFinalHostsFile()
 
-	if SupportMode == "nginx" && GenerateAfterCmd == "" {
-		GenerateAfterCmd = "nginx -s reload"
+	if SupportMode == "nginx" && ChangeFileHook == "" {
+		ChangeFileHook = "nginx -s reload"
 	}
 
 	logger.Info("current hosts file:", curHostFile)
@@ -106,8 +106,7 @@ func fillFinalHostsFile() {
 		return
 	}
 
-	if Debug {
-		logger.Info("using debug mode")
+	if DebugHostFile {
 		curHostFile = mainDir + "hosts"
 		return
 	}

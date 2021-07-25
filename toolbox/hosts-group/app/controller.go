@@ -298,12 +298,11 @@ func generateHost() error {
 }
 
 func doAfterCmd() {
-	if GenerateAfterCmd == "" {
+	if ChangeFileHook == "" {
 		return
 	}
-	fmt.Println(GenerateAfterCmd)
-	//execCmdWithQuite(exec.Command("nginx", "-s", "reload"))
-	fields := strings.Fields(GenerateAfterCmd)
+	fmt.Println("run hook:", ChangeFileHook)
+	fields := strings.Fields(ChangeFileHook)
 	if len(fields) > 1 {
 		execCmdWithQuite(exec.Command(fields[0], fields[1:]...))
 	} else {
