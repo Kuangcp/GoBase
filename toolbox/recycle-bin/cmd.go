@@ -9,9 +9,6 @@ import (
 
 // 静默执行 不关心返回值
 func execCmdWithQuite(cmd *exec.Cmd) {
-	var out bytes.Buffer
-
-	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
 		logger.Error(cmd, err)

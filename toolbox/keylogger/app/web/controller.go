@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"keylogger/app/store"
 	"sort"
 	"strconv"
@@ -264,15 +265,18 @@ func HeatMap(c *gin.Context) {
 func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	dayList := buildDayList(length, offset)
 
-	// [weekday, hour, count], [weekday, hour, count]
+	// data: [weekday, hour, count], [weekday, hour, count]
 	var result [168][3]int
 
+	//TODO no mutex or sync.Map use read write lock
 	var mutex = &sync.Mutex{}
 	// weekday -> hour -> count
 	totalMap := make(map[int]map[int]int)
 	var latch sync.WaitGroup
 	latch.Add(len(dayList))
 
+	watch := stopwatch.NewWithName("")
+	watch.Start(fmt.Sprint(len(dayList), "day"))
 	for _, day := range dayList {
 		var curDay = day
 		go func() {
@@ -282,6 +286,7 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 		}()
 	}
 	latch.Wait()
+	logger.Debug(watch.PrettyPrint())
 
 	total := 0
 	max := 0
@@ -323,37 +328,40 @@ func readDetailToMap(
 		lastCursor = cursor
 		first = false
 		for i := range result {
+			// ignore keyCode
 			if i%2 == 1 {
 				continue
 			}
 			//logger.Info(result[i], result[i+1])
 
-			parseInt, err := strconv.ParseInt(result[i], 0, 64)
+			timestamp, err := strconv.ParseInt(result[i], 0, 64)
 			cuibase.CheckIfError(err)
+			curStrokeTime := time.Unix(timestamp/1000_000, 0)
+			weekDay := int(curStrokeTime.Weekday())
 
-			cur := time.Unix(parseInt/1000_000, 0)
-			weekDay := int(cur.Weekday())
-
-			mutex.Lock()
-
-			dayMap := totalMap[weekDay]
-			//curStr := cur.Format(DateFormat)
-			//if curStr != curDay {
-			//	logger.Error("error detail data", curStr, curDay)
-			//}
-			if dayMap == nil {
-				dayMap = make(map[int]int)
-				totalMap[weekDay] = dayMap
-			}
-			dayMap[cur.Hour()] += 1
-
-			mutex.Unlock()
+			actionRoundLock(mutex, func() {
+				dayMap := totalMap[weekDay]
+				//curStr := cur.Format(DateFormat)
+				//if curStr != curDay {
+				//	logger.Error("error detail data", curStr, curDay)
+				//}
+				if dayMap == nil {
+					dayMap = make(map[int]int)
+					totalMap[weekDay] = dayMap
+				}
+				dayMap[curStrokeTime.Hour()] += 1
+			})
 		}
 		totalCount += len(result)
 	}
 	//logger.Info(day, totalCount/2)
 }
 
+func actionRoundLock(mutex *sync.Mutex, action func()) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	action()
+}
 func HourLineChart(c *gin.Context, param *QueryParam) {
 
 }

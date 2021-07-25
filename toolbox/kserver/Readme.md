@@ -2,10 +2,18 @@
 1. 静态文件服务器
 1. 文件上传服务器
 
-## build docker image
-1. go build; docker build -f kserver.dockerfile -t ksever:$(./kserver -h | grep Version | awk '{print $2}') .
+## build favicon.ico
+magick convert -background none favicon.svg -define icon:auto-resize favicon.ico
 
-2. CGO_ENABLED=0 go build; docker build -f kserver-alpine.dockerfile -t ksever:$(./kserver -h | grep Version | awk '{print $2}')-alpine .
+## build docker image
+
+> Ubuntu
+
+go build; docker build -f kserver.dockerfile -t ksever:$(./kserver -h | grep Version | awk '{print $2}') .
+
+> Alpine
+
+CGO_ENABLED=0 go build; docker build -f kserver-alpine.dockerfile -t ksever:$(./kserver -h | grep Version | awk '{print $2}')-alpine .
 
 ### use
 

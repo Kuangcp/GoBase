@@ -3,11 +3,10 @@ package app
 import (
 	"bufio"
 	"fmt"
+	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"runtime"
-
-	"github.com/kuangcp/logger"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
@@ -18,30 +17,37 @@ const (
 	winHostFileStr  = "C:\\Windows\\System32\\drivers\\etc\\hosts"
 	unixHostFileStr = "/etc/hosts"
 )
+const (
+	hostType  = "hosts"
+	nginxType = "nginx"
+)
 
 var (
-	mainDir     = "/.hosts-group/"
-	groupDir    string
-	bakFile     string
-	curHostFile string
-)
-var (
 	Win     bool
-	Debug       bool
-	DebugStatic bool
-	Version     bool
-	LogPath     string
+	
+	DebugStatic    bool
+	Version        bool
+	LogPath        string
+	DebugHostFile  bool   // 使用默认Debug文件
+	FinalHostFile  string // 入参指定hosts文件
+	MainPath       string
+	ChangeFileHook string
+	SupportMode    string
 )
 
 var Info = cuibase.HelpInfo{
-	Description:   "Hosts switch tool",
-	Version:       "1.3.9",
+	Description:   "Hosts Group, switch host tool",
+	Version:       "1.4.0",
 	SingleFlagLen: -2,
 	DoubleFlagLen: 0,
 	ValueLen:      -5,
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", Comment: "help info"},
-		{Short: "-d", Comment: "debug mode, use test hosts file"},
+		{Short: "-f", Comment: "set main hosts file"},
+		{Short: "-m", Comment: "main config file"},
+		{Short: "-mode", Comment: "support mode: hosts,nginx"},
+		{Short: "-cmd", Comment: "the cmd run after generate hosts file"},
+		{Short: "-d", Comment: "debug mode, use test dir and host-file"},
 		{Short: "-D", Comment: "debug static mode, use static dir not embed packaged"},
 		{Short: "-v", Comment: "version"},
 	},
@@ -50,33 +56,69 @@ var Info = cuibase.HelpInfo{
 	},
 }
 
-func InitConfigAndEnv() {
+var (
+	mainDir     string
+	hostMainDir = "/.hosts-group/" // 用户目录下
+	ngMainDir   = "/.nginx-group/" // 用户目录下
+
+	groupDir    string
+	bakFile     string
+	curHostFile string
+)
+
+// 初始化日志配置，目标hosts文件，应用配置目录
+func InitConfigBuildEnv() {
 	initLogConfig()
 
-	if "windows" == runtime.GOOS {
-		curHostFile = winHostFileStr
-	} else {
-		curHostFile = unixHostFileStr
+	if MainPath != "" {
+		mainDir = MainPath
 	}
 
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
 
+	switch SupportMode {
+	case "":
+		fallthrough
+	case hostType:
+		mainDir = hostMainDir
+	case nginxType:
+		mainDir = ngMainDir
+	}
+
 	mainDir = home + mainDir
 	groupDir = mainDir + groupDirStr
 	bakFile = mainDir + bakFileStr
-
-	if Debug {
-		logger.Info("using debug mode")
-		curHostFile = mainDir + "hosts"
-	}
-	logger.Info("current hosts file:", curHostFile)
-
 	mkDir(groupDir)
+
+	fillFinalHostsFile()
+
+	if SupportMode == "nginx" && ChangeFileHook == "" {
+		ChangeFileHook = "nginx -s reload"
+	}
+
+	logger.Info("current hosts file:", curHostFile)
 
 	backupOriginFile()
 }
 
+func fillFinalHostsFile() {
+	if FinalHostFile != "" {
+		curHostFile = FinalHostFile
+		return
+	}
+
+	if DebugHostFile {
+		curHostFile = mainDir + "hosts"
+		return
+	}
+
+	if runtime.GOOS == "windows" {
+		curHostFile = winHostFileStr
+	} else {
+		curHostFile = unixHostFileStr
+	}
+}
 func initLogConfig() {
 	logger.SetLogPathTrim("/hosts-group/")
 
@@ -106,6 +148,7 @@ func initLogConfig() {
 	}
 }
 
+// 备份原始 hosts 文件
 func backupOriginFile() {
 	exists, err := isPathExists(bakFile)
 	cuibase.CheckIfError(err)

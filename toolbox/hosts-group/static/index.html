@@ -6,25 +6,27 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
     <link rel="stylesheet" href="main.css"/>
     <link rel="stylesheet" href="msgTips.css"/>
+
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="lib/codemirror.js"></script>
+
+    <link rel="stylesheet" href="theme/material.css">
+    <script src="mode/nginx/nginx.js"></script>
+    <script src="mode/hosts/hosts.js"></script>
 </head>
 <body>
 
-<nav class="nav"></nav>
-
 <main>
     <div class="group-list">
-        <div class="button-list">
-            <button onclick="saveFile()" title="Ctrl S">Save</button>
-            <button onclick="queryCurrent()" title="Ctrl D">Current</button>
-        </div>
-
         <div id="groupList"></div>
     </div>
-    <div id="content" class="group-edit-box" contenteditable="true"></div>
+    <textarea id="content"></textarea>
 </main>
 
 <script src="main.js"></script>
 <script>
+    let editor;
+
     function fillParam(params) {
         if (!params.time) {
             params.time = 1500;
@@ -74,7 +76,7 @@
             let data = JSON.parse(respTxt);
 
             if (data.code === 0) {
-                document.getElementById("content").innerText = data.data.content
+                editor.setValue(data.data.content)
                 document.getElementById("group-item-check-" + fileName).checked = data.data.use
             } else {
                 alert(fileName + "not exist")
@@ -92,7 +94,7 @@
             let respTxt = req.responseText;
             let data = JSON.parse(respTxt);
             if (data.code === 0) {
-                document.getElementById("content").innerText = data.data;
+                editor.setValue(data.data)
             } else {
                 alert("current hosts not exist")
             }
@@ -114,11 +116,12 @@
     }
 
     function saveFile() {
-        let contentObj = document.getElementById("content");
+        let contentObj = editor.getValue();
 
-        let finalFileName = document.getElementById("group-item-new-label").value;
+        let finalFileName
+        let newFileName = document.getElementById("group-item-new-label").value;
         let isUse = document.getElementById("group-item-new-check").checked;
-        if (!finalFileName || finalFileName.length <= 0) {
+        if (!newFileName || newFileName.length <= 0) {
             finalFileName = localStorage.getItem(curFileKey)
             if (!finalFileName) {
                 msgTips({message: "未选中分组", type: 'error'})
@@ -126,6 +129,8 @@
             }
 
             isUse = document.getElementById("group-item-check-" + finalFileName).checked;
+        } else {
+            finalFileName = newFileName
         }
         if (finalFileName.length <= 0) {
             msgTips({message: "未选中分组", type: 'error'})
@@ -134,10 +139,10 @@
 
         let fileItem = {
             name: finalFileName,
-            content: contentObj.innerText,
+            content: contentObj,
             use: isUse
         };
-        if (contentObj.innerText === "") {
+        if (contentObj === "") {
             msgTips({message: "未选中分组", type: 'error'})
             return
         }
@@ -153,6 +158,9 @@
                 if (data.code !== 0) {
                     alert(data.msg)
                     return
+                }
+                if (newFileName) {
+                    window.location.reload()
                 }
                 // console.log(data);
                 document.getElementById("group-item-new-check").checked = false
@@ -170,40 +178,64 @@
 
     function listGroups() {
         totalItem = []
-        get(basePath + 'listFile', function (req) {
+        get(basePath + 'listFile', function (rsp) {
             // console.log('list: ', datum)
             let listEle = document.getElementById("groupList");
-            let respTxt = req.responseText;//获取到json字符串，还需解析
+            let respTxt = rsp.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
-            for (let ele in data.data) {
-                let datum = data.data[ele];
+            listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
+                '<input type="checkbox" id="group-item-new-check"/>' +
+                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="create new"/>' +
+                '</div>';
 
-                let name = datum.name;
+            if (!data.data) {
+                return
+            }
+            data.data.forEach(oneFile => {
+                let name = oneFile.name;
                 totalItem.push(name)
                 listEle.innerHTML += '<div class="group-item" id="group-item-' + name + '">' +
                     '<input type="checkbox" id="group-item-check-' + name +
-                    '" onclick="switchGroupState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
-                    '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span></div>';
-            }
-            listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
-                '<input type="checkbox" id="group-item-new-check"/>' +
-                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="new group"/></div>';
+                    '" onclick="switchGroupState(\'' + name + '\')" ' + (oneFile.use ? 'checked' : '') + '/>' +
+                    '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span>' +
+                    '</div>';
+            })
         })
     }
 
-    document.onkeydown = function (event) {
-        if (event.ctrlKey === true && event.key === 's') {
-            event.preventDefault();
-            saveFile();
-        }
-        if (event.ctrlKey === true && event.key === 'd') {
-            event.preventDefault();
-            msgTips({message: "显示当前 hosts", time: 800})
-            queryCurrent();
+    function bindKeyDown() {
+        document.onkeydown = function (event) {
+            // Ctrl S
+            if (event.ctrlKey === true && event.key === 's') {
+                event.preventDefault();
+                saveFile();
+            }
+
+            // Ctrl D
+            if (event.ctrlKey === true && event.key === 'd') {
+                event.preventDefault();
+                msgTips({message: "显示当前 hosts", time: 800})
+                queryCurrent();
+            }
         }
     }
 
+    function initEditor() {
+        get(basePath + 'queryMode', function (rsp) {
+            let respTxt = rsp.responseText;//获取到json字符串，还需解析
+            let data = JSON.parse(respTxt);
+            editor = CodeMirror.fromTextArea(document.getElementById("content"), {
+                mode: data.data,
+                lineNumbers: true,
+                theme: 'material'
+            });
+        })
+
+    }
+
     listGroups();
+    initEditor();
+    bindKeyDown();
     localStorage.removeItem(curFileKey);
 </script>
 </body>

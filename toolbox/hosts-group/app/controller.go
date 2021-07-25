@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -156,6 +157,17 @@ func fillContentResult(c *gin.Context, file string, state string) bool {
 	return true
 }
 
+func QueryMode(c *gin.Context) {
+	switch SupportMode {
+	case "":
+		fallthrough
+	case hostType:
+		ghelp.GinSuccessWith(c, "text/x-hosts")
+	case nginxType:
+		ghelp.GinSuccessWith(c, "text/x-nginx-conf")
+	}
+}
+
 func ListFile(c *gin.Context) {
 	result := getFileList()
 	ghelp.GinSuccessWith(c, result)
@@ -258,7 +270,7 @@ func switchState(absPath string, targetUse bool) (string, bool, error) {
 }
 
 func generateHost() error {
-	logger.Info("start generate", curHostFile)
+	logger.Info("Generate new:", curHostFile)
 	list := getFileList()
 	mergeResult := ""
 	for _, vo := range list {
@@ -280,7 +292,31 @@ func generateHost() error {
 		logger.Error(err.Error())
 		return fmt.Errorf(err.Error())
 	}
+
+	doAfterCmd()
 	return nil
+}
+
+func doAfterCmd() {
+	if ChangeFileHook == "" {
+		return
+	}
+	fmt.Println("run hook:", ChangeFileHook)
+	fields := strings.Fields(ChangeFileHook)
+	if len(fields) > 1 {
+		execCmdWithQuite(exec.Command(fields[0], fields[1:]...))
+	} else {
+		execCmdWithQuite(exec.Command(fields[0]))
+	}
+}
+
+// 静默执行 不关心返回值
+func execCmdWithQuite(cmd *exec.Cmd) {
+	err := cmd.Run()
+	if err != nil {
+		logger.Error(cmd, err)
+		os.Exit(1)
+	}
 }
 
 func buildFileBlock(name, content string) string {

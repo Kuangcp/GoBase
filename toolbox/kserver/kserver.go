@@ -25,9 +25,12 @@ var uploadStaticPage string
 //go:embed home.html
 var homeStaticPage string
 
+//go:embed favicon.ico
+var faviconIco string
+
 var (
-	help          bool
-	defaultHome   bool
+	help        bool
+	defaultHome bool
 
 	port         int
 	buildVersion string
@@ -134,20 +137,6 @@ func receiveFile(header *multipart.FileHeader) error {
 	return nil
 }
 
-func uploadPageHandler(writer http.ResponseWriter, _ *http.Request) {
-	_, err := writer.Write([]byte(uploadStaticPage))
-	if err != nil {
-		log.Println(err)
-	}
-}
-
-func homePageHandler(writer http.ResponseWriter, _ *http.Request) {
-	_, err := writer.Write([]byte(homeStaticPage))
-	if err != nil {
-		log.Println(err)
-	}
-}
-
 func echoHandler(_ http.ResponseWriter, request *http.Request) {
 	body, _ := ioutil.ReadAll(request.Body)
 	content := string(body)
@@ -171,6 +160,15 @@ func printStartUpLog(port int, internalIP string) {
 	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", cuibase.Purple, cuibase.End, innerURL)
 }
 
+func bindPathAndStatic(pattern, binContent string) {
+	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte(binContent))
+		if err != nil {
+			log.Println(err)
+		}
+	})
+}
+
 func main() {
 	info.Parse()
 	if help {
@@ -191,14 +189,15 @@ func main() {
 	fs := http.FileServer(http.Dir("./"))
 	if defaultHome {
 		http.Handle("/d/", http.StripPrefix("/d", fs))
-		http.HandleFunc("/", homePageHandler)
+		bindPathAndStatic("/", homeStaticPage)
 	} else {
 		http.Handle("/", http.StripPrefix("/", fs))
-		http.HandleFunc("/h", homePageHandler)
+		bindPathAndStatic("/h", homeStaticPage)
 	}
+	bindPathAndStatic("/favicon.ico", faviconIco)
+	bindPathAndStatic("/up", uploadStaticPage)
 
 	http.HandleFunc("/f", uploadHandler)
-	http.HandleFunc("/up", uploadPageHandler)
 	http.HandleFunc("/e", echoHandler)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
