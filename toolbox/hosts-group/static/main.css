@@ -11,37 +11,23 @@ body {
 }
 
 main {
-    padding-top: 20px;
-    height: calc(100vh - 20px);
-}
-
-.group-list {
-    float: left;
-    height: 100%;
+    padding: 5px;
+    height: calc(100vh - 10px);
 }
 
 .CodeMirror {
     height: 100% !important;
 }
 
-.group-edit-box {
-    margin-left: 8px;
-    margin-right: 8px;
+.group-list {
     float: left;
-    width: 700px;
-    height: 600px;
-    resize: none;
-    font-size: 15px;
-    font-family: Consolas, serif;
-    border: 1px dashed;
-    padding: 3px;
-    overflow: auto;
-    /*background: linear-gradient(darkorange 10%, white 10%);*/
-    /*background-size: 100% 18px;*/
+    height: calc(100vh - 10px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .group-item {
-    width: 300px;
+    width: 320px;
     height: 35px;
     padding-left: 8px;
     font-size: 18px;
@@ -68,19 +54,3 @@ main {
     border-right: none;
     font-size: 16px;
 }
-
-.button-list {
-    margin-bottom: 10px;
-}
-
-.button-list button {
-    width: 120px;
-    margin-left: 20px;
-    height: 30px;
-}
-
-button {
-    border-radius: 9px;
-}
-
-

@@ -9,28 +9,23 @@
 
     <link rel="stylesheet" href="lib/codemirror.css">
     <script src="lib/codemirror.js"></script>
+
+    <link rel="stylesheet" href="theme/material.css">
 </head>
 <body>
 
 <main>
     <div class="group-list">
-        <div class="button-list">
-            <button onclick="saveFile()" title="Ctrl S">Save</button>
-            <button onclick="queryCurrent()" title="Ctrl D">Current</button>
-        </div>
-
         <div id="groupList"></div>
     </div>
-<!--    <div id="content" class="group-edit-box" contenteditable="true"></div>-->
     <textarea id="content"></textarea>
 </main>
 
 <script src="main.js"></script>
 <script>
-    //根据DOM元素的id构造出一个编辑器
     let editor = CodeMirror.fromTextArea(document.getElementById("content"), {
-        mode: "text/x-java", //实现Java代码高亮
-        lineNumbers: true
+        lineNumbers: true,
+        theme: 'material'
     });
 
     function fillParam(params) {
@@ -124,9 +119,11 @@
     function saveFile() {
         let contentObj = editor.getValue();
 
-        let finalFileName = document.getElementById("group-item-new-label").value;
+        let finalFileName
+        let newFileName = document.getElementById("group-item-new-label").value;
+        console.log('new ', newFileName)
         let isUse = document.getElementById("group-item-new-check").checked;
-        if (!finalFileName || finalFileName.length <= 0) {
+        if (!newFileName || newFileName.length <= 0) {
             finalFileName = localStorage.getItem(curFileKey)
             if (!finalFileName) {
                 msgTips({message: "未选中分组", type: 'error'})
@@ -134,6 +131,8 @@
             }
 
             isUse = document.getElementById("group-item-check-" + finalFileName).checked;
+        } else {
+            finalFileName = newFileName
         }
         if (finalFileName.length <= 0) {
             msgTips({message: "未选中分组", type: 'error'})
@@ -162,6 +161,9 @@
                     alert(data.msg)
                     return
                 }
+                if (newFileName) {
+                    window.location.reload()
+                }
                 // console.log(data);
                 document.getElementById("group-item-new-check").checked = false
             }
@@ -183,27 +185,31 @@
             let listEle = document.getElementById("groupList");
             let respTxt = req.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
-            for (let ele in data.data) {
-                let datum = data.data[ele];
+            listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
+                '<input type="checkbox" id="group-item-new-check"/>' +
+                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="create new"/>' +
+                '</div>';
 
-                let name = datum.name;
+            data.data.forEach(oneFile => {
+                let name = oneFile.name;
                 totalItem.push(name)
                 listEle.innerHTML += '<div class="group-item" id="group-item-' + name + '">' +
                     '<input type="checkbox" id="group-item-check-' + name +
-                    '" onclick="switchGroupState(\'' + name + '\')" ' + (datum.use ? 'checked' : '') + '/>' +
-                    '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span></div>';
-            }
-            listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
-                '<input type="checkbox" id="group-item-new-check"/>' +
-                '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="new group"/></div>';
+                    '" onclick="switchGroupState(\'' + name + '\')" ' + (oneFile.use ? 'checked' : '') + '/>' +
+                    '<span id="group-item-label-' + name + '" onclick="getFile(\'' + name + '\')">' + name + '</span>' +
+                    '</div>';
+            })
         })
     }
 
     document.onkeydown = function (event) {
+        // Ctrl S
         if (event.ctrlKey === true && event.key === 's') {
             event.preventDefault();
             saveFile();
         }
+
+        // Ctrl D
         if (event.ctrlKey === true && event.key === 'd') {
             event.preventDefault();
             msgTips({message: "显示当前 hosts", time: 800})
