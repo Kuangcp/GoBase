@@ -120,7 +120,6 @@
 
         let finalFileName
         let newFileName = document.getElementById("group-item-new-label").value;
-        console.log('new ', newFileName)
         let isUse = document.getElementById("group-item-new-check").checked;
         if (!newFileName || newFileName.length <= 0) {
             finalFileName = localStorage.getItem(curFileKey)
