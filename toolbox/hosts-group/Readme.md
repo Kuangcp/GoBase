@@ -7,8 +7,8 @@ hosts file location:
 1. Windows `C:\Windows\System32\drivers\etc\hosts`
 1. Linux `/etc/hosts`
 
-Support nginx reload
-1. `sudo ./hosts-group -f /etc/nginx/conf.d/static.conf -m /.ng-group/ -cmd "nginx -s reload"`
+Support nginx
+1. `sudo ./hosts-group -mode nginx -f /etc/nginx/conf.d/static.conf`
 
 ## Version
 1.4.0
@@ -34,4 +34,5 @@ Support nginx reload
 [blog: exe add icon](https://blog.csdn.net/u014633966/article/details/82984037)
 
 ## Dev Tips
-go run . -d -D
+1. `hosts` go run . -d -D
+1. `nginx` go build && sudo ./hosts-group -d -D -mode nginx -f /etc/nginx/conf.d/static.conf

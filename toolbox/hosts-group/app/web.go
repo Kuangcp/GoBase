@@ -46,6 +46,8 @@ func WebServer(f embed.FS, port string) {
 }
 
 func registerRouter(router *gin.Engine) {
+	router.GET(buildPath("/queryMode"), QueryMode)
+
 	router.GET(buildPath("/listFile"), ListFile)
 	router.POST(buildPath("/postFile"), CreateOrUpdateFile)
 	router.GET(buildPath("/getFile"), FileContent)

@@ -11,6 +11,8 @@
     <script src="lib/codemirror.js"></script>
 
     <link rel="stylesheet" href="theme/material.css">
+    <script src="mode/nginx/nginx.js"></script>
+    <script src="mode/hosts/hosts.js"></script>
 </head>
 <body>
 
@@ -23,10 +25,7 @@
 
 <script src="main.js"></script>
 <script>
-    let editor = CodeMirror.fromTextArea(document.getElementById("content"), {
-        lineNumbers: true,
-        theme: 'material'
-    });
+    let editor;
 
     function fillParam(params) {
         if (!params.time) {
@@ -180,16 +179,19 @@
 
     function listGroups() {
         totalItem = []
-        get(basePath + 'listFile', function (req) {
+        get(basePath + 'listFile', function (rsp) {
             // console.log('list: ', datum)
             let listEle = document.getElementById("groupList");
-            let respTxt = req.responseText;//获取到json字符串，还需解析
+            let respTxt = rsp.responseText;//获取到json字符串，还需解析
             let data = JSON.parse(respTxt);
             listEle.innerHTML += '<div class="group-item" onclick="clearSelect()">' +
                 '<input type="checkbox" id="group-item-new-check"/>' +
                 '<input id="group-item-new-label" maxlength="30" minlength="1" type="text" class="new-input" placeholder="create new"/>' +
                 '</div>';
 
+            if (!data.data) {
+                return
+            }
             data.data.forEach(oneFile => {
                 let name = oneFile.name;
                 totalItem.push(name)
@@ -202,22 +204,39 @@
         })
     }
 
-    document.onkeydown = function (event) {
-        // Ctrl S
-        if (event.ctrlKey === true && event.key === 's') {
-            event.preventDefault();
-            saveFile();
-        }
+    function bindKeyDown() {
+        document.onkeydown = function (event) {
+            // Ctrl S
+            if (event.ctrlKey === true && event.key === 's') {
+                event.preventDefault();
+                saveFile();
+            }
 
-        // Ctrl D
-        if (event.ctrlKey === true && event.key === 'd') {
-            event.preventDefault();
-            msgTips({message: "显示当前 hosts", time: 800})
-            queryCurrent();
+            // Ctrl D
+            if (event.ctrlKey === true && event.key === 'd') {
+                event.preventDefault();
+                msgTips({message: "显示当前 hosts", time: 800})
+                queryCurrent();
+            }
         }
     }
 
+    function initEditor() {
+        get(basePath + 'queryMode', function (rsp) {
+            let respTxt = rsp.responseText;//获取到json字符串，还需解析
+            let data = JSON.parse(respTxt);
+            editor = CodeMirror.fromTextArea(document.getElementById("content"), {
+                mode: data.data,
+                lineNumbers: true,
+                theme: 'material'
+            });
+        })
+
+    }
+
     listGroups();
+    initEditor();
+    bindKeyDown();
     localStorage.removeItem(curFileKey);
 </script>
 </body>

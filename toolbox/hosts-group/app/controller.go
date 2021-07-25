@@ -157,6 +157,17 @@ func fillContentResult(c *gin.Context, file string, state string) bool {
 	return true
 }
 
+func QueryMode(c *gin.Context) {
+	switch SupportMode {
+	case "":
+		fallthrough
+	case hostType:
+		ghelp.GinSuccessWith(c, "text/x-hosts")
+	case nginxType:
+		ghelp.GinSuccessWith(c, "text/x-nginx-conf")
+	}
+}
+
 func ListFile(c *gin.Context) {
 	result := getFileList()
 	ghelp.GinSuccessWith(c, result)
@@ -290,7 +301,8 @@ func doAfterCmd() {
 	if GenerateAfterCmd == "" {
 		return
 	}
-	execCmdWithQuite(exec.Command("nginx", "-s", "reload"))
+	fmt.Println(GenerateAfterCmd)
+	//execCmdWithQuite(exec.Command("nginx", "-s", "reload"))
 	fields := strings.Fields(GenerateAfterCmd)
 	if len(fields) > 1 {
 		execCmdWithQuite(exec.Command(fields[0], fields[1:]...))

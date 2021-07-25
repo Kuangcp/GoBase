@@ -20,6 +20,7 @@ func init() {
 	flag.StringVar(&app.FinalHostFile, "f", "", "")
 	flag.StringVar(&app.MainPath, "m", "", "")
 	flag.StringVar(&app.GenerateAfterCmd, "cmd", "", "")
+	flag.StringVar(&app.SupportMode, "mode", "", "")
 	flag.Usage = app.Info.PrintHelp
 }
 
@@ -30,7 +31,7 @@ func main() {
 		return
 	}
 
-	app.InitConfigAndEnv()
+	app.InitConfigBuildEnv()
 
 	go func() {
 		app.WebServer(staticFS, "8066")

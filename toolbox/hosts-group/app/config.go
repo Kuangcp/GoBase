@@ -17,13 +17,11 @@ const (
 	winHostFileStr  = "C:\\Windows\\System32\\drivers\\etc\\hosts"
 	unixHostFileStr = "/etc/hosts"
 )
-
-var (
-	mainDir     = "/.hosts-group/" // 用户目录下
-	groupDir    string
-	bakFile     string
-	curHostFile string
+const (
+	hostType  = "hosts"
+	nginxType = "nginx"
 )
+
 var (
 	Debug            bool
 	DebugStatic      bool
@@ -32,6 +30,7 @@ var (
 	FinalHostFile    string // 入参指定hosts文件
 	MainPath         string
 	GenerateAfterCmd string
+	SupportMode      string
 )
 
 var Info = cuibase.HelpInfo{
@@ -44,6 +43,7 @@ var Info = cuibase.HelpInfo{
 		{Short: "-h", Comment: "help info"},
 		{Short: "-f", Comment: "set main hosts file"},
 		{Short: "-m", Comment: "main config file"},
+		{Short: "-mode", Comment: "support mode: hosts,nginx"},
 		{Short: "-cmd", Comment: "the cmd run after generate hosts file"},
 		{Short: "-d", Comment: "debug mode, use test dir and host-file"},
 		{Short: "-D", Comment: "debug static mode, use static dir not embed packaged"},
@@ -54,8 +54,18 @@ var Info = cuibase.HelpInfo{
 	},
 }
 
+var (
+	mainDir     string
+	hostMainDir = "/.hosts-group/" // 用户目录下
+	ngMainDir   = "/.nginx-group/" // 用户目录下
+
+	groupDir    string
+	bakFile     string
+	curHostFile string
+)
+
 // 初始化日志配置，目标hosts文件，应用配置目录
-func InitConfigAndEnv() {
+func InitConfigBuildEnv() {
 	initLogConfig()
 
 	if MainPath != "" {
@@ -65,12 +75,26 @@ func InitConfigAndEnv() {
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
 
+	switch SupportMode {
+	case "":
+		fallthrough
+	case hostType:
+		mainDir = hostMainDir
+	case nginxType:
+		mainDir = ngMainDir
+	}
+
 	mainDir = home + mainDir
 	groupDir = mainDir + groupDirStr
 	bakFile = mainDir + bakFileStr
 	mkDir(groupDir)
 
 	fillFinalHostsFile()
+
+	if SupportMode == "nginx" && GenerateAfterCmd == "" {
+		GenerateAfterCmd = "nginx -s reload"
+	}
+
 	logger.Info("current hosts file:", curHostFile)
 
 	backupOriginFile()
