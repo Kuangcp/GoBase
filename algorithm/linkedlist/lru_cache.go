@@ -37,6 +37,7 @@ func (L *LRUCache) Get(s string) interface{} {
 	if node == nil {
 		return nil
 	}
+	// TODO put head
 	return node.data.(Entry).value
 }
 
