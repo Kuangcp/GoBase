@@ -1,6 +1,6 @@
 module linkedlist
 
-go 1.13
+go 1.16
 
 require github.com/kuangcp/gobase/cuibase v0.0.0-20191025124845-81f7968fa1ea
 

@@ -1,8 +1,9 @@
 package linkedlist
 
 import (
-	"github.com/kuangcp/gobase/cuibase"
 	"log"
+
+	"github.com/kuangcp/gobase/cuibase"
 )
 
 type DoublyLinkedList struct {
@@ -38,7 +39,16 @@ func (list *DoublyLinkedList) IsEmpty() bool {
 }
 
 func (list *DoublyLinkedList) AddToHead(data interface{}) {
-
+	node := NewEmptyDoublyLinkedNode(data)
+	if list.head == nil {
+		list.head = node
+		list.tail = node
+	} else {
+		list.head.pre = node
+		node.next = list.head
+		list.head = node
+	}
+	list.len++
 }
 
 // Add to tail
@@ -78,6 +88,21 @@ func (list *DoublyLinkedList) Clear() {
 	list.head = nil
 	list.tail = nil
 	list.len = 0
+}
+
+func (list *DoublyLinkedList) RemoveTail() {
+	if list.IsEmpty() {
+		return
+	}
+
+	if list.head == list.tail {
+		list.Clear()
+		return
+	}
+	sec := list.tail.pre
+	list.tail = sec
+	sec.next = nil
+	list.len--
 }
 
 func (list *DoublyLinkedList) Remove(data interface{}) {
