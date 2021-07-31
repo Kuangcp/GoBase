@@ -13,11 +13,10 @@ type (
 	}
 
 	LRUCache struct {
-		maxSize     int
-		pool        map[string]*DoublyLinkedNode
-		list        *DoublyLinkedList
-		mutex       sync.RWMutex
-		removeCount int
+		maxSize int
+		pool    map[string]*DoublyLinkedNode
+		list    *DoublyLinkedList
+		mutex   sync.RWMutex
 	}
 	Entry struct {
 		key   string
@@ -86,19 +85,4 @@ func (L *LRUCache) Size() int {
 
 func (L *LRUCache) remove(key string) {
 	delete(L.pool, key)
-}
-
-// map not gc?
-func (L *LRUCache) remove2(key string) {
-	L.removeCount++
-	delete(L.pool, key)
-
-	if L.removeCount > L.maxSize*7 {
-		oldPool := L.pool
-		L.pool = make(map[string]*DoublyLinkedNode)
-		for k, node := range oldPool {
-			L.pool[k] = node
-		}
-		L.removeCount = 0
-	}
 }
