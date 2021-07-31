@@ -2,13 +2,24 @@ package app
 
 import (
 	"embed"
+	"log"
 	"net/http"
 
 	"github.com/getlantern/systray"
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
 	"github.com/kuangcp/logger"
+	"github.com/zserge/lorca"
 )
+
+func OpenWebView() {
+	ui, err := lorca.New("http://localhost:"+PortStr, "", 1024, 768)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ui.Close()
+	<-ui.Done()
+}
 
 func WebServer(f embed.FS, port string) {
 	gin.SetMode(gin.ReleaseMode)

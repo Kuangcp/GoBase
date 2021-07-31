@@ -3,11 +3,10 @@ package app
 import (
 	"sync"
 
-	"github.com/kuangcp/logger"
-	"github.com/skratchdot/open-golang/open"
-
 	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app/icon"
+	"github.com/kuangcp/logger"
+	"github.com/skratchdot/open-golang/open"
 )
 
 var (
@@ -17,7 +16,7 @@ var (
 func OnReady() {
 	systray.SetTemplateIcon(icon.Data, icon.Data)
 	systray.SetTitle("Hosts Group")
-	systray.SetTooltip("Tips")
+	systray.SetTooltip("Hosts Group")
 
 	addPageLinkItem()
 
@@ -43,18 +42,21 @@ func OnReady() {
 }
 
 func addPageLinkItem() {
+	winItem := systray.AddMenuItem("Webview", "Webview")
 	pageURL := systray.AddMenuItem("Hosts Group", "page")
 	feedbackURL := systray.AddMenuItem("Feedback", "Feedback")
 	go func() {
 		for {
 			select {
+			case <-winItem.ClickedCh:
+				go OpenWebView()
 			case <-feedbackURL.ClickedCh:
 				err := open.Run("https://github.com/Kuangcp/GoBase/issues")
 				if err != nil {
 					logger.Fatal(err.Error())
 				}
 			case <-pageURL.ClickedCh:
-				err := open.Run("http://localhost:8066")
+				err := open.Run("http://localhost:" + PortStr)
 				if err != nil {
 					logger.Fatal(err.Error())
 				}
