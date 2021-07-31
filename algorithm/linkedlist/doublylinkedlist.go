@@ -105,39 +105,44 @@ func (list *DoublyLinkedList) RemoveTail() {
 	list.len--
 }
 
+func (list *DoublyLinkedList) RemoveNode(node *DoublyLinkedNode) {
+	if node == nil {
+		return
+	}
+	pre := node.pre
+	next := node.next
+
+	// isHead
+	if pre == nil {
+		list.head = next
+		if list.head != nil {
+			list.head.pre = nil
+		}
+		list.len--
+		return
+	}
+
+	// isTail
+	if next == nil {
+		list.tail = pre
+		pre.next = nil
+		list.len--
+		return
+	}
+
+	// remove current node
+	pre.next = next
+	next.pre = pre
+	list.len--
+}
+
 func (list *DoublyLinkedList) Remove(data interface{}) {
 	if list.IsEmpty() {
 		return
 	}
 
 	node := list.Find(data)
-	if node != nil {
-		pre := node.pre
-		next := node.next
-
-		// isHead
-		if pre == nil {
-			list.head = next
-			if list.head != nil {
-				list.head.pre = nil
-			}
-			list.len--
-			return
-		}
-
-		// isTail
-		if next == nil {
-			list.tail = pre
-			pre.next = nil
-			list.len--
-			return
-		}
-
-		// remove current node
-		pre.next = next
-		next.pre = pre
-		list.len--
-	}
+	list.RemoveNode(node)
 }
 
 // 单链表反转 三个指针前进

@@ -85,17 +85,17 @@ func httpResponse(conn *net.TCPConn) {
 
 func main() {
 	address := net.TCPAddr{
-		IP:   net.ParseIP("127.0.0.1"), // 把字符串IP地址转换为net.IP类型
+		IP:   net.ParseIP("0.0.0.0"), // 把字符串IP地址转换为net.IP类型
 		Port: 8000,
 	}
 	listener, err := net.ListenTCP("tcp4", &address) // 创建TCP4服务器端监听器
 	if err != nil {
-		log.Fatal(err) // Println + os.Exit(1)
+		log.Fatal(err)
 	}
 	for {
 		conn, err := listener.AcceptTCP()
 		if err != nil {
-			log.Fatal(err) // 错误直接退出
+			log.Fatal(err)
 		}
 		fmt.Println("remote address:", conn.RemoteAddr())
 		go httpResponse(conn)
