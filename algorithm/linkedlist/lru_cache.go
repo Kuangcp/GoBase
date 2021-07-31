@@ -1,36 +1,88 @@
 package linkedlist
 
+import (
+	"sync"
+)
+
 type (
 	Cache interface {
 		Get(string) interface{}
 		Save(string, interface{})
-		MaxCachePool() int
+		MaxSize() int
+		Size() int
 	}
 
-	// map & double linked list
-	// save or get: move node to head
-	// clean: delete tail node
 	LRUCache struct {
-		maxPool    int
-		cachePool  map[string]interface{}
-		cacheQueue *DoublyLinkedList
+		maxSize int
+		pool    map[string]*DoublyLinkedNode
+		list    *DoublyLinkedList
+		mutex   sync.RWMutex
+	}
+	Entry struct {
+		key   string
+		value interface{}
 	}
 )
 
-func NewLRUCache(maxPool int) *LRUCache {
-	cachePool := make(map[string]interface{})
+func NewLRUCache(maxSize int) *LRUCache {
+	cachePool := make(map[string]*DoublyLinkedNode)
 	cacheQueue := NewEmptyDoublyLinkedList()
-	return &LRUCache{maxPool: maxPool, cachePool: cachePool, cacheQueue: cacheQueue}
+	return &LRUCache{maxSize: maxSize, pool: cachePool, list: cacheQueue}
 }
 
-func (L LRUCache) Get(s string) interface{} {
-	panic("implement me")
+func (L *LRUCache) Get(key string) interface{} {
+	L.mutex.RLock()
+	defer L.mutex.RUnlock()
+	node := L.pool[key]
+	if node == nil {
+		return nil
+	}
+
+	L.resetHead(key)
+	return node.data.(Entry).value
 }
 
-func (L LRUCache) Save(s string, i interface{}) {
-	panic("implement me")
+func (L *LRUCache) resetHead(key string) *DoublyLinkedNode {
+	node := L.pool[key]
+	if node == nil {
+		return node
+	}
+	L.list.RemoveNode(node)
+	L.list.AddToHead(node.data)
+	return node
 }
 
-func (L LRUCache) MaxCachePool() int {
-	panic("implement me")
+func (L *LRUCache) Save(key string, val interface{}) {
+	L.mutex.Lock()
+	defer L.mutex.Unlock()
+
+	node := L.resetHead(key)
+	if node != nil {
+		entry := node.data.(Entry)
+		entry.value = val
+		L.pool[key] = L.list.head
+		return
+	}
+
+	//fmt.Println(s, L.Size(), L.MaxSize())
+	if L.Size() >= L.MaxSize() {
+		node := L.list.tail
+		L.list.RemoveTail()
+		entry := node.data.(Entry)
+		L.remove(entry.key)
+	}
+	L.list.AddToHead(Entry{key: key, value: val})
+	L.pool[key] = L.list.head
+}
+
+func (L *LRUCache) MaxSize() int {
+	return L.maxSize
+}
+
+func (L *LRUCache) Size() int {
+	return len(L.pool)
+}
+
+func (L *LRUCache) remove(key string) {
+	delete(L.pool, key)
 }

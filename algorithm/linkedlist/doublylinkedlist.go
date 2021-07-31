@@ -1,8 +1,9 @@
 package linkedlist
 
 import (
-	"github.com/kuangcp/gobase/cuibase"
 	"log"
+
+	"github.com/kuangcp/gobase/cuibase"
 )
 
 type DoublyLinkedList struct {
@@ -38,7 +39,16 @@ func (list *DoublyLinkedList) IsEmpty() bool {
 }
 
 func (list *DoublyLinkedList) AddToHead(data interface{}) {
-
+	node := NewEmptyDoublyLinkedNode(data)
+	if list.head == nil {
+		list.head = node
+		list.tail = node
+	} else {
+		list.head.pre = node
+		node.next = list.head
+		list.head = node
+	}
+	list.len++
 }
 
 // Add to tail
@@ -80,39 +90,59 @@ func (list *DoublyLinkedList) Clear() {
 	list.len = 0
 }
 
+func (list *DoublyLinkedList) RemoveTail() {
+	if list.IsEmpty() {
+		return
+	}
+
+	if list.head == list.tail {
+		list.Clear()
+		return
+	}
+	sec := list.tail.pre
+	list.tail = sec
+	sec.next = nil
+	list.len--
+}
+
+func (list *DoublyLinkedList) RemoveNode(node *DoublyLinkedNode) {
+	if node == nil {
+		return
+	}
+	pre := node.pre
+	next := node.next
+
+	// isHead
+	if pre == nil {
+		list.head = next
+		if list.head != nil {
+			list.head.pre = nil
+		}
+		list.len--
+		return
+	}
+
+	// isTail
+	if next == nil {
+		list.tail = pre
+		pre.next = nil
+		list.len--
+		return
+	}
+
+	// remove current node
+	pre.next = next
+	next.pre = pre
+	list.len--
+}
+
 func (list *DoublyLinkedList) Remove(data interface{}) {
 	if list.IsEmpty() {
 		return
 	}
 
 	node := list.Find(data)
-	if node != nil {
-		pre := node.pre
-		next := node.next
-
-		// isHead
-		if pre == nil {
-			list.head = next
-			if list.head != nil {
-				list.head.pre = nil
-			}
-			list.len--
-			return
-		}
-
-		// isTail
-		if next == nil {
-			list.tail = pre
-			pre.next = nil
-			list.len--
-			return
-		}
-
-		// remove current node
-		pre.next = next
-		next.pre = pre
-		list.len--
-	}
+	list.RemoveNode(node)
 }
 
 // 单链表反转 三个指针前进
