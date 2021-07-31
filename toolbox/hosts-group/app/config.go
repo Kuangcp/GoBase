@@ -3,10 +3,11 @@ package app
 import (
 	"bufio"
 	"fmt"
-	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"runtime"
+
+	"github.com/kuangcp/logger"
 
 	"github.com/kuangcp/gobase/pkg/cuibase"
 )
@@ -23,8 +24,6 @@ const (
 )
 
 var (
-	Win     bool
-	
 	DebugStatic    bool
 	Version        bool
 	LogPath        string
@@ -33,11 +32,13 @@ var (
 	MainPath       string
 	ChangeFileHook string
 	SupportMode    string
+	Port           int
+	PortStr        string
 )
 
 var Info = cuibase.HelpInfo{
 	Description:   "Hosts Group, switch host tool",
-	Version:       "1.4.0",
+	Version:       "1.4.1",
 	SingleFlagLen: -2,
 	DoubleFlagLen: 0,
 	ValueLen:      -5,
