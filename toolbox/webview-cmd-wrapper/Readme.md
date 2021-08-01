@@ -1,0 +1,1 @@
+just make cross build app simplify

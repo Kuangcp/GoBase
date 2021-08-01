@@ -1,4 +1,4 @@
-module hosts-group-linux-webview
+module webview-cmd-wrapper
 
 go 1.16
 

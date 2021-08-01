@@ -23,7 +23,8 @@ func OpenWebView(url string) {
 		defer ui.Close()
 		<-ui.Done()
 	} else {
-		command := exec.Command("hosts-group-linux-webview", url)
+		command := exec.Command("webview-cmd-wrapper",
+			"-url", url, "-width", "1024", "-height", "768", "-title", "Hosts-Group")
 		err := command.Start()
 		if err != nil {
 			logger.Fatal(err.Error())
