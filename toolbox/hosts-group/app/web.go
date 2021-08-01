@@ -4,6 +4,8 @@ import (
 	"embed"
 	"log"
 	"net/http"
+	"os/exec"
+	"runtime"
 
 	"github.com/getlantern/systray"
 	"github.com/gin-gonic/gin"
@@ -12,13 +14,21 @@ import (
 	"github.com/zserge/lorca"
 )
 
-func OpenWebView() {
-	ui, err := lorca.New("http://localhost:"+PortStr, "", 1024, 768)
-	if err != nil {
-		log.Fatal(err)
+func OpenWebView(url string) {
+	if "windows" == runtime.GOOS {
+		ui, err := lorca.New(url, "", 1024, 768)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer ui.Close()
+		<-ui.Done()
+	} else {
+		command := exec.Command("hosts-group-linux-webview", url)
+		err := command.Start()
+		if err != nil {
+			logger.Fatal(err.Error())
+		}
 	}
-	defer ui.Close()
-	<-ui.Done()
 }
 
 func WebServer(f embed.FS, port string) {

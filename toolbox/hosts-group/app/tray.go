@@ -42,24 +42,21 @@ func OnReady() {
 }
 
 func addPageLinkItem() {
-	winItem := systray.AddMenuItem("Webview", "Webview")
+	//winItem := systray.AddMenuItem("Webview", "Webview")
 	pageURL := systray.AddMenuItem("Hosts Group", "page")
 	feedbackURL := systray.AddMenuItem("Feedback", "Feedback")
 	go func() {
 		for {
 			select {
-			case <-winItem.ClickedCh:
-				go OpenWebView()
+			//case <-winItem.ClickedCh:
+			//	go OpenWebView("http://localhost:"+PortStr)
 			case <-feedbackURL.ClickedCh:
 				err := open.Run("https://github.com/Kuangcp/GoBase/issues")
 				if err != nil {
 					logger.Fatal(err.Error())
 				}
 			case <-pageURL.ClickedCh:
-				err := open.Run("http://localhost:" + PortStr)
-				if err != nil {
-					logger.Fatal(err.Error())
-				}
+				go OpenWebView("http://localhost:" + PortStr)
 			}
 		}
 	}()
