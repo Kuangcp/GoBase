@@ -88,8 +88,12 @@ func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(s
 	buf := bufio.NewReader(file)
 	for {
 		line, err := buf.ReadString('\n')
-		if filterFunc(line) {
-			result = append(result, mapFunc(line))
+		if filterFunc == nil || filterFunc(line) {
+			if mapFunc != nil {
+				result = append(result, mapFunc(line))
+			} else {
+				result = append(result, line)
+			}
 		}
 
 		if err != nil {
