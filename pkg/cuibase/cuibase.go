@@ -1,12 +1,9 @@
 package cuibase
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -63,49 +60,6 @@ func CheckIfError(err error) {
 
 	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
 	os.Exit(1)
-}
-
-// ReadFileLines
-func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(string) interface{}) []interface{} {
-	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
-	if err != nil {
-		log.Println("Open file error!", err)
-		return nil
-	}
-	defer file.Close()
-
-	stat, err := file.Stat()
-	if err != nil {
-		panic(err)
-	}
-	if stat.Size() == 0 {
-		log.Printf("file:%s is empty", filename)
-		return nil
-	}
-
-	var result []interface{}
-
-	buf := bufio.NewReader(file)
-	for {
-		line, err := buf.ReadString('\n')
-		if filterFunc == nil || filterFunc(line) {
-			if mapFunc != nil {
-				result = append(result, mapFunc(line))
-			} else {
-				result = append(result, line)
-			}
-		}
-
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				log.Println("Read file error!", err)
-				return nil
-			}
-		}
-	}
-	return result
 }
 
 // Home
