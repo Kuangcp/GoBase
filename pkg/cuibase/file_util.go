@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-// ReadFileLines
+// ReadFileLines filter and map
 func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(string) interface{}) []interface{} {
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
 	if err != nil {
@@ -51,6 +51,7 @@ func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(s
 	return result
 }
 
+// ReadFileLinesNoFilter only map
 func ReadFileLinesNoFilter(filename string, mapFunc func(string) interface{}) []interface{} {
 	return ReadFileLines(filename, nil, mapFunc)
 }
@@ -58,6 +59,14 @@ func ReadFileLinesNoFilter(filename string, mapFunc func(string) interface{}) []
 type BufferWriter struct {
 	file   *os.File
 	writer *bufio.Writer
+}
+
+func NewWriterIgnoreError(filePath string) *BufferWriter {
+	writer, err := NewWriter(filePath)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return writer
 }
 
 func NewWriter(filePath string) (*BufferWriter, error) {
@@ -77,6 +86,10 @@ func (w *BufferWriter) Write(val []byte) (nn int, err error) {
 
 func (w *BufferWriter) WriteString(val string) (nn int, err error) {
 	return w.writer.WriteString(val)
+}
+
+func (w *BufferWriter) WriteLine(val string) (nn int, err error) {
+	return w.writer.WriteString(val + "\n")
 }
 
 func (w *BufferWriter) Close() {
