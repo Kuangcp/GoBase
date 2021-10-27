@@ -6,14 +6,21 @@ import (
 )
 
 func TestWriteFile(t *testing.T) {
-	writer, err := NewWriter("b.log")
+	writer, err := NewWriter("c.log")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer writer.Close()
 
-	for i := 0; i < 10000000; i++ {
-		writer.writer.Write([]byte(fmt.Sprint(i) + "\n"))
+	for i := 0; i < 5; i++ {
+		writer.WriteString(fmt.Sprint(i) + "  ")
 	}
+}
+
+func TestIgnoreError(t *testing.T) {
+	writer := NewWriterIgnoreError("/tmp/b.log")
+	defer writer.Close()
+
+	writer.WriteLine("xxxxxxx")
 }
