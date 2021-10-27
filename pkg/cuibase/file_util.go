@@ -61,7 +61,7 @@ type BufferWriter struct {
 }
 
 func NewWriter(filePath string) (*BufferWriter, error) {
-	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +69,14 @@ func NewWriter(filePath string) (*BufferWriter, error) {
 	fmt.Println(file.Name())
 	buffer := bufio.NewWriter(file)
 	return &BufferWriter{file: file, writer: buffer}, nil
+}
+
+func (w *BufferWriter) Write(val []byte) (nn int, err error) {
+	return w.writer.Write(val)
+}
+
+func (w *BufferWriter) WriteString(val string) (nn int, err error) {
+	return w.writer.WriteString(val)
 }
 
 func (w *BufferWriter) Close() {
