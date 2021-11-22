@@ -35,7 +35,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	Action(false,
+	Action(SyncAllKey,
 		&redis.Options{
 			Addr:     fromAddr,
 			Password: fromPwd,
@@ -45,7 +45,7 @@ func main() {
 			Addr:     toAddr,
 			Password: toPwd,
 			DB:       toDB,
-		}, SyncAllKey)
+		}, false)
 }
 
 func logDebug(msg string, v ...interface{}) {
@@ -62,8 +62,38 @@ func logWarn(msg string, v ...interface{}) {
 	log.Println(cuibase.Yellow, msg, v, cuibase.End)
 }
 
-func Action(debug bool, originO *redis.Options, targetO *redis.Options,
-	action func(client *redis.Client, client2 *redis.Client)) {
+func scanAllKey(origin *redis.Client) []string {
+	cursor := origin.Scan(0, "*", 1000)
+
+	result, c, err := cursor.Result()
+	if err != nil {
+		return result
+	}
+	var totalKey = result
+	for c != 0 {
+		cursor := origin.Scan(c, "*", 1000)
+		result, c, err = cursor.Result()
+		if err != nil {
+			return totalKey
+		}
+		totalKey = append(totalKey, result...)
+	}
+	return totalKey
+}
+
+func convert(data map[string]string) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	for k, v := range data {
+		result[k] = v
+	}
+	return result
+}
+
+func Action(action func(client *redis.Client, client2 *redis.Client),
+	originO *redis.Options,
+	targetO *redis.Options,
+	debug bool) {
 
 	debugFlag = debug
 	if originO == nil || targetO == nil {
@@ -86,9 +116,11 @@ func Action(debug bool, originO *redis.Options, targetO *redis.Options,
 }
 
 func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
-	logInfo("start sync")
-	result, _ := origin.Keys("*").Result()
-	//logInfo("total key: ", result)
+	logInfo("start sync keylogger data")
+
+	//result, _ := origin.Keys("*").Result()
+	result := scanAllKey(origin)
+	logInfo("total key: ", result)
 
 	swg := sizedwaitgroup.New(12)
 
@@ -140,17 +172,10 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 	swg.Wait()
 }
 
-func convert(data map[string]string) map[string]interface{} {
-	result := make(map[string]interface{})
-
-	for k, v := range data {
-		result[k] = v
-	}
-	return result
-}
 func SyncAllKey(origin *redis.Client, target *redis.Client) {
-	logInfo("start sync")
-	result, _ := origin.Keys("*").Result()
+	logInfo("start sync all key")
+	//result, _ := origin.Keys("*").Result()
+	result := scanAllKey(origin)
 
 	swg := sizedwaitgroup.New(12)
 	logInfo("total key: ", len(result))

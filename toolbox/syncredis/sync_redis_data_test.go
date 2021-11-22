@@ -7,19 +7,19 @@ import (
 )
 
 func Test_syncAllKey(t *testing.T) {
-	Action(false, &redis.Options{
-		Addr:     "127.0.0.1:6667",
+	Action(SyncAllKey, &redis.Options{
+		Addr:     "172.16.19.227:16379",
 		Password: "",
 		DB:       1,
 	}, &redis.Options{
-		Addr:     "127.0.0.1:6667",
+		Addr:     "172.16.19.227:16379",
 		Password: "",
 		DB:       2,
-	}, SyncAllKey)
+	}, false)
 }
 
 func Test_syncKeyRecord(t *testing.T) {
-	Action(false, &redis.Options{
+	Action(SyncKeyRecord, &redis.Options{
 		Addr:     "127.0.0.1:6667",
 		Password: "",
 		DB:       2,
@@ -27,5 +27,5 @@ func Test_syncKeyRecord(t *testing.T) {
 		Addr:     "127.0.0.1:6667",
 		Password: "",
 		DB:       5,
-	}, SyncKeyRecord)
+	}, false)
 }
