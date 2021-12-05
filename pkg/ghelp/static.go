@@ -13,7 +13,7 @@ type StaticResource struct {
 	Path string
 }
 
-// 静态资源被访问逻辑
+// Open 静态资源被访问逻辑
 func (_this *StaticResource) Open(name string) (fs.File, error) {
 	fullName := path.Join(_this.Path, name)
 	return _this.StaticFS.Open(fullName)

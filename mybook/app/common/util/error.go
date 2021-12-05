@@ -2,12 +2,12 @@ package util
 
 import (
 	"github.com/kuangcp/logger"
-	"log"
 )
 
 func AssertNoError(e error) {
 	if e != nil {
-		log.Fatal(e)
+		logger.Emer(e)
+		panic(e.Error())
 	}
 }
 
