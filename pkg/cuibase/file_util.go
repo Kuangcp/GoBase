@@ -9,7 +9,9 @@ import (
 )
 
 // ReadFileLines filter and map
-func ReadFileLines(filename string, filterFunc func(string) bool, mapFunc func(string) interface{}) []interface{} {
+func ReadFileLines(filename string,
+	filterFunc func(string) bool,
+	mapFunc func(string) interface{}) []interface{} {
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
 	if err != nil {
 		log.Println("Open file error!", err)
@@ -61,16 +63,23 @@ type BufferWriter struct {
 	writer *bufio.Writer
 }
 
-func NewWriterIgnoreError(filePath string) *BufferWriter {
-	writer, err := NewWriter(filePath)
+func NewWriterIgnoreError(filePath string, truncate bool) *BufferWriter {
+	writer, err := NewWriter(filePath, truncate)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return writer
 }
 
-func NewWriter(filePath string) (*BufferWriter, error) {
-	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+func NewWriter(filePath string, truncate bool) (*BufferWriter, error) {
+	var fileMod int
+	if truncate {
+		fileMod = os.O_WRONLY | os.O_TRUNC
+	} else {
+		fileMod = os.O_WRONLY | os.O_APPEND | os.O_CREATE
+	}
+
+	file, err := os.OpenFile(filePath, fileMod, 0666)
 	if err != nil {
 		return nil, err
 	}

@@ -60,6 +60,10 @@ func GinResultVO(c *gin.Context, result ResultVO) {
 	c.JSON(http.StatusOK, result)
 }
 
+func GinSuccess(c *gin.Context) {
+	c.JSON(http.StatusOK, success)
+}
+
 func GinSuccessWith(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, SuccessWith(data))
 }
