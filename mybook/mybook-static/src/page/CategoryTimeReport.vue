@@ -25,6 +25,7 @@
 
       <el-form-item label="周期">
         <el-select
+            @change="drawLine"
             v-model="timePeriod"
             size="mini"
             placeholder="请选择"
@@ -50,6 +51,7 @@
               <div class="k-flex">
                 <span>明细标记</span>
                 <el-switch
+                    @change="drawLine"
                     v-model="detailLabel"
                     active-color="#13ce66"
                     inactive-color="#ff4949">
@@ -60,6 +62,7 @@
               <div class="k-flex">
                 <span>柱/线</span>
                 <el-switch
+                    @change="drawLine"
                     v-model="lineChartType"
                     active-color="#13ce66"
                     inactive-color="#ff4949">
@@ -72,6 +75,7 @@
 
       <el-form-item>
         <el-date-picker
+            @change="drawLine"
             v-model="dateArray"
             type="daterange"
             align="right"
@@ -84,10 +88,6 @@
             style="width:240px"
         >
         </el-date-picker>
-      </el-form-item>
-
-      <el-form-item>
-        <el-button type="primary" @click="drawLine" size="mini">查询</el-button>
       </el-form-item>
     </el-form>
 
@@ -199,8 +199,9 @@ export default {
   mounted() {
   },
   methods: {
-    changeAccountType() {
+    async changeAccountType() {
       this.lineChartType = this.accountType === 10 || this.accountType === 9;
+      this.drawLine()
     },
     async drawLine() {
       let startTime = this.dateArray[0];

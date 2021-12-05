@@ -33,6 +33,10 @@ const formatter = function (timeStamp) {
     };
 }
 
+// TODO 自然月 前进 后退
+// const fillRelativeDate = function (picker) {
+// }
+
 const fillDate = function (picker, offset) {
     const end = new Date();
     const start = new Date();
@@ -47,6 +51,22 @@ const dateShortCut = [
             fillDate(picker, new Date() - new Date(new Date().getFullYear().toString()));
         },
     },
+    {
+        text: "本月",
+        onClick(picker) {
+            let now = new Date();
+            let passDay = (now.getDate() - 1) * 24 * 3600 * 1000
+            const start = now;
+            start.setTime(start.getTime() - passDay)
+            picker.$emit("pick", [start, new Date()]);
+        },
+    },
+    // {
+    //     text: "下月",
+    //     onClick(picker) {
+    //         fillRelativeDate(picker);
+    //     },
+    // },
     {
         text: "最近一周",
         onClick(picker) {

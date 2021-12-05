@@ -288,7 +288,7 @@ func queryCategoryRecord(param QueryRecordParam) *MonthCategoryRecordResult {
 	var endDate = param.EndDate
 	var typeId = param.TypeId
 	db := dal.GetDB()
-	var result []MonthCategoryRecordDTO
+	var result []*MonthCategoryRecordDTO
 	query := db.Table("record").
 		Select("record.category_id, category.name, sum(amount) as amount,type").
 		Joins("left join category on record.category_id = category.id")
@@ -305,22 +305,24 @@ func queryCategoryRecord(param QueryRecordParam) *MonthCategoryRecordResult {
 	}
 
 	var totalAmount = 0
-	var temp []MonthCategoryRecordDTO
 	for i := range result {
-		recordDTO := &result[i]
+		recordDTO := result[i]
 
 		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).GetName()
 		totalAmount += recordDTO.Amount
-		temp = append(temp, *recordDTO)
 	}
 
 	// 逆序
-	sort.Slice(temp, func(i, j int) bool {
-		return temp[i].Amount >= temp[j].Amount
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Amount >= result[j].Amount
 	})
+	for _, dto := range result {
+		dto.AmountPercent = float32(dto.Amount*100) / float32(totalAmount)
+		dto.AmountPercent = float32(int(dto.AmountPercent*100)) / 100
+	}
 
 	return &MonthCategoryRecordResult{
-		List:        temp,
+		List:        result,
 		TotalAmount: totalAmount,
 	}
 }

@@ -3,6 +3,8 @@
     <el-form :inline="true" class="demo-form-inline form-nav">
       <el-form-item label="时间">
         <el-date-picker
+            ref="datePicker"
+            @change="onSubmit"
             v-model="dateArray"
             type="daterange"
             align="right"
@@ -17,6 +19,7 @@
       </el-form-item>
       <el-form-item label="类型">
         <el-select
+            @change="onSubmit"
             v-model="accountType"
             size="mini"
             clearable
@@ -114,7 +117,7 @@ export default {
     return {
       accountId: null,
       pickerOptions: {
-        shortcuts: dateShortCut
+        shortcuts: dateShortCut,
       },
       dateArray: [],
       visible: false,

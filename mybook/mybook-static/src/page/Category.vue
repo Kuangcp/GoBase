@@ -3,6 +3,7 @@
     <el-form :inline="true" class="demo-form-inline form-nav">
       <el-form-item label="时间">
         <el-date-picker
+            @change="onSubmit"
             v-model="dateArray"
             type="daterange"
             align="right"
@@ -22,6 +23,7 @@
             size="mini"
             clearable
             placeholder="请选择"
+            @change="onSubmit"
         >
           <el-option
               v-for="item in accountTypes"
@@ -88,6 +90,7 @@
       <Echart ref="echart" v-if="reportDialogVisible" class="categoryMonth"/>
     </el-dialog>
 
+    <!-- 主数据表格区域 -->
     <el-table :data="tableData" stripe height="860" class="main-box">
       <el-table-column
           sortable
@@ -100,7 +103,8 @@
       <el-table-column
           prop="RecordTypeName"
           label="类型"
-          width="80"
+          width="60"
+          align="center"
       ></el-table-column>
       <el-table-column
           prop="Name"
@@ -113,10 +117,21 @@
 
       <el-table-column
           sortable
+          prop="AmountPercent"
+          label="比例"
+          align="right"
+          width="80"
+      >
+        <template slot-scope="scope">
+          <span>{{ scope.row.AmountPercent + "%" }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column
+          sortable
           prop="Amount"
           label="金额"
           align="right"
-          width="140"
+          width="100"
       >
         <template slot-scope="scope">
           <span>{{ scope.row.Amount.toFixed(2) }}</span>
@@ -271,13 +286,13 @@ export default {
 
       this.tableData = [];
       this.totalAmount = 0;
-      if (res.data && res.data.data && res.data.data.length > 0) {
-        this.tableData = res.data.data;
-        this.totalAmount = 0;
+      if (res.data && res.data.data && res.data.data.List.length > 0) {
+        this.tableData = res.data.data.List;
         for (let v of this.tableData) {
           this.totalAmount += v.Amount;
           v.Amount = v.Amount / 100.0;
         }
+        this.totalAmount = res.data.data.TotalAmount;
         this.totalAmount = this.totalAmount / 100.0;
       }
     },

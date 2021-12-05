@@ -17,7 +17,7 @@ type (
 	}
 
 	MonthCategoryRecordResult struct {
-		List        []MonthCategoryRecordDTO
+		List        []*MonthCategoryRecordDTO
 		TotalAmount int
 	}
 	MonthCategoryRecordDTO struct {
