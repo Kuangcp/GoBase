@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
 	"mybook/app/account"
@@ -17,6 +18,10 @@ var (
 	webServer     bool
 )
 
+//go:embed mybook-static/dist
+var staticFS embed.FS
+
+
 func init() {
 	flag.BoolVar(&updateDb, "u", false, "create or update database table")
 	flag.BoolVar(&printCategory, "pc", false, "print all category")
@@ -30,7 +35,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	fmt.Println("xx", config.AppConf)
+	fmt.Println("config: ", config.AppConf)
 	config.InitAppConfig()
 
 	if updateDb {
@@ -46,6 +51,6 @@ func main() {
 	}
 
 	if webServer {
-		web.Server()
+		web.Server(staticFS)
 	}
 }

@@ -16,6 +16,10 @@ type (
 		RecordTime     time.Time
 	}
 
+	MonthCategoryRecordResult struct {
+		List        []MonthCategoryRecordDTO
+		TotalAmount int
+	}
 	MonthCategoryRecordDTO struct {
 		CategoryId     uint
 		Name           string
@@ -23,5 +27,6 @@ type (
 		RecordTypeName string
 		Amount         int
 		Date           string
+		AmountPercent  float32 // 金额占比
 	}
 )

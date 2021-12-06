@@ -283,7 +283,7 @@ func entityToDTO(lists []RecordEntity) []RecordDTO {
 }
 
 // 帐目按类型分组 typeId record_type
-func queryCategoryRecord(param QueryRecordParam) *[]MonthCategoryRecordDTO {
+func queryCategoryRecord(param QueryRecordParam) *MonthCategoryRecordResult {
 	var startDate = param.StartDate
 	var endDate = param.EndDate
 	var typeId = param.TypeId
@@ -298,17 +298,19 @@ func queryCategoryRecord(param QueryRecordParam) *[]MonthCategoryRecordDTO {
 
 	query = query.Where("record_time between ? and ?", startDate, endDate).
 		Where("record.deleted_at is null").
-		Group("category_id").Scan(&result)
+		Group("category_id").
+		Scan(&result)
 	if len(result) == 0 {
-		return nil
+		return &MonthCategoryRecordResult{}
 	}
 
+	var totalAmount = 0
 	var temp []MonthCategoryRecordDTO
 	for i := range result {
 		recordDTO := &result[i]
 
 		recordDTO.RecordTypeName = constant.GetRecordTypeByIndex(recordDTO.Type).GetName()
-
+		totalAmount += recordDTO.Amount
 		temp = append(temp, *recordDTO)
 	}
 
@@ -317,7 +319,10 @@ func queryCategoryRecord(param QueryRecordParam) *[]MonthCategoryRecordDTO {
 		return temp[i].Amount >= temp[j].Amount
 	})
 
-	return &temp
+	return &MonthCategoryRecordResult{
+		List:        temp,
+		TotalAmount: totalAmount,
+	}
 }
 
 func weekCategoryRecord(param QueryRecordParam) *[]recordWeekOrMonthVO {

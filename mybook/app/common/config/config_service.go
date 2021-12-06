@@ -23,9 +23,9 @@ var DefaultDriver = "sqlite3"
 var DefaultPort = 9090
 var DefaultUrlPath = "/api"
 
-var AppConf *AppConfig = &AppConfig{
-	Release: false,
-	Port: DefaultPort,
+var AppConf = &AppConfig{
+	Release:    false,
+	Port:       DefaultPort,
 	DriverName: DefaultDriver,
 	DBFilePath: DefaultDBPath,
 }
