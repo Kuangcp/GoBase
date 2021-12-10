@@ -33,14 +33,6 @@ func ReadFileLines(filename string,
 	buf := bufio.NewReader(file)
 	for {
 		line, err := buf.ReadString('\n')
-		if filterFunc == nil || filterFunc(line) {
-			if mapFunc != nil {
-				result = append(result, mapFunc(line))
-			} else {
-				result = append(result, line)
-			}
-		}
-
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -48,6 +40,23 @@ func ReadFileLines(filename string,
 				log.Println("Read file error!", err)
 				return nil
 			}
+		}
+
+		if filterFunc != nil && !filterFunc(line) {
+			continue
+		}
+
+		if mapFunc != nil {
+			val := mapFunc(line)
+			if val == nil {
+				continue
+			}
+			result = append(result, val)
+		} else {
+			if line == "" {
+				continue
+			}
+			result = append(result, line)
 		}
 	}
 	return result
