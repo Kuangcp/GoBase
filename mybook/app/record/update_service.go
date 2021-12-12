@@ -82,6 +82,8 @@ func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
 		return ghelp.FailedWithMsg("日期为空")
 	}
 	var recordList []*RecordEntity
+
+	// 多日期 同一个金额 和 其他所有帐目细节
 	for _, date := range param.Date {
 		recordDate, e := time.Parse("2006-01-02", date)
 		if e != nil {
@@ -92,7 +94,7 @@ func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
 		amountList := strings.Split(param.Amount, ",")
 		var totalAmount = 0
 		for _, one := range amountList {
-			parseResult := parseAmount(one)
+			parseResult := parsePrice(one)
 			if parseResult.IsFailed() {
 				return parseResult
 			}
@@ -115,47 +117,31 @@ func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
 	return ghelp.SuccessWith(recordList)
 }
 
-func parseAmount(amount string) ghelp.ResultVO {
+func parsePrice(amount string) ghelp.ResultVO {
 	floatAmount, e := strconv.ParseFloat(amount, 64)
-	if e != nil {
-		return ghelp.FailedWithMsg("amount 参数错误")
+	if e != nil || floatAmount <= 0 {
+		return ghelp.FailedWithMsg("金额错误" + amount)
 	}
-	if floatAmount <= 0 {
-		return ghelp.FailedWithMsg("amount 无效")
-	}
-	values := strings.Split(amount, ".")
-	if len(values) > 1 {
-		p := values[0]
-		v := values[1]
-		vLen := len(v)
-		if vLen > 2 {
-			return ghelp.FailedWithMsg("amount 仅保留两位小数")
-		} else if vLen == 2 {
-			pInt, e := strconv.Atoi(p)
-			if e != nil {
-				return ghelp.FailedWithMsg("amount 参数错误")
-			}
-			vInt, e := strconv.Atoi(v)
-			if e != nil {
-				return ghelp.FailedWithMsg("amount 参数错误")
-			}
-			return ghelp.SuccessWith(pInt*100 + vInt)
-		} else if vLen == 1 {
-			pInt, e := strconv.Atoi(p)
-			if e != nil {
-				return ghelp.FailedWithMsg("amount 参数错误")
-			}
-			vInt, e := strconv.Atoi(v)
-			if e != nil {
-				return ghelp.FailedWithMsg("amount 参数错误")
-			}
-			return ghelp.SuccessWith(pInt*100 + vInt*10)
-		} else {
-			return ghelp.FailedWithMsg("amount 参数错误")
-		}
-	} else {
+
+	nums := strings.Split(amount, ".")
+	if len(nums) == 1 {
 		return ghelp.SuccessWith(int(floatAmount) * 100)
 	}
+
+	v := nums[1]
+	pInt, _ := strconv.Atoi(nums[0])
+	vInt, _ := strconv.Atoi(v)
+
+	vLen := len(v)
+	if vLen > 2 {
+		return ghelp.FailedWithMsg("金额仅保留两位小数")
+	}
+
+	// vLen only 1 Or 2
+	if vLen == 1 {
+		vInt *= 10
+	}
+	return ghelp.SuccessWith(pInt*100 + vInt)
 }
 
 func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
