@@ -171,12 +171,14 @@ export default {
         ],
         series: [],
       },
-      accountType: 9,
+      accountType: 20,
       accountTypes: [
-        {ID: 9, Name: "收支图"},
-        {ID: 10, Name: "余额"},
+        {ID: 20, Name: "余额"},
+        {ID: 21, Name: "收支图"},
         {ID: 1, Name: "支出"},
+        {ID: 22, Name: "支出聚合"},
         {ID: 2, Name: "收入"},
+        {ID: 23, Name: "收入聚合"},
         {ID: 3, Name: "转帐"},
       ],
       monthChart: "",
@@ -200,7 +202,7 @@ export default {
   },
   methods: {
     async changeAccountType() {
-      this.lineChartType = this.accountType === 10 || this.accountType === 9;
+      this.lineChartType = this.accountType === 20 || this.accountType === 21;
       this.drawLine()
     },
     async drawLine() {
@@ -209,7 +211,7 @@ export default {
 
       this.showChart = false
       let resp
-      if (this.accountType === 10) {
+      if (this.accountType === 20) {
         let start = (startTime && formatter(startTime).format(getFormatByPeriod(this.dayPeriod))) || "";
         let end = (endTime && formatter(endTime).format(getFormatByPeriod(this.dayPeriod))) || "";
 
@@ -248,7 +250,7 @@ export default {
 
       this.$nextTick(() => {
         let finalLines = respData.data.lines
-        if (this.accountType !== 9 && this.accountType !== 10 && this.showSumLabel) {
+        if (this.accountType !== 21 && this.accountType !== 20 && this.showSumLabel) {
           finalLines = this.$refs.echart.appendSumLine(finalLines)
         }
 

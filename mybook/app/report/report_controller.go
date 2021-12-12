@@ -167,13 +167,6 @@ func CategoryPeriodReport(c *gin.Context) {
 		finalEnd += "-32"
 	}
 
-	// 查询出 类别聚合后的 帐目数据
-	sumResult := sumFromRecord(param, finalStart, finalEnd)
-	if len(sumResult) == 0 {
-		ghelp.GinFailedWithMsg(c, "数据为空")
-		return
-	}
-
 	var legends []string // 类别
 	var lines []LineVO   // 类别对应的数据
 
@@ -182,6 +175,12 @@ func CategoryPeriodReport(c *gin.Context) {
 
 	switch param.TypeId {
 	case constant.ReportRecordOverview: // 收支图
+		// 查询出 类别聚合后的 帐目数据
+		sumResult := sumFromRecord(param, finalStart, finalEnd)
+		if len(sumResult) == 0 {
+			ghelp.GinFailedWithMsg(c, "数据为空")
+			return
+		}
 		legends = append(legends, constant.ERecordIncome.Name, constant.ERecordExpense.Name, "结余")
 		for _, sum := range sumResult {
 			periodNumMap[sum.BuildKey()] = sum.Sum
@@ -193,6 +192,13 @@ func CategoryPeriodReport(c *gin.Context) {
 
 		lines = buildLinesForOverview(periodList, periodNumMap, param)
 	case constant.ReportExCategoryOverview: // 支出 父类别 聚合报表
+		param.TypeId = int(constant.RecordExpense)
+		// 查询出 类别聚合后的 帐目数据
+		sumResult := sumFromRecord(param, finalStart, finalEnd)
+		if len(sumResult) == 0 {
+			ghelp.GinFailedWithMsg(c, "数据为空")
+			return
+		}
 		categoryList := category.FindCategoryByTypeId(int8(param.TypeId))
 
 		var parentCategoryMap = make(map[uint]uint)
@@ -223,6 +229,12 @@ func CategoryPeriodReport(c *gin.Context) {
 
 		lines = buildLines(existCategoryMap, periodList, periodNumMap, param, categoryNameMap)
 	default: // 收入 或 支出 类别 聚合报表
+		// 查询出 类别聚合后的 帐目数据
+		sumResult := sumFromRecord(param, finalStart, finalEnd)
+		if len(sumResult) == 0 {
+			ghelp.GinFailedWithMsg(c, "数据为空")
+			return
+		}
 		categoryList := category.FindLeafCategoryByTypeId(int8(param.TypeId))
 		var categoryNameMap = make(map[uint]string)
 		for _, entity := range *categoryList {
