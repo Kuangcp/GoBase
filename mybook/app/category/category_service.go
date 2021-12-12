@@ -42,6 +42,14 @@ func FindCategoryByName(name string) *Category {
 	return &result
 }
 
+func FindCategoryByTypeId(typeId int8) *[]Category {
+	db := dal.GetDB()
+
+	var lists []Category
+	db.Where("type_id = ?", typeId).Find(&lists)
+	return &lists
+}
+
 func FindLeafCategoryByTypeId(typeId int8) *[]Category {
 	db := dal.GetDB()
 

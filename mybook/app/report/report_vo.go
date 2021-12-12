@@ -6,9 +6,9 @@ import (
 
 type (
 	LineChartVO struct {
-		Lines   []LineVO `json:"lines"`
+		Legends []string `json:"legends"` // 类别
+		Lines   []LineVO `json:"lines"`   // 类别对应的数据
 		XAxis   []string `json:"xAxis"`
-		Legends []string `json:"legends"`
 	}
 	LineVO struct {
 		Type      string    `json:"type"`
@@ -25,7 +25,7 @@ type (
 	}
 	CategorySumVO struct {
 		CategoryId uint
-		Sum        float32
+		Sum        int
 		Period     string
 	}
 )
@@ -34,5 +34,5 @@ func (this *CategorySumVO) BuildKey() string {
 	return BuildKey(this.CategoryId, this.Period)
 }
 func BuildKey(categoryId uint, period string) string {
-	return  fmt.Sprint(categoryId) + ":" + period
+	return fmt.Sprint(categoryId) + ":" + period
 }

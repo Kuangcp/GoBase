@@ -14,7 +14,7 @@ type (
 
 		AccountId uint
 
-		// 转账记录时间戳 联系转入和转出
+		// 转账记录时间戳 关联转入和转出
 		TransferId uint
 
 		// 单位:分

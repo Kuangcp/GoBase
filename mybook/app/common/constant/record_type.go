@@ -18,7 +18,11 @@ const (
 	RecordTransferIn int8 = 4
 
 	// 收支 仅用于报表
-	RecordOverview int8 = 9
+	ReportRecordOverview int = 9
+	// 支出 父分类报表
+	ReportExCategoryOverview int = 10
+	// 收入 父分类报表
+	ReportInCategoryOverview int = 11
 )
 
 var ERecordExpense = RecordTypeEnum{NewBaseEnum(RecordExpense, "支出"), "#D87A80"}

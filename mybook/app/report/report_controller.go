@@ -167,19 +167,21 @@ func CategoryPeriodReport(c *gin.Context) {
 		finalEnd += "-32"
 	}
 
-	var sumResult []CategorySumVO
-	sumResult = buildQueryData(param, finalStart, finalEnd)
+	// 查询出 类别聚合后的 帐目数据
+	sumResult := sumFromRecord(param, finalStart, finalEnd)
 	if len(sumResult) == 0 {
 		ghelp.GinFailedWithMsg(c, "数据为空")
 		return
 	}
 
-	var legends []string
-	var existCategoryMap = make(map[uint]int)
-	var periodNumMap = make(map[string]float32)
-	var lines []LineVO
+	var legends []string // 类别
+	var lines []LineVO   // 类别对应的数据
 
-	if param.TypeId == int(constant.RecordOverview) {
+	var existCategoryMap = make(map[uint]int)
+	var periodNumMap = make(map[string]int)
+
+	switch param.TypeId {
+	case constant.ReportRecordOverview: // 收支图
 		legends = append(legends, constant.ERecordIncome.Name, constant.ERecordExpense.Name, "结余")
 		for _, sum := range sumResult {
 			periodNumMap[sum.BuildKey()] = sum.Sum
@@ -190,7 +192,37 @@ func CategoryPeriodReport(c *gin.Context) {
 		}
 
 		lines = buildLinesForOverview(periodList, periodNumMap, param)
-	} else {
+	case constant.ReportExCategoryOverview: // 支出 父类别 聚合报表
+		categoryList := category.FindCategoryByTypeId(int8(param.TypeId))
+
+		var parentCategoryMap = make(map[uint]uint)
+		var categoryNameMap = make(map[uint]string)
+		for _, entity := range *categoryList {
+			categoryNameMap[entity.ID] = entity.Name
+			if entity.ParentId != 0 {
+				parentCategoryMap[entity.ID] = entity.ParentId
+			}
+		}
+
+		for _, sum := range sumResult {
+			parentId, ok := parentCategoryMap[sum.CategoryId]
+			if ok {
+				periodNumMap[BuildKey(parentId, sum.Period)] += sum.Sum
+				_, ok = existCategoryMap[parentId]
+				if !ok {
+					existCategoryMap[parentId] = 0
+				}
+			} else {
+				periodNumMap[BuildKey(sum.CategoryId, sum.Period)] += sum.Sum
+				_, ok = existCategoryMap[sum.CategoryId]
+				if !ok {
+					existCategoryMap[sum.CategoryId] = 0
+				}
+			}
+		}
+
+		lines = buildLines(existCategoryMap, periodList, periodNumMap, param, categoryNameMap)
+	default: // 收入 或 支出 类别 聚合报表
 		categoryList := category.FindLeafCategoryByTypeId(int8(param.TypeId))
 		var categoryNameMap = make(map[uint]string)
 		for _, entity := range *categoryList {
@@ -212,9 +244,10 @@ func CategoryPeriodReport(c *gin.Context) {
 	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodList, Legends: legends})
 }
 
+// 一个 LineVO 就是帐目的一种分类 线或块
 func buildLines(existCategoryMap map[uint]int,
 	periodList []string,
-	periodNumMap map[string]float32,
+	periodNumMap map[string]int,
 	param RecordQueryParam,
 	categoryNameMap map[uint]string) []LineVO {
 
@@ -233,7 +266,7 @@ func buildLines(existCategoryMap map[uint]int,
 			key := BuildKey(categoryId, period)
 			_, exist := periodNumMap[key]
 			if exist {
-				data = append(data, periodNumMap[key])
+				data = append(data, float32(periodNumMap[key])/100.0)
 			} else {
 				data = append(data, 0)
 			}
@@ -252,7 +285,7 @@ func buildLines(existCategoryMap map[uint]int,
 	return lines
 }
 
-func buildLinesForOverview(periodList []string, periodNumMap map[string]float32, param RecordQueryParam) []LineVO {
+func buildLinesForOverview(periodList []string, periodNumMap map[string]int, param RecordQueryParam) []LineVO {
 	var lines []LineVO
 	var balanceData []int32
 
@@ -262,13 +295,13 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 		for i, period := range periodList {
 			key := BuildKey(categoryId, period)
 			_, exist := periodNumMap[key]
-			var temp float32 = 0.0
+			var temp = 0
 			if exist {
 				temp = periodNumMap[key]
 			}
 
 			// 计算结余
-			data = append(data, temp)
+			data = append(data, float32(temp))
 			if len(balanceData) <= i {
 				balanceData = append(balanceData, 0)
 			}
@@ -306,18 +339,18 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]float32,
 	return lines
 }
 
-func buildQueryData(param RecordQueryParam, finalStart string, finalEnd string) []CategorySumVO {
+func sumFromRecord(param RecordQueryParam, finalStart string, finalEnd string) []CategorySumVO {
 	var sumResult []CategorySumVO
 	db := dal.GetDB()
-	if param.TypeId == int(constant.RecordOverview) {
+	if param.TypeId == constant.ReportRecordOverview {
 		db.Table("record").
-			Select("type as category_id, sum(amount)/100.0 sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
+			Select("type as category_id, sum(amount) sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
 			Where("type in (?,?)", constant.RecordExpense, constant.RecordIncome).
 			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
 			Group("type, period").Find(&sumResult)
 	} else {
 		where := db.Table("record").
-			Select("category_id, sum(amount)/100.0 sum, strftime('" + param.sqlTimeFmt + "',record_time) as period")
+			Select("category_id, sum(amount) sum, strftime('" + param.sqlTimeFmt + "',record_time) as period")
 		if param.TypeId != 0 {
 			where = where.Where(" type = ?", param.TypeId)
 		}
