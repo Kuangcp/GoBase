@@ -21,7 +21,6 @@ var (
 //go:embed mybook-static/dist
 var staticFS embed.FS
 
-
 func init() {
 	flag.BoolVar(&updateDb, "u", false, "create or update database table")
 	flag.BoolVar(&printCategory, "pc", false, "print all category")

@@ -116,6 +116,7 @@ func registerServerApi(router *gin.Engine) {
 
 	// 账户
 	router.GET(buildApi("/account/listAccount"), account.ListAccount)
+	router.POST(buildApi("/account/createAccount"), account.CreateNewAccount)
 
 	// 账单
 	router.GET(buildApi("/record/calBalance"), record.QueryAccountBalance)

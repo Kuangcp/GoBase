@@ -22,7 +22,7 @@ func addRecord(record *RecordEntity) {
 	db.Create(record)
 }
 
-func checkParam(record *RecordEntity) (ghelp.ResultVO, *category.Category, *account.Account) {
+func checkRecordValid(record *RecordEntity) (ghelp.ResultVO, *category.Category, *account.Account) {
 	categoryEntity := category.FindCategoryById(record.CategoryId)
 	if categoryEntity == nil || !categoryEntity.Leaf {
 		return ghelp.FailedWithMsg("分类id无效"), nil, nil
@@ -46,7 +46,7 @@ func DoCreateRecord(record *RecordEntity) ghelp.ResultVO {
 	if nil == record {
 		return ghelp.Failed()
 	}
-	resultVO, _, _ := checkParam(record)
+	resultVO, _, _ := checkRecordValid(record)
 	if resultVO.IsFailed() {
 		return resultVO
 	}
@@ -60,11 +60,11 @@ func createTransRecord(origin *RecordEntity, target *RecordEntity) ghelp.ResultV
 		return ghelp.Failed()
 	}
 
-	resultVO, _, _ := checkParam(origin)
+	resultVO, _, _ := checkRecordValid(origin)
 	if resultVO.IsFailed() {
 		return resultVO
 	}
-	resultVO, _, _ = checkParam(target)
+	resultVO, _, _ = checkRecordValid(target)
 	if resultVO.IsFailed() {
 		return resultVO
 	}
@@ -77,7 +77,7 @@ func createTransRecord(origin *RecordEntity, target *RecordEntity) ghelp.ResultV
 	return ghelp.Success()
 }
 
-func BuildRecordByField(param RecordCreateParamVO) ghelp.ResultVO {
+func buildRecordListFromParam(param RecordCreateParamVO) ghelp.ResultVO {
 	if len(param.Date) == 0 {
 		return ghelp.FailedWithMsg("日期为空")
 	}
@@ -145,7 +145,7 @@ func parsePrice(amount string) ghelp.ResultVO {
 }
 
 func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
-	result := BuildRecordByField(param)
+	result := buildRecordListFromParam(param)
 	if result.IsFailed() {
 		return result
 	}
@@ -171,7 +171,7 @@ func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
 			target.AccountId = uint(param.TargetAccountId)
 			target.Type = constant.RecordTransferIn
 
-			checkResult, _, _ := checkParam(target)
+			checkResult, _, _ := checkRecordValid(target)
 			if checkResult.IsFailed() {
 				logger.Error(checkResult)
 				failResults = append(failResults, record)
