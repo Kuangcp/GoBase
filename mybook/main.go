@@ -27,8 +27,8 @@ func init() {
 	flag.BoolVar(&printAccount, "pa", false, "print all account")
 	flag.BoolVar(&webServer, "s", false, "start web server")
 
-	flag.BoolVar(&config.AppConf.DebugStatic, "d", false, "debug for static file")
-	flag.BoolVar(&config.AppConf.Release, "r", false, "Release logic")
+	flag.BoolVar(&config.AppConf.DebugStatic, "ds", false, "debug for static file")
+	flag.BoolVar(&config.AppConf.Dev, "d", false, "debug for static file")
 	flag.IntVar(&config.AppConf.Port, "p", config.DefaultPort, "web server port")
 }
 

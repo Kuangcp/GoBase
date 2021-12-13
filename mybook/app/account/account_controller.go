@@ -1,9 +1,10 @@
 package account
 
 import (
+	"mybook/app/common/util"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
-	"mybook/app/common/util"
 )
 
 func ListAccount(c *gin.Context) {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/logger"
@@ -11,20 +12,19 @@ type (
 	AppConfig struct {
 		DBFilePath  string // SQLite 文件绝对路径
 		DriverName  string
-		Release     bool // 是否 Release 模式
+		Dev         bool // 是否调试模式
 		DebugStatic bool
 		Port        int
 	}
 )
 
-//var DefaultDBPath = "/tmp/bookkeeping.db"
 var DefaultDBPath = "./data/main.db"
 var DefaultDriver = "sqlite3"
 var DefaultPort = 9090
 var DefaultUrlPath = "/api"
 
 var AppConf = &AppConfig{
-	Release:    false,
+	Dev:        false,
 	Port:       DefaultPort,
 	DriverName: DefaultDriver,
 	DBFilePath: DefaultDBPath,
@@ -45,9 +45,10 @@ func InitAppConfig() *AppConfig {
 		Level:    logger.DebugDesc,
 		Colorful: true,
 	}
-	if AppConf.Release {
+	if AppConf.Dev {
 		fileLogger.Level = logger.InformationalDesc
 		consoleLogger.Level = logger.InformationalDesc
+		AppConf.DBFilePath = "/tmp/bookkeeping.db"
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		fileLogger.Level = logger.DebugDesc
