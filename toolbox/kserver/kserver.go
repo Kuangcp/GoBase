@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -182,7 +183,16 @@ func imgIndexServer(w http.ResponseWriter, r *http.Request) {
     <title>Img</title>
 </head>
 <body>`))
+
+	sort.Slice(dir, func(i, j int) bool {
+		iInfo, _ := dir[i].Info()
+		jInfo, _ := dir[j].Info()
+		return iInfo.ModTime().After(jInfo.ModTime())
+	})
+
 	for _, entry := range dir {
+		fileInfo, _ := entry.Info()
+		fileInfo.ModTime()
 		if entry.IsDir() {
 			continue
 		}
