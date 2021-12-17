@@ -169,6 +169,28 @@ func bindPathAndStatic(pattern, binContent string) {
 	})
 }
 
+func imgIndexServer(w http.ResponseWriter, r *http.Request) {
+	dir, err := os.ReadDir("./")
+	if err != nil {
+		w.Write([]byte("error"))
+		return
+	}
+	w.Write([]byte(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Img</title>
+</head>
+<body>`))
+	for _, entry := range dir {
+		if entry.IsDir() {
+			continue
+		}
+		w.Write([]byte("<img width=\"300px\" src=\"" + entry.Name() + "\">"))
+	}
+	w.Write([]byte(`</body></html>`))
+}
+
 func main() {
 	info.Parse()
 	if help {
@@ -196,6 +218,7 @@ func main() {
 	}
 	bindPathAndStatic("/favicon.ico", faviconIco)
 	bindPathAndStatic("/up", uploadStaticPage)
+	http.HandleFunc("/img", imgIndexServer)
 
 	http.HandleFunc("/f", uploadHandler)
 	http.HandleFunc("/e", echoHandler)
