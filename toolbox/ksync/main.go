@@ -74,13 +74,7 @@ func syncFile() []string {
 
 func webServer() {
 	http.HandleFunc("/sync", func(writer http.ResponseWriter, request *http.Request) {
-		query, err := url.ParseQuery(request.URL.RawQuery)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-
-		name := query.Get("name")
+		name := request.URL.Query().Get("name")
 		unescape, err := url.QueryUnescape(name)
 		if err != nil {
 			logger.Error(err)
