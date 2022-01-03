@@ -11,7 +11,7 @@
         text-decoration: none;
     }
 
-    #dir button {
+    .dir button {
         width: 100px;
         height: 30px;
         margin-top: 10px;
@@ -22,17 +22,18 @@
         height: 180px;
         resize: none;
     }
-    #echoForm button{
+
+    #echoForm button {
         width: 80px;
         height: 30px;
     }
 </style>
 
 <body>
-<a id="dir" href="/d">
+<a id="dir" class="dir" href="/">
     <button>static dir</button>
 </a>
-<a id="dir" href="/up">
+<a id="up" class="dir" href="/up">
     <button>upload</button>
 </a>
 <br/>

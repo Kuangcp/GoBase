@@ -282,15 +282,11 @@ func main() {
 
 	printStartUpLog(port, getInternalIP())
 
-	// TODO 优化设计 绑定路由 与 当前目录
 	fs := http.FileServer(http.Dir("./"))
-	if defaultHome {
-		http.Handle("/d/", http.StripPrefix("/d", fs))
-		bindPathAndStatic("/", homeStaticPage)
-	} else {
-		http.Handle("/", http.StripPrefix("/", fs))
-		bindPathAndStatic("/h", homeStaticPage)
-	}
+	http.Handle("/", http.StripPrefix("/", fs))
+
+	// TODO template bind button
+	bindPathAndStatic("/h", homeStaticPage)
 	http.HandleFunc("/img", buildImgFunc("/"))
 
 	bindPathAndStatic("/favicon.ico", faviconIco)
