@@ -221,7 +221,18 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 			if entry.IsDir() {
 				continue
 			}
-			w.Write([]byte("<img width=\"300px\" src=\"" + entry.Name() + "\">"))
+
+			fileName := entry.Name()
+			idx := strings.LastIndex(fileName, ".")
+			if idx == -1 {
+				w.Write([]byte("<img width=\"300px\" height=\"300px\" src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+				continue
+			}
+			suffixType := fileName[idx:]
+			fmt.Println(suffixType)
+			if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" {
+				w.Write([]byte("<img width=\"300px\" height=\"300px\" src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+			}
 		}
 		w.Write([]byte(`</body></html>`))
 	}
