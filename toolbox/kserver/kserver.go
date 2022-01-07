@@ -206,6 +206,12 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 <head>
     <meta charset="UTF-8">
     <title>Img</title>
+<style>
+	img {
+	width: 210px;
+	max-height: 100px;
+	}
+</style>
 </head>
 <body>`))
 
@@ -225,13 +231,14 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 			fileName := entry.Name()
 			idx := strings.LastIndex(fileName, ".")
 			if idx == -1 {
-				w.Write([]byte("<img width=\"300px\" height=\"300px\" src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+				w.Write([]byte("<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
 				continue
 			}
 			suffixType := fileName[idx:]
 			fmt.Println(suffixType)
-			if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" {
-				w.Write([]byte("<img width=\"300px\" height=\"300px\" src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+			if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
+				suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
+				w.Write([]byte("<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
 			}
 		}
 		w.Write([]byte(`</body></html>`))
