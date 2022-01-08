@@ -28,6 +28,7 @@ var (
 
 	port         int
 	buildVersion string
+	imgFilePath  = "/g"
 )
 
 type Value interface {
@@ -71,7 +72,10 @@ func getInternalIP() string {
 
 func printStartUpLog(port int, internalIP string) {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
-	log.Printf("static file web server has started.\n")
+	log.Printf("%v/up%v  %v/up\n", cuibase.Purple, cuibase.End, innerURL)
+	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
+		cuibase.Purple, cuibase.End, innerURL)
+	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", cuibase.Purple, cuibase.End, innerURL)
 
 	// sort and print
 	var keys []string
@@ -80,27 +84,19 @@ func printStartUpLog(port int, internalIP string) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		printFileAndImgGroup("127.0.0.1", internalIP, k, pathDirMap[k], port)
+		printFileAndImgGroup("127.0.0.1", k, pathDirMap[k], port)
 	}
-
-	log.Printf("%v/up%v  %v/up\n", cuibase.Purple, cuibase.End, innerURL)
-	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
-		cuibase.Purple, cuibase.End, innerURL)
-	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", cuibase.Purple, cuibase.End, innerURL)
 }
 
-func printFileAndImgGroup(host, internalHost, path, filePath string, port int) {
+func printFileAndImgGroup(host, path, filePath string, port int) {
 	if path == "/" {
 		path = ""
 	}
 	local := fmt.Sprintf("http://%v:%v/%v", host, port, path)
-	lineBuf := fmt.Sprintf("%v%-30v", cuibase.Green, local)
+	internal := fmt.Sprintf("http://%v:%v/%v", host, port, path)
 
-	if internalHost != "" {
-		internal := fmt.Sprintf("http://%v:%v/%v", internalHost, port, path)
-		lineBuf += fmt.Sprintf("%-30v", internal)
-		lineBuf += fmt.Sprintf("%-35v", fmt.Sprintf("%v/img", internal))
-	}
+	lineBuf := fmt.Sprintf("%v%-27v", cuibase.Green, local)
+	lineBuf += fmt.Sprintf("%-29v", fmt.Sprintf("%v", internal+imgFilePath))
 
 	log.Printf("%v %v %v", lineBuf, cuibase.End, filePath)
 }
@@ -164,7 +160,7 @@ func main() {
 		pathDirMap[path] = pair[1]
 
 		http.Handle("/"+path+"/", http.StripPrefix("/"+path, http.FileServer(http.Dir(pair[1]))))
-		http.HandleFunc("/"+path+"/img", buildImgFunc(path))
+		http.HandleFunc("/"+path+imgFilePath, buildImgFunc(path))
 	}
 
 	printStartUpLog(port, getInternalIP())
@@ -174,7 +170,7 @@ func main() {
 
 	// TODO template bind button
 	bindPathAndStatic("/h", homeStaticPage)
-	http.HandleFunc("/img", buildImgFunc("/"))
+	http.HandleFunc(imgFilePath, buildImgFunc("/"))
 
 	bindPathAndStatic("/favicon.ico", faviconIco)
 	bindPathAndStatic("/up", uploadStaticPage)

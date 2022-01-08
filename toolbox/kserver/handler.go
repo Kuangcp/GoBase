@@ -127,8 +127,6 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 		})
 
 		for _, entry := range dir {
-			fileInfo, _ := entry.Info()
-			fileInfo.ModTime()
 			if entry.IsDir() {
 				continue
 			}
@@ -136,15 +134,19 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 			fileName := entry.Name()
 			idx := strings.LastIndex(fileName, ".")
 			if idx == -1 {
-				w.Write([]byte("<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+				writeImgTag(w, fileName)
 				continue
 			}
 			suffixType := fileName[idx:]
 			if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
 				suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
-				w.Write([]byte("<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+				writeImgTag(w, fileName)
 			}
 		}
 		w.Write([]byte(`</body></html>`))
 	}
+}
+
+func writeImgTag(w http.ResponseWriter, fileName string) (int, error) {
+	return w.Write([]byte("<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
 }
