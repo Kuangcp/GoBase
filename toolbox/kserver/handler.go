@@ -94,24 +94,31 @@ func echoHandler(_ http.ResponseWriter, request *http.Request) {
 
 func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		rawSize := query.Get("rawSize")
+
 		dir, err := os.ReadDir(pathDirMap[parentPath])
 		if err != nil {
 			w.Write([]byte("error"))
 			return
 		}
+
 		w.Write([]byte(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Img</title>
-<style>
-	img {
-	width: 210px;
-	max-height: 100px;
-	}
-</style>
-</head>
-<body>`))
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<title>Img</title>
+			<style>`))
+
+		if rawSize == "" {
+			w.Write([]byte(`
+			img {
+				width: 210px;
+				max-height: 100px;
+			}`))
+		}
+
+		w.Write([]byte(`</style></head><body>`))
 
 		sort.Slice(dir, func(i, j int) bool {
 			iInfo, _ := dir[i].Info()

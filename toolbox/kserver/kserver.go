@@ -94,10 +94,15 @@ func printFileAndImgGroup(host, internalHost, path, filePath string, port int) {
 		path = ""
 	}
 	local := fmt.Sprintf("http://%v:%v/%v", host, port, path)
-	internal := fmt.Sprintf("http://%v:%v/%v", internalHost, port, path)
+	lineBuf := fmt.Sprintf("%v%-30v", cuibase.Green, local)
 
-	log.Printf("%v%-30v %-30v %-35v %v %v", cuibase.Green, local, internal,
-		fmt.Sprintf("%v/img", internal), cuibase.End, filePath)
+	if internalHost != "" {
+		internal := fmt.Sprintf("http://%v:%v/%v", internalHost, port, path)
+		lineBuf += fmt.Sprintf("%-30v", internal)
+		lineBuf += fmt.Sprintf("%-35v", fmt.Sprintf("%v/img", internal))
+	}
+
+	log.Printf("%v %v %v", lineBuf, cuibase.End, filePath)
 }
 
 func bindPathAndStatic(pattern, binContent string) {
