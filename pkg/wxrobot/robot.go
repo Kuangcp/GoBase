@@ -73,10 +73,6 @@ func NewRobot(secretKey string) *Robot {
 	}
 }
 
-func init() {
-	logger.SetLogPathTrim("/wxrobot/")
-}
-
 // sendJSONPost 发送body为JSON的 Post 请求
 //  return response,timeWasted,error
 func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
