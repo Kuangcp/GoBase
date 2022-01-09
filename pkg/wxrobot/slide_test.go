@@ -9,7 +9,7 @@ import (
 )
 
 func TestRateLimiter(t *testing.T) {
-	limiter := NewCustomLimiter(time.Millisecond*1777, 35)
+	limiter := NewLimiter(time.Millisecond*1777, 35)
 
 	//limiter.acquire()
 	//time.Sleep(time.Millisecond * 50)

@@ -5,24 +5,27 @@ import (
 	"time"
 )
 
-const DefaultSlideWindow = time.Minute // 滑动窗口 默认值
-
 type (
 	PeriodRateLimiter struct {
 		lock        *sync.RWMutex
 		maxCount    int
-		curCount    int
-		slideQueue  *Queue
-		calPeriod   time.Duration
 		slideWindow time.Duration
+		curCount    int
+		slideQueue  *Queue // queue task entry nano seconds
 	}
 )
 
-func NewLimiter(maxCount int) *PeriodRateLimiter {
-	return NewCustomLimiter(DefaultSlideWindow, maxCount)
+// NewMinuteLimiter 限流: maxCount/min
+func NewMinuteLimiter(maxCount int) *PeriodRateLimiter {
+	return NewLimiter(time.Minute, maxCount)
 }
 
-func NewCustomLimiter(slideWindow time.Duration, maxCount int) *PeriodRateLimiter {
+// NewSecondLimiter 限流：maxCount/s
+func NewSecondLimiter(maxCount int) *PeriodRateLimiter {
+	return NewLimiter(time.Second, maxCount)
+}
+
+func NewLimiter(slideWindow time.Duration, maxCount int) *PeriodRateLimiter {
 	return &PeriodRateLimiter{
 		maxCount:    maxCount,
 		slideWindow: slideWindow,

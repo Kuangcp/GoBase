@@ -65,8 +65,12 @@ const (
 	imgToBase64SizeRate = 1.34    // 图片转base64 空间膨胀比例为 4/3
 )
 
-func NewRobot(key string) *Robot {
-	return &Robot{SecretKey: key, limiter: NewCustomLimiter(time.Minute, 19), client: &http.Client{}}
+func NewRobot(secretKey string) *Robot {
+	return &Robot{
+		SecretKey: secretKey,
+		limiter:   NewMinuteLimiter(19),
+		client:    &http.Client{},
+	}
 }
 
 // sendJSONPost 发送body为JSON的 Post 请求
