@@ -10,14 +10,16 @@ import (
 	"time"
 )
 
+var appKey = os.Getenv("appkey")
+
 func TestText(t *testing.T) {
-	robot := NewRobot("xxxxx")
-	//robot.MockRequest = true
+	robot := NewRobot(appKey)
+	robot.MockRequest = true
 	robot.SendText(Content{Content: "闹钟", MentionedList: []string{"xx", "@all"}})
 }
 
 func TestTextWithLimiter(t *testing.T) {
-	robot := NewRobot("xxxxx")
+	robot := NewRobot(appKey)
 	//robot.MockRequest = true
 
 	go loopSend(robot)
@@ -40,7 +42,7 @@ func loopSend(robot *Robot) {
 }
 
 func TestArticle(t *testing.T) {
-	robot := NewRobot("xxxxx")
+	robot := NewRobot(appKey)
 	robot.MockRequest = true
 	umlArti := Article{Title: "UML", Description: "UML 构图", URL: "https://blog.csdn.net/simonezhlx/article/details/8855297", PicURL: "https://img-blog.csdn.net/20130426171100149"}
 	blogArti := Article{Title: "Spring", Description: "从设计角度，深入分析 Spring 循环依赖的解决思路", URL: "https://juejin.cn/post/6958989396917895205", PicURL: "https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5a690e0622054ed1a5463751f300c815~tplv-k3u1fbpfcp-zoom-crop-mark:1304:1304:1304:734.image"}
@@ -48,7 +50,7 @@ func TestArticle(t *testing.T) {
 }
 
 func TestImage(t *testing.T) {
-	robot := NewRobot("xxxxx")
+	robot := NewRobot(appKey)
 	//robot.MockRequest = true
 
 	//robot.SendImageByFile("/home/kcp/Pictures/2020-06-20_17-19.png")
