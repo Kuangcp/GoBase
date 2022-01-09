@@ -8,9 +8,8 @@ import (
 const DefaultSlideWindow = time.Minute // 滑动窗口 默认值
 
 type (
-	// 大周期限速，例如 50次/min
 	PeriodRateLimiter struct {
-		lock        *sync.Mutex
+		lock        *sync.RWMutex
 		maxCount    int
 		curCount    int
 		slideQueue  *Queue
@@ -29,12 +28,13 @@ func NewCustomLimiter(slideWindow time.Duration, maxCount int) *PeriodRateLimite
 		slideWindow: slideWindow,
 		curCount:    0,
 		slideQueue:  NewQueue(),
-		lock:        &sync.Mutex{},
+		lock:        &sync.RWMutex{},
 	}
 }
 
+// calculateCount 移除 滑动窗口外的元素
+//  简单压测可发现 队列重整理耗时很小
 func (l *PeriodRateLimiter) calculateCount() {
-	// remove element that outer of time window
 	nowNs := time.Now().UnixNano()
 	for {
 		peek := l.slideQueue.Peek()
@@ -54,13 +54,23 @@ func (l *PeriodRateLimiter) acquire() bool {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
+	//start := time.Now().UnixNano()
 	l.calculateCount()
+	//end := time.Now().UnixNano()
+	//fmt.Println("queue waste: ", end-start)
+
 	count := l.curCount
 	maxCount := l.maxCount
-	acquire := count < maxCount
-	if acquire {
-		l.slideQueue.Push(time.Now().UnixNano())
+	if count >= maxCount {
+		return false
 	}
 
-	return acquire
+	l.slideQueue.Push(time.Now().UnixNano())
+	return true
+}
+
+func (l *PeriodRateLimiter) queueState() int {
+	l.lock.RLock()
+	defer l.lock.RUnlock()
+	return l.curCount
 }
