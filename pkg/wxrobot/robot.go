@@ -91,7 +91,7 @@ func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
 	if r.MockRequest {
-		logger.Info(start, "\n", string(jsonBytes))
+		logger.Info("post body: \n\t", string(jsonBytes))
 		return nil, 0, nil
 	}
 
