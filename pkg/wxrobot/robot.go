@@ -48,7 +48,7 @@ type (
 	}
 
 	// Robot 文档 https://work.weixin.qq.com/api/doc/90000/90136/91770
-	//  1. 接口调用限流：20条消息/min
+	//  1. 接口调用限流：20条消息/min。但是额外地，在短时间内多次调用同样会被限流 但是没有具体策略说明
 	//  2. 当前自定义机器人支持 文本（text）、markdown（markdown）、图片（image）、图文（news）四种消息类型。
 	//  3. 机器人的text/markdown类型消息支持在content中使用<@userid>扩展语法来@群成员
 	Robot struct {
@@ -71,6 +71,10 @@ func NewRobot(secretKey string) *Robot {
 		limiter:   NewMinuteLimiter(19),
 		client:    &http.Client{},
 	}
+}
+
+func init() {
+	logger.SetLogPathTrim("/wxrobot/")
 }
 
 // sendJSONPost 发送body为JSON的 Post 请求
