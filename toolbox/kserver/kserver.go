@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kuangcp/gobase/cuibase"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
 //go:embed up.html
