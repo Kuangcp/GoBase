@@ -7,10 +7,10 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/kuangcp/gobase/pkg/cuibase v0.0.0-20201103041857-ea5c95ff0199
-	github.com/kuangcp/gobase/pkg/ghelp v0.0.0-20201103041857-ea5c95ff0199
-	github.com/kuangcp/gobase/pkg/stopwatch v0.0.0-20210409094425-3f724b872d91
-	github.com/kuangcp/logger v1.0.5
+	github.com/kuangcp/gobase/pkg/cuibase v1.0.0
+	github.com/kuangcp/gobase/pkg/ghelp v1.0.0
+	github.com/kuangcp/gobase/pkg/stopwatch v1.0.0
+	github.com/kuangcp/logger v1.0.8
 	github.com/mattn/go-sqlite3 v1.14.4
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
