@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
+	"log"
+
 	"github.com/webview/webview"
 	"github.com/zserge/lorca"
-	"log"
 )
 
 const (

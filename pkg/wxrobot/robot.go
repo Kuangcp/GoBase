@@ -54,6 +54,7 @@ type (
 	Robot struct {
 		SecretKey   string
 		MockRequest bool
+		RequestLog  bool
 		limiter     *PeriodRateLimiter
 		client      *http.Client
 	}
@@ -62,7 +63,7 @@ type (
 const (
 	robotApi            = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
 	imgMaxSize          = 2 << 20 // 发送图片最大 2Mib
-	imgToBase64SizeRate = 1.34    // 图片转base64 空间膨胀比例为 4/3
+	imgToBase64SizeRate = 1.34    // 图片转base64 空间膨胀为 4/3
 )
 
 func NewRobot(secretKey string) *Robot {
@@ -90,8 +91,10 @@ func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
-	if r.MockRequest {
+	if r.RequestLog {
 		logger.Info("post body: \n\t", string(jsonBytes))
+	}
+	if r.MockRequest {
 		return nil, 0, nil
 	}
 
@@ -106,6 +109,10 @@ func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 	}
 
 	return rspBody, time.Now().Sub(start).Milliseconds(), nil
+}
+
+func (r *Robot) BuildMarkDownText(color, content string) string {
+	return fmt.Sprintf("<font color=\"%s\">%s</font>", color, content)
 }
 
 // SendMarkDown markdown消息
@@ -126,7 +133,9 @@ func (r *Robot) SendMarkDown(content Content) error {
 	if err != nil {
 		return err
 	}
-	logger.Warn(string(result), " time: ", waste)
+	if r.RequestLog {
+		logger.Warn(string(result), " time: ", waste)
+	}
 	return nil
 }
 
@@ -142,7 +151,9 @@ func (r *Robot) SendText(content Content) error {
 	if err != nil {
 		return err
 	}
-	logger.Warn(string(result), " time: ", waste)
+	if r.RequestLog {
+		logger.Warn(string(result), " time: ", waste)
+	}
 	return nil
 }
 
@@ -162,7 +173,9 @@ func (r *Robot) SendNews(articles ...Article) error {
 	if err != nil {
 		return err
 	}
-	logger.Warn(string(result), " time: ", waste)
+	if r.RequestLog {
+		logger.Warn(string(result), " time: ", waste)
+	}
 	return nil
 }
 
@@ -221,7 +234,9 @@ func (r *Robot) SendImageByBytes(img []byte) error {
 	if err != nil {
 		return err
 	}
-	logger.Warn(string(result), " time: ", waste)
+	if r.RequestLog {
+		logger.Warn(string(result), " time: ", waste)
+	}
 	return nil
 }
 

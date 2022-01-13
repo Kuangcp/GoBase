@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/kuangcp/logger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -12,10 +13,14 @@ import (
 
 
 func connect() {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://172.16.8.3:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
 	log.Print(client, err)
-	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, caf := context.WithTimeout(context.Background(), 20*time.Second)
+	caf()
 	err = client.Ping(ctx, readpref.Primary())
-	print(err)
-
+	if err != nil {
+		logger.Error(err)
+	}
+	database := client.Database("test-data")
+	database.CreateCollection(ctx, "xxx")
 }

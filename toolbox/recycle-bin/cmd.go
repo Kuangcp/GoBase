@@ -2,9 +2,10 @@ package main
 
 import (
 	"bytes"
-	"github.com/kuangcp/logger"
 	"os"
 	"os/exec"
+
+	"github.com/kuangcp/logger"
 )
 
 // 静默执行 不关心返回值
