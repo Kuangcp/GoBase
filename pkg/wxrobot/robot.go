@@ -111,8 +111,19 @@ func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 	return rspBody, time.Now().Sub(start).Milliseconds(), nil
 }
 
-func (r *Robot) BuildMarkDownText(color, content string) string {
+// MarkDown 构建颜色文本
+func (r *Robot) markDown(color, content string) string {
 	return fmt.Sprintf("<font color=\"%s\">%s</font>", color, content)
+}
+
+func (r *Robot) MarkDownGrey(content string) string {
+	return r.markDown(MdColorGray, content)
+}
+func (r *Robot) MarkDownGreen(content string) string {
+	return r.markDown(MdColorGreen, content)
+}
+func (r *Robot) MarkDownOrange(content string) string {
+	return r.markDown(MdColorOrange, content)
 }
 
 // SendMarkDown markdown消息
@@ -123,11 +134,11 @@ func (r *Robot) BuildMarkDownText(color, content string) string {
 //   链接:       [文字](URL)
 //   引用:       > 文字
 //   字体颜色:    <font color="info">绿色</font> <font color="comment">灰色</font> <font color="warning">橙红色</font>
-func (r *Robot) SendMarkDown(content Content) error {
+func (r *Robot) SendMarkDown(content string) error {
 	if !r.limiter.acquire() {
 		return errors.New("out of limiter")
 	}
-	msg := Msg{MsgType: "markdown", Markdown: &content}
+	msg := Msg{MsgType: "markdown", Markdown: &Content{Content: content}}
 
 	result, waste, err := r.sendJSONPost(msg)
 	if err != nil {
