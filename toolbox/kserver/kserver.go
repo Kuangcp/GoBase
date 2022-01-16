@@ -28,6 +28,7 @@ var (
 
 	port         int
 	buildVersion string
+	internalIP   string
 	imgFilePath  = "/g"
 )
 
@@ -70,7 +71,7 @@ func getInternalIP() string {
 	return ""
 }
 
-func printStartUpLog(port int, internalIP string) {
+func printStartUpLog() {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
 	log.Printf("%v/up%v  %v/up\n", cuibase.Purple, cuibase.End, innerURL)
 	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
@@ -84,16 +85,15 @@ func printStartUpLog(port int, internalIP string) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		printFileAndImgGroup("127.0.0.1", k, pathDirMap[k], port)
+		printFileAndImgGroup("127.0.0.1", k, pathDirMap[k])
 	}
 }
 
-func printFileAndImgGroup(host, path, filePath string, port int) {
-	if path == "/" {
-		path = ""
-	}
+func printFileAndImgGroup(host, path, filePath string) {
 	local := fmt.Sprintf("http://%v:%v/%v", host, port, path)
-	internal := fmt.Sprintf("http://%v:%v/%v", host, port, path)
+	internal := fmt.Sprintf("http://%v:%v/%v", internalIP, port, path)
+	internal = strings.TrimRight(internal, "/")
+	local = strings.TrimRight(local, "/")
 
 	lineBuf := fmt.Sprintf("%v%-27v", cuibase.Green, local)
 	lineBuf += fmt.Sprintf("%-29v", fmt.Sprintf("%v", internal+imgFilePath))
@@ -112,7 +112,7 @@ func bindPathAndStatic(pattern, binContent string) {
 
 var info = cuibase.HelpInfo{
 	Description:   "Start static file web server on current path",
-	Version:       "1.0.9",
+	Version:       "1.0.10",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -2,
 	ValueLen:      -6,
@@ -124,6 +124,27 @@ var info = cuibase.HelpInfo{
 		{Short: "-p", Value: "port", Comment: "web server port"},
 		{Short: "-d", Value: "folder", Comment: "folder pair. like -d x=y "},
 	}}
+
+func registerFolder() {
+	pathDirMap["/"] = "./"
+	for _, s := range folderPair {
+		if !strings.Contains(s, "=") {
+			log.Printf("%vWARN %v is invalid format. must like a=b %v", cuibase.Red, s, cuibase.End)
+			continue
+		}
+
+		pair := strings.Split(s, "=")
+		path := pair[0]
+		if path == "f" || path == "g" || path == "h" || path == "up" || path == "e" || path == "d" {
+			log.Printf("%vWARN path /%v already bind. %v", cuibase.Red, path, cuibase.End)
+			continue
+		}
+		pathDirMap[path] = pair[1]
+
+		http.Handle("/"+path+"/", http.StripPrefix("/"+path, http.FileServer(http.Dir(pair[1]))))
+		http.HandleFunc("/"+path+imgFilePath, buildImgFunc(path))
+	}
+}
 
 func init() {
 	flag.IntVar(&port, "p", 8989, "")
@@ -143,27 +164,10 @@ func main() {
 	if port < 1024 {
 		log.Printf("%vWARN: [1-1024] need run by root user.%v", cuibase.Red, cuibase.End)
 	}
+	internalIP = getInternalIP()
 
-	pathDirMap["/"] = "./"
-	for _, s := range folderPair {
-		if !strings.Contains(s, "=") {
-			log.Printf("%vWARN %v is invalid format. must like a=b %v", cuibase.Red, s, cuibase.End)
-			continue
-		}
-
-		pair := strings.Split(s, "=")
-		path := pair[0]
-		if path == "f" || path == "img" || path == "h" || path == "up" || path == "e" || path == "d" {
-			log.Printf("%vWARN path /%v already bind. %v", cuibase.Red, path, cuibase.End)
-			continue
-		}
-		pathDirMap[path] = pair[1]
-
-		http.Handle("/"+path+"/", http.StripPrefix("/"+path, http.FileServer(http.Dir(pair[1]))))
-		http.HandleFunc("/"+path+imgFilePath, buildImgFunc(path))
-	}
-
-	printStartUpLog(port, getInternalIP())
+	registerFolder()
+	printStartUpLog()
 
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))

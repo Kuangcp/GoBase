@@ -120,31 +120,43 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 
 		w.Write([]byte(`</style></head><body>`))
 
-		sort.Slice(dir, func(i, j int) bool {
-			iInfo, _ := dir[i].Info()
-			jInfo, _ := dir[j].Info()
-			return iInfo.ModTime().After(jInfo.ModTime())
-		})
-
-		for _, entry := range dir {
-			if entry.IsDir() {
-				continue
-			}
-
-			fileName := entry.Name()
-			idx := strings.LastIndex(fileName, ".")
-			if idx == -1 {
-				writeImgTag(w, fileName)
-				continue
-			}
-			suffixType := fileName[idx:]
-			if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
-				suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
-				writeImgTag(w, fileName)
-			}
+		hasImg := writeImgList(w, dir)
+		if !hasImg {
+			w.Write([]byte("<h2>No Image</h2>"))
 		}
 		w.Write([]byte(`</body></html>`))
 	}
+}
+
+func writeImgList(w http.ResponseWriter, dir []os.DirEntry) bool {
+	sort.Slice(dir, func(i, j int) bool {
+		iInfo, _ := dir[i].Info()
+		jInfo, _ := dir[j].Info()
+		return iInfo.ModTime().After(jInfo.ModTime())
+	})
+
+	hasImg := false
+	for _, entry := range dir {
+		if entry.IsDir() {
+			continue
+		}
+
+		fileName := entry.Name()
+		idx := strings.LastIndex(fileName, ".")
+		if idx == -1 {
+			hasImg = true
+			writeImgTag(w, fileName)
+			continue
+		}
+
+		suffixType := fileName[idx:]
+		if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
+			suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
+			writeImgTag(w, fileName)
+			hasImg = true
+		}
+	}
+	return hasImg
 }
 
 func writeImgTag(w http.ResponseWriter, fileName string) (int, error) {
