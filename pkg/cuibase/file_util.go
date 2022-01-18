@@ -83,7 +83,7 @@ func NewWriterIgnoreError(filePath string, truncate bool) *BufferWriter {
 func NewWriter(filePath string, truncate bool) (*BufferWriter, error) {
 	var fileMod int
 	if truncate {
-		fileMod = os.O_WRONLY | os.O_TRUNC
+		fileMod = os.O_WRONLY | os.O_TRUNC | os.O_CREATE
 	} else {
 		fileMod = os.O_WRONLY | os.O_APPEND | os.O_CREATE
 	}

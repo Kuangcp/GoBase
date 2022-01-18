@@ -6,7 +6,7 @@ import (
 )
 
 func TestWriteFile(t *testing.T) {
-	writer, err := NewWriter("c.log")
+	writer, err := NewWriter("c.log", false)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -19,7 +19,7 @@ func TestWriteFile(t *testing.T) {
 }
 
 func TestIgnoreError(t *testing.T) {
-	writer := NewWriterIgnoreError("/tmp/b.log")
+	writer := NewWriterIgnoreError("c.log", true)
 	defer writer.Close()
 
 	writer.WriteLine("xxxxxxx")
