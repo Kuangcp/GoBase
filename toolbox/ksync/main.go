@@ -4,34 +4,36 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"github.com/getlantern/systray"
-	"github.com/kuangcp/logger"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kuangcp/logger"
 )
 
 //go:embed sync.png
 var iconImg string
 
 var (
-	sideList []string // 对端列表 格式 host:port
-	port     int
-	version  bool
-	initSide string
+	sideList  []string // 对端列表 格式 host:port
+	port      int
+	version   bool
+	initSide  string
+	localAddr string
 )
 
 var (
-	lastMod = time.Now()
+	lastFile = make(map[string]struct{})
 )
 
 func init() {
 	flag.IntVar(&port, "p", 8000, "port")
 	flag.BoolVar(&version, "v", false, "version")
-	flag.StringVar(&initSide, "s", "", "init side url")
+	flag.StringVar(&initSide, "s", "", "init server side. ag: 192.168.0.1:8000")
+	flag.StringVar(&localAddr, "l", "", "local side host. ag: 192.168.0.2")
 }
 
 func main() {
@@ -43,12 +45,23 @@ func main() {
 
 	initSideBind()
 
-	go webServer()
+	ticker := time.NewTicker(time.Second * 5)
+	for range ticker.C {
 
-	systray.Run(OnReady, OnExit)
+	}
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				syncFile()
+			}
+		}
+	}()
+
+	webServer()
 }
 
-func syncFile() []string {
+func readNeedSyncFile() []string {
 	var result []string
 	dir, err := ioutil.ReadDir("./")
 	if err != nil {
@@ -56,18 +69,21 @@ func syncFile() []string {
 		return result
 	}
 
+	init := len(lastFile) == 0
 	for _, info := range dir {
 		if info.IsDir() {
-			//fmt.Println("dir", info)
 			continue
 		}
-		if lastMod.Before(info.ModTime()) {
+		_, ok := lastFile[info.Name()]
+		if init {
+			lastFile[info.Name()] = struct{}{}
+		}
+
+		if !ok || init {
 			logger.Info("need sync", info.Name(), info.ModTime())
 			result = append(result, info.Name())
 		}
-	}
-	if len(result) != 0 {
-		lastMod = time.Now()
+
 	}
 	return result
 }
@@ -114,13 +130,14 @@ func webServer() {
 }
 
 func initSideBind() {
-	if initSide == "" {
+	if initSide == "" || localAddr == "" {
+		fmt.Println("config error")
 		return
 	}
 
 	client := http.Client{}
 	req, err := http.NewRequest("GET", "http://"+initSide+"/register", nil)
-	req.Header.Set("self", fmt.Sprintf("localhost:%v", port))
+	req.Header.Set("self", fmt.Sprintf("%v:%v", localAddr, port))
 	if err != nil {
 		fmt.Println(err)
 		return

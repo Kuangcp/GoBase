@@ -1,49 +1,36 @@
 package main
 
 import (
-	"fmt"
-	"github.com/getlantern/systray"
-	"github.com/kuangcp/logger"
-	"ksync/icon"
+	"time"
+
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
+
+	"github.com/kuangcp/logger"
 )
 
 func OnReady() {
-	if "windows" == runtime.GOOS {
-		systray.SetTemplateIcon(icon.Data, icon.Data)
-	} else {
-		systray.SetTemplateIcon([]byte(iconImg), []byte(iconImg))
-	}
-	systray.SetTitle("K-Sync")
-	systray.SetTooltip("K-Sync")
 
-	syncItem := systray.AddMenuItem("Sync", "sync file")
+	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for {
 			select {
-			case <-syncItem.ClickedCh:
-				logger.Info("sync %v", sideList)
-				fileList := syncFile()
-				for _, path := range fileList {
-					for _, r := range sideList {
-						postFile(r, path)
-					}
-				}
+			case <-ticker.C:
+				syncFile()
 			}
 		}
 	}()
+}
 
-	exitItem := systray.AddMenuItem(fmt.Sprintf("Exit (%v)", port), "Exit the whole app")
-	go func() {
-		<-exitItem.ClickedCh
-		logger.Info("Requesting quit")
-		systray.Quit()
-		logger.Info("Finished quitting")
-	}()
-
+func syncFile() {
+	logger.Info("check sync %v", sideList)
+	fileList := readNeedSyncFile()
+	for _, path := range fileList {
+		for _, r := range sideList {
+			postFile(r, path)
+		}
+	}
 }
 
 func postFile(server string, path string) {
