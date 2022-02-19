@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "embed"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -13,9 +12,6 @@ import (
 
 	"github.com/kuangcp/logger"
 )
-
-//go:embed sync.png
-var iconImg string
 
 var (
 	sideList  []string // 对端列表 格式 host:port
@@ -146,7 +142,7 @@ func webServer() {
 
 func initSideBind() {
 	if initSide == "" || localAddr == "" {
-		logger.Warn("client config error")
+		logger.Warn("client config missing")
 		return
 	}
 
@@ -167,6 +163,10 @@ func initSideBind() {
 }
 
 func syncFile() {
+	if len(sideList) == 0 {
+		return
+	}
+
 	//logger.Info("check sync %v", sideList)
 	fileList := readNeedSyncFile()
 	for _, path := range fileList {
