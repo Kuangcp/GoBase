@@ -3,23 +3,25 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kuangcp/logger"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
+	"strings"
 	"time"
-
-	"github.com/kuangcp/logger"
 )
 
 var (
-	sideList  []string // 对端列表 格式 host:port
-	port      int
-	version   bool
-	initSide  string
-	localAddr string
-	syncDir   string
+	sideList   []string // 对端列表 格式 host:port
+	port       int
+	version    bool
+	serverAddr string
+	localAddr  string
+	localHost  string
+	syncDir    string
+	checkSec   int
 )
 
 var (
@@ -28,10 +30,11 @@ var (
 
 func init() {
 	flag.IntVar(&port, "p", 8000, "port")
+	flag.IntVar(&checkSec, "c", 2, "check duration second")
 	flag.BoolVar(&version, "v", false, "version")
-	flag.StringVar(&initSide, "s", "", "init server side. ag: 192.168.0.1:8000")
-	flag.StringVar(&localAddr, "l", "", "local side host. ag: 192.168.0.2")
-	flag.StringVar(&syncDir, "d", "./", "sync dir. end with / or \\\\")
+	flag.StringVar(&serverAddr, "s", "", "init server host&port. ag: 192.168.0.1:8000")
+	flag.StringVar(&localHost, "l", "", "local side host. ag: 192.168.0.2")
+	flag.StringVar(&syncDir, "d", "./", "sync dir.")
 }
 
 func main() {
@@ -41,16 +44,23 @@ func main() {
 		return
 	}
 
-	initSideBind()
-
-	ticker := time.NewTicker(time.Second * 5)
-	go func() {
-		for range ticker.C {
-			syncFile()
-		}
-	}()
-
+	normalizeParam()
+	registerOnServer()
+	go syncTimerTask()
 	webServer()
+}
+
+func normalizeParam() {
+	localAddr = localHost + ":" + fmt.Sprint(port)
+	if "windows" == runtime.GOOS {
+		if !strings.HasSuffix(syncDir, "\\") {
+			syncDir += "\\"
+		}
+	} else {
+		if !strings.HasSuffix(syncDir, "/") {
+			syncDir += "/"
+		}
+	}
 }
 
 func readNeedSyncFile() []string {
@@ -82,73 +92,21 @@ func isFileExist(filename string) bool {
 	return err == nil
 }
 
-func webServer() {
-	http.HandleFunc("/exist", func(writer http.ResponseWriter, request *http.Request) {
-		name := request.URL.Query().Get("name")
-		unescape, err := url.QueryUnescape(name)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		exist := isFileExist(syncDir + "" + unescape)
-		if exist {
-			writer.Write([]byte("EXIST"))
-		} else {
-			writer.Write([]byte("NONE"))
-		}
-	})
-
-	// 接收文件
-	http.HandleFunc("/sync", func(writer http.ResponseWriter, request *http.Request) {
-		name := request.URL.Query().Get("name")
-		unescape, err := url.QueryUnescape(name)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-
-		open, err := os.Create(syncDir + unescape)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-
-		var buf = make([]byte, 4096)
-		for {
-			read, err := request.Body.Read(buf)
-			if read != 0 {
-				open.Write(buf[:read])
-			}
-			if err != nil {
-				break
-			}
-		}
-
-		open.Close()
-	})
-	// 注册
-	http.HandleFunc("/register", func(writer http.ResponseWriter, request *http.Request) {
-		client := request.Header.Get("self")
-		logger.Info("register new", client)
-		sideList = append(sideList, client)
-		writer.Write([]byte("OK"))
-	})
-
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		log.Fatal("error: ", err)
+// 注册到服务端
+func registerOnServer() {
+	// 如果需要注册到服务端，必须要声明自己可被访问的host
+	if serverAddr != "" && localHost == "" {
+		logger.Warn("local host is missing")
+		os.Exit(1)
 	}
-}
 
-func initSideBind() {
-	if initSide == "" || localAddr == "" {
-		logger.Warn("client config missing")
+	if serverAddr == "" {
 		return
 	}
 
 	client := http.Client{}
-	req, err := http.NewRequest("GET", "http://"+initSide+"/register", nil)
-	req.Header.Set("self", fmt.Sprintf("%v:%v", localAddr, port))
+	req, err := http.NewRequest("GET", "http://"+serverAddr+"/register", nil)
+	req.Header.Set("self", fmt.Sprintf("%v:%v", localHost, port))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -159,7 +117,14 @@ func initSideBind() {
 		return
 	}
 	fmt.Println(rsp)
-	sideList = append(sideList, initSide)
+	sideList = append(sideList, serverAddr)
+}
+
+func syncTimerTask() {
+	ticker := time.NewTicker(time.Second * time.Duration(checkSec))
+	for range ticker.C {
+		syncFile()
+	}
 }
 
 func syncFile() {
@@ -198,7 +163,7 @@ func postFile(server string, path string) {
 
 	defer open.Close()
 
-	syncURL := "http://" + server + "/sync?name=" + name
+	syncURL := "http://" + server + "/upload?name=" + name
 	post, err := http.Post(syncURL, "", open)
 	if err != nil {
 		return
