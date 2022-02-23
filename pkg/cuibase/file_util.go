@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 // ReadFileLines filter and map
@@ -65,6 +66,18 @@ func ReadFileLines(filename string,
 // ReadFileLinesNoFilter only map
 func ReadFileLinesNoFilter(filename string, mapFunc func(string) interface{}) []interface{} {
 	return ReadFileLines(filename, nil, mapFunc)
+}
+
+func ReadCsvFile(filename string) [][]string {
+	lines := ReadFileLines(filename, nil, func(s string) interface{} {
+		return strings.Split(strings.ReplaceAll(strings.TrimSpace(s), "\"", ""), ",")
+	})
+
+	var result [][]string
+	for _, line := range lines {
+		result = append(result, line.([]string))
+	}
+	return result
 }
 
 type BufferWriter struct {
