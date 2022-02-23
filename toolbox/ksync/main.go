@@ -146,29 +146,27 @@ func postFile(server string, path string) {
 	existURL := "http://" + server + "/exist?name=" + name
 
 	existRsp, err := http.Get(existURL)
-	if existRsp == nil || err != nil {
+	if err != nil || existRsp == nil || existRsp.Body == nil {
 		return
 	}
 	rspStr, err := ioutil.ReadAll(existRsp.Body)
-	if string(rspStr) == "EXIST" {
+	if err != nil || string(rspStr) == "EXIST" {
 		logger.Info("%s exist", name)
 		return
 	}
+	defer existRsp.Body.Close()
 
 	open, err := os.Open(path)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
-
 	defer open.Close()
 
-	syncURL := "http://" + server + "/upload?name=" + name
-	post, err := http.Post(syncURL, "", open)
-	if err != nil {
+	post, err := http.Post("http://"+server+"/upload?name="+name, "", open)
+	if err != nil || post == nil || post.Body == nil {
 		return
 	}
-
 	defer post.Body.Close()
 	logger.Info("send to ", server, name)
 }
