@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/kuangcp/logger"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/kuangcp/logger"
 )
 
 func exist(writer http.ResponseWriter, request *http.Request) {
@@ -73,6 +74,13 @@ func notifySyncFile(writer http.ResponseWriter, request *http.Request) {
 func register(writer http.ResponseWriter, request *http.Request) {
 	client := request.Header.Get("self")
 	logger.Info("register new", client)
+	for _, s := range sideList {
+		if s == client {
+			logger.Warn("already register")
+			writer.Write([]byte("EXIST"))
+			return
+		}
+	}
 	sideList = append(sideList, client)
 	writer.Write([]byte("OK"))
 }
