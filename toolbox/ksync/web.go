@@ -64,24 +64,22 @@ func notifySyncFile(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	for _, s := range sideList {
+	sideList.Loop(func(s interface{}) {
 		logger.Info("notify refresh", s)
-		http.Get("http://" + s + "/refresh?actionList=" + actionList + "," + localAddr)
-	}
+		http.Get("http://" + s.(string) + "/refresh?actionList=" + actionList + "," + localAddr)
+	})
 	writer.Write([]byte("OK"))
 }
 
 func register(writer http.ResponseWriter, request *http.Request) {
 	client := request.Header.Get("self")
 	logger.Info("register new", client)
-	for _, s := range sideList {
-		if s == client {
-			logger.Warn("already register")
-			writer.Write([]byte("EXIST"))
-			return
-		}
+	if sideList.Contains(client) {
+		logger.Warn("already register")
+		writer.Write([]byte("EXIST"))
+		return
 	}
-	sideList = append(sideList, client)
+	sideList.Add(client)
 	writer.Write([]byte("OK"))
 }
 

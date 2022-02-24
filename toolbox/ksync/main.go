@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kuangcp/logger"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,10 +10,12 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/logger"
 )
 
 var (
-	sideList   []string // 对端列表 格式 host:port
 	port       int
 	version    bool
 	serverAddr string
@@ -25,7 +26,8 @@ var (
 )
 
 var (
-	lastFile = make(map[string]struct{})
+	lastFile = cuibase.NewSet()
+	sideList = cuibase.NewSet() // 对端列表 格式 host:port
 )
 
 func init() {
@@ -40,7 +42,7 @@ func init() {
 func main() {
 	flag.Parse()
 	if version {
-		fmt.Println("1.0.0")
+		fmt.Println("1.0.2")
 		return
 	}
 
@@ -71,15 +73,15 @@ func readNeedSyncFile() []string {
 		return result
 	}
 
-	init := len(lastFile) == 0
+	firstInit := lastFile.IsEmpty()
 	for _, info := range dir {
 		if info.IsDir() {
 			continue
 		}
-		_, ok := lastFile[info.Name()]
-		lastFile[info.Name()] = struct{}{}
+		contains := lastFile.Contains(info.Name())
+		lastFile.Add(info.Name())
 
-		if !ok || init {
+		if !contains || firstInit {
 			logger.Info("need sync", info.Name(), info.ModTime())
 			result = append(result, info.Name())
 		}
@@ -117,7 +119,7 @@ func registerOnServer() {
 		return
 	}
 	fmt.Println(rsp)
-	sideList = append(sideList, serverAddr)
+	sideList.Add(serverAddr)
 }
 
 func syncTimerTask() {
@@ -128,16 +130,16 @@ func syncTimerTask() {
 }
 
 func syncFile() {
-	if len(sideList) == 0 {
+	if sideList.Len() == 0 {
 		return
 	}
 
 	//logger.Info("check sync %v", sideList)
 	fileList := readNeedSyncFile()
 	for _, path := range fileList {
-		for _, r := range sideList {
-			postFile(r, path)
-		}
+		sideList.Loop(func(i interface{}) {
+			postFile(i.(string), path)
+		})
 	}
 }
 
