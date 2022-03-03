@@ -16,8 +16,8 @@ type (
 		first     bool
 		hasStart  bool
 		firstTime time.Time
-		startTime time.Time
-		stopTime  time.Time
+		startTime *time.Time
+		stopTime  *time.Time
 		tasks     []TaskInfo
 	}
 )
@@ -30,7 +30,7 @@ func NewWithName(name string) *StopWatch {
 	return &StopWatch{name: name, first: true}
 }
 
-func (s *StopWatch) PrettyPrint() string {
+func (s StopWatch) PrettyPrint() string {
 	if s.first {
 		return ""
 	}
@@ -54,6 +54,10 @@ func (s *StopWatch) PrettyPrint() string {
 		s.stopTime.Format("15:04:05.000"), taskStr)
 }
 
+func (s *StopWatch) StartAnon() {
+	s.Start("")
+}
+
 func (s *StopWatch) Start(name string) {
 	now := time.Now()
 	if s.first {
@@ -63,7 +67,7 @@ func (s *StopWatch) Start(name string) {
 	if s.hasStart {
 		s.Stop()
 	}
-	s.startTime = now
+	s.startTime = &now
 	s.hasStart = true
 	s.tasks = append(s.tasks, TaskInfo{name: name})
 }
@@ -73,7 +77,18 @@ func (s *StopWatch) Stop() {
 		return
 	}
 	now := time.Now()
-	s.stopTime = now
+	s.stopTime = &now
 	s.hasStart = false
-	s.tasks[len(s.tasks)-1].elapsedTime = now.Sub(s.startTime)
+	s.tasks[len(s.tasks)-1].elapsedTime = now.Sub(*s.startTime)
+}
+
+func (s StopWatch) GetTotalDuration() time.Duration {
+	if s.stopTime == nil {
+		return time.Now().Sub(s.firstTime)
+	}
+	return s.stopTime.Sub(s.firstTime)
+}
+
+func (s StopWatch) GetTaskCount() int {
+	return len(s.tasks)
 }

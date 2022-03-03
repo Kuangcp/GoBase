@@ -37,6 +37,8 @@ func TestRepeatStart(t *testing.T) {
 	http.Get("http://jd.com")
 	watch.Stop()
 	println(watch.PrettyPrint())
+	println(watch.GetTotalDuration().Milliseconds())
+	println(watch.GetTaskCount())
 }
 
 func TestMissingLastStop(t *testing.T) {
