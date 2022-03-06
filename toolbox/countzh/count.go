@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/go-redis/redis/v7"
-	"github.com/kuangcp/gobase/cuibase"
 )
 
 var totalFile = 0
