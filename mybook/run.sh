@@ -28,11 +28,11 @@ install_server() {
         ln -s data bin/data
     fi
 
-    bin/${BINARY_NAME} -s -p 9090
+    bin/${BINARY_NAME} -s -p 9098
 }
 
 run(){
-  bin/${BINARY_NAME} -s -p 9090
+  bin/${BINARY_NAME} -s -p 9098
 }
 
 help() {
