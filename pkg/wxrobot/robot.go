@@ -18,8 +18,8 @@ import (
 type (
 	Content struct {
 		Content             string   `json:"content"`
-		MentionedList       []string `json:"mentioned_list,omitempty"`        // 仅text类型 有效
-		MentionedMobileList []string `json:"mentioned_mobile_list,omitempty"` // 仅text类型 有效
+		MentionedList       []string `json:"mentioned_list,omitempty"`        // 仅text消息 使用
+		MentionedMobileList []string `json:"mentioned_mobile_list,omitempty"` // 仅text消息 使用
 	}
 
 	ArticleList struct {
@@ -29,13 +29,13 @@ type (
 	Article struct {
 		Title       string `json:"title"`       // 标题，不超过128个字节，超过会自动截断
 		Description string `json:"description"` // 描述，不超过512个字节，超过会自动截断
-		URL         string `json:"url"`         // 点击后跳转的链接
+		URL         string `json:"url"`         // 点击图文消息后所跳转的链接
 		PicURL      string `json:"picurl"`      // 支持JPG、PNG格式，较好的效果为大图 1068*455，小图150*150
 	}
 
 	Image struct {
 		Base64 string `json:"base64"` // 图片内容的base64编码
-		MD5    string `json:"md5"`    // 图片内容（base64编码前）的md5值
+		MD5    string `json:"md5"`    // 图片文件二进制字节的md5值
 	}
 
 	Msg struct {
@@ -47,14 +47,14 @@ type (
 		Image    *Image       `json:"image,omitempty"`
 	}
 
-	// Robot 文档 https://work.weixin.qq.com/api/doc/90000/90136/91770
+	// WeWorkRobot 文档 https://work.weixin.qq.com/api/doc/90000/90136/91770
 	//  1. 接口调用限流：20条消息/min。但是额外地，在短时间内多次调用同样会被限流 但是没有具体策略说明
 	//  2. 当前自定义机器人支持 文本（text）、markdown（markdown）、图片（image）、图文（news）四种消息类型。
 	//  3. 机器人的text/markdown类型消息支持在content中使用<@userid>扩展语法来@群成员
-	Robot struct {
-		SecretKey   string
-		MockRequest bool
-		RequestLog  bool
+	WeWorkRobot struct {
+		secretKey   string
+		requestLog  bool
+		mockRequest bool
 		limiter     *PeriodRateLimiter
 		client      *http.Client
 	}
@@ -66,17 +66,25 @@ const (
 	imgToBase64SizeRate = 1.34    // 图片转base64 空间膨胀为 4/3
 )
 
-func NewRobot(secretKey string) *Robot {
-	return &Robot{
-		SecretKey: secretKey,
+func NewRobot(secretKey string) Robot {
+	return &WeWorkRobot{
+		secretKey: secretKey,
 		limiter:   NewMinuteLimiter(19),
 		client:    &http.Client{},
 	}
 }
 
+func (r *WeWorkRobot) MockRequest() {
+	r.mockRequest = true
+}
+
+func (r *WeWorkRobot) ShowRequestLog() {
+	r.requestLog = true
+}
+
 // sendJSONPost 发送body为JSON的 Post 请求
 //  return response,timeWasted,error
-func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
+func (r *WeWorkRobot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 	start := time.Now()
 	jsonBytes, err := json.Marshal(value)
 	if err != nil {
@@ -84,17 +92,17 @@ func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 	}
 
 	reader := bytes.NewReader(jsonBytes)
-	request, err := http.NewRequest("POST", robotApi+r.SecretKey, reader)
+	request, err := http.NewRequest("POST", robotApi+r.secretKey, reader)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 
-	if r.RequestLog {
+	if r.requestLog {
 		logger.Info("post body: ", string(jsonBytes))
 	}
-	if r.MockRequest {
+	if r.mockRequest {
 		return nil, 0, nil
 	}
 
@@ -112,29 +120,22 @@ func (r *Robot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 }
 
 // MarkDown 构建颜色文本
-func (r *Robot) markDown(color, content string) string {
+func (r *WeWorkRobot) markDown(color, content string) string {
 	return fmt.Sprintf("<font color=\"%s\">%s</font>", color, content)
 }
 
-func (r *Robot) MarkDownGrey(content string) string {
+func (r *WeWorkRobot) MarkDownGrey(content string) string {
 	return r.markDown(MdColorGray, content)
 }
-func (r *Robot) MarkDownGreen(content string) string {
+func (r *WeWorkRobot) MarkDownGreen(content string) string {
 	return r.markDown(MdColorGreen, content)
 }
-func (r *Robot) MarkDownOrange(content string) string {
+func (r *WeWorkRobot) MarkDownOrange(content string) string {
 	return r.markDown(MdColorOrange, content)
 }
 
 // SendMarkDown markdown消息
-//  支持格式：
-//   1-6级标题:   #
-//   加粗:       **文字**
-//   行内代码段:  ``
-//   链接:       [文字](URL)
-//   引用:       > 文字
-//   字体颜色:    <font color="info">绿色</font> <font color="comment">灰色</font> <font color="warning">橙红色</font>
-func (r *Robot) SendMarkDown(content string) error {
+func (r *WeWorkRobot) SendMarkDown(content string) error {
 	if !r.limiter.acquire() {
 		return errors.New("out of limiter")
 	}
@@ -144,14 +145,14 @@ func (r *Robot) SendMarkDown(content string) error {
 	if err != nil {
 		return err
 	}
-	if r.RequestLog {
+	if r.requestLog {
 		logger.Warn(string(result), " time: ", waste)
 	}
 	return nil
 }
 
 // SendText 文本消息
-func (r *Robot) SendText(content Content) error {
+func (r *WeWorkRobot) SendText(content Content) error {
 	if !r.limiter.acquire() {
 		return errors.New("out of limiter")
 	}
@@ -162,7 +163,7 @@ func (r *Robot) SendText(content Content) error {
 	if err != nil {
 		return err
 	}
-	if r.RequestLog {
+	if r.requestLog {
 		logger.Warn(string(result), " time: ", waste)
 	}
 	return nil
@@ -170,7 +171,7 @@ func (r *Robot) SendText(content Content) error {
 
 // SendNews 发送图文消息
 //  注意：单个图文时能看到 title 和 description, 多个时只能看到 title
-func (r *Robot) SendNews(articles ...Article) error {
+func (r *WeWorkRobot) SendNews(articles ...Article) error {
 	if !r.limiter.acquire() {
 		return errors.New("out of limiter")
 	}
@@ -184,14 +185,14 @@ func (r *Robot) SendNews(articles ...Article) error {
 	if err != nil {
 		return err
 	}
-	if r.RequestLog {
+	if r.requestLog {
 		logger.Warn(string(result), " time: ", waste)
 	}
 	return nil
 }
 
 // SendImageByFile 发送图片
-func (r *Robot) SendImageByFile(filePath string) error {
+func (r *WeWorkRobot) SendImageByFile(filePath string) error {
 	if !r.limiter.acquire() {
 		return errors.New("out of limiter")
 	}
@@ -221,7 +222,7 @@ func buildImgFileMd5(img []byte) string {
 
 // SendImageByBytes 发送图片
 //  图片（base64编码前）最大不能超过2M，支持JPG,PNG格式
-func (r *Robot) SendImageByBytes(img []byte) error {
+func (r *WeWorkRobot) SendImageByBytes(img []byte) error {
 	if !r.limiter.acquire() {
 		return errors.New("out of limiter")
 	}
@@ -245,7 +246,7 @@ func (r *Robot) SendImageByBytes(img []byte) error {
 	if err != nil {
 		return err
 	}
-	if r.RequestLog {
+	if r.requestLog {
 		logger.Warn(string(result), " time: ", waste)
 	}
 	return nil

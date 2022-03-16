@@ -10,7 +10,7 @@ type (
 		lock        *sync.RWMutex
 		maxCount    int
 		slideWindow time.Duration
-		curCount    int
+		curCount    int    // already run task in current windows
 		slideQueue  *Queue // queue task entry nano seconds
 	}
 )
