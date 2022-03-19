@@ -32,3 +32,4 @@ CGO_ENABLED=0 go build; docker build -f kserver-alpine.dockerfile -t ksever:$(./
 ## change log
 - 1.0.4 add upload function
 - 1.0.5 index.html
+- 1.0.6 img page

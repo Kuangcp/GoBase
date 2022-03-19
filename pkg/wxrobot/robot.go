@@ -47,7 +47,7 @@ type (
 		Image    *Image       `json:"image,omitempty"`
 	}
 
-	// WeWorkRobot 文档 https://work.weixin.qq.com/api/doc/90000/90136/91770
+	// WeWorkRobot 接口文档 https://work.weixin.qq.com/api/doc/90000/90136/91770
 	//  1. 接口调用限流：20条消息/min。但是额外地，在短时间内多次调用同样会被限流 但是没有具体策略说明
 	//  2. 当前自定义机器人支持 文本（text）、markdown（markdown）、图片（image）、图文（news）四种消息类型。
 	//  3. 机器人的text/markdown类型消息支持在content中使用<@userid>扩展语法来@群成员
@@ -58,12 +58,6 @@ type (
 		limiter     *PeriodRateLimiter
 		client      *http.Client
 	}
-)
-
-const (
-	robotApi            = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key="
-	imgMaxSize          = 2 << 20 // 发送图片最大 2Mib
-	imgToBase64SizeRate = 1.34    // 图片转base64 空间膨胀为 4/3
 )
 
 func NewRobot(secretKey string) Robot {

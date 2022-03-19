@@ -26,10 +26,11 @@ var (
 	help        bool
 	defaultHome bool
 
-	port         int
-	buildVersion string
-	internalIP   string
-	imgFilePath  = "/g"
+	port          int
+	buildVersion  string
+	internalIP    string
+	imgFilePath   = "/g"
+	videoFilePath = "/v"
 )
 
 type Value interface {
@@ -125,7 +126,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-d", Value: "folder", Comment: "folder pair. like -d x=y "},
 	}}
 
-func registerFolder() {
+func registerAllFolder() {
 	pathDirMap["/"] = "./"
 	for _, s := range folderPair {
 		if !strings.Contains(s, "=") {
@@ -141,8 +142,12 @@ func registerFolder() {
 		}
 		pathDirMap[path] = pair[1]
 
+		// 动态生成静态文件页面
 		http.Handle("/"+path+"/", http.StripPrefix("/"+path, http.FileServer(http.Dir(pair[1]))))
+
+		// 动态生成图片和视频 页面
 		http.HandleFunc("/"+path+imgFilePath, buildImgFunc(path))
+		http.HandleFunc("/"+path+videoFilePath, buildVideoFunc(path))
 	}
 }
 
@@ -166,7 +171,7 @@ func main() {
 	}
 	internalIP = getInternalIP()
 
-	registerFolder()
+	registerAllFolder()
 	printStartUpLog()
 
 	fs := http.FileServer(http.Dir("./"))

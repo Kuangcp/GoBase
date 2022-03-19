@@ -10,9 +10,15 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
+
+type imgParam struct {
+	rawSize  bool
+	imgCount int
+}
 
 func isFileExist(filename string) bool {
 	_, err := os.Stat(filename)
@@ -92,13 +98,11 @@ func echoHandler(_ http.ResponseWriter, request *http.Request) {
 	log.Print(decode)
 }
 
-func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
+func buildVideoFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query()
-		rawSize := query.Get("rawSize")
-
 		dir, err := os.ReadDir(pathDirMap[parentPath])
 		if err != nil {
+			fmt.Println(err)
 			w.Write([]byte("error"))
 			return
 		}
@@ -110,7 +114,47 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 				<title>Img</title>
 			<style>`))
 
-		if rawSize == "" {
+		w.Write([]byte(`</style></head><body>`))
+
+		w.Write([]byte("" + parentPath))
+		hasResource := writeVideoList(w, dir)
+		if !hasResource {
+			w.Write([]byte("<h2>No Video</h2>"))
+		}
+		w.Write([]byte(`</body></html>`))
+	}
+}
+
+func resolveImgParam(r *http.Request) imgParam {
+	query := r.URL.Query()
+	rawSize := query.Get("rawSize")
+	count := query.Get("count")
+
+	countInt := 5
+	countTmp, err := strconv.Atoi(count)
+	if err == nil && countTmp > 0 {
+		countInt = countTmp
+	}
+	return imgParam{rawSize: rawSize != "", imgCount: countInt}
+}
+
+func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		param := resolveImgParam(r)
+		dir, err := os.ReadDir(pathDirMap[parentPath])
+		if err != nil {
+			w.Write([]byte("read dir " + parentPath + " error"))
+			return
+		}
+
+		w.Write([]byte(`<!DOCTYPE html>
+			<html lang="en">
+			<head>
+				<meta charset="UTF-8">
+				<title>Img</title>
+			<style>`))
+
+		if !param.rawSize {
 			w.Write([]byte(`
 			img {
 				width: 210px;
@@ -119,23 +163,19 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 		}
 
 		w.Write([]byte(`</style></head><body>`))
-
-		hasImg := writeImgList(w, dir)
-		if !hasImg {
-			w.Write([]byte("<h2>No Image</h2>"))
-		}
-		w.Write([]byte(`</body></html>`))
+		imgBody := buildImgListArea(dir, param.imgCount)
+		w.Write([]byte(imgBody + `</body></html>`))
 	}
 }
 
-func writeImgList(w http.ResponseWriter, dir []os.DirEntry) bool {
+func writeVideoList(w http.ResponseWriter, dir []os.DirEntry) bool {
 	sort.Slice(dir, func(i, j int) bool {
 		iInfo, _ := dir[i].Info()
 		jInfo, _ := dir[j].Info()
 		return iInfo.ModTime().After(jInfo.ModTime())
 	})
 
-	hasImg := false
+	hasVideo := false
 	for _, entry := range dir {
 		if entry.IsDir() {
 			continue
@@ -144,21 +184,62 @@ func writeImgList(w http.ResponseWriter, dir []os.DirEntry) bool {
 		fileName := entry.Name()
 		idx := strings.LastIndex(fileName, ".")
 		if idx == -1 {
-			hasImg = true
-			writeImgTag(w, fileName)
+			hasVideo = true
+			writeVideoTag(w, fileName)
+			continue
+		}
+
+		suffixType := fileName[idx:]
+		if suffixType == ".mp4" {
+			writeVideoTag(w, fileName)
+			hasVideo = true
+		}
+	}
+	return hasVideo
+}
+
+func buildImgListArea(dir []os.DirEntry, countInt int) string {
+	sort.Slice(dir, func(i, j int) bool {
+		iInfo, _ := dir[i].Info()
+		jInfo, _ := dir[j].Info()
+		return iInfo.ModTime().After(jInfo.ModTime())
+	})
+
+	imgCount := 0
+	imgBodyH5 := ""
+	for _, entry := range dir {
+		if entry.IsDir() {
+			continue
+		}
+		if imgCount == countInt {
+			break
+		}
+
+		fileName := entry.Name()
+		idx := strings.LastIndex(fileName, ".")
+		if idx == -1 {
+			imgBodyH5 += writeImgTag(fileName)
+			imgCount++
 			continue
 		}
 
 		suffixType := fileName[idx:]
 		if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
 			suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
-			writeImgTag(w, fileName)
-			hasImg = true
+			imgBodyH5 += writeImgTag(fileName)
+			imgCount++
 		}
 	}
-	return hasImg
+	if imgBodyH5 == "" {
+		return "<h2>No Image</h2>"
+	}
+	return imgBodyH5
 }
 
-func writeImgTag(w http.ResponseWriter, fileName string) (int, error) {
-	return w.Write([]byte("<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"))
+func writeVideoTag(w http.ResponseWriter, fileName string) {
+	w.Write([]byte("<video src=\"" + url.PathEscape(fileName) + "\" controls=\"controls\"></video>"))
+}
+
+func writeImgTag(fileName string) string {
+	return "<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"
 }
