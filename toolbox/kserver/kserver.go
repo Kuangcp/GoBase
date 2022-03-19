@@ -14,10 +14,10 @@ import (
 )
 
 //go:embed up.html
-var uploadStaticPage string
+var uploadHtml string
 
 //go:embed home.html
-var homeStaticPage string
+var homeHtml string
 
 //go:embed favicon.ico
 var faviconIco string
@@ -128,6 +128,12 @@ var info = cuibase.HelpInfo{
 
 func registerAllFolder() {
 	pathDirMap["/"] = "./"
+
+	// current dir
+	http.HandleFunc(imgFilePath, buildImgFunc("/"))
+	http.HandleFunc(videoFilePath, buildVideoFunc("/"))
+
+	// new pair dir from param
 	for _, s := range folderPair {
 		if !strings.Contains(s, "=") {
 			log.Printf("%vWARN %v is invalid format. must like a=b %v", cuibase.Red, s, cuibase.End)
@@ -178,16 +184,12 @@ func main() {
 	http.Handle("/", http.StripPrefix("/", fs))
 
 	// TODO template bind button
-	bindPathAndStatic("/h", homeStaticPage)
-	http.HandleFunc(imgFilePath, buildImgFunc("/"))
-
 	bindPathAndStatic("/favicon.ico", faviconIco)
-	bindPathAndStatic("/up", uploadStaticPage)
+	bindPathAndStatic("/h", homeHtml)
+	bindPathAndStatic("/up", uploadHtml)
+
 	http.HandleFunc("/f", uploadHandler)
 	http.HandleFunc("/e", echoHandler)
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		log.Fatal("error: ", err)
-	}
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
