@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-type imgParam struct {
-	rawSize  bool
-	imgCount int
+type ResourceParam struct {
+	rawSize bool
+	count   int
 }
 
 func isFileExist(filename string) bool {
@@ -100,42 +100,24 @@ func echoHandler(_ http.ResponseWriter, request *http.Request) {
 
 func buildVideoFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		param := resolveImgParam(r)
+
 		dir, err := os.ReadDir(pathDirMap[parentPath])
 		if err != nil {
-			fmt.Println(err)
-			w.Write([]byte("error"))
+			w.Write([]byte("read dir " + pathDirMap[parentPath] + " error"))
 			return
 		}
 
-		w.Write([]byte(`<!DOCTYPE html>
-			<html lang="en">
+		w.Write([]byte(`<!DOCTYPE html><html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<title>Img</title>
-			<style>`))
+				<title>` + pathDirMap[parentPath] + `</title>
+			</head>
+			<body>`))
 
-		w.Write([]byte(`</style></head><body>`))
-
-		w.Write([]byte("" + parentPath))
-		hasResource := writeVideoList(w, dir)
-		if !hasResource {
-			w.Write([]byte("<h2>No Video</h2>"))
-		}
+		w.Write([]byte(buildVideoList(dir, param.count)))
 		w.Write([]byte(`</body></html>`))
 	}
-}
-
-func resolveImgParam(r *http.Request) imgParam {
-	query := r.URL.Query()
-	rawSize := query.Get("rawSize")
-	count := query.Get("count")
-
-	countInt := 5
-	countTmp, err := strconv.Atoi(count)
-	if err == nil && countTmp > 0 {
-		countInt = countTmp
-	}
-	return imgParam{rawSize: rawSize != "", imgCount: countInt}
 }
 
 func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
@@ -143,15 +125,14 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 		param := resolveImgParam(r)
 		dir, err := os.ReadDir(pathDirMap[parentPath])
 		if err != nil {
-			w.Write([]byte("read dir " + parentPath + " error"))
+			w.Write([]byte("read dir " + pathDirMap[parentPath] + " error"))
 			return
 		}
 
-		w.Write([]byte(`<!DOCTYPE html>
-			<html lang="en">
+		w.Write([]byte(`<!DOCTYPE html><html lang="en">
 			<head>
 				<meta charset="UTF-8">
-				<title>Img</title>
+				<title>` + pathDirMap[parentPath] + `</title>
 			<style>`))
 
 		if !param.rawSize {
@@ -163,39 +144,60 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 		}
 
 		w.Write([]byte(`</style></head><body>`))
-		imgBody := buildImgListArea(dir, param.imgCount)
+		imgBody := buildImgListArea(dir, param.count)
 		w.Write([]byte(imgBody + `</body></html>`))
 	}
 }
 
-func writeVideoList(w http.ResponseWriter, dir []os.DirEntry) bool {
+func resolveImgParam(r *http.Request) ResourceParam {
+	query := r.URL.Query()
+	rawSize := query.Get("raw")
+	count := query.Get("count")
+
+	countInt := 5
+	countTmp, err := strconv.Atoi(count)
+	if err == nil && countTmp > 0 {
+		countInt = countTmp
+	}
+	return ResourceParam{rawSize: rawSize != "", count: countInt}
+}
+
+func buildVideoList(dir []os.DirEntry, count int) string {
 	sort.Slice(dir, func(i, j int) bool {
 		iInfo, _ := dir[i].Info()
 		jInfo, _ := dir[j].Info()
 		return iInfo.ModTime().After(jInfo.ModTime())
 	})
 
-	hasVideo := false
+	videoBody := ""
+	videoCount := 0
 	for _, entry := range dir {
 		if entry.IsDir() {
 			continue
+		}
+		if videoCount == count {
+			break
 		}
 
 		fileName := entry.Name()
 		idx := strings.LastIndex(fileName, ".")
 		if idx == -1 {
-			hasVideo = true
-			writeVideoTag(w, fileName)
+			videoBody += buildVideoTag(fileName)
+			videoCount++
 			continue
 		}
 
 		suffixType := fileName[idx:]
 		if suffixType == ".mp4" {
-			writeVideoTag(w, fileName)
-			hasVideo = true
+			videoBody += buildVideoTag(fileName)
+			videoCount++
 		}
 	}
-	return hasVideo
+
+	if videoBody == "" {
+		return "<h2>No Video</h2>"
+	}
+	return videoBody
 }
 
 func buildImgListArea(dir []os.DirEntry, countInt int) string {
@@ -218,7 +220,7 @@ func buildImgListArea(dir []os.DirEntry, countInt int) string {
 		fileName := entry.Name()
 		idx := strings.LastIndex(fileName, ".")
 		if idx == -1 {
-			imgBodyH5 += writeImgTag(fileName)
+			imgBodyH5 += buildImgTag(fileName)
 			imgCount++
 			continue
 		}
@@ -226,7 +228,7 @@ func buildImgListArea(dir []os.DirEntry, countInt int) string {
 		suffixType := fileName[idx:]
 		if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
 			suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
-			imgBodyH5 += writeImgTag(fileName)
+			imgBodyH5 += buildImgTag(fileName)
 			imgCount++
 		}
 	}
@@ -236,10 +238,10 @@ func buildImgListArea(dir []os.DirEntry, countInt int) string {
 	return imgBodyH5
 }
 
-func writeVideoTag(w http.ResponseWriter, fileName string) {
-	w.Write([]byte("<video src=\"" + url.PathEscape(fileName) + "\" controls=\"controls\"></video>"))
+func buildVideoTag(fileName string) string {
+	return "<video src=\"" + url.PathEscape(fileName) + "\" controls=\"controls\"></video>"
 }
 
-func writeImgTag(fileName string) string {
+func buildImgTag(fileName string) string {
 	return "<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"
 }
