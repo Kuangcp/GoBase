@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/cuibase"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,7 +16,10 @@ import (
 	"time"
 )
 
-type ResourceParam struct {
+var imgSuffixSet = cuibase.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
+var videoSuffixSet = cuibase.NewSet(".mp4")
+
+type MediaParam struct {
 	rawSize bool
 	count   int
 }
@@ -100,7 +104,7 @@ func echoHandler(_ http.ResponseWriter, request *http.Request) {
 
 func buildVideoFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		param := resolveImgParam(r)
+		param := resolveMediaParam(r)
 
 		dir, err := os.ReadDir(pathDirMap[parentPath])
 		if err != nil {
@@ -115,14 +119,13 @@ func buildVideoFunc(parentPath string) func(w http.ResponseWriter, r *http.Reque
 			</head>
 			<body>`))
 
-		w.Write([]byte(buildVideoList(dir, param.count)))
-		w.Write([]byte(`</body></html>`))
+		w.Write([]byte(buildMediaList(dir, param.count, videoSuffixSet, videoTag) + `</body></html>`))
 	}
 }
 
 func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		param := resolveImgParam(r)
+		param := resolveMediaParam(r)
 		dir, err := os.ReadDir(pathDirMap[parentPath])
 		if err != nil {
 			w.Write([]byte("read dir " + pathDirMap[parentPath] + " error"))
@@ -143,13 +146,13 @@ func buildImgFunc(parentPath string) func(w http.ResponseWriter, r *http.Request
 			}`))
 		}
 
-		w.Write([]byte(`</style></head><body>`))
-		imgBody := buildImgListArea(dir, param.count)
-		w.Write([]byte(imgBody + `</body></html>`))
+		w.Write([]byte(`</style></head><body>` +
+			buildMediaList(dir, param.count, imgSuffixSet, imgTag) +
+			`</body></html>`))
 	}
 }
 
-func resolveImgParam(r *http.Request) ResourceParam {
+func resolveMediaParam(r *http.Request) MediaParam {
 	query := r.URL.Query()
 	rawSize := query.Get("raw")
 	count := query.Get("count")
@@ -159,89 +162,58 @@ func resolveImgParam(r *http.Request) ResourceParam {
 	if err == nil && countTmp > 0 {
 		countInt = countTmp
 	}
-	return ResourceParam{rawSize: rawSize != "", count: countInt}
+	return MediaParam{rawSize: rawSize != "", count: countInt}
 }
 
-func buildVideoList(dir []os.DirEntry, count int) string {
+func sortByModTime(dir []os.DirEntry) {
 	sort.Slice(dir, func(i, j int) bool {
 		iInfo, _ := dir[i].Info()
 		jInfo, _ := dir[j].Info()
 		return iInfo.ModTime().After(jInfo.ModTime())
 	})
+}
 
-	videoBody := ""
-	videoCount := 0
+func matchSuffix(set *cuibase.Set, fileName string) bool {
+	idx := strings.LastIndex(fileName, ".")
+	if idx == -1 {
+		return true
+	}
+
+	suffixType := fileName[idx:]
+	return set.Contains(suffixType)
+}
+
+func buildMediaList(dir []os.DirEntry, count int, set *cuibase.Set, tagFunc func(string) string) string {
+	sortByModTime(dir)
+	mediaBody := ""
+	mediaCount := 0
+
 	for _, entry := range dir {
 		if entry.IsDir() {
 			continue
 		}
-		if videoCount == count {
+		if mediaCount == count {
 			break
 		}
 
 		fileName := entry.Name()
-		idx := strings.LastIndex(fileName, ".")
-		if idx == -1 {
-			videoBody += buildVideoTag(fileName)
-			videoCount++
+		if matchSuffix(set, fileName) {
+			mediaBody += tagFunc(fileName)
+			mediaCount++
 			continue
 		}
-
-		suffixType := fileName[idx:]
-		if suffixType == ".mp4" {
-			videoBody += buildVideoTag(fileName)
-			videoCount++
-		}
 	}
 
-	if videoBody == "" {
-		return "<h2>No Video</h2>"
+	if mediaCount == 0 {
+		return "<h2>No Media</h2>"
 	}
-	return videoBody
+	return mediaBody
 }
 
-func buildImgListArea(dir []os.DirEntry, countInt int) string {
-	sort.Slice(dir, func(i, j int) bool {
-		iInfo, _ := dir[i].Info()
-		jInfo, _ := dir[j].Info()
-		return iInfo.ModTime().After(jInfo.ModTime())
-	})
-
-	imgCount := 0
-	imgBodyH5 := ""
-	for _, entry := range dir {
-		if entry.IsDir() {
-			continue
-		}
-		if imgCount == countInt {
-			break
-		}
-
-		fileName := entry.Name()
-		idx := strings.LastIndex(fileName, ".")
-		if idx == -1 {
-			imgBodyH5 += buildImgTag(fileName)
-			imgCount++
-			continue
-		}
-
-		suffixType := fileName[idx:]
-		if suffixType == ".jpg" || suffixType == ".png" || suffixType == ".svg" || suffixType == ".webp" ||
-			suffixType == ".bmp" || suffixType == ".gif" || suffixType == ".ico" {
-			imgBodyH5 += buildImgTag(fileName)
-			imgCount++
-		}
-	}
-	if imgBodyH5 == "" {
-		return "<h2>No Image</h2>"
-	}
-	return imgBodyH5
-}
-
-func buildVideoTag(fileName string) string {
+func videoTag(fileName string) string {
 	return "<video src=\"" + url.PathEscape(fileName) + "\" controls=\"controls\"></video>"
 }
 
-func buildImgTag(fileName string) string {
-	return "<img  src=\"" + fileName + "\" alt=\"" + fileName + "\">"
+func imgTag(fileName string) string {
+	return "<img  src=\"" + url.PathEscape(fileName) + "\" alt=\"" + fileName + "\">"
 }
