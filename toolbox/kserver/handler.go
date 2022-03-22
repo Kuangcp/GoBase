@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
 var imgSuffixSet = cuibase.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
@@ -157,7 +158,7 @@ func resolveMediaParam(r *http.Request) MediaParam {
 	rawSize := query.Get("raw")
 	count := query.Get("count")
 
-	countInt := 5
+	countInt := 4
 	countTmp, err := strconv.Atoi(count)
 	if err == nil && countTmp > 0 {
 		countInt = countTmp

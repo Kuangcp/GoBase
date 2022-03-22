@@ -17,7 +17,8 @@ import (
 
 type (
 	Content struct {
-		Content             string   `json:"content"`
+		Content string `json:"content"`
+		// MentionedList eg: ["zhangsan", "@all"]
 		MentionedList       []string `json:"mentioned_list,omitempty"`        // 仅text消息 使用
 		MentionedMobileList []string `json:"mentioned_mobile_list,omitempty"` // 仅text消息 使用
 	}

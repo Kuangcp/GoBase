@@ -54,6 +54,7 @@ func (i *arrayFlags) Set(value string) error {
 
 var folderPair arrayFlags
 var pathDirMap = make(map[string]string)
+var usedPath = cuibase.NewSet("f", "g", "h", "up", "e", "d")
 
 func getInternalIP() string {
 	address, err := net.InterfaceAddrs()
@@ -142,7 +143,7 @@ func registerAllFolder() {
 
 		pair := strings.Split(s, "=")
 		path := pair[0]
-		if path == "f" || path == "g" || path == "h" || path == "up" || path == "e" || path == "d" {
+		if usedPath.Contains(path) {
 			log.Printf("%vWARN path /%v already bind. %v", cuibase.Red, path, cuibase.End)
 			continue
 		}
