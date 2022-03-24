@@ -1,11 +1,16 @@
 package store
 
-import "time"
+import (
+	"time"
+
+	"github.com/kuangcp/gobase/pkg/cuibase"
+)
 
 const (
-	Prefix     = "keyboard:"
-	DateFormat = "2006:01:02"
-	TimeFormat = "15:04:05"
+	Prefix       = "keyboard:"
+	DateFormat   = "2006:01:02"
+	TimeFormat   = cuibase.HH_MM_SS
+	MsTimeFormat = cuibase.HH_MM_SS_MS
 )
 
 const (

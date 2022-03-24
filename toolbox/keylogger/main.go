@@ -43,6 +43,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-r", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration"},
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
 		{Short: "-b", BoolVar: &dashboard, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
+		{Short: "-m", BoolVar: &store.DashboardMsMode, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
 		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
 		{Short: "-O", BoolVar: &notOpenPage, Comment: "not open url by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
@@ -110,12 +111,13 @@ func init() {
 	flag.StringVar(&port, "port", "6667", "")
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
+	flag.IntVar(&store.DashboardMs, "ms", store.DashboardMs, "")
 
 	flag.StringVar(&webPort, "P", "9902", "")
 }
 
 func configLogger() {
-	logger.SetLogPathTrim("/keylogger/")
+	//logger.SetLogPathTrim("/keylogger/")
 
 	home, err := cuibase.Home()
 	cuibase.CheckIfError(err)
@@ -195,7 +197,7 @@ func main() {
 	store.InitConnection(option)
 	defer store.CloseConnection()
 
-	invokeThenExit(dashboard, app.ShowPopWindow, store.CloseConnection)
+	invokeThenExit(dashboard, app.InitPopWindow, store.CloseConnection)
 	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
 	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
 

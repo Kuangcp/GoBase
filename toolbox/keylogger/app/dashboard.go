@@ -10,22 +10,29 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/kuangcp/logger"
 )
 
 const (
-	width              = 84
-	height             = 10
-	refreshLabelPeriod = time.Millisecond * 960
-	appId              = "com.github.kuangcp.keylogger"
+	width            = 84
+	height           = 10
+	kpmRefreshPeriod = time.Millisecond * 450
+	appId            = "com.github.kuangcp.keylogger"
 )
 
 var (
-	app      *gtk.Application
-	win      *gtk.Window
-	kpmLabel *gtk.Label
+	app           *gtk.Application
+	win           *gtk.Window
+	kpmLabel      *gtk.Label
+	refreshPeriod = kpmRefreshPeriod
 )
 
-func ShowPopWindow() {
+func InitPopWindow() {
+	if store.DashboardMsMode {
+		refreshPeriod = time.Millisecond * time.Duration(store.DashboardMs)
+	}
+	logger.Info("refresh:", refreshPeriod)
+
 	gtk.Init(nil)
 	app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
 	app.Connect("activate", createWindow)
@@ -45,12 +52,7 @@ func createWindow() {
 	win.ShowAll()
 
 	// 启动后的计算并刷新缓存
-	go func() {
-		ticker := time.NewTicker(refreshLabelPeriod)
-		for now := range ticker.C {
-			refreshLabel(now)
-		}
-	}()
+	go timeoutRefresh(refreshPeriod)
 }
 
 // https://developer.gnome.org/gtk4/unstable/GtkLabel.html
@@ -113,20 +115,27 @@ func latestLabelStr(now time.Time) string {
 	}
 	total := conn.ZScore(store.TotalCount, today).Val()
 
+	var timeFmt = ""
+	if store.DashboardMsMode {
+		timeFmt = store.MsTimeFormat
+	} else {
+		timeFmt = store.TimeFormat
+	}
+
 	// style https://blog.csdn.net/bitscro/article/details/3874616
 	return "<span font_family='Cascadia Mono PL' font_desc='10'>" +
-		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(store.TimeFormat)) + "</span>\n" +
+		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(timeFmt)) + "</span>\n" +
 		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
 		"<span foreground='gray'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
 		"<span foreground='white'>" + fmt.Sprintf("%-6d", int(total)) + "</span></span>"
 }
 
 // 从缓存中更新窗口内面板
-func refreshLabel(now time.Time) {
-	// TODO memory leak!
-
-	glib.IdleAdd(func() {
-		str := latestLabelStr(now)
+func timeoutRefresh(period time.Duration) {
+	// 返回 true 才能一直执行
+	glib.TimeoutAdd(uint(period.Milliseconds()), func() bool {
+		str := latestLabelStr(time.Now())
 		kpmLabel.SetMarkup(str)
+		return true
 	})
 }
