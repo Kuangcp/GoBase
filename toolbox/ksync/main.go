@@ -47,7 +47,13 @@ func main() {
 	}
 
 	normalizeParam()
-	registerOnServer()
+
+	go func() {
+		for range time.NewTicker(time.Second * 5).C {
+			registerOnServer()
+		}
+	}()
+
 	go syncTimerTask()
 	webServer()
 }
