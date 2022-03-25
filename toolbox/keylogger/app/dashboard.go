@@ -28,7 +28,7 @@ var (
 )
 
 func InitPopWindow() {
-	if store.DashboardMsMode {
+	if store.DashboardMsMode || (!store.DashboardMsMode && store.DashboardMs != store.DefaultRefreshMs) {
 		refreshPeriod = time.Millisecond * time.Duration(store.DashboardMs)
 	}
 	logger.Info("refresh:", refreshPeriod)

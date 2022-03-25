@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -26,8 +27,16 @@ var (
 )
 
 var (
-	lastFile = cuibase.NewSet()
-	sideList = cuibase.NewSet() // 对端列表 格式 host:port
+	lastFile   = cuibase.NewSet()
+	sideList   = cuibase.NewSet() // 对端列表 格式 host:port
+	configName = "ksync.config.json"
+)
+
+type (
+	ArgVO struct {
+		ServerAddr string `json:"server_addr"`
+		LocalHost  string `json:"local_host"`
+	}
 )
 
 func init() {
@@ -46,24 +55,53 @@ func main() {
 		return
 	}
 
+	initFromConfig()
+	logger.Info("start success. server:", serverAddr, "local:", localHost)
 	normalizeParam()
-
-	go func() {
-		for range time.NewTicker(time.Second * 5).C {
-			registerOnServer()
-		}
-	}()
 
 	go syncTimerTask()
 	webServer()
 }
 
+// 当命令行未指定才从配置文件加载
+func initFromConfig() {
+	if serverAddr != "" && localHost != "" {
+		return
+	}
+
+	file, err := ioutil.ReadFile(configName)
+	if err != nil {
+		return
+	}
+
+	var arg ArgVO
+	err = json.Unmarshal(file, &arg)
+	if err != nil {
+		return
+	}
+
+	if serverAddr == "" {
+		serverAddr = arg.ServerAddr
+	}
+	if localHost == "" {
+		localHost = arg.LocalHost
+	}
+}
+
 func normalizeParam() {
 	localAddr = localHost + ":" + fmt.Sprint(port)
 	if "windows" == runtime.GOOS {
-		if !strings.HasSuffix(syncDir, "\\") {
-			syncDir += "\\"
+		//if !strings.HasSuffix(syncDir, "\\") {
+		//	syncDir += "\\"
+		//}
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+
+		if home == "" {
+
+			home = os.Getenv("USERPROFILE")
+
 		}
+		fmt.Println(home)
 	} else {
 		if !strings.HasSuffix(syncDir, "/") {
 			syncDir += "/"
@@ -84,12 +122,19 @@ func readNeedSyncFile() []string {
 		if info.IsDir() {
 			continue
 		}
-		contains := lastFile.Contains(info.Name())
-		lastFile.Add(info.Name())
+		fileName := info.Name()
+		if strings.HasPrefix(fileName, ".") {
+			continue
+		}
+		if fileName == configName {
+			continue
+		}
+		contains := lastFile.Contains(fileName)
+		lastFile.Add(fileName)
 
 		if !contains || firstInit {
-			logger.Info("need sync", info.Name(), info.ModTime())
-			result = append(result, info.Name())
+			logger.Info("need sync", fileName, info.ModTime())
+			result = append(result, fileName)
 		}
 	}
 	return result
@@ -119,18 +164,20 @@ func registerOnServer() {
 		fmt.Println(err)
 		return
 	}
+
 	rsp, err := client.Do(req)
 	if err != nil {
+		fmt.Println(rsp)
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(rsp)
 	sideList.Add(serverAddr)
 }
 
 func syncTimerTask() {
 	ticker := time.NewTicker(time.Second * time.Duration(checkSec))
 	for range ticker.C {
+		registerOnServer()
 		syncFile()
 	}
 }
