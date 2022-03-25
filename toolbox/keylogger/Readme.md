@@ -53,6 +53,7 @@
 	- value: keyCode score: 当日按键数
 
 ## Version
+- 1.1.0 fix memory leak
 - 1.0.9 fix 00：00 cache problem
 - 1.0.8 transfer the task of calculating KPM to the listening input device process
 - 1.0.6 add interactive select device
@@ -65,5 +66,6 @@
 > `go tool pprof -inuse_space -cum -svg http://localhost:8891/debug/pprof/heap > heap_inuse.svg`
 
 ## TODO
-1. gtk 窗口有内存泄漏的问题，随着刷新次数的增多，内存也随之增长
+- [x] gtk 窗口有内存泄漏的问题，随着刷新次数的增多，内存也随之增长
+    - 使用timeoutAdd 解决
 1. [webview vs electron](https://www.zhihu.com/question/396199869)
