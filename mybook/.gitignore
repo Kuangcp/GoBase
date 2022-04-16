@@ -1,6 +1,11 @@
-bin/
 *.log
+*.db
+
+
 local*
+
+
+bin/
 conf/static/
 data/
 /conf/static/js/lib/

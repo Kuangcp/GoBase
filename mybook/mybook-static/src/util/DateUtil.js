@@ -36,13 +36,14 @@ const formatter = function (timeStamp) {
 // TODO 自然月 前进 后退
 // const fillRelativeDate = function (picker) {
 // }
-
-const passWeek = 3600 * 1000 * 24 * 7
-const passMonth = 3600 * 1000 * 24 * 30
-const passTriMonth = 3600 * 1000 * 24 * 90
-const passHalfYear = 3600 * 1000 * 24 * 183
-const passYear = 3600 * 1000 * 24 * 365
-const passTriYear = 3600 * 1000 * 24 * 365
+const day = 3600 * 1000 * 24
+const passWeek = day * 7
+const passMonth = day * 30
+const passTriMonth = day * 90
+const passHalfYear = day * 183
+const passYear = day * 365
+const passTriYear = day * 365 * 3
+const passFiveYear = day * 365 * 5
 
 const calDate = function (offset) {
     const end = new Date();
@@ -111,6 +112,12 @@ const dateShortCut = [
         text: "最近三年",
         onClick(picker) {
             fillDate(picker, passTriYear);
+        },
+    },
+    {
+        text: "最近五年",
+        onClick(picker) {
+            fillDate(picker, passFiveYear);
         },
     },
 ]
