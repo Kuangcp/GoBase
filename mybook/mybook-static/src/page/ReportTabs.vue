@@ -1,6 +1,6 @@
 <template>
   <el-tabs v-model="activeName" @tab-click="handleClick" class="report-tab-box">
-    <el-tab-pane label="类别统计" name="dashboard">
+    <el-tab-pane label="时序统计" name="dashboard">
       <CategoryTimeReport ref="dashboardCom"/>
     </el-tab-pane>
   </el-tabs>

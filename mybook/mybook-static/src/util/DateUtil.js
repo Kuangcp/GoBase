@@ -37,6 +37,20 @@ const formatter = function (timeStamp) {
 // const fillRelativeDate = function (picker) {
 // }
 
+const passWeek = 3600 * 1000 * 24 * 7
+const passMonth = 3600 * 1000 * 24 * 30
+const passTriMonth = 3600 * 1000 * 24 * 90
+const passHalfYear = 3600 * 1000 * 24 * 183
+const passYear = 3600 * 1000 * 24 * 365
+const passTriYear = 3600 * 1000 * 24 * 365
+
+const calDate = function (offset) {
+    const end = new Date();
+    const start = new Date();
+    start.setTime(start.getTime() - offset);
+    return [start, end]
+}
+
 const fillDate = function (picker, offset) {
     const end = new Date();
     const start = new Date();
@@ -54,11 +68,7 @@ const dateShortCut = [
     {
         text: "本月",
         onClick(picker) {
-            let now = new Date();
-            let passDay = (now.getDate() - 1) * 24 * 3600 * 1000
-            const start = now;
-            start.setTime(start.getTime() - passDay)
-            picker.$emit("pick", [start, new Date()]);
+            fillDate(picker, (new Date().getDate() - 1) * 24 * 3600 * 1000)
         },
     },
     // {
@@ -70,37 +80,37 @@ const dateShortCut = [
     {
         text: "最近一周",
         onClick(picker) {
-            fillDate(picker, 3600 * 1000 * 24 * 7);
+            fillDate(picker, passWeek);
         },
     },
     {
         text: "最近一个月",
         onClick(picker) {
-            fillDate(picker, 3600 * 1000 * 24 * 30);
+            fillDate(picker, passMonth);
         },
     },
     {
         text: "最近三个月",
         onClick(picker) {
-            fillDate(picker, 3600 * 1000 * 24 * 90);
+            fillDate(picker, passTriMonth);
         },
     },
     {
         text: "最近半年",
         onClick(picker) {
-            fillDate(picker, 3600 * 1000 * 24 * 180);
+            fillDate(picker, passHalfYear);
         },
     },
     {
         text: "最近一年",
         onClick(picker) {
-            fillDate(picker, 3600 * 1000 * 24 * 365);
+            fillDate(picker, passYear);
         },
     },
     {
         text: "最近三年",
         onClick(picker) {
-            fillDate(picker, 3600 * 1000 * 24 * 365 * 3);
+            fillDate(picker, passTriYear);
         },
     },
 ]
@@ -124,5 +134,6 @@ const getFormatByPeriod = function (period) {
 }
 
 export {
-    formatter, dateShortCut, getFormatByPeriod, yearPeriod, monthPeriod, dayPeriod, weekPeriod
+    formatter, dateShortCut, getFormatByPeriod, yearPeriod, monthPeriod, dayPeriod, weekPeriod,
+    calDate, passWeek, passMonth, passTriMonth, passHalfYear, passYear
 }

@@ -121,7 +121,9 @@ import {
   getFormatByPeriod,
   monthPeriod,
   weekPeriod,
-  yearPeriod
+  yearPeriod,
+  calDate,
+  passMonth,
 } from "@/util/DateUtil";
 import Echart from "../components/Echart";
 
@@ -171,7 +173,7 @@ export default {
         ],
         series: [],
       },
-      accountType: 20,
+      accountType: 21,
       accountTypes: [
         {ID: 20, Name: "余额"},
         {ID: 21, Name: "收支图"},
@@ -185,7 +187,7 @@ export default {
       lineChartType: false,
       detailLabel: false,
       showSumLabel: true,
-      timePeriod: monthPeriod,
+      timePeriod: dayPeriod,
       timePeriods: [
         {ID: yearPeriod, Name: "年"},
         {ID: monthPeriod, Name: "月"},
@@ -199,6 +201,8 @@ export default {
     };
   },
   mounted() {
+    this.dateArray = calDate(passMonth)
+    this.drawLine()
   },
   methods: {
     async changeAccountType() {
@@ -206,6 +210,7 @@ export default {
       this.drawLine()
     },
     async drawLine() {
+      console.log(this.dateArray)
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
 
