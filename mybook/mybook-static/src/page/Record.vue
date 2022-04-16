@@ -153,6 +153,6 @@ export default {
 
 <style scoped>
 .report-tab-box {
-  padding-left: 6px;
+  padding-left: 4px;
 }
 </style>
