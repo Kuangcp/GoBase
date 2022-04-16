@@ -32,16 +32,12 @@ export default {
     return {leaf: 0, radio: 1, categoryId: [], categoryMap: []};
   },
   mounted() {
-    this.fillAccount();
+    this.fillCategoryList();
   },
   methods: {
-    async queryAllAccount() {
+    async fillCategoryList() {
       const res = await this.$http.get(window.api.category.tree);
-      return res.data.data;
-    },
-    async fillAccount() {
-      this.categoryMap = [];
-      this.categoryMap = await this.queryAllAccount();
+      this.categoryMap = res.data.data;
     },
     handleChange(value) {
       console.log(value);

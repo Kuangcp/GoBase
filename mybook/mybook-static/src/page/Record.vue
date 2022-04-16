@@ -144,7 +144,7 @@ export default {
       this.targetAccountId = val;
     },
     handleClick() {
-
+      console.log('')
     }
   },
 };

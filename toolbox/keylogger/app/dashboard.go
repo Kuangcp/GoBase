@@ -93,7 +93,8 @@ func bindMouseActionForWindow() {
 		}
 	})
 
-	//鼠标移动事件处理
+	// 鼠标移动事件处理
+	// 注意： 不出现偏差的前提是 应用 内不出现其他点击事件和交互
 	win.Connect("motion-notify-event", func(widget *gtk.Window, ctx *gdk.Event) {
 		//获取鼠标移动属性结构体变量，系统内部的变量，不是用户传参变量
 		event := *(*gdk.EventButton)(unsafe.Pointer(&ctx))

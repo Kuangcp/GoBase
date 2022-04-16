@@ -210,7 +210,6 @@ export default {
       this.drawLine()
     },
     async drawLine() {
-      console.log(this.dateArray)
       let startTime = this.dateArray[0];
       let endTime = this.dateArray[1];
 

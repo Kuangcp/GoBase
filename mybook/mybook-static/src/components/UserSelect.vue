@@ -7,7 +7,7 @@
       @change="onChanges"
   >
     <el-option
-        v-for="item in accounts"
+        v-for="item in users"
         :key="item.ID"
         :label="item.Name"
         :value="item.ID"
@@ -17,24 +17,24 @@
 </template>
 <script>
 export default {
+  name: "UserSelect",
   props: {
-    account: {
+    user: {
       type: Number,
     },
   },
   data: function () {
-    return {tempVal: this.account, accounts: []};
+    return {tempVal: this.user, users: []};
   },
   mounted() {
-    this.fillAccountList();
+    this.fillUserList();
   },
   methods: {
-    async fillAccountList() {
-      const res = await this.$http.get(window.api.account.listAll);
-      this.accounts = res.data.data;
+    async fillUserList() {
+      const res = await this.$http.get(window.api.user.listAll);
+      this.users = res.data.data;
     },
     onChanges(val) {
-      // console.log("child", val);
       this.$emit("hasChange", val);
     },
   },

@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import MainTabs from "./page/MainTabs.vue";
+import MainTabs from "./page/MainTabs";
 
 export default {
   name: "App",

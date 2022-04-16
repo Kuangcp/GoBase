@@ -2,6 +2,9 @@ window.api = {
     account: {
         listAll: "/account/listAccount",
     },
+    user: {
+        listAll: "/user/listUser",
+    },
     category: {
         tree: "/category/listCategoryTree"
     },

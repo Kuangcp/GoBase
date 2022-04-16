@@ -11,6 +11,7 @@ import (
 	"mybook/app/common/config"
 	"mybook/app/record"
 	"mybook/app/report"
+	"mybook/app/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -117,6 +118,9 @@ func registerServerApi(router *gin.Engine) {
 	// 账户
 	router.GET(buildApi("/account/listAccount"), account.ListAccount)
 	router.POST(buildApi("/account/createAccount"), account.CreateNewAccount)
+
+	// 用户
+	router.GET(buildApi("/user/listUser"), user.ListUser)
 
 	// 账单
 	router.GET(buildApi("/record/calBalance"), record.QueryAccountBalance)
