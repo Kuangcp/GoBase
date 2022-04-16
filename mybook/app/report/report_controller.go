@@ -299,7 +299,7 @@ func buildLines(existCategoryMap map[uint]int,
 
 func buildLinesForOverview(periodList []string, periodNumMap map[string]int, param RecordQueryParam) []LineVO {
 	var lines []LineVO
-	var balanceData []int32
+	var balanceData []int
 
 	for _, typeId := range []constant.RecordTypeEnum{constant.ERecordIncome, constant.ERecordExpense} {
 		categoryId := uint(typeId.Index)
@@ -318,16 +318,16 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]int, par
 				balanceData = append(balanceData, 0)
 			}
 			if categoryId == uint(constant.RecordExpense) {
-				balanceData[i] += -int32(temp * 100)
+				balanceData[i] -= temp
 			} else {
-				balanceData[i] += int32(temp * 100)
+				balanceData[i] += temp
 			}
 		}
 
 		line := LineVO{
 			Type:      param.ChartType,
 			Name:      typeId.Name,
-			Data:      data,
+			Data:      convertRealPrice(data),
 			AreaStyle: "{normal: {}}",
 			Label:     commonLabel,
 			Color:     typeId.Color,
@@ -335,20 +335,32 @@ func buildLinesForOverview(periodList []string, periodNumMap map[string]int, par
 		lines = append(lines, line)
 	}
 
-	var finalBalanceData []float32
-	for _, datum := range balanceData {
-		finalBalanceData = append(finalBalanceData, float32(datum)/100.0)
-	}
 	line := LineVO{
 		Type:      param.ChartType,
 		Name:      "结余",
-		Data:      finalBalanceData,
+		Data:      convertIntRealPrice(balanceData),
 		AreaStyle: "{normal: {}}",
 		Label:     commonLabel,
 		Color:     "#97B552",
 	}
 	lines = append(lines, line)
 	return lines
+}
+
+func convertIntRealPrice(noPointPrice []int) []float32 {
+	var finalBalanceData []float32
+	for _, datum := range noPointPrice {
+		finalBalanceData = append(finalBalanceData, float32(datum)/100.0)
+	}
+	return finalBalanceData
+}
+
+func convertRealPrice(noPointPrice []float32) []float32 {
+	var finalBalanceData []float32
+	for _, datum := range noPointPrice {
+		finalBalanceData = append(finalBalanceData, float32(datum)/100.0)
+	}
+	return finalBalanceData
 }
 
 func sumFromRecord(param RecordQueryParam, finalStart string, finalEnd string) []CategorySumVO {

@@ -1,6 +1,9 @@
 <template>
   <div>
-    余额：{{ (this.totalAmount / 100.0).toFixed(2) }}
+    <span style="color: green" title="净值">{{ (this.totalAmount / 100.0).toFixed(2) }}</span>
+    = <span style="color: blue" title="资产">{{ (this.totalAssets / 100.0).toFixed(2) }}</span>
+    - <span style="color: red" title="负债">{{ (this.totalLiabilities / 100.0).toFixed(2) }}</span>
+
     <el-table :data="tableData" stripe class="main-box" height="880">
       <el-table-column sortable prop="ID" label="ID" width="60" align="right">
       </el-table-column>
@@ -41,7 +44,12 @@
           align="right"
       >
         <template slot-scope="scope">
-          <span>{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
+          <div v-if="scope.row.CurrentAmount<0">
+            <span style="color: red">{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
+          </div>
+          <div v-else>
+            <span style="color: blue">{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -62,6 +70,8 @@ export default {
     return {
       tableData: [],
       totalAmount: 0,
+      totalLiabilities: 0,
+      totalAssets: 0,
     };
   },
   methods: {
@@ -69,11 +79,18 @@ export default {
       const res = await this.$http.get(window.api.record.balance);
       this.tableData = [];
       this.totalAmount = 0;
+      this.totalLiabilities = 0;
+      this.totalAssets = 0;
+
       if (res.data && res.data.data && res.data.data.length > 0) {
         this.tableData = res.data.data;
         for (let v of this.tableData) {
           this.totalAmount += v.CurrentAmount;
+          if (v.CurrentAmount < 0) {
+            this.totalLiabilities += -1 * v.CurrentAmount
+          }
         }
+        this.totalAssets = this.totalAmount + this.totalLiabilities
       } else {
         this.$message({
           message: "数据为空",

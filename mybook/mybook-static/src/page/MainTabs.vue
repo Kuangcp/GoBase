@@ -1,9 +1,9 @@
 <template>
   <el-tabs v-model="activeName" @tab-click="handleClick" class="tab-box">
-    <el-tab-pane label="面板" name="report">
+    <el-tab-pane label="报表" name="report">
       <ReportTabs/>
     </el-tab-pane>
-    <el-tab-pane label="记录" name="record">
+    <el-tab-pane label="记账" name="record">
       <Record/>
     </el-tab-pane>
     <el-tab-pane label="明细" name="detail">
@@ -12,7 +12,7 @@
     <el-tab-pane label="分类" name="category">
       <Category ref="categoryCom"/>
     </el-tab-pane>
-    <el-tab-pane label="余额" name="balance">
+    <el-tab-pane label="财务状况" name="balance">
       <Balance ref="balanceCom"/>
     </el-tab-pane>
   </el-tabs>

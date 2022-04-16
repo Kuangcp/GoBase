@@ -214,7 +214,7 @@ func calculateAndQueryAccountBalance() []*account.Account {
 		//logger.Release(account.Name, account.CurrentAmount, affected)
 		watch.Stop()
 	}
-	logger.Info("\n", watch.PrettyPrint())
+	logger.Info(watch.PrettyPrint())
 
 	return account.ListAccounts()
 }

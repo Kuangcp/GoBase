@@ -17,6 +17,10 @@
 | make build   |`编译前后端 并 启动应用`
 | make run     |`启动应用`
 
+```sql
+create table log_balance(id integer, create_t datetime, comment varchar);
+```
+
 ## IDE开发
 
 IDE内运行时默认使用当前目录旁data目录的配置文件

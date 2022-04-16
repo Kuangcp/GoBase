@@ -97,6 +97,12 @@ const dateShortCut = [
             fillDate(picker, 3600 * 1000 * 24 * 365);
         },
     },
+    {
+        text: "最近三年",
+        onClick(picker) {
+            fillDate(picker, 3600 * 1000 * 24 * 365 * 3);
+        },
+    },
 ]
 
 const yearPeriod = 'year'

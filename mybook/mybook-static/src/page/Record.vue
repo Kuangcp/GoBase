@@ -1,80 +1,88 @@
 <template>
-  <div>
-    <el-form :inline="false" label-width="80px" ref="ruleForm" class="demo-form-inline">
-      <el-form-item label="分类" required>
-        <CategorySelect ref="categoryCom"/>
-      </el-form-item>
+  <el-tabs v-model="activeTab" @tab-click="handleClick" class="report-tab-box">
+    <el-tab-pane label="普通" name="record">
+      <el-form :inline="false" label-width="80px" ref="ruleForm" class="demo-form-inline">
 
-      <el-form-item label="操作账户" required>
-        <AccountSelect
-            ref="accountCom"
-            :account="accountId"
-            @hasChange="hasChange"
-            style="width: 120px"
-        />
-      </el-form-item>
+        <el-form-item label="分类" required>
+          <CategorySelect ref="categoryCom"/>
+        </el-form-item>
 
-      <el-form-item label="目标账户">
-        <el-tooltip class="item" effect="dark" content="仅在转账时有效" placement="top-start">
+        <el-form-item label="操作账户" required>
           <AccountSelect
-              ref="targetAccountCom"
-              :account="targetAccountId"
-              @hasChange="listenTargetAccount"
+              ref="accountCom"
+              :account="accountId"
+              @hasChange="hasChange"
               style="width: 120px"
           />
-        </el-tooltip>
-      </el-form-item>
+        </el-form-item>
 
-      <el-form-item label="金额" required>
-        <el-input
-            v-model="amount"
-            size="mini"
-            clearable
-            min="0"
-            style="width: 120px"
-        />
-      </el-form-item>
+        <el-form-item label="目标账户">
+          <el-tooltip class="item" effect="dark" content="仅在转账时有效" placement="top-start">
+            <AccountSelect
+                ref="targetAccountCom"
+                :account="targetAccountId"
+                @hasChange="listenTargetAccount"
+                style="width: 120px"
+            />
+          </el-tooltip>
+        </el-form-item>
 
-      <el-form-item label="时间" required>
-        <el-date-picker
-            v-model="recordDate"
-            type="date"
-            size="mini"
-            clearable
-            style="width: 140px"
-            placeholder="选择日期"
-        >
-        </el-date-picker>
-        OR
-        <el-date-picker
-            v-model="recordDates"
-            type="dates"
-            size="mini"
-            clearable
-            style="width: 140px"
-            placeholder="选择日期"
-        >
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="备注">
-        <el-input v-model="comment" size="mini" clearable style="width: 200px"/>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit" size="mini">新增</el-button>
-      </el-form-item>
-    </el-form>
-  </div>
+        <el-form-item label="金额" required>
+          <el-input
+              v-model="amount"
+              size="mini"
+              clearable
+              min="0"
+              style="width: 120px"
+          />
+        </el-form-item>
+
+        <el-form-item label="时间" required>
+          <el-date-picker
+              v-model="recordDate"
+              type="date"
+              size="mini"
+              clearable
+              style="width: 140px"
+              placeholder="选择日期"
+          >
+          </el-date-picker>
+          OR
+          <el-date-picker
+              v-model="recordDates"
+              type="dates"
+              size="mini"
+              clearable
+              style="width: 140px"
+              placeholder="选择日期"
+          >
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="comment" size="mini" clearable style="width: 200px"/>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="onSubmit" size="mini">新增</el-button>
+        </el-form-item>
+      </el-form>
+    </el-tab-pane>
+    <el-tab-pane label="借贷" name="loan">
+      <RecordLoan ref="loan"/>
+    </el-tab-pane>
+  </el-tabs>
 </template>
 
 <script>
 import {formatter} from "@/util/DateUtil";
 import AccountSelect from "../components/AccountSelect";
 import CategorySelect from "../components/CategorySelect";
+import RecordLoan from "./RecordLoan";
 
 export default {
   components: {
     AccountSelect,
     CategorySelect,
+    RecordLoan,
   },
   data: function () {
     return {
@@ -84,6 +92,7 @@ export default {
       recordDate: "",
       recordDates: [],
       comment: "",
+      activeTab: "record",
     };
   },
   methods: {
@@ -134,6 +143,16 @@ export default {
     listenTargetAccount(val) {
       this.targetAccountId = val;
     },
+    handleClick() {
+
+    }
   },
 };
+
 </script>
+
+<style scoped>
+.report-tab-box {
+  padding-left: 6px;
+}
+</style>
