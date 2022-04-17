@@ -96,6 +96,12 @@ export default {
       }, {
         value: 2,
         label: '贷出'
+      }, {
+        value: 3,
+        label: '贷出-负债'
+      }, {
+        value: 4,
+        label: '借入-负债'
       }],
     };
   },

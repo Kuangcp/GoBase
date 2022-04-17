@@ -57,7 +57,14 @@ func CreateLoan(c *gin.Context) {
 	} else if entity.LoanType == constant.LoanLend {
 		reP.AccountId = paramVO.AccountId
 		reP.TargetAccountId = constant.AccountARId
+	} else if entity.LoanType == constant.LoanBorrowRe {
+		reP.AccountId = paramVO.AccountId
+		reP.TargetAccountId = constant.AccountAPId
+	} else if entity.LoanType == constant.LoanLendRe {
+		reP.AccountId = constant.AccountARId
+		reP.TargetAccountId = paramVO.AccountId
 	}
+
 	logger.Info(reP)
 
 	recordList := record.CreateMultipleTypeRecord(reP)

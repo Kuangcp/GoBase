@@ -18,15 +18,17 @@ func TestInitBook(t *testing.T) {
 }
 
 func TestInitAccount(t *testing.T) {
-	account.AddAccount(&account.Account{TypeId: constant.AccountCash, Name: "现金", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
-	account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "应收款", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "应付款", InitAmount: 0})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountCash, Name: "现金", InitAmount: 0})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
+	account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "兴业信用卡", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "应收款", InitAmount: 0})
+	//account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "应付款", InitAmount: 0})
 }
 
+// 初始化分类数据
 func TestInitCategory(t *testing.T) {
 	expenseIndex := 10
 	var types = []string{"日常餐", "文娱", "日常开支", "交通"}
@@ -61,12 +63,12 @@ func TestInitCategory(t *testing.T) {
 		category.AddCategory(tmpCategory)
 	}
 
-	transferIndex := 300
-	types = []string{"转账", "加仓", "平仓"}
+	//types = []string{"转账", "加仓", "平仓"}
+	types = []string{"转账", "投资", "变现"}
+	ids := []uint{constant.CategoryTransferId, constant.CategoryTransferOpenId, constant.CategoryTransferCloseId}
 	for e := range types {
-		transferIndex++
 		tmpCategory := &category.Category{Name: types[e], Leaf: true, TypeId: constant.CategoryTransfer}
-		tmpCategory.ID = uint(transferIndex)
+		tmpCategory.ID = ids[e]
 		category.AddCategory(tmpCategory)
 	}
 }
