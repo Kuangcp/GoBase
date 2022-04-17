@@ -124,9 +124,11 @@ func registerServerApi(router *gin.Engine) {
 	router.GET(buildApi("/user/listUser"), user.ListUser)
 
 	// 账单
-	router.GET(buildApi("/record/calBalance"), record.QueryAccountBalance)
+	router.GET(buildApi("/record/calBalance"), record.CalculateAccountBalance)
 	router.POST(buildApi("/record/createRecord"), record.CreateRecord)
 	router.POST(buildApi("/loan/create"), loan.CreateLoan)
+
+	router.GET(buildApi("/loan/query"), loan.QueryLoan)
 
 	router.GET(buildApi("/record/listRecord"), record.ListRecord)
 	router.GET(buildApi("/record/category"), record.CategoryRecord)

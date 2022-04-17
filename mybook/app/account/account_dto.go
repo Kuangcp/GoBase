@@ -4,9 +4,10 @@ type (
 	AccountDTO struct {
 		ID            uint
 		Name          string
-		InitAmount    int32
-		CurrentAmount int32
+		InitAmount    int
+		CurrentAmount int
 		TypeId        int8
+		TypeName      string
 		// 账本id
 		BookId int
 

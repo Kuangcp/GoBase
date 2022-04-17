@@ -146,7 +146,7 @@ export default {
           startDate: start,
           endDate: end,
           typeId: this.accountType,
-          accountId: this.$refs.accountCom.account,
+          accountId: this.accountId,
         },
       });
 
@@ -160,8 +160,13 @@ export default {
         }
       }
     },
-    listenAccount(val) {
-      this.accountId = val;
+    async listenAccount(val) {
+      if (val !== '') {
+        this.accountId = val;
+      } else {
+        this.accountId = null;
+      }
+      await this.onSubmit()
     },
   },
 };

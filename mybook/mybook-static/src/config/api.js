@@ -16,7 +16,8 @@ window.api = {
         categoryDetail: "/record/categoryDetail"
     },
     loan: {
-        create: "/loan/create"
+        create: "/loan/create",
+        query: "/loan/query"
     },
     report: {
         categoryPeriod: "/report/categoryPeriod",

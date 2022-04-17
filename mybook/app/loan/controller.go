@@ -9,6 +9,7 @@ import (
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
 	"mybook/app/record"
+	"mybook/app/user"
 	"time"
 )
 
@@ -22,7 +23,50 @@ type (
 		ExceptedDate string `json:"exceptedDate"`
 		Comment      string `json:"comment"`
 	}
+
+	LoanUserVO struct {
+		UserId uint
+		Name   string
+		Amount int
+	}
 )
+
+func QueryLoan(c *gin.Context) {
+	db := dal.GetDB()
+	var l []*Entity
+
+	db.Table("record_loan").
+		Select("user_id,loan_type,sum(amount) as amount").
+		Group("user_id,loan_type").
+		Find(&l)
+
+	amountMap := make(map[uint]int)
+
+	var users []LoanUserVO
+	userMap := user.QueryUserMap()
+	for _, entity := range l {
+		userId := entity.UserId
+		_, ok := amountMap[userId]
+		if !ok {
+			amountMap[userId] = 0
+		}
+
+		if entity.LoanType == constant.LoanBorrow || entity.LoanType == constant.LoanLendRe {
+			amountMap[userId] = amountMap[userId] - entity.Amount
+		} else {
+			amountMap[userId] = amountMap[userId] + entity.Amount
+		}
+	}
+
+	for k, v := range amountMap {
+		users = append(users, LoanUserVO{
+			UserId: k,
+			Name:   userMap[k].Name,
+			Amount: v,
+		})
+	}
+	ghelp.GinSuccessWith(c, users)
+}
 
 func CreateLoan(c *gin.Context) {
 	var paramVO CreateLoanParam

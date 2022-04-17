@@ -14,3 +14,12 @@ func ListUsers() []*User {
 
 	return accounts
 }
+
+func QueryUserMap() map[uint]User {
+	users := ListUsers()
+	cache := make(map[uint]User)
+	for _, user := range users {
+		cache[user.ID] = *user
+	}
+	return cache
+}

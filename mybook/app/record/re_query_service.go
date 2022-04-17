@@ -182,7 +182,7 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time,
 	return &result
 }
 
-func calculateAndQueryAccountBalance() []*account.Account {
+func calculateAndQueryAccountBalance() []account.AccountDTO {
 	db := dal.GetDB()
 
 	accountMap := account.ListAccountMap()
@@ -216,7 +216,15 @@ func calculateAndQueryAccountBalance() []*account.Account {
 	}
 	logger.Info(watch.PrettyPrint())
 
-	return account.ListAccounts()
+	accounts := account.ListAccounts()
+	var result []account.AccountDTO
+	resultTmp := util.Copy(accounts, new([]account.AccountDTO)).(*[]account.AccountDTO)
+	for _, dto := range *resultTmp {
+		tmp := &dto
+		tmp.TypeName = constant.GetAccountTypeByIndex(dto.TypeId).GetName()
+		result = append(result, *tmp)
+	}
+	return result
 }
 
 func entityToDTO(lists []RecordEntity) []RecordDTO {

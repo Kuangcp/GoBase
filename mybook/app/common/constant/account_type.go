@@ -30,7 +30,7 @@ var accountTypeList []Enum
 
 func GetAccountTypeByIndex(index int8) Enum {
 	if accountTypeMap == nil {
-		accountTypeMap, accountTypeList = MakeMap(EAccountCash, EAccountDeposit, EAccountCredit, EAccountOnline, EAccountFinance)
+		accountTypeMap, accountTypeList = MakeMap(EAccountCash, EAccountDeposit, EAccountCredit, EAccountOnline, EAccountFinance, EAccountAP, EAccountAR)
 	}
 	return accountTypeMap[index]
 }
