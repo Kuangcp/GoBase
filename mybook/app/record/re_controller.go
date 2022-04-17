@@ -8,7 +8,7 @@ import (
 )
 
 func CreateRecord(c *gin.Context) {
-	var paramVO RecordCreateParamVO
+	var paramVO CreateParamVO
 	err := c.ShouldBind(&paramVO)
 	if err != nil {
 		ghelp.GinFailedWithMsg(c, err.Error())
@@ -16,7 +16,7 @@ func CreateRecord(c *gin.Context) {
 	}
 	logger.Debug("createRecord param: ", util.Json(paramVO))
 
-	result := createMultipleTypeRecord(paramVO)
+	result := CreateMultipleTypeRecord(paramVO)
 	if result.IsFailed() {
 		ghelp.GinResultVO(c, result)
 		return

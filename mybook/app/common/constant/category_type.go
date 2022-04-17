@@ -10,6 +10,11 @@ const (
 	// 转账
 	CategoryTransfer int8 = 3
 )
+const (
+	CategoryTransferId      uint = 301 // 转账
+	CategoryTransferOpenId  uint = 302 // 加仓
+	CategoryTransferCloseId uint = 303 // 平仓
+)
 
 var ECategoryExpense = NewBaseEnum(CategoryExpense, "支出")
 var ECategoryIncome = NewBaseEnum(CategoryIncome, "收入")

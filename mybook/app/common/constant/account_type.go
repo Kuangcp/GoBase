@@ -12,6 +12,11 @@ const (
 	AccountAP      int8 = 7
 )
 
+const (
+	AccountARId = 11 // 应收id
+	AccountAPId = 13 // 应付id
+)
+
 var EAccountCash = BaseEnum{Index: AccountCash, Name: "现金"}
 var EAccountDeposit = BaseEnum{Index: AccountDeposit, Name: "储蓄卡"}
 var EAccountCredit = BaseEnum{Index: AccountCredit, Name: "信用卡"}

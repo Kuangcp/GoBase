@@ -1,13 +1,12 @@
 package record
 
 import (
+	"github.com/kuangcp/gobase/pkg/cuibase"
 	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/ghelp"
@@ -77,7 +76,7 @@ func createTransRecord(origin *RecordEntity, target *RecordEntity) ghelp.ResultV
 	return ghelp.Success()
 }
 
-func buildRecordListFromParam(param RecordCreateParamVO) ghelp.ResultVO {
+func buildRecordListFromParam(param CreateParamVO) ghelp.ResultVO {
 	if len(param.Date) == 0 {
 		return ghelp.FailedWithMsg("日期为空")
 	}
@@ -85,21 +84,17 @@ func buildRecordListFromParam(param RecordCreateParamVO) ghelp.ResultVO {
 
 	// 多日期 同一个金额 和 其他所有帐目细节
 	for _, date := range param.Date {
-		recordDate, e := time.Parse("2006-01-02", date)
+		recordDate, e := time.Parse(cuibase.YYYY_MM_DD, date)
 		if e != nil {
 			logger.Error(e)
 			return ghelp.FailedWithMsg("date 参数错误")
 		}
-		param.Amount = strings.Replace(param.Amount, "，", ",", -1)
-		amountList := strings.Split(param.Amount, ",")
-		var totalAmount = 0
-		for _, one := range amountList {
-			parseResult := parsePrice(one)
-			if parseResult.IsFailed() {
-				return parseResult
-			}
-			totalAmount += parseResult.Data.(int)
+
+		priceRe := util.ParseMultiPrice(param.Amount)
+		if priceRe.IsFailed() {
+			return priceRe
 		}
+		var totalAmount = priceRe.Data.(int)
 
 		record := &RecordEntity{
 			AccountId:  uint(param.AccountId),
@@ -117,34 +112,7 @@ func buildRecordListFromParam(param RecordCreateParamVO) ghelp.ResultVO {
 	return ghelp.SuccessWith(recordList)
 }
 
-func parsePrice(amount string) ghelp.ResultVO {
-	floatAmount, e := strconv.ParseFloat(amount, 64)
-	if e != nil || floatAmount <= 0 {
-		return ghelp.FailedWithMsg("金额错误" + amount)
-	}
-
-	nums := strings.Split(amount, ".")
-	if len(nums) == 1 {
-		return ghelp.SuccessWith(int(floatAmount) * 100)
-	}
-
-	v := nums[1]
-	pInt, _ := strconv.Atoi(nums[0])
-	vInt, _ := strconv.Atoi(v)
-
-	vLen := len(v)
-	if vLen > 2 {
-		return ghelp.FailedWithMsg("金额仅保留两位小数")
-	}
-
-	// vLen only 1 Or 2
-	if vLen == 1 {
-		vInt *= 10
-	}
-	return ghelp.SuccessWith(pInt*100 + vInt)
-}
-
-func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
+func CreateMultipleTypeRecord(param CreateParamVO) ghelp.ResultVO {
 	result := buildRecordListFromParam(param)
 	if result.IsFailed() {
 		return result
@@ -155,7 +123,9 @@ func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
 	var failResults []*RecordEntity
 
 	for _, record := range list {
-		if param.TargetAccountId != 0 && constant.IsTransferRecordType(record.Type) {
+		// 转账
+		if param.TargetAccountId != 0 &&
+			constant.IsTransferRecordType(record.Type) {
 			record.Type = constant.RecordTransferOut
 
 			now := time.Now()
@@ -186,6 +156,7 @@ func createMultipleTypeRecord(param RecordCreateParamVO) ghelp.ResultVO {
 			}
 			successList = append(successList, record)
 		} else {
+			// 支出或收入
 			resultVO := DoCreateRecord(record)
 			if resultVO.IsFailed() {
 				logger.Error(resultVO)

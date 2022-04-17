@@ -9,6 +9,7 @@ import (
 	"mybook/app/category"
 	"mybook/app/common"
 	"mybook/app/common/config"
+	"mybook/app/loan"
 	"mybook/app/record"
 	"mybook/app/report"
 	"mybook/app/user"
@@ -125,8 +126,9 @@ func registerServerApi(router *gin.Engine) {
 	// 账单
 	router.GET(buildApi("/record/calBalance"), record.QueryAccountBalance)
 	router.POST(buildApi("/record/createRecord"), record.CreateRecord)
-	router.GET(buildApi("/record/listRecord"), record.ListRecord)
+	router.POST(buildApi("/loan/create"), loan.CreateLoan)
 
+	router.GET(buildApi("/record/listRecord"), record.ListRecord)
 	router.GET(buildApi("/record/category"), record.CategoryRecord)
 
 	router.GET(buildApi("/record/categoryDetail"), record.CategoryDetailRecord)

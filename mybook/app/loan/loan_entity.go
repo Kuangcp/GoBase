@@ -19,7 +19,7 @@ type (
 		// 对方
 		UserId uint
 
-		// 借入 1 贷出 2
+		// 1 借入 2 贷出
 		LoanType int8
 
 		// 记录发生时刻
