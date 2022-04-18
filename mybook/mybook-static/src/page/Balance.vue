@@ -129,11 +129,6 @@ export default {
       console.log(loans)
       if (loans.data && loans.data.data && loans.data.data.length > 0) {
         this.loanUser = loans.data.data;
-      } else {
-        this.$message({
-          message: "数据为空",
-          type: "warning",
-        });
       }
     },
   },
