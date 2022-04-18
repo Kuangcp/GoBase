@@ -20,7 +20,7 @@ window.api = {
         query: "/loan/query"
     },
     report: {
-        categoryPeriod: "/report/categoryPeriod",
+        categoryPeriodReport: "/report/categoryPeriodReport",
         balanceReport: "/report/balanceReport"
     }
 }

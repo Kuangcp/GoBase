@@ -320,7 +320,7 @@ export default {
       let start = (startTime && formatter(startTime).format(getFormatByPeriod(period))) || "";
       let end = (endTime && formatter(endTime).format(getFormatByPeriod(period))) || "";
 
-      let resp = await this.$http.get(window.api.report.categoryPeriod, {
+      let resp = await this.$http.get(window.api.report.categoryPeriodReport, {
         params: {
           startDate: start,
           endDate: end,

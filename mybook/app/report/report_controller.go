@@ -1,7 +1,6 @@
 package report
 
 import (
-	"github.com/kuangcp/logger"
 	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
@@ -9,6 +8,8 @@ import (
 	"mybook/app/record"
 	"sort"
 	"time"
+
+	"github.com/kuangcp/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
@@ -191,7 +192,7 @@ func CategoryPeriodReport(c *gin.Context) {
 		}
 
 		lines = buildLinesForOverview(periodList, periodNumMap, param)
-	case constant.ReportExCategoryOverview: // 支出 父类别 聚合报表
+	case constant.ReportExCategoryOverview: // 支出 根类别 聚合报表
 		param.TypeId = int(constant.RecordExpense)
 		// 查询出 类别聚合后的 帐目数据
 		sumResult := sumFromRecord(param, finalStart, finalEnd)
@@ -228,8 +229,8 @@ func CategoryPeriodReport(c *gin.Context) {
 		}
 
 		lines = buildLines(existCategoryMap, periodList, periodNumMap, param, categoryNameMap)
-	default: // 收入 或 支出 类别 聚合报表
-		// 查询出 类别聚合后的 帐目数据
+	default: // 收入 或 支出 叶类别 聚合报表
+		// 查询出 叶类别聚合后的 帐目数据
 		sumResult := sumFromRecord(param, finalStart, finalEnd)
 		if len(sumResult) == 0 {
 			ghelp.GinFailedWithMsg(c, "数据为空")
@@ -388,25 +389,25 @@ func sumFromRecord(param RecordQueryParam, finalStart string, finalEnd string) [
 }
 
 func buildPeriodList(param RecordQueryParam) []string {
-	start := param.startDate
+	cursorDate := param.startDate
 
 	var result []string
-	for !start.After(param.endDate) {
-		result = append(result, param.periodFunc(start))
+	for !cursorDate.After(param.endDate) {
+		result = append(result, param.periodFunc(cursorDate))
 		switch param.Period {
 		case yearPeriod:
-			start = start.AddDate(1, 0, 0)
+			cursorDate = cursorDate.AddDate(1, 0, 0)
 		case monthPeriod:
-			start = start.AddDate(0, 1, 0)
+			cursorDate = cursorDate.AddDate(0, 1, 0)
 		case weekPeriod:
-			start = start.AddDate(0, 0, 7)
+			cursorDate = cursorDate.AddDate(0, 0, 7)
 		case dayPeriod:
-			start = start.AddDate(0, 0, 1)
+			cursorDate = cursorDate.AddDate(0, 0, 1)
 		default:
-			start = start.AddDate(0, 1, 0)
+			cursorDate = cursorDate.AddDate(0, 1, 0)
 		}
 	}
-	return result[:len(result)-1]
+	return result
 }
 
 func buildParam(c *gin.Context) ghelp.ResultVO {
