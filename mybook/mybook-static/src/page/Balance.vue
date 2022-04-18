@@ -1,8 +1,8 @@
 <template>
   <div>
     <span style="color: green" title="净值">{{ (this.totalAmount / 100.0).toFixed(2) }}</span>
-    = <span style="color: blue" title="资产">{{ (this.totalAssets / 100.0).toFixed(2) }}</span>
-    - <span style="color: red" title="负债">{{ (this.totalLiabilities / 100.0).toFixed(2) }}</span>
+    &nbsp;<span style="color: blue" title="资产">{{ (this.totalAssets / 100.0).toFixed(2) }}</span>
+    &nbsp;️<span style="color: red" title="负债">{{ (this.totalLiabilities / 100.0).toFixed(2) }}</span>
 
     <br>
     <el-table :data="tableData" stripe class="balance-box">

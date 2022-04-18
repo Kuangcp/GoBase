@@ -1,6 +1,13 @@
 <template>
-  <el-form :inline="false" label-width="80px" ref="ruleForm" class="demo-form-inline">
-    <el-form-item label="借贷方" required>
+  <el-form :inline="false" label-width="80px" ref="ruleForm">
+    <el-form-item label="借贷" required>
+      <el-radio v-model="loanType" :label=1>借入</el-radio>
+      <el-radio v-model="loanType" :label=2>贷出</el-radio>
+      <el-radio v-model="loanType" :label=3>借入-冲正</el-radio>
+      <el-radio v-model="loanType" :label=4>贷出-冲正</el-radio>
+    </el-form-item>
+
+    <el-form-item label="人员" required>
       <UserSelect
           ref="userCom"
           :user="userId"
@@ -8,18 +15,6 @@
           style="width: 140px"
       />
     </el-form-item>
-
-    <el-form-item label="借贷" required>
-      <el-select v-model="loanType" placeholder="请选择" size="mini" style="width: 140px;">
-        <el-option
-            v-for="item in options"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-        </el-option>
-      </el-select>
-    </el-form-item>
-
     <el-form-item label="账户" required>
       <AccountSelect
           ref="accountCom"
@@ -90,19 +85,6 @@ export default {
       recordDate: "",
       exceptedDate: "",
       comment: "",
-      options: [{
-        value: 1,
-        label: '借入'
-      }, {
-        value: 2,
-        label: '贷出'
-      }, {
-        value: 3,
-        label: '贷出-负债'
-      }, {
-        value: 4,
-        label: '借入-负债'
-      }],
     };
   },
   methods: {
