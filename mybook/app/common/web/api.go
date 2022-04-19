@@ -26,6 +26,7 @@ func registerServerApi(router *gin.Engine) {
 
 	// 用户
 	router.GET(buildApi("/user/listUser"), user.ListUser)
+	router.GET(buildApi("/user/addUser"), user.AddUser)
 
 	// 账单
 	router.GET(buildApi("/record/calBalance"), record.CalculateAccountBalance)
@@ -42,10 +43,9 @@ func registerServerApi(router *gin.Engine) {
 	router.GET(buildApi("/record/categoryMonthDetail"), record.MonthCategoryDetailRecord)
 
 	router.GET(buildApi("/report/categoryPeriodReport"), report.CategoryPeriodReport) // 各分类周期报表
-	router.GET(buildApi("/report/balanceReport"), report.BalanceReport)         // 余额报表
+	router.GET(buildApi("/report/balanceReport"), report.BalanceReport)               // 余额报表
 }
 
 func buildApi(path string) string {
 	return config.DefaultUrlPath + path
 }
-

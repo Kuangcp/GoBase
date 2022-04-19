@@ -4,6 +4,7 @@ window.api = {
     },
     user: {
         listAll: "/user/listUser",
+        addUser: "/user/addUser",
     },
     category: {
         tree: "/category/listCategoryTree"

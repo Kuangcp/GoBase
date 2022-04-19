@@ -1,7 +1,7 @@
 <template>
   <el-tabs v-model="activeTab" @tab-click="handleClick" class="report-tab-box">
     <el-tab-pane label="收支" name="record">
-      <el-form :inline="false" label-width="80px" ref="ruleForm" class="demo-form-inline">
+      <el-form :inline="false" label-width="80px" ref="ruleForm">
 
         <el-form-item label="分类" required>
           <CategorySelect ref="categoryCom"/>
