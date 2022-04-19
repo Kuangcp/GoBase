@@ -4,9 +4,11 @@ type Robot interface {
 
 	// MockRequest 不触发真实请求
 	MockRequest()
+	MockRequestVar(flag bool)
 
 	// ShowRequestLog 打印请求参数
 	ShowRequestLog()
+	ShowRequestLogVar(flag bool)
 
 	MarkDownGrey(content string) string
 	MarkDownGreen(content string) string

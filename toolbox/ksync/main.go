@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/logger"
 )
@@ -56,11 +58,20 @@ func main() {
 	}
 
 	initFromConfig()
+	//pprofDebug()
 	logger.Info("start success. server:", serverAddr, "local:", localHost)
 	normalizeParam()
 
 	go syncTimerTask()
 	webServer()
+}
+
+func pprofDebug() {
+	debugPort := "8891"
+	go func() {
+		fmt.Println("http://127.0.0.1:" + debugPort + "/debug/pprof/")
+		_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
+	}()
 }
 
 // 当命令行未指定才从配置文件加载
@@ -166,6 +177,9 @@ func registerOnServer() {
 	}
 
 	rsp, err := client.Do(req)
+	if rsp != nil {
+		defer rsp.Body.Close()
+	}
 	if err != nil {
 		fmt.Println(rsp)
 		fmt.Println(err)
@@ -218,10 +232,10 @@ func postFile(server string, path string) {
 	}
 	defer open.Close()
 
-	post, err := http.Post("http://"+server+"/upload?name="+name, "", open)
-	if err != nil || post == nil || post.Body == nil {
+	postRsp, err := http.Post("http://"+server+"/upload?name="+name, "", open)
+	if err != nil || postRsp == nil || postRsp.Body == nil {
 		return
 	}
-	defer post.Body.Close()
+	defer postRsp.Body.Close()
 	logger.Info("send to ", server, name)
 }

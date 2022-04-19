@@ -77,6 +77,14 @@ func (r *WeWorkRobot) ShowRequestLog() {
 	r.requestLog = true
 }
 
+func (r *WeWorkRobot) MockRequestVar(flag bool) {
+	r.mockRequest = flag
+}
+
+func (r *WeWorkRobot) ShowRequestLogVar(flag bool) {
+	r.requestLog = flag
+}
+
 // sendJSONPost 发送body为JSON的 Post 请求
 //  return response,timeWasted,error
 func (r *WeWorkRobot) sendJSONPost(value interface{}) ([]byte, int64, error) {
