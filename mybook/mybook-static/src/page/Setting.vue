@@ -6,7 +6,7 @@
       </el-form-item>
 
       <el-form-item label="" required>
-        <el-button @click="addUser">提交</el-button>
+        <el-button @click="addUser">新增用户</el-button>
       </el-form-item>
     </el-form>
 

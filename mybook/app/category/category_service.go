@@ -32,7 +32,10 @@ func SetParentId(name string, id uint) {
 	db := dal.GetDB()
 	current.ParentId = id
 	// TODO update
-	db.Update(current)
+	db.Model(&current).Update("parent_id", id)
+
+	news := FindCategoryByName(name)
+	logger.Info(current, news)
 }
 
 func FindCategoryByName(name string) *Category {
