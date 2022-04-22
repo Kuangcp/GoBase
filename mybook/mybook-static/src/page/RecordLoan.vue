@@ -1,10 +1,10 @@
 <template>
   <el-form :inline="false" label-width="80px" ref="ruleForm">
-    <el-form-item label="借贷" required>
+    <el-form-item label="操作" required>
       <el-radio v-model="loanType" :label=1>借入</el-radio>
+      <el-radio v-model="loanType" :label=3>还债</el-radio>
       <el-radio v-model="loanType" :label=2>贷出</el-radio>
-      <el-radio v-model="loanType" :label=3>借入-冲正</el-radio>
-      <el-radio v-model="loanType" :label=4>贷出-冲正</el-radio>
+      <el-radio v-model="loanType" :label=4>收款</el-radio>
     </el-form-item>
 
     <el-form-item label="人员" required>

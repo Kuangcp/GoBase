@@ -28,7 +28,7 @@
           sortable
           prop="InitAmount"
           cell-style="text-align:right;"
-          label="初始金额"
+          label="初始"
           width="100"
           align="right"
       >
@@ -48,8 +48,11 @@
           <div v-if="scope.row.CurrentAmount<0">
             <span style="color: red">{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
           </div>
+          <div v-else-if="scope.row.CurrentAmount===0">
+            <span style="color: grey">0</span>
+          </div>
           <div v-else>
-            <span style="color: blue">{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
+            <span style="color: green">{{ (scope.row.CurrentAmount / 100.0).toFixed(2) }}</span>
           </div>
         </template>
       </el-table-column>
@@ -61,10 +64,13 @@
       <el-table-column sortable prop="Amount" label="金额" width="120" align="right">
         <template slot-scope="scope">
           <div v-if="scope.row.Amount<0">
-            <span style="color: red">{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
+            <span style="color: red">借入 {{ (scope.row.Amount / 100.0 * -1).toFixed(2) }}</span>
+          </div>
+          <div v-else-if="scope.row.Amount===0">
+            <span style="color: grey">{{ (scope.row.Amount / 100.0 * -1).toFixed(2) }}</span>
           </div>
           <div v-else>
-            <span style="color: blue">{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
+            <span style="color: green">贷出 {{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
           </div>
         </template>
       </el-table-column>
@@ -75,15 +81,15 @@
 
 <style scoped>
 .balance-box {
-  width: 510px;
+  width: 520px;
   height: 800px;
   border-radius: 4px;
   float: left;
 }
 
 .loan-box {
-  margin-left: 2vw;
-  width: 300px;
+  margin-left: 1vw;
+  width: 320px;
   height: 800px;
   border-radius: 4px;
   float: left;
