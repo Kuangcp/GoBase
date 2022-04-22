@@ -13,8 +13,8 @@ const (
 )
 
 const (
-	AccountARId = 11 // 应收id
-	AccountAPId = 13 // 应付id
+	AccountARId = 10001 // 应收id
+	AccountAPId = 10002 // 应付id
 )
 
 var EAccountCash = BaseEnum{Index: AccountCash, Name: "现金"}

@@ -1,8 +1,6 @@
 package record
 
 import (
-	"github.com/kuangcp/gobase/pkg/stopwatch"
-	"github.com/kuangcp/logger"
 	"mybook/app/account"
 	"mybook/app/category"
 	"mybook/app/common/constant"
@@ -12,6 +10,9 @@ import (
 	"strconv"
 	"time"
 	"unsafe"
+
+	"github.com/kuangcp/gobase/pkg/stopwatch"
+	"github.com/kuangcp/logger"
 )
 
 func QueryForBalance() []RecordDTO {
@@ -196,6 +197,10 @@ func calculateAndQueryAccountBalance() []account.AccountDTO {
 	db.Where("1=1").Find(&list)
 	for _, record := range list {
 		accountEntity := accountMap[record.AccountId]
+		if accountEntity == nil {
+			logger.Error("invalid account", record.AccountId)
+			break
+		}
 		if constant.IsExpense(record.Type) {
 			accountEntity.CurrentAmount -= record.Amount
 		} else {

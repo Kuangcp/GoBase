@@ -1,6 +1,12 @@
 package util
 
-import "time"
+import (
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/kuangcp/logger"
+)
 
 //判断时间是当年的第几周
 func WeekByDate(t time.Time) int {
@@ -30,4 +36,27 @@ func WeekOfYearByDate(t time.Time) (int, int) {
 
 func MonthByDate(t time.Time) int {
 	return t.Year()*100 + int(t.Month())
+}
+
+func StartDayByYearWeek(yearWeek string) string {
+	split := strings.Split(yearWeek, "-")
+	return StartDayByWeekAndYear(split[0], split[1])
+}
+
+func StartDayByWeekAndYear(year, week string) string {
+	yearInt, err := strconv.Atoi(year)
+	if err != nil {
+		return ""
+	}
+	weekInt, err := strconv.Atoi(week)
+	if err != nil {
+		return ""
+	}
+
+	firstDay := time.Date(yearInt, 1, 1, 0, 0, 0, 0, time.Local)
+	firstDayInWeek := int(firstDay.Weekday())
+
+	logger.Info(firstDay, firstDayInWeek)
+	date := firstDay.AddDate(0, 0, weekInt*7)
+	return year + "_" + week + " " + date.Format("01-02")
 }

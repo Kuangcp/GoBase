@@ -5,6 +5,7 @@ import (
 	"mybook/app/category"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
+	"mybook/app/common/util"
 	"mybook/app/record"
 	"sort"
 	"time"
@@ -254,7 +255,19 @@ func CategoryPeriodReport(c *gin.Context) {
 		lines = buildLines(existCategoryMap, periodList, periodNumMap, param, categoryNameMap)
 	}
 
-	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodList, Legends: legends})
+	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, XAxis: periodTransfer(param.Period, periodList), Legends: legends})
+}
+
+func periodTransfer(period string, periods []string) []string {
+	if period != weekPeriod {
+		return periods
+	}
+
+	var result []string
+	for i := range periods {
+		result = append(result, util.StartDayByYearWeek(periods[i]))
+	}
+	return result
 }
 
 // 一个 LineVO 就是帐目的一种分类 线或块

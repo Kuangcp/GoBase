@@ -1,16 +1,18 @@
 package loan
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/kuangcp/gobase/pkg/ghelp"
-	"github.com/kuangcp/logger"
 	"mybook/app/common/constant"
 	"mybook/app/common/dal"
 	"mybook/app/common/util"
 	"mybook/app/record"
 	"mybook/app/user"
+	"sort"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ghelp"
+	"github.com/kuangcp/logger"
 )
 
 type (
@@ -65,6 +67,9 @@ func QueryLoan(c *gin.Context) {
 			Amount: v,
 		})
 	}
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].Amount > users[j].Amount
+	})
 	ghelp.GinSuccessWith(c, users)
 }
 

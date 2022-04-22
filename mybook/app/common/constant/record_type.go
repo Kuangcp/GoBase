@@ -19,7 +19,7 @@ const (
 
 	// 余额 报表
 	ReportRecordBalance int = 20
-	// 收支 仅用于报表
+	// 收支图 仅用于报表
 	ReportRecordOverview int = 21
 	// 支出 父分类报表
 	ReportExCategoryOverview int = 22
