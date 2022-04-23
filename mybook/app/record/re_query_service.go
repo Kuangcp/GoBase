@@ -15,6 +15,8 @@ import (
 	"github.com/kuangcp/logger"
 )
 
+var lastCal int64 = 0
+
 func QueryForBalance() []RecordDTO {
 	db := dal.GetDB()
 	var lists []RecordEntity
@@ -184,6 +186,24 @@ func buildCommonWeekOrMonthVO(endDateObj time.Time,
 }
 
 func calculateAndQueryAccountBalance() []account.AccountDTO {
+	calculateBalance()
+
+	accounts := account.ListAccounts()
+	var result []account.AccountDTO
+	resultTmp := util.Copy(accounts, new([]account.AccountDTO)).(*[]account.AccountDTO)
+	for _, dto := range *resultTmp {
+		tmp := &dto
+		tmp.TypeName = constant.GetAccountTypeByIndex(dto.TypeId).GetName()
+		result = append(result, *tmp)
+	}
+	return result
+}
+
+func calculateBalance() {
+	if lastCal != 0 && time.Now().Unix()-lastCal < int64(30) {
+		return
+	}
+	lastCal = time.Now().Unix()
 	db := dal.GetDB()
 
 	accountMap := account.ListAccountMap()
@@ -220,16 +240,6 @@ func calculateAndQueryAccountBalance() []account.AccountDTO {
 		watch.Stop()
 	}
 	logger.Info(watch.PrettyPrint())
-
-	accounts := account.ListAccounts()
-	var result []account.AccountDTO
-	resultTmp := util.Copy(accounts, new([]account.AccountDTO)).(*[]account.AccountDTO)
-	for _, dto := range *resultTmp {
-		tmp := &dto
-		tmp.TypeName = constant.GetAccountTypeByIndex(dto.TypeId).GetName()
-		result = append(result, *tmp)
-	}
-	return result
 }
 
 func entityToDTO(lists []RecordEntity) []RecordDTO {

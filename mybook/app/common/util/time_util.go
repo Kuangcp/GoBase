@@ -4,8 +4,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/kuangcp/logger"
 )
 
 //判断时间是当年的第几周
@@ -54,9 +52,6 @@ func StartDayByWeekAndYear(year, week string) string {
 	}
 
 	firstDay := time.Date(yearInt, 1, 1, 0, 0, 0, 0, time.Local)
-	firstDayInWeek := int(firstDay.Weekday())
-
-	logger.Info(firstDay, firstDayInWeek)
 	date := firstDay.AddDate(0, 0, weekInt*7)
 	return year + "_" + week + " " + date.Format("01-02")
 }

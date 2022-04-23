@@ -7,7 +7,7 @@
           <CategorySelect ref="categoryCom"/>
         </el-form-item>
 
-        <el-form-item label="操作账户" required>
+        <el-form-item label="主账户" required>
           <AccountSelect
               ref="accountCom"
               :account="accountId"

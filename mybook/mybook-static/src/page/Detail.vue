@@ -51,7 +51,7 @@
     </el-form>
 
     <el-table :data="tableData" stripe class="main-box" height="860">
-      <el-table-column sortable prop="ID" label="ID" width="60" align="right">
+      <el-table-column sortable prop="ID" label="ID" width="70" align="right">
       </el-table-column>
       <el-table-column
           sortable
@@ -86,7 +86,7 @@
           <span>{{ (scope.row.Amount / 100.0).toFixed(2) }}</span>
         </template>
       </el-table-column>
-      <el-table-column sortable prop="RecordTime" label="时间" width="100">
+      <el-table-column sortable prop="RecordTime" label="时间" width="120">
       </el-table-column>
       <el-table-column prop="Comment" label="备注" width="280">
       </el-table-column>

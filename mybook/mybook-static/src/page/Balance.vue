@@ -6,7 +6,7 @@
 
     <br>
     <el-table :data="tableData" stripe class="balance-box">
-      <el-table-column sortable prop="ID" label="ID" width="60" align="right">
+      <el-table-column sortable prop="ID" label="ID" width="70" align="right">
       </el-table-column>
       <el-table-column
           sortable
@@ -59,9 +59,9 @@
     </el-table>
 
     <el-table :data="loanUser" stripe class="loan-box">
-      <el-table-column sortable prop="UserId" label="ID" width="60" align="right"/>
+      <el-table-column sortable prop="UserId" label="ID" width="70" align="right"/>
       <el-table-column sortable prop="Name" label="用户" width="120" align="right"/>
-      <el-table-column sortable prop="Amount" label="金额" width="120" align="right">
+      <el-table-column sortable prop="Amount" label="金额" width="140" align="right">
         <template slot-scope="scope">
           <div v-if="scope.row.Amount<0">
             <span style="color: red">借入 {{ (scope.row.Amount / 100.0 * -1).toFixed(2) }}</span>
@@ -89,7 +89,7 @@
 
 .loan-box {
   margin-left: 1vw;
-  width: 320px;
+  width: 340px;
   height: 800px;
   border-radius: 4px;
   float: left;
