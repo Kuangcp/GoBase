@@ -1,8 +1,11 @@
-package app
+package main
 
 import (
+	"flag"
 	"fmt"
-	"keylogger/app/store"
+	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"log"
 	"time"
 	"unsafe"
@@ -13,10 +16,15 @@ import (
 	"github.com/kuangcp/logger"
 )
 
+var (
+	DashboardMsMode bool // 以 ms 格式刷新时间
+	DashboardMs     = DefaultRefreshMs
+)
+
 const (
 	width            = 84
 	height           = 10
-	kpmRefreshPeriod = time.Millisecond * 450
+	DefaultRefreshMs = 57
 	appId            = "com.github.kuangcp.keylogger"
 )
 
@@ -24,12 +32,66 @@ var (
 	app           *gtk.Application
 	win           *gtk.Window
 	kpmLabel      *gtk.Label
-	refreshPeriod = kpmRefreshPeriod
+	refreshPeriod = time.Millisecond * 450
 )
 
-func InitPopWindow() {
-	if store.DashboardMsMode || (!store.DashboardMsMode && store.DashboardMs != store.DefaultRefreshMs) {
-		refreshPeriod = time.Millisecond * time.Duration(store.DashboardMs)
+var (
+	help bool
+
+	// redis
+	host string
+	port string
+	pwd  string
+	db   int
+
+	option redis.Options
+)
+
+var (
+	buildVersion string
+)
+
+var info = cuibase.HelpInfo{
+	Description:   "Record key input, show rank",
+	Version:       "1.1.0",
+	BuildVersion:  buildVersion,
+	SingleFlagLen: -5,
+	DoubleFlagLen: 0,
+	ValueLen:      -6,
+	Flags: []cuibase.ParamVO{
+		{Short: "-h", BoolVar: &help, Comment: "help info"},
+		{Short: "-m", BoolVar: &DashboardMsMode, Comment: "show time with ms"},
+	},
+	Options: []cuibase.ParamVO{
+		{Short: "-host", Value: "host", Comment: "redis host"},
+		{Short: "-port", Value: "port", Comment: "redis port"},
+		{Short: "-pwd", Value: "pwd", Comment: "redis password"},
+		{Short: "-db", Value: "db", Comment: "redis db"},
+		{Short: "-ms", Value: "ms", Comment: "gui refresh ms"},
+	},
+}
+
+func init() {
+	flag.StringVar(&host, "host", "127.0.0.1", "")
+	flag.StringVar(&port, "port", "6667", "")
+	flag.StringVar(&pwd, "pwd", "", "")
+	flag.IntVar(&db, "db", 5, "")
+	flag.IntVar(&DashboardMs, "ms", DashboardMs, "")
+}
+
+func main() {
+	info.Parse()
+
+	if help {
+		info.PrintHelp()
+		return
+	}
+
+	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
+	store.InitConnection(option)
+
+	if DashboardMsMode || (!DashboardMsMode && DashboardMs != DefaultRefreshMs) {
+		refreshPeriod = time.Millisecond * time.Duration(DashboardMs)
 	}
 	logger.Info("refresh:", refreshPeriod)
 
@@ -117,7 +179,7 @@ func latestLabelStr(now time.Time) string {
 	total := conn.ZScore(store.TotalCount, today).Val()
 
 	var timeFmt = ""
-	if store.DashboardMsMode {
+	if DashboardMsMode {
 		timeFmt = store.MsTimeFormat
 	} else {
 		timeFmt = store.TimeFormat

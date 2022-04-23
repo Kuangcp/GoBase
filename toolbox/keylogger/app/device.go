@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
-	"keylogger/app/queue"
-	"keylogger/app/store"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/queue"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"log"
 	"sort"
 	"strconv"

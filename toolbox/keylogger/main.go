@@ -4,9 +4,9 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"keylogger/app"
-	"keylogger/app/store"
-	"keylogger/app/web"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/web"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -42,8 +42,6 @@ var info = cuibase.HelpInfo{
 		{Short: "-R", BoolVar: &printDayRank, Comment: "print daily rank by before x day ago and duration"},
 		{Short: "-r", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration"},
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
-		{Short: "-b", BoolVar: &dashboard, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
-		{Short: "-m", BoolVar: &store.DashboardMsMode, Comment: "open small window to show total and KPM(Keystrokes Per Minute)"},
 		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
 		{Short: "-O", BoolVar: &notOpenPage, Comment: "not open url by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
@@ -70,7 +68,6 @@ var (
 	printDay           bool
 	printDayRank       bool
 	printTotalRank     bool
-	dashboard          bool
 	showLog            bool
 
 	targetDevice string
@@ -111,7 +108,6 @@ func init() {
 	flag.StringVar(&port, "port", "6667", "")
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
-	flag.IntVar(&store.DashboardMs, "ms", store.DashboardMs, "")
 
 	flag.StringVar(&webPort, "P", "9902", "")
 }
@@ -197,7 +193,7 @@ func main() {
 	store.InitConnection(option)
 	defer store.CloseConnection()
 
-	invokeThenExit(dashboard, app.InitPopWindow, store.CloseConnection)
+	//invokeThenExit(dashboard, app.InitPopWindow, store.CloseConnection)
 	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
 	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
 
