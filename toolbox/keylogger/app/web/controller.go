@@ -153,7 +153,7 @@ func CalendarMap(c *gin.Context) {
 	for k := range yearListMap {
 		yearList = append(yearList, k)
 	}
-	sort.Strings(yearList)
+	sort.Sort(sort.Reverse(sort.StringSlice(yearList)))
 
 	chartIndex := -1
 	var mapList []CalendarHeatMapVO
