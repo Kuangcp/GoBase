@@ -24,7 +24,7 @@ func SetParentId(name string, id uint) {
 	}
 
 	current := FindCategoryByName(name)
-	if current == nil {
+	if current == nil || current.ID == 0 {
 		logger.Error("current not exist")
 		return
 	}
@@ -35,7 +35,7 @@ func SetParentId(name string, id uint) {
 	db.Model(&current).Update("parent_id", id)
 
 	news := FindCategoryByName(name)
-	logger.Info(current, news)
+	logger.Info(current.ID, current.Name, current.ParentId, news.ID, news.ParentId)
 }
 
 func FindCategoryByName(name string) *Category {
