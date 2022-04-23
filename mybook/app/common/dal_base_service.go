@@ -72,25 +72,38 @@ func initData() {
 		return
 	}
 
-	BindCategoryLink()
-
 	if b.Name != "" {
 		logger.Info("already init")
+		refreshCategoryBind()
 		return
 	}
 
 	book.AddBookkeeping(&book.BookKeeping{Name: "主账本", Comment: ""})
 
 	InitCategory()
+	refreshCategoryBind()
 	InitAccount()
 }
 
 func InitAccount() {
-	account.AddAccount(&account.Account{TypeId: constant.AccountCash, Name: "现金", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountCredit, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10})
-	account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0})
-	account.AddAccount(&account.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0})
+	crash := account.Account{TypeId: constant.AccountCash, Name: "现金", InitAmount: 0}
+	crash.ID = uint(constant.AccountCash)*100 + 1
+	account.AddAccount(&crash)
+
+	huabei := account.Account{TypeId: constant.AccountCredit, Name: "花呗", InitAmount: 0, MaxAmount: 2000, BillDay: 1, RepaymentDay: 10}
+	huabei.ID = uint(constant.AccountCredit)*100 + 1
+	account.AddAccount(&huabei)
+
+	zhifubao := account.Account{TypeId: constant.AccountOnline, Name: "支付宝", InitAmount: 0}
+	zhifubao.ID = uint(constant.AccountOnline)*100 + 1
+	account.AddAccount(&zhifubao)
+	wechat := account.Account{TypeId: constant.AccountOnline, Name: "微信", InitAmount: 0}
+	wechat.ID = uint(constant.AccountOnline)*100 + 2
+	account.AddAccount(&wechat)
+
+	deposit := account.Account{TypeId: constant.AccountDeposit, Name: "储蓄卡", InitAmount: 0}
+	deposit.ID = uint(constant.AccountDeposit)*100 + 1
+	account.AddAccount(&deposit)
 
 	ar := account.Account{TypeId: constant.AccountAR, Name: "应收款", InitAmount: 0}
 	ar.ID = constant.AccountARId
@@ -100,7 +113,7 @@ func InitAccount() {
 	account.AddAccount(&ap)
 }
 
-func BindCategoryLink() {
+func refreshCategoryBind() {
 	category.SetParentId("早餐", expenseRootType["食"])
 	category.SetParentId("午餐", expenseRootType["食"])
 	category.SetParentId("晚餐", expenseRootType["食"])
@@ -158,8 +171,6 @@ func InitCategory() {
 		tmpCategory.ID = v
 		category.AddCategory(tmpCategory)
 	}
-
-	BindCategoryLink()
 
 	for k, v := range incomeType {
 		tmpCategory := &category.Category{Name: k, Leaf: true, TypeId: constant.CategoryIncome}
