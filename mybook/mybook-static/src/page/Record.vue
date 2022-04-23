@@ -86,8 +86,8 @@ export default {
   },
   data: function () {
     return {
-      accountId: 2,
-      targetAccountId: 1,
+      accountId: 301,
+      targetAccountId: 502,
       amount: "",
       recordDate: "",
       recordDates: [],
