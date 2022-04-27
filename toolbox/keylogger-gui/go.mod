@@ -1,4 +1,4 @@
-module keylogger_gui
+module keylogger-gui
 
 go 1.16
 
