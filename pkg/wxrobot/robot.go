@@ -149,7 +149,7 @@ func (r *WeWorkRobot) SendMarkDown(content string) error {
 		return err
 	}
 	if r.requestLog {
-		logger.Warn(string(result), " time: ", waste)
+		logger.Warn(waste, "ms : ", string(result))
 	}
 	return nil
 }
