@@ -265,7 +265,7 @@ func periodTransfer(period string, periods []string) []string {
 
 	var result []string
 	for i := range periods {
-		result = append(result, util.StartDayByYearWeek(periods[i]))
+		result = append(result, util.PairDayByYearWeek(periods[i]))
 	}
 	return result
 }

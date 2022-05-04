@@ -143,6 +143,7 @@ func refreshCategoryBind() {
 	category.SetParentId("线下会员", expenseRootType["娱"])
 	category.SetParentId("打赏", expenseRootType["娱"])
 	category.SetParentId("服饰", expenseRootType["娱"])
+	category.SetParentId("游戏", expenseRootType["娱"])
 
 	category.SetParentId("地铁", expenseRootType["行"])
 	category.SetParentId("公交", expenseRootType["行"])

@@ -15,6 +15,6 @@ func TestWeekOfYearByDate(t *testing.T) {
 }
 
 func TestDayFromWeek(t *testing.T) {
-	year := StartDayByWeekAndYear("2022", "23")
+	year := PairDayByWeekAndYear("2022", "18")
 	logger.Info(year)
 }

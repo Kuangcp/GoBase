@@ -115,15 +115,15 @@
 
 <script>
 import {
+  calDate,
   dateShortCut,
   dayPeriod,
   formatter,
   getFormatByPeriod,
   monthPeriod,
+  passMonth,
   weekPeriod,
   yearPeriod,
-  calDate,
-  passMonth,
 } from "@/util/DateUtil";
 import Echart from "../components/Echart";
 
@@ -166,6 +166,7 @@ export default {
         yAxis: [
           {
             type: 'value',
+            scale: true,
             axisLabel: {
               formatter: '{value}',
             },

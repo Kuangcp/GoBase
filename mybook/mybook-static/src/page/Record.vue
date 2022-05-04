@@ -7,16 +7,14 @@
           <CategorySelect ref="categoryCom"/>
         </el-form-item>
 
-        <el-form-item label="主账户" required>
+        <el-form-item label="账户" required>
           <AccountSelect
               ref="accountCom"
               :account="accountId"
               @hasChange="hasChange"
               style="width: 120px"
           />
-        </el-form-item>
-
-        <el-form-item label="目标账户">
+          =>
           <el-tooltip class="item" effect="dark" content="仅在转账时有效" placement="top-start">
             <AccountSelect
                 ref="targetAccountCom"
@@ -26,6 +24,8 @@
             />
           </el-tooltip>
         </el-form-item>
+
+
 
         <el-form-item label="金额" required>
           <el-input

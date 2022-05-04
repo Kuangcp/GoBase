@@ -36,12 +36,12 @@ func MonthByDate(t time.Time) int {
 	return t.Year()*100 + int(t.Month())
 }
 
-func StartDayByYearWeek(yearWeek string) string {
+func PairDayByYearWeek(yearWeek string) string {
 	split := strings.Split(yearWeek, "-")
-	return StartDayByWeekAndYear(split[0], split[1])
+	return PairDayByWeekAndYear(split[0], split[1])
 }
 
-func StartDayByWeekAndYear(year, week string) string {
+func PairDayByWeekAndYear(year, week string) string {
 	yearInt, err := strconv.Atoi(year)
 	if err != nil {
 		return ""
@@ -52,6 +52,7 @@ func StartDayByWeekAndYear(year, week string) string {
 	}
 
 	firstDay := time.Date(yearInt, 1, 1, 0, 0, 0, 0, time.Local)
-	date := firstDay.AddDate(0, 0, weekInt*7)
-	return year + "_" + week + " " + date.Format("01-02")
+	endDay := firstDay.AddDate(0, 0, weekInt*7+1)
+	startDay := endDay.AddDate(0, 0, -6)
+	return year + "." + week + " [" + startDay.Format("01-02") + "," + endDay.Format("01-02") + "]"
 }
