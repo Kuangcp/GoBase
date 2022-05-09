@@ -12,16 +12,16 @@ import (
 )
 
 var (
-	port     int
-	username string
-	pwd      string
-	dirPair  cuibase.ArrayFlags
+	port    int
+	user    string
+	pwd     string
+	dirPair cuibase.ArrayFlags
 )
 
 func init() {
 	flag.IntVar(&port, "p", 33311, "port")
-	flag.StringVar(&username, "user", "gin", "username")
-	flag.StringVar(&pwd, "pwd", "jiushi", "username")
+	flag.StringVar(&user, "user", "gin", "username")
+	flag.StringVar(&pwd, "pwd", "jiushi", "pwd")
 	flag.Var(&dirPair, "d", "dir eg: x=/path/to")
 }
 
@@ -35,11 +35,30 @@ func main() {
 
 func MultiHandle(port string) {
 	mux := http.NewServeMux()
+	var list []*webdav.Handler
+
 	if len(dirPair) == 0 {
-		bindSingleHandler(mux)
+		list = append(list, &webdav.Handler{
+			Prefix:     "/",
+			FileSystem: webdav.Dir("."),
+			LockSystem: webdav.NewMemLS(),
+		})
 	} else {
-		bindMultiHandler(mux)
+		var l []*webdav.Handler
+		for _, s := range dirPair {
+			pair := strings.Split(s, "=")
+			if len(pair) != 2 {
+				continue
+			}
+			l = append(l, &webdav.Handler{
+				Prefix:     "/" + pair[0] + "/",
+				FileSystem: webdav.Dir(pair[1]),
+				LockSystem: webdav.NewMemLS(),
+			})
+		}
 	}
+
+	bindMultiHandler(mux, list)
 
 	err := http.ListenAndServe(port, mux)
 	if err != nil {
@@ -47,33 +66,7 @@ func MultiHandle(port string) {
 	}
 }
 
-func bindSingleHandler(mux *http.ServeMux) {
-	loHandler := &webdav.Handler{
-		FileSystem: webdav.Dir("."),
-		LockSystem: webdav.NewMemLS(),
-	}
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		if !authUser(w, req) {
-			return
-		}
-
-		loHandler.ServeHTTP(w, req)
-	})
-}
-
-func bindMultiHandler(mux *http.ServeMux) {
-	var l []*webdav.Handler
-	for _, s := range dirPair {
-		pair := strings.Split(s, "=")
-		if len(pair) != 2 {
-			continue
-		}
-		l = append(l, &webdav.Handler{
-			Prefix:     "/" + pair[0] + "/",
-			FileSystem: webdav.Dir(pair[1]),
-			LockSystem: webdav.NewMemLS(),
-		})
-	}
+func bindMultiHandler(mux *http.ServeMux, l []*webdav.Handler) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if !authUser(w, req) {
 			return
@@ -108,7 +101,7 @@ func authUser(w http.ResponseWriter, req *http.Request) bool {
 	}
 
 	// 验证用户名/密码
-	if username != "gin" || password != "jiushi" {
+	if username != user || password != pwd {
 		http.Error(w, "WebDAV: need authorized!", http.StatusUnauthorized)
 		return false
 	}
