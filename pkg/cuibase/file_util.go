@@ -80,6 +80,12 @@ func ReadCsvFile(filename string) [][]string {
 	return result
 }
 
+// IsFileExist relative or absolute path
+func IsFileExist(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
 type BufferWriter struct {
 	file   *os.File
 	writer *bufio.Writer

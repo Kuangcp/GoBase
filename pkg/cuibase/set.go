@@ -14,11 +14,13 @@ func NewSet(s ...interface{}) *Set {
 	return &result
 }
 
-func (s *Set) Add(val interface{}) {
+func (s *Set) Add(val ...interface{}) {
 	if val == nil {
 		return
 	}
-	s.cache[val] = struct{}{}
+	for _, v := range val {
+		s.cache[v] = struct{}{}
+	}
 }
 
 func (s *Set) Len() int {
@@ -46,4 +48,18 @@ func (s *Set) Loop(action func(interface{})) {
 	for k, _ := range s.cache {
 		action(k)
 	}
+}
+
+func (s *Set) Intersection(set *Set) *Set {
+	if set == nil {
+		return nil
+	}
+	result := NewSet()
+	for k, _ := range s.cache {
+		_, ok := set.cache[k]
+		if ok {
+			result.Add(k)
+		}
+	}
+	return result
 }
