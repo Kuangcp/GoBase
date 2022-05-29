@@ -60,7 +60,7 @@
       <el-input v-model="comment" size="mini" clearable style="width: 140px"/>
     </el-form-item>
     <el-form-item>
-      <el-button type="primary" @click="onSubmit" size="mini">新增</el-button>
+      <el-button type="primary" @click="onSubmit" size="mini" style="width: 100px">新增</el-button>
     </el-form-item>
   </el-form>
 </template>
@@ -79,7 +79,7 @@ export default {
   data: function () {
     return {
       userId: 1,
-      accountId: 7,
+      accountId: 201,
       loanType: 1,
       amount: "",
       recordDate: "",

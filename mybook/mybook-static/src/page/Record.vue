@@ -12,7 +12,7 @@
               ref="accountCom"
               :account="accountId"
               @hasChange="hasChange"
-              style="width: 120px"
+              style="width: 166px"
           />
           =>
           <el-tooltip class="item" effect="dark" content="仅在转账时有效" placement="top-start">
@@ -20,12 +20,10 @@
                 ref="targetAccountCom"
                 :account="targetAccountId"
                 @hasChange="listenTargetAccount"
-                style="width: 120px"
+                style="width: 167px"
             />
           </el-tooltip>
         </el-form-item>
-
-
 
         <el-form-item label="金额" required>
           <el-input
@@ -33,7 +31,7 @@
               size="mini"
               clearable
               min="0"
-              style="width: 120px"
+              style="width: 357px"
           />
         </el-form-item>
 
@@ -42,8 +40,9 @@
               v-model="recordDate"
               type="date"
               size="mini"
+              format="MM-dd"
               clearable
-              style="width: 140px"
+              style="width: 100px"
               placeholder="选择日期"
           >
           </el-date-picker>
@@ -52,17 +51,18 @@
               v-model="recordDates"
               type="dates"
               size="mini"
+              format="MM-dd"
               clearable
-              style="width: 140px"
+              style="width: 230px"
               placeholder="选择日期"
           >
           </el-date-picker>
         </el-form-item>
         <el-form-item label="备注">
-          <el-input v-model="comment" size="mini" clearable style="width: 200px"/>
+          <el-input v-model="comment" size="mini" clearable style="width: 357px"/>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="onSubmit" size="mini">新增</el-button>
+          <el-button type="primary" @click="onSubmit" size="mini" style="width: 100px">新增</el-button>
         </el-form-item>
       </el-form>
     </el-tab-pane>

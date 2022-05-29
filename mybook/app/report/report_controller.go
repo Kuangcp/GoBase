@@ -384,7 +384,7 @@ func sumFromRecord(param RecordQueryParam, finalStart string, finalEnd string) [
 		db.Table("record").
 			Select("type as category_id, sum(amount) sum, strftime('"+param.sqlTimeFmt+"',record_time) as period").
 			Where("type in (?,?)", constant.RecordExpense, constant.RecordIncome).
-			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
+			Where("record_time BETWEEN ? AND ?", finalStart, finalEnd+" 23:59:59.999").
 			Where("deleted_at is null").
 			Group("type, period").Find(&sumResult)
 	} else {
@@ -396,7 +396,7 @@ func sumFromRecord(param RecordQueryParam, finalStart string, finalEnd string) [
 		if param.CategoryId != 0 {
 			where = where.Where(" category_id = ?", param.CategoryId)
 		}
-		where.Where("record_time BETWEEN ? AND ?", finalStart, finalEnd).
+		where.Where("record_time BETWEEN ? AND ?", finalStart, finalEnd+" 23:59:59.999").
 			Where("deleted_at is null").
 			Group("category_id, period").Find(&sumResult)
 	}

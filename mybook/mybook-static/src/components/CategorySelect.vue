@@ -6,6 +6,7 @@
         :props="{ expandTrigger: 'hover' }"
         @change="handleChange"
         size="mini"
+        style="width: 356px"
         clearable
     ></el-cascader>
 
