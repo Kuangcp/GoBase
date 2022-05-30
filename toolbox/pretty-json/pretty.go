@@ -12,6 +12,7 @@ import (
 var (
 	debug    bool
 	help     bool
+	txt      bool
 	uglyJSON string
 	indent   string
 )
@@ -21,6 +22,7 @@ func init() {
 	flag.StringVar(&uglyJSON, "s", "", "json string")
 	flag.StringVar(&indent, "i", "    ", "indent string")
 	flag.BoolVar(&debug, "d", false, "debug info")
+	flag.BoolVar(&txt, "t", false, "no color txt")
 }
 
 func helpInfo() {
@@ -49,5 +51,9 @@ func main() {
 	}
 
 	var Options = &pretty.Options{Width: 80, Prefix: "", Indent: indent, SortKeys: false}
-	fmt.Printf("%s\n", pretty.Color(pretty.PrettyOptions([]byte(uglyJSON), Options), pretty.TerminalStyle))
+	if txt {
+		fmt.Println(string(pretty.PrettyOptions([]byte(uglyJSON), Options)))
+	} else {
+		fmt.Printf("%s\n", pretty.Color(pretty.PrettyOptions([]byte(uglyJSON), Options), pretty.TerminalStyle))
+	}
 }
