@@ -1,6 +1,0 @@
-GET {{host}}/api/record/list?startDate=2020-04-01&endDate=2020-05-24&typeId=1&accountId=
-
-###
-
-GET {{host}}/api/account/balance
-
