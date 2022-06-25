@@ -19,6 +19,9 @@ type (
 )
 
 func NewClient(host string, port int) *WebClient {
+	if port <= 0 {
+		port = Port
+	}
 	return &WebClient{host: host, port: port, api: &http.Client{}}
 }
 

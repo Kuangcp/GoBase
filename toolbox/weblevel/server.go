@@ -2,6 +2,7 @@ package weblevel
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	Port       = 33742
+	Port       = 33745
 	PathSets   = "/sets"
 	PathGet    = "/get"
 	PathDel    = "/del"
@@ -25,52 +26,38 @@ type (
 		mux  *http.ServeMux
 		port int
 	}
+	Options struct {
+		Port     int
+		DBPath   string
+		Database *leveldb.DB
+	}
 	ValKV struct {
 		Key string `json:"key"`
 		Val string `json:"val"`
 	}
 )
 
-func (w *WebLevel) del(key string) {
-	err := w.db.Delete([]byte(key), nil)
-	if err != nil {
-		logger.Error(key, err)
+func NewServer(opt *Options) (*WebLevel, error) {
+	if opt == nil {
+		return nil, errors.New("option is nil")
 	}
-}
 
-func (w *WebLevel) get(key string) (string, error) {
-	value, err := w.db.Get([]byte(key), nil)
-	if err != nil {
-		unescape, err2 := url.QueryUnescape(key)
-		logger.Warn(unescape, err, err2)
-		return "", err
+	if opt.Port <= 0 || opt.Port >= 65535 {
+		opt.Port = Port
 	}
-	return string(value), nil
-}
 
-func (w *WebLevel) set(key, value string) {
-	err := w.db.Put([]byte(key), []byte(value), nil)
-	if err != nil {
-		logger.Error(key, value, err)
+	if opt.DBPath != "" {
+		newDB, err := leveldb.OpenFile("test-db", nil)
+		if err != nil {
+			return nil, err
+		}
+		opt.Database = newDB
 	}
-}
 
-func (w *WebLevel) rangeKey(prefix string) map[string]string {
-	result := make(map[string]string)
-	iter := w.db.NewIterator(util.BytesPrefix([]byte(prefix)), nil)
-	for iter.Next() {
-		result[string(iter.Key())] = string(iter.Value())
+	if opt.Database == nil {
+		return nil, errors.New("db is nil")
 	}
-	iter.Release()
-	err := iter.Error()
-	if err != nil {
-		logger.Error(err)
-	}
-	return result
-}
-
-func NewServer(db *leveldb.DB, port int) *WebLevel {
-	return &WebLevel{db: db, mux: http.NewServeMux(), port: port}
+	return &WebLevel{db: opt.Database, mux: http.NewServeMux(), port: opt.Port}, nil
 }
 
 func (w *WebLevel) Bootstrap() {
@@ -122,4 +109,42 @@ func (w *WebLevel) Bootstrap() {
 	if err != nil {
 		logger.Error(err)
 	}
+}
+
+func (w *WebLevel) del(key string) {
+	err := w.db.Delete([]byte(key), nil)
+	if err != nil {
+		logger.Error(key, err)
+	}
+}
+
+func (w *WebLevel) get(key string) (string, error) {
+	value, err := w.db.Get([]byte(key), nil)
+	if err != nil {
+		unescape, err2 := url.QueryUnescape(key)
+		logger.Warn(unescape, err, err2)
+		return "", err
+	}
+	return string(value), nil
+}
+
+func (w *WebLevel) set(key, value string) {
+	err := w.db.Put([]byte(key), []byte(value), nil)
+	if err != nil {
+		logger.Error(key, value, err)
+	}
+}
+
+func (w *WebLevel) rangeKey(prefix string) map[string]string {
+	result := make(map[string]string)
+	iter := w.db.NewIterator(util.BytesPrefix([]byte(prefix)), nil)
+	for iter.Next() {
+		result[string(iter.Key())] = string(iter.Value())
+	}
+	iter.Release()
+	err := iter.Error()
+	if err != nil {
+		logger.Error(err)
+	}
+	return result
 }
