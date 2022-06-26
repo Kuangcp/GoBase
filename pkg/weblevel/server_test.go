@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 )
 
 var client Client
@@ -22,7 +23,7 @@ func TestServer(t *testing.T) {
 }
 
 func TestRange(t *testing.T) {
-	search := client.PrefixSearch("page:")
+	search := client.PrefixSearch("do")
 	for k, v := range search {
 		fmt.Println(k, v)
 	}
@@ -41,4 +42,25 @@ func TestWebClient_Get(t *testing.T) {
 		t.Failed()
 	}
 	fmt.Println(val)
+}
+
+func TestRollingTxt(t *testing.T) {
+	s := "20220626_021829_Masquerade-マスカレード-葵つかさアサ芸SEXY女優写真集[172P]_172P"
+
+	runes := []rune(s)
+	showWin := 20
+	cursor := 0
+	l := len(runes)
+
+	for i := 0; i < 200; i++ {
+		cursor = cursor % l
+		v2 := cursor + showWin
+		if v2 > l {
+			fmt.Print(string(runes[cursor:]) + "   " + string(runes[:v2-l]) + "\r\r")
+		} else {
+			fmt.Print(string(runes[cursor:v2-1]) + "\r\r")
+		}
+		cursor++
+		time.Sleep(time.Millisecond * 150)
+	}
 }
