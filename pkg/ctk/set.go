@@ -1,4 +1,4 @@
-package cuibase
+package ctk
 
 type Set struct {
 	cache map[interface{}]struct{}

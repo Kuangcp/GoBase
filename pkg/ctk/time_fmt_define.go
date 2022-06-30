@@ -1,4 +1,4 @@
-package cuibase
+package ctk
 
 const (
 	YYYY                   = "2006"

@@ -1,4 +1,4 @@
-package cuibase
+package ctk
 
 import (
 	"fmt"
