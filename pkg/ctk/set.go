@@ -23,6 +23,53 @@ func (s *Set) Add(val ...interface{}) {
 	}
 }
 
+func (s *Set) Adds(set *Set) {
+	if set == nil {
+		return
+	}
+	for k := range set.cache {
+		s.cache[k] = struct{}{}
+	}
+}
+
+// 交集
+func (s *Set) Intersect(set *Set) *Set {
+	if s == nil || set == nil {
+		return nil
+	}
+
+	result := NewSet()
+	for k := range s.cache {
+		if set.Contains(k) {
+			result.Add(k)
+		}
+	}
+
+	return result
+}
+
+// 差集
+func (s *Set) Difference(set *Set) *Set {
+	return nil
+}
+
+// 并集
+func (s *Set) Union(set *Set) *Set {
+	return nil
+}
+
+// 补集 余集
+func (s *Set) Supplementary(set *Set) *Set {
+	if s == nil || set == nil {
+		return nil
+	}
+
+	for k := range set.cache {
+		s.Remove(k)
+	}
+	return s
+}
+
 func (s *Set) Len() int {
 	return len(s.cache)
 }
@@ -55,7 +102,7 @@ func (s *Set) Intersection(set *Set) *Set {
 		return nil
 	}
 	result := NewSet()
-	for k, _ := range s.cache {
+	for k := range s.cache {
 		_, ok := set.cache[k]
 		if ok {
 			result.Add(k)
