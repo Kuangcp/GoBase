@@ -2,9 +2,10 @@ package web
 
 import (
 	"embed"
-	"github.com/kuangcp/gobase/pkg/cuibase"
-	"github.com/kuangcp/logger"
 	"net/http"
+
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
@@ -45,7 +46,7 @@ func Server(f embed.FS, debugStatic, notOpenPage bool, port string) {
 	url := "http://localhost" + srv.Addr
 	logger.Info(url)
 	if !notOpenPage {
-		_ = cuibase.OpenBrowser(url)
+		_ = ctk.OpenBrowser(url)
 	}
 
 	ghelp.GracefulExit(srv)

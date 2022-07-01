@@ -2,16 +2,17 @@ package web
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/stopwatch"
-	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/pkg/stopwatch"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
+
 	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/kuangcp/gobase/pkg/ghelp"
 	"github.com/kuangcp/logger"
 )
@@ -123,9 +124,9 @@ var commonLabel = LabelVO{Show: false, Position: "insideRight"}
 func CalendarMap(c *gin.Context) {
 	conn := store.GetConnection()
 	data, err := conn.ZRange(store.TotalCount, 0, -1).Result()
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	totalData, err := conn.ZRangeWithScores(store.TotalCount, 0, -1).Result()
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	sort.Strings(data)
 
 	scoreMap := make(map[string]int)
@@ -185,7 +186,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 	var lastTime *time.Time = nil
 	for _, day := range data {
 		var dayTime, err = time.Parse(store.DateFormat, day)
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 
 		if lastTime == nil {
 			// fill year start to dayTime
@@ -202,7 +203,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 			max = score
 		}
 
-		result = append(result, [2]string{dayTime.Format(cuibase.YYYY_MM_DD), strconv.Itoa(score)})
+		result = append(result, [2]string{dayTime.Format(ctk.YYYY_MM_DD), strconv.Itoa(score)})
 	}
 	return result, max
 }
@@ -214,7 +215,7 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 		return nil
 	}
 	for !indexDay.Equal(endDay) {
-		result = append(result, [2]string{indexDay.Format(cuibase.YYYY_MM_DD), "0"})
+		result = append(result, [2]string{indexDay.Format(ctk.YYYY_MM_DD), "0"})
 		indexDay = indexDay.AddDate(0, 0, 1)
 	}
 	return result
@@ -324,7 +325,7 @@ func readDetailToMap(
 	for lastCursor != 0 || first {
 		result, cursor, err := store.GetConnection().
 			ZScan(store.GetDetailKeyByString(curDay), lastCursor, "", 600).Result()
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 		lastCursor = cursor
 		first = false
 		for i := range result {
@@ -335,7 +336,7 @@ func readDetailToMap(
 			//logger.Info(result[i], result[i+1])
 
 			timestamp, err := strconv.ParseInt(result[i], 0, 64)
-			cuibase.CheckIfError(err)
+			ctk.CheckIfError(err)
 			curStrokeTime := time.Unix(timestamp/1000_000, 0)
 			weekDay := int(curStrokeTime.Weekday())
 
@@ -437,7 +438,7 @@ func LineMap(c *gin.Context) {
 		}
 
 		keyCode, err := strconv.Atoi(key)
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 		lines = append(lines, LineVO{
 			Type:      param.ChartType,
 			Name:      nameMap[key],

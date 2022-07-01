@@ -3,14 +3,14 @@ package store
 import (
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 )
 
 const (
 	Prefix       = "keyboard:"
 	DateFormat   = "2006:01:02"
-	TimeFormat   = cuibase.HH_MM_SS
-	MsTimeFormat = cuibase.HH_MM_SS_MS
+	TimeFormat   = ctk.HH_MM_SS
+	MsTimeFormat = ctk.HH_MM_SS_MS
 )
 
 const (

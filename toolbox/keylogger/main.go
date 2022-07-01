@@ -4,33 +4,34 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"github.com/kuangcp/gobase/toolbox/keylogger/app"
-	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
-	"github.com/kuangcp/gobase/toolbox/keylogger/app/web"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/web"
 
 	"github.com/kuangcp/logger"
 
 	"github.com/webview/webview"
 
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
 //go:embed static
 var fs embed.FS
 
-var user = cuibase.Red.Print("root")
-var info = cuibase.HelpInfo{
+var user = ctk.Red.Print("root")
+var info = ctk.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.1.0",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -14,
-	Flags: []cuibase.ParamVO{
+	Flags: []ctk.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help info"},
 		{Short: "-l", BoolVar: &listKeyboardDevice, Comment: user + " list keyboard device"},
 		{Short: "-L", BoolVar: &listAllDevice, Comment: user + " list all device"},
@@ -46,7 +47,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-O", BoolVar: &notOpenPage, Comment: "not open url by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
-	Options: []cuibase.ParamVO{
+	Options: []ctk.ParamVO{
 		{Short: "-t", Value: "x,duration", Comment: "before x day ago and duration. For -T and -R"},
 		{Short: "-e", Value: "device", Comment: "operation target device. For -p -ca -s"},
 		{Short: "-P", Value: "port", Comment: "web Server port. default 9902"},
@@ -115,20 +116,20 @@ func init() {
 func configLogger() {
 	//logger.SetLogPathTrim("/keylogger/")
 
-	home, err := cuibase.Home()
-	cuibase.CheckIfError(err)
+	home, err := ctk.Home()
+	ctk.CheckIfError(err)
 	mainDir = home + mainDir
 
 	err = os.MkdirAll(mainDir, 0755)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	logDir := mainDir + "/log"
 
 	err = os.MkdirAll(logDir, 0755)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 
 	logPath = logDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: cuibase.YYYY_MM_DD_HH_MM_SS_MS,
+		TimeFormat: ctk.YYYY_MM_DD_HH_MM_SS_MS,
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,

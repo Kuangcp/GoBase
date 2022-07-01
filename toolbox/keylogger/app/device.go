@@ -2,20 +2,21 @@ package app
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/toolbox/keylogger/app/queue"
-	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/queue"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
+
 	"github.com/kuangcp/logger"
 	"github.com/manifoldco/promptui"
 
 	"github.com/go-redis/redis"
 	. "github.com/gvalkov/golang-evdev"
-	"github.com/kuangcp/gobase/pkg/cuibase"
 )
 
 const (
@@ -73,7 +74,7 @@ func ListenDevice() {
 		}
 	}
 
-	fmt.Println("Try to listen " + cuibase.Yellow.Print(targetDevice) + " ...")
+	fmt.Println("Try to listen " + ctk.Yellow.Print(targetDevice) + " ...")
 
 	device, err := Open("/dev/input/" + targetDevice)
 	defer closeDevice(device)
@@ -99,7 +100,7 @@ func ListenDevice() {
 		handleResult := handleEvents(inputEvents, connection)
 		if !hasSuccess && handleResult {
 			hasSuccess = true
-			fmt.Println(cuibase.Green.Print("\n    Listen success."))
+			fmt.Println(ctk.Green.Print("\n    Listen success."))
 			connection.Set(store.LastInputEvent, targetDevice, 0)
 		}
 	}
@@ -218,7 +219,7 @@ func OpenDevice() *InputDevice {
 		event = targetDevice
 	}
 	if event == "" {
-		fmt.Println(cuibase.Red.Print("Please select inputDevice"))
+		fmt.Println(ctk.Red.Print("Please select inputDevice"))
 		return nil
 	}
 
@@ -287,17 +288,17 @@ func PrintTotalRank() {
 		return sortList[i].Value > sortList[j].Value // 降序
 	})
 
-	fmt.Printf("    %s → %s\n", firstDay.Format(cuibase.YYYY_MM_DD), lastDay.Format(cuibase.YYYY_MM_DD))
+	fmt.Printf("    %s → %s\n", firstDay.Format(ctk.YYYY_MM_DD), lastDay.Format(ctk.YYYY_MM_DD))
 
 	if len(keyMap) != 0 {
 		printByFourColumn(len(sortList), func(index int) string {
 			val := sortList[index]
-			return fmt.Sprintf("%7v → %-28v", val.Value, cuibase.LightGreen.Print(keyMap[val.Key]))
+			return fmt.Sprintf("%7v → %-28v", val.Value, ctk.LightGreen.Print(keyMap[val.Key]))
 		})
 	} else {
 		printByFourColumn(len(sortList), func(index int) string {
 			val := sortList[index]
-			return fmt.Sprintf("%7v → %-28v", val.Value, cuibase.LightGreen.Print(val.Key))
+			return fmt.Sprintf("%7v → %-28v", val.Value, ctk.LightGreen.Print(val.Key))
 		})
 	}
 }
@@ -347,23 +348,23 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 	}
 
 	fmt.Printf("\n%s | %s | %-3s | Total: %s \n",
-		cuibase.Green.Printf("%-9s", time.Weekday()),
-		time.Format(cuibase.YYYY_MM_DD),
-		cuibase.Yellow.Printf("%3s", maxKPM),
-		cuibase.Green.Printf("%-5d", int64(totalScore.Val())))
+		ctk.Green.Printf("%-9s", time.Weekday()),
+		time.Format(ctk.YYYY_MM_DD),
+		ctk.Yellow.Printf("%3s", maxKPM),
+		ctk.Green.Printf("%-5d", int64(totalScore.Val())))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(store.GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
 		valList := keyRank.Val()
 		printByFourColumn(len(valList), func(index int) string {
 			val := valList[index]
-			return fmt.Sprintf("%4v → %-26v", val.Score, cuibase.LightGreen.Print(keyMap[val.Member.(string)]))
+			return fmt.Sprintf("%4v → %-26v", val.Score, ctk.LightGreen.Print(keyMap[val.Member.(string)]))
 		})
 	} else {
 		valList := keyRank.Val()
 		printByFourColumn(len(valList), func(index int) string {
 			val := valList[index]
-			return fmt.Sprintf("%4v → %-26v", val.Score, cuibase.LightGreen.Print(val.Member.(string)))
+			return fmt.Sprintf("%4v → %-26v", val.Score, ctk.LightGreen.Print(val.Member.(string)))
 		})
 	}
 }
@@ -375,16 +376,16 @@ func parseTime(timeSegment string) (int, int) {
 	durationDay := 1
 	if len(timePairs) == 1 {
 		day, err := strconv.Atoi(timePairs[0])
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 		indexDay = day - 1
 		durationDay = day
 	} else if len(timePairs) == 2 {
 		day, err := strconv.Atoi(timePairs[0])
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 		indexDay = day
 
 		durationDay, err = strconv.Atoi(timePairs[1])
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 	}
 	return indexDay, durationDay
 }
@@ -397,9 +398,9 @@ func handleTotalByDate(time time.Time, conn *redis.Client) {
 	if err != nil {
 		maxKPM = "0"
 	}
-	fmt.Printf("%s %s %s %6v\n", time.Format(cuibase.YYYY_MM_DD),
-		cuibase.Green.Printf("%-9s", time.Weekday()),
-		cuibase.Yellow.Printf("%4s", maxKPM),
+	fmt.Printf("%s %s %s %6v\n", time.Format(ctk.YYYY_MM_DD),
+		ctk.Green.Printf("%-9s", time.Weekday()),
+		ctk.Yellow.Printf("%4s", maxKPM),
 		int64(score.Val()))
 }
 
@@ -428,12 +429,12 @@ func PrintKeyMap() {
 
 	fmt.Println(device)
 	for capType, codes := range device.Capabilities {
-		fmt.Printf("\n\n %s%v %v%s\n", cuibase.Purple, capType.Type, capType.Name, cuibase.End)
+		fmt.Printf("\n\n %s%v %v%s\n", ctk.Purple, capType.Type, capType.Name, ctk.End)
 		printByColumn(6, len(codes), func(index int) string {
 			if len(codes[index].Name) == 0 {
 				return ""
 			}
-			return fmt.Sprintf("%s%4d%s %20s┃", cuibase.LightGreen, codes[index].Code, cuibase.End, codes[index].Name)
+			return fmt.Sprintf("%s%4d%s %20s┃", ctk.LightGreen, codes[index].Code, ctk.End, codes[index].Name)
 		})
 	}
 }
