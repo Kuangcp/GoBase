@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 	"github.com/kuangcp/logger"
 	"golang.org/x/net/webdav"
 )
@@ -15,7 +15,7 @@ var (
 	port    int
 	user    string
 	pwd     string
-	dirPair cuibase.ArrayFlags
+	dirPair ctk.ArrayFlags
 )
 
 func init() {

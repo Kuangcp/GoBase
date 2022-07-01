@@ -30,6 +30,14 @@ func NewWithName(name string) *StopWatch {
 	return &StopWatch{name: name, first: true}
 }
 
+func fmtDuration(d time.Duration) string {
+	ms := d.Milliseconds()
+	if ms < 10000 {
+		return fmt.Sprintf("%vms", float64(d.Nanoseconds()/1000*1000)/1000_000.0)
+	}
+	return d.String()
+}
+
 func (s StopWatch) PrettyPrint() string {
 	if s.first {
 		return ""
@@ -45,11 +53,13 @@ func (s StopWatch) PrettyPrint() string {
 			maxNameLen = curLen
 		}
 	}
-	for i, task := range s.tasks {
-		taskStr += fmt.Sprintf("%3d %-"+fmt.Sprint(maxNameLen)+"s : %v\n",
-			i+1, task.name, task.elapsedTime.String())
+	totalElapsed := s.stopTime.Sub(s.firstTime)
+	for _, task := range s.tasks {
+		rate := task.elapsedTime.Nanoseconds() * 100 / totalElapsed.Nanoseconds()
+		taskStr += fmt.Sprintf("%10v %v%% %v\n", fmtDuration(task.elapsedTime), rate, task.name)
 	}
-	return fmt.Sprintf("\n%s : %v | %v => %v\n%v", s.name, s.stopTime.Sub(s.firstTime),
+
+	return fmt.Sprintf("\nStopWatch %s : %v | %v => %v\n%v", s.name, fmtDuration(totalElapsed),
 		s.firstTime.Format("15:04:05.000"),
 		s.stopTime.Format("15:04:05.000"), taskStr)
 }

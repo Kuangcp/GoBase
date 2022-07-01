@@ -47,3 +47,7 @@ func TestMissingLastStop(t *testing.T) {
 	http.Get("http://jd.com")
 	println(watch.PrettyPrint())
 }
+
+func TestFmtDuration(t *testing.T) {
+	print(fmtDuration(time.Nanosecond * 8938860000))
+}
