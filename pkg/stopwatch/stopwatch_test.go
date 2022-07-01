@@ -10,7 +10,7 @@ import (
 func TestStopWatch_PrettyPrint(t *testing.T) {
 	stopWatch := NewWithName("action1")
 	stopWatch.Start("task1 new request")
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 3)
 	stopWatch.Stop()
 	stopWatch.Start("task2")
 	http.Get("https://baidu.com")
@@ -26,6 +26,7 @@ func TestStopWatch_PrettyPrint(t *testing.T) {
 	http.Get("http://jd.com")
 	stopWatch.Stop()
 	stopWatch.Start("B")
+
 	fmt.Println(stopWatch.PrettyPrint())
 }
 
@@ -49,5 +50,6 @@ func TestMissingLastStop(t *testing.T) {
 }
 
 func TestFmtDuration(t *testing.T) {
-	print(fmtDuration(time.Nanosecond * 8938860000))
+	fmt.Println(fmtDuration(time.Nanosecond * 8938860000))
+	fmt.Println(time.Millisecond * 9345)
 }

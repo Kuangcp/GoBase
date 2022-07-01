@@ -32,8 +32,9 @@ func NewWithName(name string) *StopWatch {
 
 func fmtDuration(d time.Duration) string {
 	ms := d.Milliseconds()
-	if ms < 10000 {
-		return fmt.Sprintf("%vms", float64(d.Nanoseconds()/1000*1000)/1000_000.0)
+	d = d.Round(time.Millisecond)
+	if ms < 10_000 {
+		return fmt.Sprintf("%vms", ms)
 	}
 	return d.String()
 }
@@ -55,8 +56,8 @@ func (s StopWatch) PrettyPrint() string {
 	}
 	totalElapsed := s.stopTime.Sub(s.firstTime)
 	for _, task := range s.tasks {
-		rate := task.elapsedTime.Nanoseconds() * 100 / totalElapsed.Nanoseconds()
-		taskStr += fmt.Sprintf("%10v %v%% %v\n", fmtDuration(task.elapsedTime), rate, task.name)
+		rate := task.elapsedTime.Milliseconds() * 100 / totalElapsed.Milliseconds()
+		taskStr += fmt.Sprintf("%8v %v%% %v\n", fmtDuration(task.elapsedTime), rate, task.name)
 	}
 
 	return fmt.Sprintf("\nStopWatch %s : %v | %v => %v\n%v", s.name, fmtDuration(totalElapsed),

@@ -21,16 +21,16 @@ func init() {
 	flag.BoolVar(&help, "h", false, "show help")
 	flag.StringVar(&uglyJSON, "s", "", "json string")
 	flag.StringVar(&indent, "i", "    ", "indent string")
-	flag.BoolVar(&debug, "d", false, "debug info")
-	flag.BoolVar(&txt, "t", false, "no color txt")
+	flag.BoolVar(&debug, "d", false, "debug log")
+	flag.BoolVar(&txt, "t", false, "no color")
 }
 
 func helpInfo() {
 	fmt.Printf("usage:\n\n")
 	flag.PrintDefaults()
 
-	fmt.Println("\neg:\n 1. echo '{\"id\":1}' | pretty-json")
-	fmt.Println(" 2. pretty-json -s '{\"id\":1}'")
+	fmt.Println("\neg:\n   1. echo '{\"id\":1}' | pretty-json")
+	fmt.Println("   2. pretty-json -s '{\"id\":1}'")
 }
 
 func main() {
