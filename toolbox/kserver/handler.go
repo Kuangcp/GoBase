@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 )
 
-var imgSuffixSet = cuibase.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
-var videoSuffixSet = cuibase.NewSet(".mp4")
+var imgSuffixSet = ctk.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
+var videoSuffixSet = ctk.NewSet(".mp4")
 
 type MediaParam struct {
 	rawSize bool
@@ -174,7 +174,7 @@ func sortByModTime(dir []os.DirEntry) {
 	})
 }
 
-func matchSuffix(set *cuibase.Set, fileName string) bool {
+func matchSuffix(set *ctk.Set, fileName string) bool {
 	idx := strings.LastIndex(fileName, ".")
 	if idx == -1 {
 		return true
@@ -184,20 +184,21 @@ func matchSuffix(set *cuibase.Set, fileName string) bool {
 	return set.Contains(suffixType)
 }
 
-func buildMediaList(dir []os.DirEntry, count int, set *cuibase.Set, tagFunc func(string) string) string {
+func buildMediaList(dir []os.DirEntry, count int, set *ctk.Set, tagFunc func(string) string) string {
 	sortByModTime(dir)
 	mediaBody := ""
 	mediaCount := 0
 
 	for _, entry := range dir {
+		fileName := entry.Name()
 		if entry.IsDir() {
+			mediaBody += dirTag(fileName)
 			continue
 		}
 		if mediaCount == count {
 			break
 		}
 
-		fileName := entry.Name()
 		if matchSuffix(set, fileName) {
 			mediaBody += tagFunc(fileName)
 			mediaCount++
@@ -209,6 +210,10 @@ func buildMediaList(dir []os.DirEntry, count int, set *cuibase.Set, tagFunc func
 		return "<h2>No Media</h2>"
 	}
 	return mediaBody
+}
+
+func dirTag(fileName string) string {
+	return "<a href=" + url.PathEscape(fileName) + ">" + fileName + "</a><br/>"
 }
 
 func videoTag(fileName string) string {

@@ -53,8 +53,8 @@ func init() {
 func initConfigValue() {
 	logger.SetLogPathTrim("recycle-bin/")
 
-	home, err := cuibase.Home()
-	cuibase.CheckIfError(err)
+	home, err := ctk.Home()
+	ctk.CheckIfError(err)
 
 	mainDir = home + mainDir
 	configDir = mainDir + "/conf"
@@ -81,7 +81,7 @@ func initConfigValue() {
 	})
 
 	_, err = loadConfig()
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 }
 
 func loadConfig() (*Setting, error) {
@@ -116,13 +116,13 @@ func loadConfig() (*Setting, error) {
 	return &setting, nil
 }
 
-var info = cuibase.HelpInfo{
+var info = ctk.HelpInfo{
 	Description:   "Recycle bin",
 	Version:       "1.0.7",
-	BuildVersion: buildVersion,
+	BuildVersion:  buildVersion,
 	SingleFlagLen: -3,
 	ValueLen:      -10,
-	Flags: []cuibase.ParamVO{
+	Flags: []ctk.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "Help info"},
 		{Short: "-P", BoolVar: &pipeline, Comment: "Pipeline"},
 		{Short: "-D", BoolVar: &debug, Comment: "Release mode"},
@@ -134,7 +134,7 @@ var info = cuibase.HelpInfo{
 		{Short: "-c", BoolVar: &showConfig, Comment: "Show config file"},
 		{Short: "-i", BoolVar: &initConfig, Comment: "Init dir and config"},
 	},
-	Options: []cuibase.ParamVO{
+	Options: []ctk.ParamVO{
 		{
 			Short:   "",
 			Value:   "file",
@@ -165,18 +165,18 @@ var info = cuibase.HelpInfo{
 func InitConfig() {
 	fmt.Println("init")
 	err := os.MkdirAll(trashDir, 0755)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	err = os.MkdirAll(configDir, 0755)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	err = os.MkdirAll(logDir, 0755)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	exist, err := isPathExists(configFile)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	if !exist {
 		result, err := json.Marshal(Setting{Retention: retentionStr, CheckPeriod: periodStr})
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 		err = ioutil.WriteFile(configFile, result, 0644)
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 	}
 }
 

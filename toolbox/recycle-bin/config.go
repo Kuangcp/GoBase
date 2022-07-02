@@ -61,7 +61,7 @@ func (t *fileItem) seconds() int64 {
 }
 
 func (t *fileItem) formatTime() string {
-	return time.Unix(t.seconds(), 0).Format(cuibase.YYYY_MM_DD_HH_MM_SS_MS)
+	return time.Unix(t.seconds(), 0).Format(ctk.YYYY_MM_DD_HH_MM_SS_MS)
 }
 
 func (t *fileItem) formatForList(index int, currentNano int64) string {
@@ -70,5 +70,5 @@ func (t *fileItem) formatForList(index int, currentNano int64) string {
 		duration = 0
 	}
 	return fmt.Sprintf("%-3v %v %v %v\n", index+1, t.formatTime(),
-		cuibase.Yellow.Print(fmtDuration(duration)), cuibase.Green.Print(t.name))
+		ctk.Yellow.Print(fmtDuration(duration)), ctk.Green.Print(t.name))
 }

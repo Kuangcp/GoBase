@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 )
 
 //go:embed up.html
@@ -54,7 +54,7 @@ func (i *arrayFlags) Set(value string) error {
 
 var folderPair arrayFlags
 var pathDirMap = make(map[string]string)
-var usedPath = cuibase.NewSet("f", "g", "h", "up", "e", "d")
+var usedPath = ctk.NewSet("f", "g", "h", "up", "e", "d")
 
 func getInternalIP() string {
 	address, err := net.InterfaceAddrs()
@@ -75,10 +75,10 @@ func getInternalIP() string {
 
 func printStartUpLog() {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
-	log.Printf("%v/up%v  %v/up\n", cuibase.Purple, cuibase.End, innerURL)
+	log.Printf("%v/up%v  %v/up\n", ctk.Purple, ctk.End, innerURL)
 	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
-		cuibase.Purple, cuibase.End, innerURL)
-	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", cuibase.Purple, cuibase.End, innerURL)
+		ctk.Purple, ctk.End, innerURL)
+	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", ctk.Purple, ctk.End, innerURL)
 
 	// sort and print
 	var keys []string
@@ -97,10 +97,10 @@ func printFileAndImgGroup(host, path, filePath string) {
 	internal = strings.TrimRight(internal, "/")
 	local = strings.TrimRight(local, "/")
 
-	lineBuf := fmt.Sprintf("%v%-27v", cuibase.Green, local)
+	lineBuf := fmt.Sprintf("%v%-27v", ctk.Green, local)
 	lineBuf += fmt.Sprintf("%-29v", fmt.Sprintf("%v", internal+imgFilePath))
 
-	log.Printf("%v %v %v", lineBuf, cuibase.End, filePath)
+	log.Printf("%v %v %v", lineBuf, ctk.End, filePath)
 }
 
 func bindPathAndStatic(pattern, binContent string) {
@@ -112,17 +112,17 @@ func bindPathAndStatic(pattern, binContent string) {
 	})
 }
 
-var info = cuibase.HelpInfo{
+var info = ctk.HelpInfo{
 	Description:   "Start static file web server on current path",
 	Version:       "1.0.10",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -2,
 	ValueLen:      -6,
-	Flags: []cuibase.ParamVO{
+	Flags: []ctk.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-g", BoolVar: &defaultHome, Comment: "default home page"},
 	},
-	Options: []cuibase.ParamVO{
+	Options: []ctk.ParamVO{
 		{Short: "-p", Value: "port", Comment: "web server port"},
 		{Short: "-d", Value: "folder", Comment: "folder pair. like -d x=y "},
 	}}
@@ -137,14 +137,14 @@ func registerAllFolder() {
 	// new pair dir from param
 	for _, s := range folderPair {
 		if !strings.Contains(s, "=") {
-			log.Printf("%vWARN %v is invalid format. must like a=b %v", cuibase.Red, s, cuibase.End)
+			log.Printf("%vWARN %v is invalid format. must like a=b %v", ctk.Red, s, ctk.End)
 			continue
 		}
 
 		pair := strings.Split(s, "=")
 		path := pair[0]
 		if usedPath.Contains(path) {
-			log.Printf("%vWARN path /%v already bind. %v", cuibase.Red, path, cuibase.End)
+			log.Printf("%vWARN path /%v already bind. %v", ctk.Red, path, ctk.End)
 			continue
 		}
 		pathDirMap[path] = pair[1]
@@ -174,7 +174,7 @@ func main() {
 		log.Fatalf("Please input correct port [1, 65535]. now: %v", port)
 	}
 	if port < 1024 {
-		log.Printf("%vWARN: [1-1024] need run by root user.%v", cuibase.Red, cuibase.End)
+		log.Printf("%vWARN: [1-1024] need run by root user.%v", ctk.Red, ctk.End)
 	}
 	internalIP = getInternalIP()
 
@@ -184,7 +184,6 @@ func main() {
 	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	// TODO template bind button
 	bindPathAndStatic("/favicon.ico", faviconIco)
 	bindPathAndStatic("/h", homeHtml)
 	bindPathAndStatic("/up", uploadHtml)

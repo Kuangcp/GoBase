@@ -79,7 +79,6 @@ func handleToZh(params []string) {
 	handleTranslation(params, "en", "zh")
 }
 
-// FIXME 翻译 负载均衡 会导致 zsh 5.8.1 发生 core dump
 func handleToEn(params []string) {
 	handleTranslation(params, "zh", "en")
 }

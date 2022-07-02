@@ -32,7 +32,7 @@ func main() {
 	invokeWithBool(showConfig, func() {
 		fmt.Println(configFile)
 		config, err := loadConfig()
-		cuibase.CheckIfError(err)
+		ctk.CheckIfError(err)
 		logger.Info("period:", config.CheckPeriod, "retention:", config.Retention)
 	})
 
@@ -182,7 +182,7 @@ func ListTrashFiles() {
 	currentNano := time.Now().UnixNano()
 	if len(items) != 0 {
 		fmt.Printf("%v%-3s       %-17s %-10s %s%v\n",
-			cuibase.Cyan, "No.", "DeleteTime", "Remaining", "File", cuibase.End)
+			ctk.Cyan, "No.", "DeleteTime", "Remaining", "File", ctk.End)
 	}
 
 	if listOrder > 0 {

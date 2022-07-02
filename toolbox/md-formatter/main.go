@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/kuangcp/gobase/pkg/cuibase"
 	"github.com/wonderivan/logger"
 )
@@ -63,17 +62,17 @@ var (
 	titleReplace *strings.Replacer
 )
 
-var info = cuibase.HelpInfo{
+var info = ctk.HelpInfo{
 	Description:   "Format markdown file, generate catalog",
 	Version:       "1.0.3",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -3,
 	DoubleFlagLen: -3,
 	ValueLen:      -5,
-	Flags: []cuibase.ParamVO{
+	Flags: []ctk.ParamVO{
 		{Short: "-h", Comment: "Help info"},
 	},
-	Options: []cuibase.ParamVO{
+	Options: []ctk.ParamVO{
 		{Short: "", Value: "file", Comment: "Refresh file catalog"},
 		{Short: "-d", Value: "dir", Comment: "Refresh file catalog that recursive dir, default current dir"},
 		{Short: "-mm", Value: "file", Comment: "Print mind map"},
@@ -325,11 +324,11 @@ func printMindMap(filename string) {
 // 更新指定目录的Git仓库中 发生变更 的文件
 func refreshChangeFile(dir string) {
 	r, err := git.PlainOpen(dir)
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	worktree, err := r.Worktree()
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	status, err := worktree.Status()
-	cuibase.CheckIfError(err)
+	ctk.CheckIfError(err)
 	if status.IsClean() {
 		return
 	}
