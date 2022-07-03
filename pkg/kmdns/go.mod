@@ -1,6 +1,6 @@
 module github.com/kuangcp/gobase/pkg/kmdns
 
-go 1.18
+go 1.16
 
 require (
 	github.com/pion/mdns v0.0.5
