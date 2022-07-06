@@ -442,6 +442,8 @@ func PrintKeyMap() {
 func findActualBoardMap(dev *InputDevice) (*InputDevice, []CapabilityCode) {
 	for _, codes := range dev.Capabilities {
 		for _, code := range codes {
+			//logger.Info(dev.Fn, dev.Name, code)
+			// 鼠标 键盘 均有该事件code
 			if code.Name == "KEY_ESC" {
 				return dev, codes
 			}
@@ -500,7 +502,7 @@ func SelectDevice() (string, error) {
 		Label:     "Listen which device",
 		Items:     peppers,
 		Templates: templates,
-		Size:      4,
+		Size:      7,
 		Searcher:  searcher,
 	}
 
