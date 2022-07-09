@@ -7,7 +7,7 @@ import (
 )
 
 func TestReadLines(t *testing.T) {
-	lines := ReadLines[int]("test.tsv", func(s string) bool {
+	lines := ReadLines[int]("1.test.tsv", func(s string) bool {
 		return true
 	}, func(s string) int {
 		sp := strings.Split(s, "\t")
@@ -15,7 +15,7 @@ func TestReadLines(t *testing.T) {
 	})
 	fmt.Println(lines)
 
-	linev := ReadTsvLines("test.tsv")
+	linev := ReadTsvLines("1.test.tsv")
 	for i := range linev {
 		fmt.Println(len(linev[i]))
 	}
