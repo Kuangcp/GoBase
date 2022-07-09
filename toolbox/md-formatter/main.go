@@ -12,7 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/go-git/go-git/v5"
+	"github.com/kuangcp/gobase/pkg/ctk"
 	"github.com/wonderivan/logger"
 )
 

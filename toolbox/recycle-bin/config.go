@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 )
 
 const (

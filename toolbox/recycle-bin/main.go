@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 	"github.com/kuangcp/logger"
 	"github.com/manifoldco/promptui"
 )

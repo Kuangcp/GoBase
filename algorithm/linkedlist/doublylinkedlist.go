@@ -3,7 +3,7 @@ package linkedlist
 import (
 	"log"
 
-	"github.com/kuangcp/gobase/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctk"
 )
 
 type DoublyLinkedList struct {
@@ -195,9 +195,9 @@ func (list *DoublyLinkedList) PrintListWithDetail(needDetail bool) {
 	for {
 		if needDetail {
 			log.Println(
-				cuibase.Green, "pre=", node.pre, cuibase.End,
+				ctk.Green, "pre=", node.pre, ctk.End,
 				"data=", node.data,
-				cuibase.Green, "next=", node.next, cuibase.End)
+				ctk.Green, "next=", node.next, ctk.End)
 		} else {
 			log.Println(node.data)
 		}
