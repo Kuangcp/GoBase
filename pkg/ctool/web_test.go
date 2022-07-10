@@ -26,4 +26,6 @@ func TestCheck(t *testing.T) {
 	with := SuccessWith(B{A: "ifdjsifjds"})
 	marshal, _ := json.Marshal(with)
 	fmt.Println(string(marshal))
+
+	fmt.Println(with.JSONStr(), string([]byte{}))
 }

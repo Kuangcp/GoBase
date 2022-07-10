@@ -1,5 +1,10 @@
 package ctool
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 const (
 	SUCCESS = 0
 	FAILED  = 1
@@ -34,4 +39,17 @@ func (result ResultVO[any]) IsSuccess() bool {
 }
 func (result ResultVO[any]) IsFailed() bool {
 	return !result.IsSuccess()
+}
+
+func (result ResultVO[any]) JSON() []byte {
+	marshal, err := json.Marshal(result)
+	if err != nil {
+		fmt.Println(err)
+		return []byte{}
+	}
+	return marshal
+}
+
+func (result ResultVO[any]) JSONStr() string {
+	return string(result.JSON())
 }
