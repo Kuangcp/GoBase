@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"io/ioutil"
 	"net/http"
@@ -40,20 +41,25 @@ func (w *WebClient) Del(key string) error {
 	return nil
 }
 
-func (w *WebClient) Get(key string) (string, error) {
+func (w *WebClient) Get(key string) (ctool.ResultVO[string], error) {
 	fmtKey := url.QueryEscape(key)
 	resp, err := w.api.Get(w.buildPath(PathGet) + "?key=" + fmtKey)
 	if err != nil {
-		return "", err
+		return ctool.Failed[string](), err
 	}
 	defer resp.Body.Close()
 
 	bodyBt, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return ctool.Failed[string](), err
+	}
+	var r ctool.ResultVO[string]
+	err = json.Unmarshal(bodyBt, &r)
+	if err != nil {
+		return ctool.Failed[string](), err
 	}
 
-	return string(bodyBt), nil
+	return r, nil
 }
 
 func (w *WebClient) Set(key, val string) {

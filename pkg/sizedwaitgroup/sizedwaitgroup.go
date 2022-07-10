@@ -1,7 +1,7 @@
 // Based upon sync.WaitGroup, SizedWaitGroup allows to start multiple
 // routines and to wait for their end using the simple API.
 
-// SizedWaitGroup adds the feature of limiting the maximum number of
+// Package sizedwaitgroup SizedWaitGroup adds the feature of limiting the maximum number of
 // concurrently started routines. It could for example be used to start
 // multiples routines querying a database but without sending too much
 // queries in order to not overload the given database.
@@ -12,18 +12,21 @@ package sizedwaitgroup
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
+	"time"
 )
 
 // SizedWaitGroup has the same role and close to the
 // same API as the Golang sync.WaitGroup but adds a limit of
 // the amount of goroutines started concurrently.
 type SizedWaitGroup struct {
-	Size    int
-	Name    string
-	current chan struct{}
-	wg      sync.WaitGroup
-	queue   chan func()
+	Size        int
+	Name        string
+	current     chan struct{}
+	wg          sync.WaitGroup
+	queue       chan func()
+	futureQueue chan *Future
 }
 
 // New creates a SizedWaitGroup.
@@ -39,27 +42,82 @@ func NewWithName(limit int, name string) (*SizedWaitGroup, error) {
 	}
 
 	return &SizedWaitGroup{
-		Size:    limit,
-		Name:    name,
-		current: make(chan struct{}, limit),
-		queue:   make(chan func()),
-		wg:      sync.WaitGroup{},
+		Size:        limit,
+		Name:        name,
+		current:     make(chan struct{}, limit),
+		queue:       make(chan func()),
+		futureQueue: make(chan *Future),
+		wg:          sync.WaitGroup{},
 	}, nil
 }
 
 func NewWithQueue(limit int) (*SizedWaitGroup, error) {
 	group, err := NewWithName(limit, "")
-	go func() {
-		for task := range group.queue {
-			action := task
-			group.Add()
+	go group.QueuePool()
+	return group, err
+}
+
+func (s *SizedWaitGroup) QueuePool() {
+	for task := range s.queue {
+		action := task
+		s.Add()
+		go func() {
+			defer s.Done()
+			action()
+		}()
+	}
+}
+
+func NewWithFuture(limit int) (*SizedWaitGroup, error) {
+	group, err := New(limit)
+	go group.FuturePool()
+	return group, err
+}
+
+func (s *SizedWaitGroup) FuturePool() {
+	for task := range s.futureQueue {
+		future := task
+		s.Add()
+		if future.timeout.Nanoseconds() == 0 {
 			go func() {
-				defer group.Done()
-				action()
+				defer s.Done()
+				s.finishAction(future)
+			}()
+		} else {
+			// run action func with timeout
+			timeout, cancelFunc := context.WithTimeout(context.TODO(), future.timeout)
+			go func() {
+				go func(ctx context.Context) {
+					defer cancelFunc()
+					defer s.Done()
+
+					s.finishAction(future)
+				}(timeout)
+				select {
+				case <-timeout.Done():
+					if timeout.Err().Error() == "context deadline exceeded" {
+						log.Println("timeout")
+					}
+					return
+				}
 			}()
 		}
-	}()
-	return group, err
+	}
+}
+
+func (s *SizedWaitGroup) finishAction(future *Future) {
+	data, actionErr := future.Action()
+	future.SetData(data, actionErr)
+
+	if actionErr != nil {
+		if future.FailedFunc != nil {
+			future.FailedFunc(actionErr)
+		}
+	} else {
+		if future.SuccessFunc != nil {
+			future.SuccessFunc(data)
+		}
+	}
 }
 
 // Add increments the internal WaitGroup counter.
@@ -117,7 +175,23 @@ func (s *SizedWaitGroup) Run(action func()) {
 }
 
 func (s *SizedWaitGroup) Submit(action func()) {
-	go func() {
-		s.queue <- action
-	}()
+	s.queue <- action
+}
+
+func (s *SizedWaitGroup) SubmitFuture(action func() (interface{}, error),
+	success func(data interface{}), failed func(ex error)) *Future {
+	return s.SubmitFutureTimeout(time.Duration(0), action, success, failed)
+}
+
+func (s *SizedWaitGroup) SubmitFutureTimeout(timeout time.Duration, action func() (interface{}, error),
+	success func(data interface{}), failed func(ex error)) *Future {
+	future := &Future{
+		Action:      action,
+		timeout:     timeout,
+		SuccessFunc: success,
+		FailedFunc:  failed,
+		finish:      make(chan struct{}, 1),
+	}
+	s.futureQueue <- future
+	return future
 }
