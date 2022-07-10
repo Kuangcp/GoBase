@@ -5,12 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"sort"
 	"strings"
 
-	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/pkg/ctool"
 )
 
 //go:embed up.html
@@ -33,52 +32,16 @@ var (
 	videoFilePath = "/v"
 )
 
-type Value interface {
-	String() string
-	Set(string) error
-}
-
-type arrayFlags []string
-
-// Value ...
-func (i *arrayFlags) String() string {
-	return fmt.Sprint(*i)
-}
-
-// Set 方法是flag.Value接口, 设置flag Value的方法.
-// 通过多个flag指定的值， 所以我们追加到最终的数组上.
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, value)
-	return nil
-}
-
-var folderPair arrayFlags
+var folderPair ctool.ArrayFlags
 var pathDirMap = make(map[string]string)
-var usedPath = ctk.NewSet("f", "g", "h", "up", "e", "d")
-
-func getInternalIP() string {
-	address, err := net.InterfaceAddrs()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	for _, addr := range address {
-		if ipNet, ok := addr.(*net.IPNet); ok &&
-			!ipNet.IP.IsLoopback() &&
-			ipNet.IP.To4() != nil &&
-			strings.HasPrefix(ipNet.IP.String(), "192") {
-			return ipNet.IP.String()
-		}
-	}
-	return ""
-}
+var usedPath = ctool.NewSet("f", "g", "h", "up", "e", "d")
 
 func printStartUpLog() {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
-	log.Printf("%v/up%v  %v/up\n", ctk.Purple, ctk.End, innerURL)
+	log.Printf("%v/up%v  %v/up\n", ctool.Purple, ctool.End, innerURL)
 	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
-		ctk.Purple, ctk.End, innerURL)
-	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", ctk.Purple, ctk.End, innerURL)
+		ctool.Purple, ctool.End, innerURL)
+	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", ctool.Purple, ctool.End, innerURL)
 
 	// sort and print
 	var keys []string
@@ -97,10 +60,10 @@ func printFileAndImgGroup(host, path, filePath string) {
 	internal = strings.TrimRight(internal, "/")
 	local = strings.TrimRight(local, "/")
 
-	lineBuf := fmt.Sprintf("%v%-27v", ctk.Green, local)
+	lineBuf := fmt.Sprintf("%v%-27v", ctool.Green, local)
 	lineBuf += fmt.Sprintf("%-29v", fmt.Sprintf("%v", internal+imgFilePath))
 
-	log.Printf("%v %v %v", lineBuf, ctk.End, filePath)
+	log.Printf("%v %v %v", lineBuf, ctool.End, filePath)
 }
 
 func bindPathAndStatic(pattern, binContent string) {
@@ -112,17 +75,17 @@ func bindPathAndStatic(pattern, binContent string) {
 	})
 }
 
-var info = ctk.HelpInfo{
+var info = ctool.HelpInfo{
 	Description:   "Start static file web server on current path",
 	Version:       "1.0.10",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -2,
 	ValueLen:      -6,
-	Flags: []ctk.ParamVO{
+	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-g", BoolVar: &defaultHome, Comment: "default home page"},
 	},
-	Options: []ctk.ParamVO{
+	Options: []ctool.ParamVO{
 		{Short: "-p", Value: "port", Comment: "web server port"},
 		{Short: "-d", Value: "folder", Comment: "folder pair. like -d x=y "},
 	}}
@@ -137,14 +100,14 @@ func registerAllFolder() {
 	// new pair dir from param
 	for _, s := range folderPair {
 		if !strings.Contains(s, "=") {
-			log.Printf("%vWARN %v is invalid format. must like a=b %v", ctk.Red, s, ctk.End)
+			log.Printf("%vWARN %v is invalid format. must like a=b %v", ctool.Red, s, ctool.End)
 			continue
 		}
 
 		pair := strings.Split(s, "=")
 		path := pair[0]
 		if usedPath.Contains(path) {
-			log.Printf("%vWARN path /%v already bind. %v", ctk.Red, path, ctk.End)
+			log.Printf("%vWARN path /%v already bind. %v", ctool.Red, path, ctool.End)
 			continue
 		}
 		pathDirMap[path] = pair[1]
@@ -174,9 +137,9 @@ func main() {
 		log.Fatalf("Please input correct port [1, 65535]. now: %v", port)
 	}
 	if port < 1024 {
-		log.Printf("%vWARN: [1-1024] need run by root user.%v", ctk.Red, ctk.End)
+		log.Printf("%vWARN: [1-1024] need run by root user.%v", ctool.Red, ctool.End)
 	}
-	internalIP = getInternalIP()
+	internalIP = ctool.GetInternalIP()
 
 	registerAllFolder()
 	printStartUpLog()

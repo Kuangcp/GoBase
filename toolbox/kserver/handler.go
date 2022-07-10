@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/pkg/ctool"
 )
 
-var imgSuffixSet = ctk.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
-var videoSuffixSet = ctk.NewSet(".mp4")
+var imgSuffixSet = ctool.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
+var videoSuffixSet = ctool.NewSet(".mp4")
 
 type MediaParam struct {
 	rawSize bool
@@ -174,7 +174,7 @@ func sortByModTime(dir []os.DirEntry) {
 	})
 }
 
-func matchSuffix(set *ctk.Set, fileName string) bool {
+func matchSuffix(set *ctool.Set[string], fileName string) bool {
 	idx := strings.LastIndex(fileName, ".")
 	if idx == -1 {
 		return true
@@ -184,7 +184,7 @@ func matchSuffix(set *ctk.Set, fileName string) bool {
 	return set.Contains(suffixType)
 }
 
-func buildMediaList(dir []os.DirEntry, count int, set *ctk.Set, tagFunc func(string) string) string {
+func buildMediaList(dir []os.DirEntry, count int, set *ctool.Set[string], tagFunc func(string) string) string {
 	sortByModTime(dir)
 	mediaBody := ""
 	mediaCount := 0
