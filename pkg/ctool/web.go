@@ -13,7 +13,7 @@ const (
 type (
 	ResultVO[T any] struct {
 		Data T      `json:"data"`
-		Code int8   `json:"code"`
+		Code int    `json:"code"`
 		Msg  string `json:"msg"`
 	}
 )
@@ -28,6 +28,9 @@ func Success[T any]() ResultVO[T] {
 
 func Failed[T any]() ResultVO[T] {
 	return ResultVO[T]{Code: FAILED}
+}
+func Fail[T any](code int, msg string) ResultVO[T] {
+	return ResultVO[T]{Msg: msg, Code: code}
 }
 
 func FailedWithMsg[T any](msg string) ResultVO[T] {

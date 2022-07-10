@@ -14,7 +14,7 @@ func init() {
 }
 
 func TestServer(t *testing.T) {
-	levelDB, err := NewServer(&Options{Port: 9066, DBPath: "test-db"})
+	levelDB, err := NewServer(&Options{Port: 33742, DBPath: "test-db"})
 	if err != nil {
 		log.Println(err)
 		return
@@ -37,9 +37,9 @@ func TestWebClient_Sets(t *testing.T) {
 }
 
 func TestWebClient_Get(t *testing.T) {
-	val, err := client.Get("test-a")
+	val, err := client.Get("test-a1")
 	if err != nil {
-		t.Failed()
+		fmt.Println(err)
 	}
 	fmt.Println(val)
 }

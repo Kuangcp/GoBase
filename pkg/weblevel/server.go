@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -73,10 +74,10 @@ func (w *WebLevel) Bootstrap() {
 		key := query.Get("key")
 		val, err := w.get(key)
 		if err != nil {
-			//writer.Write([]byte(NONE))
+			writer.Write(ctool.Failed[string]().JSON())
 			return
 		}
-		writer.Write([]byte(val))
+		writer.Write(ctool.SuccessWith(val).JSON())
 	})
 
 	// TODO /sets 错请求成 //sets body会被清空 url参数会保留
