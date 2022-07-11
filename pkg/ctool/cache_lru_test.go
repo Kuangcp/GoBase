@@ -12,12 +12,34 @@ import (
 func TestMaxSize(t *testing.T) {
 	a := assert.New(t)
 
-	cache := NewLRUCache(2)
-	cache.Save("1", "1")
+	cache := NewLRUCache[string](2)
+	cache.Save("1", "")
+	a.Equal(cache.Get("1"), "")
 	cache.Save("2", "2")
 	cache.Save("3", "3")
 
-	a.Nil(cache.Get("1"))
+	a.Equal(cache.Get("1"), "")
+
+	a.Equal(cache.Size(), 2)
+	a.Equal(cache.Get("2"), "2")
+	a.Equal(cache.Get("3"), "3")
+}
+
+func TestMaxSize2(t *testing.T) {
+	a := assert.New(t)
+
+	type vo struct {
+		id   string
+		name string
+	}
+	cache := NewLRUCache[vo](2)
+	cache.Save("1", vo{id: "???ss"})
+	a.Equal(cache.Get("1"), vo{id: "???ss"})
+
+	cache.Save("2", vo{})
+	cache.Save("3", vo{})
+
+	a.Equal(cache.Get("1"), vo{})
 
 	a.Equal(cache.Size(), 2)
 	a.Equal(cache.Get("2"), "2")
@@ -27,7 +49,7 @@ func TestMaxSize(t *testing.T) {
 func TestLRU(t *testing.T) {
 	a := assert.New(t)
 
-	cache := NewLRUCache(2)
+	cache := NewLRUCache[string](2)
 	cache.Save("1", "1")
 	cache.Save("2", "2")
 	cache.Get("1")
@@ -43,7 +65,7 @@ func TestConcurrency(t *testing.T) {
 	a := assert.New(t)
 
 	maxSize := 5
-	cache := NewLRUCache(maxSize)
+	cache := NewLRUCache[string](maxSize)
 	for i := 0; i < 50; i++ {
 		go func() {
 			for i := 0; i < 200000; i++ {

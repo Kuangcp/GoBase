@@ -22,12 +22,12 @@ func (car *Car) String() string {
 }
 
 func TestLinkedList_Add(t *testing.T) {
-	list := NewEmptyDoublyLinkedList()
+	list := NewEmptyDoublyLinkedList[int]()
 	for i := 0; i < 4; i++ {
 		list.Add(i)
 	}
 	node := list.Find(2)
-	re := node.data.(int) + 2
+	re := node.data + 2
 	log.Println(node.data, re)
 
 	list.PrintList()
@@ -35,17 +35,17 @@ func TestLinkedList_Add(t *testing.T) {
 	list.PrintList()
 	list.Clear()
 
+	list2 := NewEmptyDoublyLinkedList[*Car]()
 	for i := 0; i < 5; i++ {
-		list.Add(NewCar(i, 4, "benz"))
+		list2.Add(NewCar(i, 4, "benz"))
 	}
-	list.PrintList()
-
-	car := list.Find(NewCar(1, 4, "benz"))
+	list2.PrintList()
+	car := list2.Find(NewCar(1, 4, "benz"))
 	log.Println(car)
 }
 
 func TestLinkedList_Reverse(t *testing.T) {
-	list := NewEmptyDoublyLinkedList()
+	list := NewEmptyDoublyLinkedList[int]()
 	for i := 0; i < 2; i++ {
 		list.Add(i)
 	}
@@ -59,7 +59,7 @@ func TestLinkedList_Reverse(t *testing.T) {
 }
 
 func TestAddRemove(t *testing.T) {
-	list := NewEmptyDoublyLinkedList()
+	list := NewEmptyDoublyLinkedList[int]()
 	for i := 0; i < 3; i++ {
 		list.Add(i)
 	}

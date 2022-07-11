@@ -4,39 +4,39 @@ import (
 	"log"
 )
 
-type DoublyLinkedList struct {
-	head *DoublyLinkedNode
-	tail *DoublyLinkedNode
+type DoublyLinkedList[T comparable] struct {
+	head *DoublyLinkedNode[T]
+	tail *DoublyLinkedNode[T]
 	len  int
 }
 
-type DoublyLinkedNode struct {
-	pre  *DoublyLinkedNode
-	data interface{}
-	next *DoublyLinkedNode
+type DoublyLinkedNode[T comparable] struct {
+	pre  *DoublyLinkedNode[T]
+	data T
+	next *DoublyLinkedNode[T]
 }
 
-func NewEmptyDoublyLinkedList() *DoublyLinkedList {
-	return &DoublyLinkedList{head: nil, tail: nil}
+func NewEmptyDoublyLinkedList[T comparable]() *DoublyLinkedList[T] {
+	return &DoublyLinkedList[T]{head: nil, tail: nil}
 }
 
-func NewDoublyLinkedList(head, tail *DoublyLinkedNode) *DoublyLinkedList {
-	return &DoublyLinkedList{head: head, tail: tail}
+func NewDoublyLinkedList[T comparable](head, tail *DoublyLinkedNode[T]) *DoublyLinkedList[T] {
+	return &DoublyLinkedList[T]{head: head, tail: tail}
 }
 
-func NewEmptyDoublyLinkedNode(data interface{}) *DoublyLinkedNode {
-	return &DoublyLinkedNode{pre: nil, data: data, next: nil}
+func NewEmptyDoublyLinkedNode[T comparable](data T) *DoublyLinkedNode[T] {
+	return &DoublyLinkedNode[T]{pre: nil, data: data, next: nil}
 }
 
-func NewDoublyLinkedNode(pre, next *DoublyLinkedNode, data interface{}) *DoublyLinkedNode {
-	return &DoublyLinkedNode{pre: pre, data: data, next: next}
+func NewDoublyLinkedNode[T comparable](pre, next *DoublyLinkedNode[T], data T) *DoublyLinkedNode[T] {
+	return &DoublyLinkedNode[T]{pre: pre, data: data, next: next}
 }
 
-func (list *DoublyLinkedList) IsEmpty() bool {
+func (list *DoublyLinkedList[T]) IsEmpty() bool {
 	return list.head == nil
 }
 
-func (list *DoublyLinkedList) AddToHead(data interface{}) {
+func (list *DoublyLinkedList[T]) AddToHead(data T) {
 	node := NewEmptyDoublyLinkedNode(data)
 	if list.head == nil {
 		list.head = node
@@ -50,8 +50,8 @@ func (list *DoublyLinkedList) AddToHead(data interface{}) {
 }
 
 // Add to tail
-func (list *DoublyLinkedList) Add(data interface{}) {
-	node := NewEmptyDoublyLinkedNode(data)
+func (list *DoublyLinkedList[T]) Add(data T) {
+	node := NewEmptyDoublyLinkedNode[T](data)
 	if list.head == nil {
 		list.head = node
 		list.tail = node
@@ -63,7 +63,7 @@ func (list *DoublyLinkedList) Add(data interface{}) {
 	list.len++
 }
 
-func (list *DoublyLinkedList) Find(data interface{}) *DoublyLinkedNode {
+func (list *DoublyLinkedList[T]) Find(data T) *DoublyLinkedNode[T] {
 	if list.IsEmpty() {
 		return nil
 	}
@@ -82,13 +82,13 @@ func (list *DoublyLinkedList) Find(data interface{}) *DoublyLinkedNode {
 	return nil
 }
 
-func (list *DoublyLinkedList) Clear() {
+func (list *DoublyLinkedList[T]) Clear() {
 	list.head = nil
 	list.tail = nil
 	list.len = 0
 }
 
-func (list *DoublyLinkedList) RemoveTail() {
+func (list *DoublyLinkedList[T]) RemoveTail() {
 	if list.IsEmpty() {
 		return
 	}
@@ -103,7 +103,7 @@ func (list *DoublyLinkedList) RemoveTail() {
 	list.len--
 }
 
-func (list *DoublyLinkedList) RemoveNode(node *DoublyLinkedNode) {
+func (list *DoublyLinkedList[T]) RemoveNode(node *DoublyLinkedNode[T]) {
 	if node == nil {
 		return
 	}
@@ -134,7 +134,7 @@ func (list *DoublyLinkedList) RemoveNode(node *DoublyLinkedNode) {
 	list.len--
 }
 
-func (list *DoublyLinkedList) Remove(data interface{}) {
+func (list *DoublyLinkedList[T]) Remove(data T) {
 	if list.IsEmpty() {
 		return
 	}
@@ -144,7 +144,7 @@ func (list *DoublyLinkedList) Remove(data interface{}) {
 }
 
 // 单链表反转 三个指针前进
-func (list *DoublyLinkedList) ReverseBySingle() *DoublyLinkedList {
+func (list *DoublyLinkedList[T]) ReverseBySingle() *DoublyLinkedList[T] {
 	if list.IsEmpty() || list.len == 1 {
 		return list
 	}
@@ -177,11 +177,11 @@ func (list *DoublyLinkedList) ReverseBySingle() *DoublyLinkedList {
 	}
 }
 
-func (list *DoublyLinkedList) PrintList() {
+func (list *DoublyLinkedList[T]) PrintList() {
 	list.PrintListWithDetail(false)
 }
 
-func (list *DoublyLinkedList) PrintListWithDetail(needDetail bool) {
+func (list *DoublyLinkedList[T]) PrintListWithDetail(needDetail bool) {
 	if list.IsEmpty() {
 		log.Println("list is empty")
 		return
