@@ -1,6 +1,7 @@
 package ctool
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"testing"
@@ -66,4 +67,17 @@ func TestAddRemove(t *testing.T) {
 	list.PrintList()
 	list.Remove(1)
 	list.PrintListWithDetail(true)
+}
+
+func TestAddRemoveS(t *testing.T) {
+	list := NewEmptyDoublyLinkedList[Car]()
+	for i := 0; i < 3; i++ {
+		list.Add(Car{no: 12, brand: "io"})
+	}
+	list.PrintList()
+	fmt.Println("----", list.len)
+	list.Remove(Car{no: 12, brand: "io"})
+	list.Remove(Car{no: 12})
+	list.PrintListWithDetail(true)
+	fmt.Println("----", list.len)
 }

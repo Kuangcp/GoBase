@@ -2,33 +2,34 @@ package ctool
 
 import (
 	"log"
+	"reflect"
 )
 
-type DoublyLinkedList[T comparable] struct {
+type DoublyLinkedList[T any] struct {
 	head *DoublyLinkedNode[T]
 	tail *DoublyLinkedNode[T]
 	len  int
 }
 
-type DoublyLinkedNode[T comparable] struct {
+type DoublyLinkedNode[T any] struct {
 	pre  *DoublyLinkedNode[T]
 	data T
 	next *DoublyLinkedNode[T]
 }
 
-func NewEmptyDoublyLinkedList[T comparable]() *DoublyLinkedList[T] {
+func NewEmptyDoublyLinkedList[T any]() *DoublyLinkedList[T] {
 	return &DoublyLinkedList[T]{head: nil, tail: nil}
 }
 
-func NewDoublyLinkedList[T comparable](head, tail *DoublyLinkedNode[T]) *DoublyLinkedList[T] {
+func NewDoublyLinkedList[T any](head, tail *DoublyLinkedNode[T]) *DoublyLinkedList[T] {
 	return &DoublyLinkedList[T]{head: head, tail: tail}
 }
 
-func NewEmptyDoublyLinkedNode[T comparable](data T) *DoublyLinkedNode[T] {
+func NewEmptyDoublyLinkedNode[T any](data T) *DoublyLinkedNode[T] {
 	return &DoublyLinkedNode[T]{pre: nil, data: data, next: nil}
 }
 
-func NewDoublyLinkedNode[T comparable](pre, next *DoublyLinkedNode[T], data T) *DoublyLinkedNode[T] {
+func NewDoublyLinkedNode[T any](pre, next *DoublyLinkedNode[T], data T) *DoublyLinkedNode[T] {
 	return &DoublyLinkedNode[T]{pre: pre, data: data, next: next}
 }
 
@@ -70,7 +71,8 @@ func (list *DoublyLinkedList[T]) Find(data T) *DoublyLinkedNode[T] {
 
 	node := list.head
 	for {
-		if node.data == data {
+		//  node.data == data
+		if reflect.DeepEqual(node.data, data) {
 			return node
 		}
 		if node.next != nil {

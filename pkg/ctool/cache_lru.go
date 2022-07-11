@@ -5,26 +5,26 @@ import (
 )
 
 type (
-	Cache[T comparable] interface {
+	Cache[T any] interface {
 		Get(string) T
 		Save(string, T)
 		MaxSize() int
 		Size() int
 	}
 
-	LRUCache[T comparable] struct {
+	LRUCache[T any] struct {
 		maxSize int
 		pool    map[string]*DoublyLinkedNode[Entry[T]]
 		list    *DoublyLinkedList[Entry[T]]
 		mutex   sync.RWMutex
 	}
-	Entry[T comparable] struct {
+	Entry[T any] struct {
 		key   string
 		value T
 	}
 )
 
-func NewLRUCache[T comparable](maxSize int) *LRUCache[T] {
+func NewLRUCache[T any](maxSize int) *LRUCache[T] {
 	cachePool := make(map[string]*DoublyLinkedNode[Entry[T]])
 	cacheQueue := NewEmptyDoublyLinkedList[Entry[T]]()
 	return &LRUCache[T]{maxSize: maxSize, pool: cachePool, list: cacheQueue}

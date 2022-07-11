@@ -25,13 +25,14 @@ func TestMaxSize(t *testing.T) {
 	a.Equal(cache.Get("3"), "3")
 }
 
+type vo struct {
+	id   string
+	name string
+}
+
 func TestMaxSize2(t *testing.T) {
 	a := assert.New(t)
 
-	type vo struct {
-		id   string
-		name string
-	}
 	cache := NewLRUCache[vo](2)
 	cache.Save("1", vo{id: "???ss"})
 	a.Equal(cache.Get("1"), vo{id: "???ss"})
@@ -44,6 +45,15 @@ func TestMaxSize2(t *testing.T) {
 	a.Equal(cache.Size(), 2)
 	a.Equal(cache.Get("2"), "2")
 	a.Equal(cache.Get("3"), "3")
+}
+
+func TestArray(t *testing.T) {
+	// 要求实现 comparable 但是结构体数组无法实现 comparable， 只能 reflect.DeepEqual(v1, v2)来比较
+	cache := NewLRUCache[[]vo](2)
+	cache.Save("x", []vo{{id: "xx"}})
+
+	vos := cache.Get("x")
+	fmt.Println(vos)
 }
 
 func TestLRU(t *testing.T) {
