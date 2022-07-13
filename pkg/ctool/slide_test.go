@@ -25,7 +25,7 @@ func TestRateLimiter(t *testing.T) {
 	for range ticker.C {
 		fmt.Println()
 		//log.Println("[", limiter.slideQueue.Len(), "]")
-		log.Println("[", limiter.queueState(), "]")
+		log.Println("[", limiter.QueueState(), "]")
 	}
 }
 
@@ -33,7 +33,7 @@ func producer(limiter *PeriodRateLimiter) {
 	ticker := time.NewTicker(time.Millisecond * 37)
 	for range ticker.C {
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(70)+37))
-		acquire := limiter.acquire()
+		acquire := limiter.Acquire()
 		if acquire {
 			fmt.Printf("%v▶%v", "\033[0;32m", "\033[0m")
 		} else {
