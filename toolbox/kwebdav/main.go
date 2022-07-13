@@ -22,7 +22,7 @@ func init() {
 	flag.IntVar(&port, "p", 33311, "port")
 	flag.StringVar(&user, "user", "gin", "username")
 	flag.StringVar(&pwd, "pwd", "jiushi", "pwd")
-	flag.Var(&dirPair, "d", "dir eg: x=/path/to")
+	flag.Var(&dirPair, "d", "webdav dir(default current dir). eg: x=/path/to")
 }
 
 func main() {

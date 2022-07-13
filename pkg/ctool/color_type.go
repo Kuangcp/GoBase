@@ -23,18 +23,18 @@ const (
 )
 
 // Print content with color
-func (t Color) Print(content string) string {
-	return string(t) + content + string(End)
+func (t Color) Print(content interface{}) string {
+	return fmt.Sprintf("%s%v%s", string(t), content, string(End))
 }
 
 // Print content with color no end
-func (t Color) PrintNoEnd(content string) string {
-	return string(t) + content
+func (t Color) PrintNoEnd(content interface{}) string {
+	return fmt.Sprintf("%s%v", string(t), content)
 }
 
 // Print content with color
-func (t Color) Println(content string) string {
-	return string(t) + content + string(End) + "\n"
+func (t Color) Println(content interface{}) string {
+	return t.Print(content) + "\n"
 }
 
 // Printf content with color and format

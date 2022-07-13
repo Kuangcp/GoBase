@@ -34,7 +34,7 @@ var (
 
 var folderPair ctool.ArrayFlags
 var pathDirMap = make(map[string]string)
-var usedPath = ctool.NewSet("f", "g", "h", "up", "e", "d")
+var usedPath = ctool.NewSet[string]("f", "g", "h", "up", "e", "d")
 
 func printStartUpLog() {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
