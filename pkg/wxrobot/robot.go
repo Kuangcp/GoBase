@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 )
 
@@ -56,7 +57,7 @@ type (
 		secretKey   string
 		requestLog  bool
 		mockRequest bool
-		limiter     *PeriodRateLimiter
+		limiter     *ctool.PeriodRateLimiter
 		client      *http.Client
 	}
 )
@@ -64,7 +65,7 @@ type (
 func NewRobot(secretKey string) Robot {
 	return &WeWorkRobot{
 		secretKey: secretKey,
-		limiter:   NewMinuteLimiter(19),
+		limiter:   ctool.NewMinuteLimiter(19),
 		client:    &http.Client{},
 	}
 }
@@ -139,7 +140,7 @@ func (r *WeWorkRobot) MarkDownOrange(content string) string {
 
 // SendMarkDown markdown消息
 func (r *WeWorkRobot) SendMarkDown(content string) error {
-	if !r.limiter.acquire() {
+	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
 	}
 	msg := Msg{MsgType: "markdown", Markdown: &Content{Content: content}}
@@ -156,7 +157,7 @@ func (r *WeWorkRobot) SendMarkDown(content string) error {
 
 // SendText 文本消息
 func (r *WeWorkRobot) SendText(content Content) error {
-	if !r.limiter.acquire() {
+	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
 	}
 
@@ -175,7 +176,7 @@ func (r *WeWorkRobot) SendText(content Content) error {
 // SendNews 发送图文消息
 //  注意：单个图文时能看到 title 和 description, 多个时只能看到 title
 func (r *WeWorkRobot) SendNews(articles ...Article) error {
-	if !r.limiter.acquire() {
+	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
 	}
 
@@ -196,7 +197,7 @@ func (r *WeWorkRobot) SendNews(articles ...Article) error {
 
 // SendImageByFile 发送图片
 func (r *WeWorkRobot) SendImageByFile(filePath string) error {
-	if !r.limiter.acquire() {
+	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
 	}
 
@@ -226,7 +227,7 @@ func buildImgFileMd5(img []byte) string {
 // SendImageByBytes 发送图片
 //  图片（base64编码前）最大不能超过2M，支持JPG,PNG格式
 func (r *WeWorkRobot) SendImageByBytes(img []byte) error {
-	if !r.limiter.acquire() {
+	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
 	}
 

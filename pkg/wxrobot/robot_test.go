@@ -8,11 +8,10 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"github.com/kuangcp/logger"
 )
 
-var appKey = os.Getenv("appkey")
+//var appKey = os.Getenv("appkey")
+var appKey = "ec80ba3f-9b61-4130-aee9-b62a454834a6" // 机器人群 机器人
 
 func TestText(t *testing.T) {
 	robot := NewRobot(appKey)
@@ -31,7 +30,7 @@ func TestTextWithLimiter(t *testing.T) {
 	go loopSend(robot)
 	wxrobot := robot.(*WeWorkRobot)
 	for range time.NewTicker(time.Second).C {
-		log.Println(wxrobot.limiter.queueState())
+		log.Println(wxrobot.limiter.QueueState())
 	}
 }
 
@@ -47,9 +46,8 @@ func loopSend(robot Robot) {
 
 func TestArticle(t *testing.T) {
 	robot := NewRobot(appKey)
-	logger.Info(robot)
 	robot.MockRequest()
-	logger.Info(robot)
+	robot.ShowRequestLog()
 
 	umlArti := Article{Title: "UML", Description: "UML 构图", URL: "https://blog.csdn.net/simonezhlx/article/details/8855297", PicURL: "https://img-blog.csdn.net/20130426171100149"}
 	blogArti := Article{Title: "Spring", Description: "从设计角度，深入分析 Spring 循环依赖的解决思路", URL: "https://juejin.cn/post/6958989396917895205", PicURL: "https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/5a690e0622054ed1a5463751f300c815~tplv-k3u1fbpfcp-zoom-crop-mark:1304:1304:1304:734.image"}
