@@ -1,4 +1,4 @@
-package sizedwaitgroup
+package sizedpool
 
 import (
 	"errors"
