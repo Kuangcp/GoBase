@@ -1,6 +1,8 @@
 package mongodb
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_connect(t *testing.T) {
 	connect()

@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/kuangcp/logger"
@@ -11,10 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-
 func connect() {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
-	log.Print(client, err)
+	logger.Info(client, err)
 	ctx, caf := context.WithTimeout(context.Background(), 20*time.Second)
 	caf()
 	err = client.Ping(ctx, readpref.Primary())
