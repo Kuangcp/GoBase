@@ -14,7 +14,7 @@ import (
 )
 
 func TestWait(t *testing.T) {
-	swg, _ := New(10)
+	swg, _ := New(PoolOption{limit: 10})
 	var c uint32
 
 	for i := 0; i < 10000; i++ {
@@ -35,7 +35,7 @@ func TestWait(t *testing.T) {
 func TestThrottling(t *testing.T) {
 	var c uint32
 
-	swg, _ := New(4)
+	swg, _ := New(PoolOption{limit: 4})
 
 	if len(swg.current) != 0 {
 		t.Fatalf("the SizedWaitGroup should start with zero.")
@@ -58,7 +58,7 @@ func TestThrottling(t *testing.T) {
 
 func TestNoThrottling(t *testing.T) {
 	var c uint32
-	swg, _ := New(0)
+	swg, _ := New(PoolOption{limit: 0})
 	if len(swg.current) != 0 {
 		t.Fatalf("the SizedWaitGroup should start with zero.")
 	}
@@ -78,7 +78,7 @@ func TestNoThrottling(t *testing.T) {
 func TestAddWithContext(t *testing.T) {
 	ctx, cancelFunc := context.WithCancel(context.TODO())
 
-	swg, _ := New(1)
+	swg, _ := New(PoolOption{limit: 1})
 
 	if err := swg.AddWithContext(ctx); err != nil {
 		t.Fatalf("AddContext returned error: %v", err)
@@ -110,7 +110,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestSubmit(t *testing.T) {
-	run, _ := NewWithQueue(2)
+	run, _ := NewQueuePool(2)
 	for i := 0; i < 7; i++ {
 		fi := i
 		run.Submit(func() {
@@ -125,21 +125,23 @@ func TestSubmit(t *testing.T) {
 }
 
 func TestFuture(t *testing.T) {
-	future, _ := New(3)
+	future, _ := New(PoolOption{limit: 3})
 	var res []*Future
 	for i := 0; i < 80; i++ {
-		submitFuture := future.SubmitFutureTimeout(time.Second*6, func() (interface{}, error) {
-			time.Sleep(time.Second * 1)
-			sec := time.Now().Second()
-			if sec%2 == 0 {
-				return sec, nil
-			}
-			return nil, errors.New("oo")
-		}, func(data interface{}) {
-			log.Println("success:", data)
-		}, func(ex error) {
-			log.Println("fail:", ex)
-		})
+		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
+			fmt.Sprint(i),
+			func(ctx context.Context) (interface{}, error) {
+				time.Sleep(time.Second * 1)
+				sec := time.Now().Second()
+				if sec%2 == 0 {
+					return sec, nil
+				}
+				return nil, errors.New("oo")
+			}, func(data interface{}) {
+				log.Println("success:", data)
+			}, func(ex error) {
+				log.Println("fail:", ex)
+			}})
 		res = append(res, submitFuture)
 	}
 	time.Sleep(time.Second * 2)
@@ -150,53 +152,29 @@ func TestFuture(t *testing.T) {
 	}
 }
 
-func TestFutureVO(t *testing.T) {
-	type VO struct {
-		id   int
-		name string
-	}
-	future, _ := New(3)
-	var res []*Future
-	for i := 0; i < 20; i++ {
-		submitFuture := future.SubmitFutureTimeout(time.Second*6, func() (interface{}, error) {
-			time.Sleep(time.Second * 1)
-			sec := time.Now().Second()
-			if sec%3 != 0 {
-				return VO{id: sec, name: "test"}, nil
-			}
-			return nil, errors.New("oo")
-		}, func(data interface{}) {
-			vo := data.(VO)
-			log.Println("success:", vo.id, vo.name)
-		}, func(ex error) {
-			log.Println("fail:", ex)
-		})
-		res = append(res, submitFuture)
-	}
-	time.Sleep(time.Second * 2)
-	future.Wait()
-}
-
 func TestFutureGet(t *testing.T) {
 	type VO struct {
 		id   int
 		name string
 	}
-	future, _ := New(2)
+	future, _ := New(PoolOption{limit: 2})
 	var res []*Future
 	for i := 0; i < 7; i++ {
 		fi := i
-		submitFuture := future.SubmitFutureTimeout(time.Second*6, func() (interface{}, error) {
-			time.Sleep(time.Millisecond * time.Duration(rand.Intn(900)))
-			sec := time.Now().Second()
-			if sec%4 == 0 {
-				return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
-			}
-			return nil, errors.New(fmt.Sprint(fi, " exception"))
-		}, func(data interface{}) {
-			log.Println("su call", data)
-		}, func(ex error) {
-			log.Println("fa call", ex)
+		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
+			fmt.Sprint(fi),
+			func(ctx context.Context) (interface{}, error) {
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(900)))
+				sec := time.Now().Second()
+				if sec%4 == 0 {
+					return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
+				}
+				return nil, errors.New(fmt.Sprint(fi, " exception"))
+			}, func(data interface{}) {
+				log.Println("su call", data)
+			}, func(ex error) {
+				log.Println("fa call", ex)
+			},
 		})
 
 		res = append(res, submitFuture)
@@ -214,7 +192,7 @@ func TestFutureGet(t *testing.T) {
 		}
 	}()
 
-	go future.FuturePool()
+	go future.ExecFuturePool(nil)
 	http.ListenAndServe(":9090", nil)
 }
 
@@ -223,26 +201,29 @@ func TestFutureGetWithCancel(t *testing.T) {
 		id   int
 		name string
 	}
-	future, _ := NewWithFuture(6)
+	future, _ := NewFuturePool(PoolOption{limit: 6})
 
 	var res []*Future
 	for i := 0; i < 30; i++ {
 		fi := i
 
-		submitFuture := future.SubmitFuture(func() (interface{}, error) {
-			//submitFuture := future.SubmitFutureTimeout(time.Second*2, func() (interface{}, error) {
-			x := rand.Intn(900) + 1600
-			//fmt.Println(fi, x)
-			time.Sleep(time.Millisecond * time.Duration(x))
-			sec := time.Now().Second()
-			//if sec%4 == 0 {
-			return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
-			//}
-			//return nil, errors.New(fmt.Sprint(fi, " exception"))
-		}, func(data interface{}) {
-			log.Println("su call", data)
-		}, func(ex error) {
-			log.Println("fa call", ex)
+		submitFuture := future.SubmitFuture(Callable{
+			fmt.Sprint(fi),
+			func(ctx context.Context) (interface{}, error) {
+				//submitFuture := future.SubmitFutureTimeout(time.Second*2, func() (interface{}, error) {
+				x := rand.Intn(900) + 1600
+				//fmt.Println(fi, x)
+				time.Sleep(time.Millisecond * time.Duration(x))
+				sec := time.Now().Second()
+				//if sec%4 == 0 {
+				return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
+				//}
+				//return nil, errors.New(fmt.Sprint(fi, " exception"))
+			}, func(data interface{}) {
+				log.Println("su call", data)
+			}, func(ex error) {
+				log.Println("fa call", ex)
+			},
 		})
 
 		res = append(res, submitFuture)
@@ -262,15 +243,30 @@ func TestFutureGetWithCancel(t *testing.T) {
 
 	time.Sleep(time.Second * 5)
 	future.Wait()
-	//go func() {
-	//	time.Sleep(time.Second * 5)
-	//	fmt.Println("check")
-	//	for range time.NewTicker(time.Second).C {
-	//		for _, i := range res {
-	//			data, err := i.GetData()
-	//			fmt.Println(data, err)
-	//		}
-	//	}
-	//}()
-	//http.ListenAndServe(":9090", nil)
+}
+
+func TestNewTmpWithFuture(t *testing.T) {
+	log.Println("start")
+	//future, _ := NewTmpWithFuture(30, time.Second*4)
+	future, err := NewTmpFuturePool(PoolOption{limit: 30, timeout: time.Second * 7})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for i := 0; i < 3; i++ {
+		fi := i
+		future.SubmitFutureTimeout(time.Second*5, Callable{
+			fmt.Sprint(fi),
+			func(ctx context.Context) (interface{}, error) {
+				value := ctx.Value(TraceID)
+				log.Println(value, "start")
+				sl := rand.Intn(4) + 10
+				time.Sleep(time.Second * time.Duration(sl))
+				log.Println(value, "finish", sl)
+				return fi, nil
+			}, nil, nil,
+		})
+	}
+	future.Wait()
 }

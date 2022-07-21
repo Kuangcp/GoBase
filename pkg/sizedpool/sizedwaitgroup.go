@@ -1,12 +1,3 @@
-// Based upon sync.WaitGroup, SizedWaitGroup allows to start multiple
-// routines and to wait for their end using the simple API.
-
-// Package sizedwaitgroup SizedWaitGroup adds the feature of limiting the maximum number of
-// concurrently started routines. It could for example be used to start
-// multiples routines querying a database but without sending too much
-// queries in order to not overload the given database.
-//
-// Rémy Mathieu © 2016
 package sizedpool
 
 import (
@@ -26,28 +17,35 @@ type SizedWaitGroup struct {
 	wg          sync.WaitGroup
 	queue       chan func()
 	futureQueue chan *Future
+	tmpAbort    bool
+}
+
+type PoolOption struct {
+	limit   int
+	name    string
+	timeout time.Duration
 }
 
 // New creates a SizedWaitGroup.
 // The limit parameter is the maximum amount of
 // goroutines which can be started concurrently.
-func New(limit int) (*SizedWaitGroup, error) {
-	return NewWithName(limit, "")
-}
-
-func NewWithName(limit int, name string) (*SizedWaitGroup, error) {
-	if limit <= 0 {
+func New(option PoolOption) (*SizedWaitGroup, error) {
+	if option.limit <= 0 {
 		return nil, fmt.Errorf("limit must great than 0")
 	}
 
 	return &SizedWaitGroup{
-		Size:        limit,
-		Name:        name,
-		current:     make(chan struct{}, limit),
+		Size:        option.limit,
+		Name:        option.name,
+		current:     make(chan struct{}, option.limit),
 		queue:       make(chan func()),
 		futureQueue: make(chan *Future),
 		wg:          sync.WaitGroup{},
 	}, nil
+}
+
+func NewWithName(limit int, name string) (*SizedWaitGroup, error) {
+	return New(PoolOption{limit: limit, name: name})
 }
 
 // Add increments the internal WaitGroup counter.
@@ -102,26 +100,4 @@ func (s *SizedWaitGroup) Run(action func()) {
 		defer s.Done()
 		action()
 	}()
-}
-
-func (s *SizedWaitGroup) Submit(action func()) {
-	s.queue <- action
-}
-
-func (s *SizedWaitGroup) SubmitFuture(action func() (interface{}, error),
-	success func(data interface{}), failed func(ex error)) *Future {
-	return s.SubmitFutureTimeout(time.Duration(0), action, success, failed)
-}
-
-func (s *SizedWaitGroup) SubmitFutureTimeout(timeout time.Duration, action func() (interface{}, error),
-	success func(data interface{}), failed func(ex error)) *Future {
-	future := &Future{
-		Action:      action,
-		timeout:     timeout,
-		SuccessFunc: success,
-		FailedFunc:  failed,
-		finish:      make(chan struct{}, 1),
-	}
-	s.futureQueue <- future
-	return future
 }

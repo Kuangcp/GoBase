@@ -6,14 +6,12 @@ import (
 )
 
 type Future struct {
-	data        any // 由于 method 无法使用泛型，需要使用在结构体上会导致兼容和使用的复杂性，只能不使用泛型
-	ex          error
-	finish      chan struct{}
-	finishFlag  bool
-	timeout     time.Duration
-	Action      func() (interface{}, error)
-	FailedFunc  func(ex error)
-	SuccessFunc func(data interface{})
+	Callable
+	data       any // 由于 method 无法使用泛型，需要使用在结构体上会导致兼容和使用的复杂性，只能不使用泛型
+	ex         error
+	finish     chan struct{}
+	finishFlag bool
+	timeout    time.Duration
 }
 
 func NewFuture() *Future {
