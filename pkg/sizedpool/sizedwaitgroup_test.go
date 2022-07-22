@@ -14,7 +14,7 @@ import (
 )
 
 func TestWait(t *testing.T) {
-	swg, _ := New(PoolOption{limit: 10})
+	swg, _ := New(PoolOption{size: 10})
 	var c uint32
 
 	for i := 0; i < 10000; i++ {
@@ -35,7 +35,7 @@ func TestWait(t *testing.T) {
 func TestThrottling(t *testing.T) {
 	var c uint32
 
-	swg, _ := New(PoolOption{limit: 4})
+	swg, _ := New(PoolOption{size: 4})
 
 	if len(swg.current) != 0 {
 		t.Fatalf("the SizedWaitGroup should start with zero.")
@@ -58,7 +58,7 @@ func TestThrottling(t *testing.T) {
 
 func TestNoThrottling(t *testing.T) {
 	var c uint32
-	swg, _ := New(PoolOption{limit: 0})
+	swg, _ := New(PoolOption{size: 0})
 	if len(swg.current) != 0 {
 		t.Fatalf("the SizedWaitGroup should start with zero.")
 	}
@@ -78,7 +78,7 @@ func TestNoThrottling(t *testing.T) {
 func TestAddWithContext(t *testing.T) {
 	ctx, cancelFunc := context.WithCancel(context.TODO())
 
-	swg, _ := New(PoolOption{limit: 1})
+	swg, _ := New(PoolOption{size: 1})
 
 	if err := swg.AddWithContext(ctx); err != nil {
 		t.Fatalf("AddContext returned error: %v", err)
@@ -98,7 +98,7 @@ func TestRun(t *testing.T) {
 	for i := 0; i < 12; i++ {
 		index := strconv.Itoa(i)
 		swg.Run(func() {
-			fmt.Println(swg.Name, "run", index)
+			fmt.Println(swg.GetName(), "run", index)
 			time.Sleep(time.Second * 1)
 		})
 	}
@@ -109,7 +109,7 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func TestSubmit(t *testing.T) {
+func TestQueue(t *testing.T) {
 	run, _ := NewQueuePool(2)
 	for i := 0; i < 7; i++ {
 		fi := i
@@ -125,8 +125,8 @@ func TestSubmit(t *testing.T) {
 }
 
 func TestFuture(t *testing.T) {
-	future, _ := New(PoolOption{limit: 3})
-	var res []*Future
+	future, _ := New(PoolOption{size: 3})
+	var res []*FutureTask
 	for i := 0; i < 80; i++ {
 		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
 			fmt.Sprint(i),
@@ -157,8 +157,8 @@ func TestFutureGet(t *testing.T) {
 		id   int
 		name string
 	}
-	future, _ := New(PoolOption{limit: 2})
-	var res []*Future
+	future, _ := New(PoolOption{size: 2})
+	var res []*FutureTask
 	for i := 0; i < 7; i++ {
 		fi := i
 		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
@@ -201,9 +201,9 @@ func TestFutureGetWithCancel(t *testing.T) {
 		id   int
 		name string
 	}
-	future, _ := NewFuturePool(PoolOption{limit: 6})
+	future, _ := NewFuturePool(PoolOption{size: 6})
 
-	var res []*Future
+	var res []*FutureTask
 	for i := 0; i < 30; i++ {
 		fi := i
 
@@ -248,7 +248,7 @@ func TestFutureGetWithCancel(t *testing.T) {
 func TestNewTmpWithFuture(t *testing.T) {
 	log.Println("start")
 	//future, _ := NewTmpWithFuture(30, time.Second*4)
-	future, err := NewTmpFuturePool(PoolOption{limit: 30, timeout: time.Second * 7})
+	future, err := NewTmpFuturePool(PoolOption{size: 30, timeout: time.Second * 7})
 	if err != nil {
 		log.Println(err)
 		return

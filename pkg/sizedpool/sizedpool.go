@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func NewQueuePool(limit int) (*SizedWaitGroup, error) {
-	group, err := New(PoolOption{limit: limit})
+func NewQueuePool(limit int) (QueuePool, error) {
+	group, err := New(PoolOption{size: limit})
 	go group.ExecQueuePool()
 	return group, err
 }
@@ -104,7 +104,7 @@ func (s *SizedWaitGroup) ExecFuturePool(ctx context.Context) {
 	}
 }
 
-func (s *SizedWaitGroup) execAction(ctx context.Context, future *Future) {
+func (s *SizedWaitGroup) execAction(ctx context.Context, future *FutureTask) {
 	data, actionErr := future.ActionFunc(ctx)
 	future.SetData(data, actionErr)
 
@@ -123,15 +123,15 @@ func (s *SizedWaitGroup) Submit(action func()) {
 	s.queue <- action
 }
 
-func (s *SizedWaitGroup) SubmitFuture(callable Callable) *Future {
+func (s *SizedWaitGroup) SubmitFuture(callable Callable) *FutureTask {
 	return s.SubmitFutureTimeout(time.Duration(0), callable)
 }
 
-func (s *SizedWaitGroup) SubmitFutureTimeout(timeout time.Duration, callable Callable) *Future {
+func (s *SizedWaitGroup) SubmitFutureTimeout(timeout time.Duration, callable Callable) *FutureTask {
 	if s.tmpAbort {
 		return nil
 	}
-	future := &Future{
+	future := &FutureTask{
 		timeout: timeout,
 		finish:  make(chan struct{}, 1),
 	}

@@ -8,7 +8,7 @@ import (
 )
 
 // SizedWaitGroup has the same role and close to the
-// same API as the Golang sync.WaitGroup but adds a limit of
+// same API as the Golang sync.WaitGroup but adds a size of
 // the amount of goroutines started concurrently.
 type SizedWaitGroup struct {
 	Size        int
@@ -16,40 +16,48 @@ type SizedWaitGroup struct {
 	current     chan struct{}
 	wg          sync.WaitGroup
 	queue       chan func()
-	futureQueue chan *Future
+	futureQueue chan *FutureTask
 	tmpAbort    bool
 }
 
 type PoolOption struct {
-	limit   int
+	size    int
 	name    string
 	timeout time.Duration
 }
 
-// New creates a SizedWaitGroup.
-// The limit parameter is the maximum amount of
+// New creates a SizedWaitGroup. The most flexible way
+// The size parameter is the maximum amount of
 // goroutines which can be started concurrently.
 func New(option PoolOption) (*SizedWaitGroup, error) {
-	if option.limit <= 0 {
-		return nil, fmt.Errorf("limit must great than 0")
+	if option.size <= 0 {
+		return nil, fmt.Errorf("size must great than 0")
 	}
 
 	return &SizedWaitGroup{
-		Size:        option.limit,
+		Size:        option.size,
 		Name:        option.name,
-		current:     make(chan struct{}, option.limit),
+		current:     make(chan struct{}, option.size),
 		queue:       make(chan func()),
-		futureQueue: make(chan *Future),
+		futureQueue: make(chan *FutureTask),
 		wg:          sync.WaitGroup{},
 	}, nil
 }
 
-func NewWithName(limit int, name string) (*SizedWaitGroup, error) {
-	return New(PoolOption{limit: limit, name: name})
+func NewWithName(limit int, name string) (SizedWait, error) {
+	return New(PoolOption{size: limit, name: name})
+}
+
+func (s *SizedWaitGroup) GetName() string {
+	return s.Name
+}
+
+func (s *SizedWaitGroup) GetSize() int {
+	return s.Size
 }
 
 // Add increments the internal WaitGroup counter.
-// It can be blocking if the limit of spawned goroutines
+// It can be blocking if the size of spawned goroutines
 // has been reached. It will stop blocking when Done is
 // been called.
 //
@@ -59,7 +67,7 @@ func (s *SizedWaitGroup) Add() error {
 }
 
 // AddWithContext increments the internal WaitGroup counter.
-// It can be blocking if the limit of spawned goroutines
+// It can be blocking if the size of spawned goroutines
 // has been reached. It will stop blocking when Done is
 // been called, or when the context is canceled. Returns nil on
 // success or an error if the context is canceled before the lock

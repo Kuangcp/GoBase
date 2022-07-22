@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Future struct {
+type FutureTask struct {
 	Callable
 	data       any // 由于 method 无法使用泛型，需要使用在结构体上会导致兼容和使用的复杂性，只能不使用泛型
 	ex         error
@@ -14,17 +14,17 @@ type Future struct {
 	timeout    time.Duration
 }
 
-func NewFuture() *Future {
-	return &Future{}
+func NewFutureTask() *FutureTask {
+	return &FutureTask{}
 }
 
-func (f *Future) SetData(data interface{}, ex error) {
+func (f *FutureTask) SetData(data interface{}, ex error) {
 	f.data = data
 	f.ex = ex
 	f.finish <- struct{}{}
 }
 
-func (f *Future) GetData() (interface{}, error) {
+func (f *FutureTask) GetData() (interface{}, error) {
 	if f.finishFlag {
 		return f.data, f.ex
 	}
@@ -35,7 +35,7 @@ func (f *Future) GetData() (interface{}, error) {
 		return f.data, f.ex
 	}
 }
-func (f *Future) GetDataTimeout(timeout time.Duration) (interface{}, error) {
+func (f *FutureTask) GetDataTimeout(timeout time.Duration) (interface{}, error) {
 	if f.finishFlag {
 		return f.data, f.ex
 	}
