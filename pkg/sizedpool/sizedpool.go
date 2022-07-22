@@ -74,7 +74,9 @@ func (s *SizedWaitGroup) ExecFuturePool(ctx context.Context) {
 
 		s.Add()
 
-		ctx = context.WithValue(ctx, TraceID, future.TraceId)
+		if ctx != nil {
+			ctx = context.WithValue(ctx, TraceID, future.TraceId)
+		}
 		if future.timeout.Nanoseconds() == 0 {
 			go func(_ context.Context) {
 				defer s.Done()
