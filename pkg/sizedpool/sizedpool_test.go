@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -171,4 +172,32 @@ func TestNewTmpWithFuture(t *testing.T) {
 		})
 	}
 	future.Wait()
+}
+
+func TestLongWait(t *testing.T) {
+	pool, err := NewFuturePool(PoolOption{size: 3})
+	if err != nil {
+		return
+	}
+
+	for i := 0; i < 8; i++ {
+		future := pool.SubmitFuture(Callable{ActionFunc: func(ctx context.Context) (interface{}, error) {
+			rsp, err2 := http.Get("http://localhost:9911/longrt")
+			if err2 != nil {
+				return nil, err2
+			}
+			all, err2 := ioutil.ReadAll(rsp.Body)
+			return all, err2
+		}})
+		log.Println("submit")
+		go func() {
+			dataTimeout, err := future.GetDataTimeout(time.Second * 5)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Println(string(dataTimeout.([]byte)))
+		}()
+	}
+	pool.Wait()
 }
