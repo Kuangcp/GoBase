@@ -37,6 +37,8 @@ func TestRepeatStart(t *testing.T) {
 	watch.Start("b")
 	http.Get("http://jd.com")
 	watch.Stop()
+	watch.Start("x")
+	watch.Stop()
 	println(watch.PrettyPrint())
 	println(watch.GetTotalDuration().Milliseconds())
 	println(watch.GetTaskCount())
