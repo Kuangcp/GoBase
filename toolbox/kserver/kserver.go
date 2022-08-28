@@ -144,11 +144,16 @@ func main() {
 	registerAllFolder()
 	printStartUpLog()
 
-	fs := http.FileServer(http.Dir("./"))
-	http.Handle("/", http.StripPrefix("/", fs))
+	if defaultHome {
+		bindPathAndStatic("/", homeHtml)
+	} else {
+		fs := http.FileServer(http.Dir("./"))
+		http.Handle("/", http.StripPrefix("/", fs))
+		bindPathAndStatic("/h", homeHtml)
+	}
 
 	bindPathAndStatic("/favicon.ico", faviconIco)
-	bindPathAndStatic("/h", homeHtml)
+
 	bindPathAndStatic("/up", uploadHtml)
 
 	http.HandleFunc("/f", uploadHandler)
