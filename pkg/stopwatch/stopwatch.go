@@ -56,7 +56,7 @@ func (s StopWatch) PrettyPrint() string {
 	}
 	totalElapsed := s.stopTime.Sub(s.firstTime)
 	for _, task := range s.tasks {
-		rate := task.elapsedTime.Milliseconds() * 100 / totalElapsed.Milliseconds()
+		rate := task.elapsedTime.Nanoseconds() * 100 / totalElapsed.Nanoseconds()
 		taskStr += fmt.Sprintf("%9v%3v%% %v\n", fmtDuration(task.elapsedTime), rate, task.name)
 	}
 
