@@ -1,4 +1,4 @@
-package stopwatch
+package ctool
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ type (
 		name        string
 		elapsedTime time.Duration
 	}
+	// StopWatch inspire by spring stopwatch
 	StopWatch struct {
 		name      string
 		first     bool

@@ -1,4 +1,4 @@
-package stopwatch
+package ctool
 
 import (
 	"fmt"
