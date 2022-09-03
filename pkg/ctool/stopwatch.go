@@ -23,11 +23,11 @@ type (
 	}
 )
 
-func New() *StopWatch {
+func NewStopWatch() *StopWatch {
 	return &StopWatch{first: true}
 }
 
-func NewWithName(name string) *StopWatch {
+func NewStopWatchWithName(name string) *StopWatch {
 	return &StopWatch{name: name, first: true}
 }
 

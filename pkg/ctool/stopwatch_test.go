@@ -8,7 +8,7 @@ import (
 )
 
 func TestStopWatch_PrettyPrint(t *testing.T) {
-	stopWatch := NewWithName("action1")
+	stopWatch := NewStopWatchWithName("action1")
 	stopWatch.Start("task1 new request")
 	time.Sleep(time.Second * 3)
 	stopWatch.Stop()
@@ -17,11 +17,11 @@ func TestStopWatch_PrettyPrint(t *testing.T) {
 	stopWatch.Stop()
 	fmt.Println(stopWatch.PrettyPrint())
 
-	stopWatch = NewWithName("action")
+	stopWatch = NewStopWatchWithName("action")
 	stopWatch.Stop()
 	fmt.Println(stopWatch.PrettyPrint())
 
-	stopWatch = NewWithName("action2")
+	stopWatch = NewStopWatchWithName("action2")
 	stopWatch.Start("A")
 	http.Get("http://jd.com")
 	stopWatch.Stop()
@@ -31,7 +31,7 @@ func TestStopWatch_PrettyPrint(t *testing.T) {
 }
 
 func TestRepeatStart(t *testing.T) {
-	watch := NewWithName("task")
+	watch := NewStopWatchWithName("task")
 	watch.Start("a")
 	http.Get("http://jd.com")
 	watch.Start("b")
@@ -45,7 +45,7 @@ func TestRepeatStart(t *testing.T) {
 }
 
 func TestMissingLastStop(t *testing.T) {
-	watch := NewWithName("task")
+	watch := NewStopWatchWithName("task")
 	watch.Start("a")
 	http.Get("http://jd.com")
 	println(watch.PrettyPrint())
