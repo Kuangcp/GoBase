@@ -60,7 +60,7 @@ func main() {
 	flag.IntVar(&monthNumber, "n", 1, "month number")
 	flag.Parse()
 
-	firstDay := now.AddDate(0, startMonth, -now.Day()+1)
+	firstDay := now.AddDate(0, 0, -now.Day()+1)
 	// one month one block
 	//for i := 0; i < month; i++ {
 	//	date := firstDay.AddDate(0, startMonth+i, 0)
@@ -75,15 +75,18 @@ func main() {
 
 	var blockRightSplit = " │"
 	var block = []string{"", "", "", "", "", "", "", "", "", "", "", "", "", ""}
+
 	for i := range list {
 		lunarMonth := list[i]
 		block[0] += lunarMonth.title + blockRightSplit
 		block[1] += "   " + weekDay + blockRightSplit
 
-		i2 := len(lunarMonth.weeks)
+		//i2 := len(lunarMonth.weeks)
+
+		i2 := findMaxWeeks(i, list)
 		for j := 0; j < i2; j++ {
-			block[2*j+2] += buildWeekLineBlock(lunarMonth.weeks[j], blockRightSplit)
-			block[2*j+2+1] += buildWeekLineBlock(lunarMonth.lunarWeeks[j], blockRightSplit)
+			block[2*j+2] += buildWeekLineBlock(lunarMonth.weeks, j, blockRightSplit)
+			block[2*j+2+1] += buildWeekLineBlock(lunarMonth.lunarWeeks, j, blockRightSplit)
 		}
 
 		if i%3 == 2 {
@@ -93,12 +96,27 @@ func main() {
 	}
 	printBlock(block)
 }
+func findMaxWeeks(i int, list []*LunarMonth) int {
+	num := i / 3
+	max := 0
+	maxLen := len(list)
+	ids := []int{num * 3, num*3 + 1, num*3 + 2}
+	for _, idx := range ids {
+		if idx >= maxLen {
+			continue
+		}
+		if len(list[idx].weeks) > max {
+			max = len(list[idx].weeks)
+		}
+	}
+	return max
+}
 
-func buildWeekLineBlock(block, split string) string {
-	if block == "" {
+func buildWeekLineBlock(list []string, j int, split string) string {
+	if j >= len(list) || list[j] == "" {
 		return strings.Repeat(" ", 35) + split
 	} else {
-		return block + split
+		return list[j] + split
 	}
 }
 
