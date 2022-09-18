@@ -32,7 +32,7 @@ func (s *Set[T]) Adds(set *Set[T]) {
 	}
 }
 
-// 交集
+// Intersect 交集
 func (s *Set[T]) Intersect(set *Set[T]) *Set[T] {
 	if s == nil || set == nil {
 		return nil
@@ -48,26 +48,37 @@ func (s *Set[T]) Intersect(set *Set[T]) *Set[T] {
 	return result
 }
 
-// 差集
+// Difference 差集: 在当前集合 但是 不在参数集合内
 func (s *Set[T]) Difference(set *Set[T]) *Set[T] {
-	return nil
+	result := NewSet[T]()
+	for k := range s.cache {
+		if !set.Contains(k) {
+			result.Add(k)
+		}
+	}
+	return result
 }
 
-// 并集
+// Union 并集
 func (s *Set[T]) Union(set *Set[T]) *Set[T] {
-	return nil
+	result := NewSet[T]()
+	result.Adds(s)
+	result.Adds(set)
+	return result
 }
 
-// 补集 余集
+// Supplementary 补集 余集
 func (s *Set[T]) Supplementary(set *Set[T]) *Set[T] {
 	if s == nil || set == nil {
 		return nil
 	}
 
+	result := NewSet[T]()
+	result.Adds(s)
 	for k := range set.cache {
-		s.Remove(k)
+		result.Remove(k)
 	}
-	return s
+	return result
 }
 
 func (s *Set[T]) Len() int {
@@ -95,18 +106,4 @@ func (s *Set[T]) Loop(action func(T)) {
 	for k, _ := range s.cache {
 		action(k)
 	}
-}
-
-func (s *Set[T]) Intersection(set *Set[T]) *Set[T] {
-	if set == nil {
-		return nil
-	}
-	result := NewSet[T]()
-	for k := range s.cache {
-		_, ok := set.cache[k]
-		if ok {
-			result.Add(k)
-		}
-	}
-	return result
 }
