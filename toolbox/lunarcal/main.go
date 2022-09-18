@@ -38,12 +38,11 @@ type (
 	}
 )
 
-var now = time.Now()
-var s = []string{"一", "二", "三", "四", "五", "六", "日"}
-var weekDay = ctool.Green.Print(strings.Join(s, "   "))
 var (
 	startMonth  int
 	monthNumber int
+	now         = time.Now()
+	weekDay     = ctool.Green.Print(strings.Join([]string{"一", "二", "三", "四", "五", "六", "日"}, "   "))
 )
 
 func (l *LunarMonth) toString() string {
@@ -96,6 +95,7 @@ func main() {
 	}
 	printBlock(block)
 }
+
 func findMaxWeeks(i int, list []*LunarMonth) int {
 	num := i / 3
 	max := 0
@@ -139,8 +139,8 @@ func printBlock(block []string) {
 func buildMonthBlock(first time.Time) *LunarMonth {
 	end := first.AddDate(0, 1, 0)
 	firstLine := true
-	result := ""
-	footLine := ""
+	solarLine := ""
+	lunarLine := ""
 
 	var weeks []string
 	var lunarWeeks []string
@@ -156,22 +156,22 @@ func buildMonthBlock(first time.Time) *LunarMonth {
 		if firstLine {
 			firstLine = false
 			month.title = buildTitle(first)
-			result += fmt.Sprint(strings.Repeat("     ", (weekDay+6)%7))
-			footLine += fmt.Sprint(strings.Repeat("     ", (weekDay+6)%7))
+			solarLine += fmt.Sprint(strings.Repeat("     ", (weekDay+6)%7))
+			lunarLine += fmt.Sprint(strings.Repeat("     ", (weekDay+6)%7))
 		}
 		if weekDay == 1 {
-			month.weeks = append(month.weeks, result)
-			month.lunarWeeks = append(month.lunarWeeks, footLine)
-			footLine = ""
-			result = ""
+			month.weeks = append(month.weeks, solarLine)
+			month.lunarWeeks = append(month.lunarWeeks, lunarLine)
+			lunarLine = ""
+			solarLine = ""
 		}
 
 		if first.Equal(now) {
-			result += ctool.Yellow.Print(fmt.Sprintf("%4v ", first.Day()))
-			footLine += ctool.Yellow.Print(getDay(tmpLunar.Lunar, month))
+			solarLine += ctool.Yellow.Print(fmt.Sprintf("%4v ", first.Day()))
+			lunarLine += ctool.Yellow.Print(getDay(tmpLunar.Lunar, month))
 		} else {
-			result += fmt.Sprintf("%4v ", first.Day())
-			footLine += ctool.LightBlue.Print(getDay(tmpLunar.Lunar, month))
+			solarLine += fmt.Sprintf("%4v ", first.Day())
+			lunarLine += ctool.LightBlue.Print(getDay(tmpLunar.Lunar, month))
 		}
 
 		first = first.AddDate(0, 0, 1)
@@ -179,12 +179,12 @@ func buildMonthBlock(first time.Time) *LunarMonth {
 
 	actualDay := first.AddDate(0, 0, -1)
 	weekDay := int(actualDay.Weekday())
-	result += fmt.Sprint(strings.Repeat("     ", (7-weekDay)%7))
-	footLine += fmt.Sprint(strings.Repeat("     ", (7-weekDay)%7))
+	solarLine += fmt.Sprint(strings.Repeat("     ", (7-weekDay)%7))
+	lunarLine += fmt.Sprint(strings.Repeat("     ", (7-weekDay)%7))
 
-	if result != "" {
-		month.weeks = append(month.weeks, result)
-		month.lunarWeeks = append(month.lunarWeeks, footLine)
+	if solarLine != "" {
+		month.weeks = append(month.weeks, solarLine)
+		month.lunarWeeks = append(month.lunarWeeks, lunarLine)
 	}
 	return month
 }
