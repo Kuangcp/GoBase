@@ -36,3 +36,9 @@ Support nginx
 ## Dev Tips
 1. `hosts` go run . -d -D
 1. `nginx` go build && sudo ./hosts-group -d -D -mode nginx -f /etc/nginx/conf.d/static.conf
+
+TODO 
+1. js 文件缺失 
+1. Linux编译打包流程未抽出来
+
+

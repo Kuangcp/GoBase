@@ -132,7 +132,7 @@ func printBlock(block []string) {
 	if s != "" {
 		fmt.Print(s)
 		count := strings.Count(block[0], "│")
-		fmt.Println(strings.Repeat("─", 37*count))
+		fmt.Println(strings.Repeat(strings.Repeat("─", 36)+"┴", count))
 	}
 }
 
