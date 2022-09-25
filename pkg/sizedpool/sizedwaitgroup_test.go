@@ -10,7 +10,7 @@ import (
 )
 
 func TestWait(t *testing.T) {
-	swg, _ := New(PoolOption{size: 10})
+	swg, _ := New(PoolOption{Size: 10})
 	var c uint32
 
 	for i := 0; i < 10000; i++ {
@@ -31,7 +31,7 @@ func TestWait(t *testing.T) {
 func TestThrottling(t *testing.T) {
 	var c uint32
 
-	swg, _ := New(PoolOption{size: 4})
+	swg, _ := New(PoolOption{Size: 4})
 
 	if len(swg.current) != 0 {
 		t.Fatalf("the SizedWaitGroup should start with zero.")
@@ -54,7 +54,7 @@ func TestThrottling(t *testing.T) {
 
 func TestNoThrottling(t *testing.T) {
 	var c uint32
-	swg, _ := New(PoolOption{size: 0})
+	swg, _ := New(PoolOption{Size: 0})
 	if len(swg.current) != 0 {
 		t.Fatalf("the SizedWaitGroup should start with zero.")
 	}
@@ -74,7 +74,7 @@ func TestNoThrottling(t *testing.T) {
 func TestAddWithContext(t *testing.T) {
 	ctx, cancelFunc := context.WithCancel(context.TODO())
 
-	swg, _ := New(PoolOption{size: 1})
+	swg, _ := New(PoolOption{Size: 1})
 
 	if err := swg.AddWithContext(ctx); err != nil {
 		t.Fatalf("AddContext returned error: %v", err)
