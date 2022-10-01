@@ -55,16 +55,11 @@ func (l *LunarMonth) toString() string {
 }
 
 func main() {
-	flag.IntVar(&startMonth, "s", 0, "month cursor")
-	flag.IntVar(&monthNumber, "n", 1, "month number")
+	flag.IntVar(&startMonth, "s", 0, "month cursor eg: -s 2 or -s -3")
+	flag.IntVar(&monthNumber, "n", 1, "month count eg: -n 12")
 	flag.Parse()
 
 	firstDay := now.AddDate(0, 0, -now.Day()+1)
-	// one month one block
-	//for i := 0; i < month; i++ {
-	//	date := firstDay.AddDate(0, startMonth+i, 0)
-	//	fmt.Println(buildMonthBlock(date).toString())
-	//}
 
 	var list []*LunarMonth
 	for i := 0; i < monthNumber; i++ {
@@ -80,8 +75,6 @@ func main() {
 		block[0] += lunarMonth.title + blockRightSplit
 		block[1] += "   " + weekDay + blockRightSplit
 
-		//i2 := len(lunarMonth.weeks)
-
 		i2 := findMaxWeeks(i, list)
 		for j := 0; j < i2; j++ {
 			block[2*j+2] += buildWeekLineBlock(lunarMonth.weeks, j, blockRightSplit)
@@ -89,11 +82,11 @@ func main() {
 		}
 
 		if i%3 == 2 {
-			printBlock(block)
+			printMonthBlock(block)
 			block = []string{"", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 		}
 	}
-	printBlock(block)
+	printMonthBlock(block)
 }
 
 func findMaxWeeks(i int, list []*LunarMonth) int {
@@ -120,8 +113,9 @@ func buildWeekLineBlock(list []string, j int, split string) string {
 	}
 }
 
-func printBlock(block []string) {
+func printMonthBlock(block []string) {
 	s := ""
+	// print day contents
 	for _, v := range block {
 		if v == "" {
 			continue
@@ -129,11 +123,22 @@ func printBlock(block []string) {
 		s += v + "\n"
 	}
 
-	if s != "" {
-		fmt.Print(s)
-		count := strings.Count(block[0], "│")
-		fmt.Println(strings.Repeat(strings.Repeat("─", 36)+"┴", count))
+	if s == "" {
+		return
 	}
+	// print border
+	fmt.Print(s)
+	count := strings.Count(block[0], "│")
+
+	for i := 0; i < count; i++ {
+		endChar := "┴"
+		if i == count-1 {
+			endChar = "┘"
+		}
+
+		fmt.Print(strings.Repeat("─", 36) + endChar)
+	}
+	fmt.Println()
 }
 
 func buildMonthBlock(first time.Time) *LunarMonth {
