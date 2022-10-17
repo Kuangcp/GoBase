@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"io"
 	"log"
 	"net/http"
@@ -10,11 +13,19 @@ import (
 	"strings"
 )
 
+var port int
+
 // origin url -> target url
 var proxyMap = make(map[*url.URL]*url.URL)
 
-// "http://192.168.16.91:32149/(.*)", "http://127.0.0.1:19011/$1"
-func registerProxy(proxy map[string]string) {
+//	/api/a -> /a
+//
+// registerReplace(map[string]string{"http://host1:port1/api": "http://host2:port2"})
+//
+//	/api/a -> /api2/a
+//
+// registerReplace(map[string]string{"http://host1:port1/api": "http://host2:port2/api2"})
+func registerReplace(proxy map[string]string) {
 	for k, v := range proxy {
 		kUrl, err := url.Parse(k)
 		if err != nil {
@@ -25,44 +36,60 @@ func registerProxy(proxy map[string]string) {
 			continue
 		}
 		proxyMap[kUrl] = vUrl
+		fmt.Println("register:", k, "->", v)
 	}
 }
 
-func singleJoiningSlash(a, b string) string {
-	aslash := strings.HasSuffix(a, "/")
-	bslash := strings.HasPrefix(b, "/")
-	switch {
-	case aslash && bslash:
-		return a + b[1:]
-	case !aslash && !bslash:
-		return a + "/" + b
-	}
-	return a + b
-}
-
-func findTarget(r *http.Request) *url.URL {
+// TODO 当前按Host维度替换，需要实现按路径维度替换
+func findTargetReplace(r *http.Request) (*url.URL, *url.URL) {
 	for k, v := range proxyMap {
 		if k.Host == r.Host {
-			return v
+			return k, v
 		}
 	}
-	return nil
+	return nil, nil
+}
+
+func concatIgnoreSlash(left, right string) string {
+	aslash := strings.HasSuffix(left, "/")
+	bslash := strings.HasPrefix(right, "/")
+	switch {
+	case aslash && bslash:
+		return left + right[1:]
+	case !aslash && !bslash:
+		return left + "/" + right
+	}
+	return left + right
+}
+
+func handlePath(origin, target *url.URL, path string) string {
+	// 原始路径去前缀
+	if origin.Path != "" && strings.HasPrefix(path, origin.Path) {
+		path = path[len(origin.Path):]
+	}
+	// 原始路径加前缀
+	if target.Path != "" {
+		path = concatIgnoreSlash(target.Path, path)
+	}
+	return path
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	proxyReq := new(http.Request)
 	*proxyReq = *r
 
-	targetUrl := findTarget(proxyReq)
+	originUrl, targetUrl := findTargetReplace(proxyReq)
 	if targetUrl != nil {
-		fmt.Printf("proxy: %s -> %s\n", proxyReq.Host, targetUrl.Host)
+		path := handlePath(originUrl, targetUrl, proxyReq.URL.Path)
+		fmt.Printf("proxy: %s -> %s  %s -> %s\n", proxyReq.Host, targetUrl.Host, proxyReq.URL.Path, path)
+
 		proxyReq.Host = targetUrl.Host
 		//o.URL.Scheme = targetURL.Scheme
 		proxyReq.URL.Host = targetUrl.Host
-		proxyReq.URL.Path = singleJoiningSlash(targetUrl.Path, proxyReq.URL.Path)
+		proxyReq.URL.Path = path
 		//o.URL.RawQuery = targetUrl.RawQuery
 	} else {
-		fmt.Println("direct:", proxyReq.Host)
+		//fmt.Println("direct:", proxyReq.Host)
 	}
 
 	if q := proxyReq.URL.RawQuery; q != "" {
@@ -102,12 +129,31 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//registerProxy(map[string]string{"http://192.168.16.91:32149/(.*)": "http://127.0.0.1:19011/$1"})
-	registerProxy(map[string]string{"http://192.168.16.91:32149": "http://127.0.0.1:19011"})
+	flag.IntVar(&port, "p", 1234, "port")
+	flag.Parse()
 
-	log.Println("Start serving on port 1234")
+	home, err := ctool.Home()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
+	file, err := os.ReadFile(home + "/.dev-proxy.json")
+	if err == nil {
+		var configMap map[string]string
+		err := json.Unmarshal(file, &configMap)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		registerReplace(configMap)
+	}
+
+	log.Printf("Start serving on 127.0.0.1:%d\n", port)
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":1234", nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 	os.Exit(0)
 }
