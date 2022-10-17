@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -9,21 +10,11 @@ import (
 	"strings"
 )
 
-var targetURL *url.URL
-
 // origin url -> target url
-var proxyMap map[*url.URL]*url.URL
+var proxyMap = make(map[*url.URL]*url.URL)
 
 // "http://192.168.16.91:32149/(.*)", "http://127.0.0.1:19011/$1"
 func registerProxy(proxy map[string]string) {
-	targetServer := "http://localhost:19011"
-	tmpUrl, err := url.Parse(targetServer)
-	if err != nil {
-		log.Println("Bad target URL")
-		return
-	}
-	targetURL = tmpUrl
-
 	for k, v := range proxy {
 		kUrl, err := url.Parse(k)
 		if err != nil {
@@ -49,31 +40,45 @@ func singleJoiningSlash(a, b string) string {
 	return a + b
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	// copy object
-	o := new(http.Request)
-	*o = *r
+func findTarget(r *http.Request) *url.URL {
+	for k, v := range proxyMap {
+		if k.Host == r.Host {
+			return v
+		}
+	}
+	return nil
+}
 
-	o.Host = targetURL.Host
-	o.URL.Scheme = targetURL.Scheme
-	o.URL.Host = targetURL.Host
-	o.URL.Path = singleJoiningSlash(targetURL.Path, o.URL.Path)
-	if q := o.URL.RawQuery; q != "" {
-		o.URL.RawPath = o.URL.Path + "?" + q
+func handler(w http.ResponseWriter, r *http.Request) {
+	proxyReq := new(http.Request)
+	*proxyReq = *r
+
+	targetUrl := findTarget(proxyReq)
+	if targetUrl != nil {
+		fmt.Printf("proxy: %s -> %s\n", proxyReq.Host, targetUrl.Host)
+		proxyReq.Host = targetUrl.Host
+		//o.URL.Scheme = targetURL.Scheme
+		proxyReq.URL.Host = targetUrl.Host
+		proxyReq.URL.Path = singleJoiningSlash(targetUrl.Path, proxyReq.URL.Path)
+		//o.URL.RawQuery = targetUrl.RawQuery
 	} else {
-		o.URL.RawPath = o.URL.Path
+		fmt.Println("direct:", proxyReq.Host)
 	}
 
-	o.URL.RawQuery = targetURL.RawQuery
+	if q := proxyReq.URL.RawQuery; q != "" {
+		proxyReq.URL.RawPath = proxyReq.URL.Path + "?" + q
+	} else {
+		proxyReq.URL.RawPath = proxyReq.URL.Path
+	}
 
-	o.Proto = "HTTP/1.1"
-	o.ProtoMajor = 1
-	o.ProtoMinor = 1
-	o.Close = false
+	proxyReq.Proto = "HTTP/1.1"
+	proxyReq.ProtoMajor = 1
+	proxyReq.ProtoMinor = 1
+	proxyReq.Close = false
 
 	transport := http.DefaultTransport
 
-	res, err := transport.RoundTrip(o)
+	res, err := transport.RoundTrip(proxyReq)
 	if err != nil {
 		log.Printf("http: proxy error: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -97,7 +102,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	registerProxy(map[string]string{"http://192.168.16.91:32149/(.*)": "http://127.0.0.1:19011/$1"})
+	//registerProxy(map[string]string{"http://192.168.16.91:32149/(.*)": "http://127.0.0.1:19011/$1"})
+	registerProxy(map[string]string{"http://192.168.16.91:32149": "http://127.0.0.1:19011"})
 
 	log.Println("Start serving on port 1234")
 
