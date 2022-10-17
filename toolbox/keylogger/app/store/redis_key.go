@@ -32,18 +32,18 @@ func GetTodayMaxKPMKeyByString(timeStr string) string {
 	return Prefix + timeStr + ":kpm"
 }
 
-//GetRankKey by time
+// GetRankKey by time
 // zset member keyCode score 按键数
 func GetRankKey(time time.Time) string {
 	return GetRankKeyByString(time.Format(DateFormat))
 }
 
-//GetRankKeyByString
+// GetRankKeyByString
 func GetRankKeyByString(timeStr string) string {
 	return Prefix + timeStr + ":rank"
 }
 
-//GetDetailKey by time
+// GetDetailKey by time
 // zset member 时间戳 score keyCode
 func GetDetailKey(time time.Time) string {
 	return GetDetailKeyByString(time.Format(DateFormat))

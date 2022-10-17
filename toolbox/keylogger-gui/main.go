@@ -32,7 +32,7 @@ var (
 	app           *gtk.Application
 	win           *gtk.Window
 	kpmLabel      *gtk.Label
-	refreshPeriod = time.Millisecond * 450
+	refreshPeriod = time.Millisecond * 400
 )
 
 var (

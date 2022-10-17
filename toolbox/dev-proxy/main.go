@@ -5,12 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/logger"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 var port int
@@ -36,7 +37,7 @@ func registerReplace(proxy map[string]string) {
 			continue
 		}
 		proxyMap[kUrl] = vUrl
-		fmt.Println("register:", k, "->", v)
+		logger.Info("register:", k, "=>", v)
 	}
 }
 
@@ -74,42 +75,32 @@ func handlePath(origin, target *url.URL, path string) string {
 	return path
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq := new(http.Request)
 	*proxyReq = *r
 
-	originUrl, targetUrl := findTargetReplace(proxyReq)
-	if targetUrl != nil {
-		path := handlePath(originUrl, targetUrl, proxyReq.URL.Path)
-		fmt.Printf("proxy: %s -> %s  %s -> %s\n", proxyReq.Host, targetUrl.Host, proxyReq.URL.Path, path)
+	log := proxyReplace(proxyReq)
 
-		proxyReq.Host = targetUrl.Host
-		//o.URL.Scheme = targetURL.Scheme
-		proxyReq.URL.Host = targetUrl.Host
-		proxyReq.URL.Path = path
-		//o.URL.RawQuery = targetUrl.RawQuery
-	} else {
-		//fmt.Println("direct:", proxyReq.Host)
-	}
-
+	startMs := time.Now().UnixMilli()
 	if q := proxyReq.URL.RawQuery; q != "" {
 		proxyReq.URL.RawPath = proxyReq.URL.Path + "?" + q
 	} else {
 		proxyReq.URL.RawPath = proxyReq.URL.Path
 	}
-
 	proxyReq.Proto = "HTTP/1.1"
 	proxyReq.ProtoMajor = 1
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
 
 	transport := http.DefaultTransport
-
 	res, err := transport.RoundTrip(proxyReq)
+	endMs := time.Now().UnixMilli()
 	if err != nil {
-		log.Printf("http: proxy error: %v", err)
+		logger.Error("%vms %v proxy error", endMs-startMs, log, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	} else if log != "" {
+		logger.Debug("%vms %v", endMs-startMs, log)
 	}
 
 	hdr := w.Header()
@@ -124,7 +115,33 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(res.StatusCode)
 	if res.Body != nil {
-		io.Copy(w, res.Body)
+		written, err := io.Copy(w, res.Body)
+		if err != nil {
+			logger.Error(written, err)
+		}
+	}
+}
+
+func proxyReplace(proxyReq *http.Request) string {
+	originUrl, targetUrl := findTargetReplace(proxyReq)
+	if targetUrl != nil {
+		path := handlePath(originUrl, targetUrl, proxyReq.URL.Path)
+		log := ""
+		if path == proxyReq.URL.Path {
+			log = fmt.Sprintf("proxy: %s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+" .")
+		} else {
+			log = fmt.Sprintf("proxy: %s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+path)
+		}
+
+		proxyReq.Host = targetUrl.Host
+		//o.URL.Scheme = targetURL.Scheme
+		proxyReq.URL.Host = targetUrl.Host
+		proxyReq.URL.Path = path
+		//o.URL.RawQuery = targetUrl.RawQuery
+		return log
+	} else {
+		//logger.Debug("direct:", proxyReq.Host)
+		return ""
 	}
 }
 
@@ -143,17 +160,17 @@ func main() {
 		var configMap map[string]string
 		err := json.Unmarshal(file, &configMap)
 		if err != nil {
-			fmt.Println(err)
+			logger.Error(err)
 			return
 		}
 		registerReplace(configMap)
 	}
 
-	log.Printf("Start serving on 127.0.0.1:%d\n", port)
-	http.HandleFunc("/", handler)
+	logger.Info("Start serving on 127.0.0.1:%d", port)
+	http.HandleFunc("/", proxyHandler)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 	}
 	os.Exit(0)
 }
