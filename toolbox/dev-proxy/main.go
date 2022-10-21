@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"io"
 	"net/http"
@@ -15,41 +13,7 @@ import (
 )
 
 var port int
-
-// origin url -> target url
-var proxyMap = make(map[*url.URL]*url.URL)
-
-//	/api/a -> /a
-//
-// registerReplace(map[string]string{"http://host1:port1/api": "http://host2:port2"})
-//
-//	/api/a -> /api2/a
-//
-// registerReplace(map[string]string{"http://host1:port1/api": "http://host2:port2/api2"})
-func registerReplace(proxy map[string]string) {
-	for k, v := range proxy {
-		kUrl, err := url.Parse(k)
-		if err != nil {
-			continue
-		}
-		vUrl, err := url.Parse(v)
-		if err != nil {
-			continue
-		}
-		proxyMap[kUrl] = vUrl
-		logger.Info("register:", k, "=>", v)
-	}
-}
-
-// TODO 当前按Host维度替换，需要实现按路径维度替换
-func findTargetReplace(r *http.Request) (*url.URL, *url.URL) {
-	for k, v := range proxyMap {
-		if k.Host == r.Host {
-			return k, v
-		}
-	}
-	return nil, nil
-}
+var checkConf bool
 
 func concatIgnoreSlash(left, right string) string {
 	aslash := strings.HasSuffix(left, "/")
@@ -92,11 +56,15 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
 
+	//if websocketHandler(w, r, proxyReq) {
+	//	return
+	//}
+
 	transport := http.DefaultTransport
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
 	if err != nil {
-		logger.Error("%vms %v proxy error", endMs-startMs, log, err)
+		logger.Error("%vms %v proxy error %v", endMs-startMs, log, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	} else if log != "" {
@@ -147,28 +115,14 @@ func proxyReplace(proxyReq *http.Request) string {
 
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
+	flag.BoolVar(&checkConf, "c", false, "check config change")
 	flag.Parse()
 
-	home, err := ctool.Home()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	file, err := os.ReadFile(home + "/.dev-proxy.json")
-	if err == nil {
-		var configMap map[string]string
-		err := json.Unmarshal(file, &configMap)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		registerReplace(configMap)
-	}
+	initConfig()
 
 	logger.Info("Start serving on 127.0.0.1:%d", port)
 	http.HandleFunc("/", proxyHandler)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		logger.Error(err)
 	}
