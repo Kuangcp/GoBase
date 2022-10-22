@@ -1,19 +1,21 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"github.com/kuangcp/logger"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 )
 
-var port int
-var checkConf bool
+var (
+	port      int
+	checkConf bool
+)
 
 func concatIgnoreSlash(left, right string) string {
 	aslash := strings.HasSuffix(left, "/")
@@ -40,6 +42,11 @@ func handlePath(origin, target *url.URL, path string) string {
 }
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodConnect {
+		handleHttps(w, r)
+		return
+	}
+
 	proxyReq := new(http.Request)
 	*proxyReq = *r
 
@@ -121,10 +128,28 @@ func main() {
 	initConfig()
 
 	logger.Info("Start serving on 127.0.0.1:%d", port)
-	http.HandleFunc("/", proxyHandler)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+
+	cert, err := genCertificate()
 	if err != nil {
-		logger.Error(err)
+		logger.Fatal(err)
 	}
-	os.Exit(0)
+
+	server := &http.Server{
+		Addr:      fmt.Sprintf("0.0.0.0:%d", port),
+		TLSConfig: &tls.Config{Certificates: []tls.Certificate{cert}},
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			proxyHandler(w, r)
+		}),
+	}
+
+	logger.Fatal(server.ListenAndServe())
+
+	//err := http.ListenAndServe(fmt.Sprintf(":%d", port),
+	//	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	//		proxyHandler(w, r)
+	//	}))
+	//if err != nil {
+	//	logger.Error(err)
+	//}
+	//os.Exit(0)
 }
