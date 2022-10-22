@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"github.com/kuangcp/logger"
 	"io"
 	"math/big"
 	"net"
@@ -15,6 +14,8 @@ import (
 	"time"
 )
 
+// https://mojotv.cn/2018/12/26/how-to-create-a-https-proxy-service-in-100-lines-of-code
+// https://github.com/golang/go/issues/46319
 // https://github.com/Zartenc/httpsproxy.git
 func genCertificate() (cert tls.Certificate, err error) {
 	rawCert, rawKey, err := generateKeyPair()
@@ -40,7 +41,7 @@ func generateKeyPair() (rawCert, rawKey []byte, err error) {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Zarten"},
+			Organization: []string{"Mythos"},
 		},
 		NotBefore: notBefore,
 		NotAfter:  notAfter,
@@ -61,7 +62,6 @@ func generateKeyPair() (rawCert, rawKey []byte, err error) {
 }
 
 func handleHttps(w http.ResponseWriter, r *http.Request) {
-	logger.Info(r.URL)
 	destConn, err := net.DialTimeout("tcp", r.Host, 60*time.Second)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
