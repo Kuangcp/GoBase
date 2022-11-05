@@ -56,8 +56,33 @@ func closeDevice(device *InputDevice) {
 	}
 }
 
-// ListenDevice listen and record
-func ListenDevice() {
+func ListenMouseDevice() {
+	fmt.Println("Try to listen " + ctk.Yellow.Print(targetDevice) + " ...")
+	device, err := Open("/dev/input/mice")
+	defer closeDevice(device)
+	if device == nil || err != nil {
+		logger.Error(err)
+		return
+	}
+
+	fmt.Println("reading")
+	for true {
+		inputEvents, err := device.Read()
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
+		if inputEvents == nil || len(inputEvents) == 0 {
+			continue
+		}
+
+		fmt.Println(inputEvents)
+	}
+}
+
+// ListenKeyboardDevice listen and record
+func ListenKeyboardDevice() {
 	connection := store.GetConnection()
 	if connection == nil {
 		return
@@ -75,7 +100,6 @@ func ListenDevice() {
 	}
 
 	fmt.Println("Try to listen " + ctk.Yellow.Print(targetDevice) + " ...")
-
 	device, err := Open("/dev/input/" + targetDevice)
 	defer closeDevice(device)
 	if device == nil || err != nil {
@@ -160,7 +184,7 @@ func calculateKPM() {
 	}
 }
 
-// ns us ms s
+// time: ns us ms s
 func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 	today := time.Now()
 	todayStr := today.Format(store.DateFormat)
@@ -404,7 +428,7 @@ func handleTotalByDate(time time.Time, conn *redis.Client) {
 		int64(score.Val()))
 }
 
-//CacheKeyMap to redis
+// CacheKeyMap to redis
 func CacheKeyMap() {
 	device := OpenDevice()
 	if device == nil {
@@ -420,7 +444,7 @@ func CacheKeyMap() {
 	}
 }
 
-//PrintKeyMap show
+// PrintKeyMap show
 func PrintKeyMap() {
 	device := OpenDevice()
 	if device == nil {

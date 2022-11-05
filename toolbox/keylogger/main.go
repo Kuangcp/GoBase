@@ -39,6 +39,7 @@ var info = ctk.HelpInfo{
 		{Short: "-c", BoolVar: &cacheKeyMap, Comment: user + " cache key map"},
 		{Short: "-s", BoolVar: &listenDevice, Comment: user + " listen keyboard with last device or specific device"},
 		{Short: "-i", BoolVar: &interactiveListen, Comment: user + " listen keyboard with interactive select device"},
+		{Short: "-m", BoolVar: &mouseListen, Comment: user + " listen mouse with interactive select device"},
 		{Short: "-T", BoolVar: &printDay, Comment: "print daily total by before x day ago and duration"},
 		{Short: "-R", BoolVar: &printDayRank, Comment: "print daily rank by before x day ago and duration"},
 		{Short: "-r", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration"},
@@ -66,6 +67,7 @@ var (
 	listAllDevice      bool
 	listenDevice       bool
 	interactiveListen  bool
+	mouseListen        bool
 	printDay           bool
 	printDayRank       bool
 	printTotalRank     bool
@@ -195,8 +197,18 @@ func main() {
 	defer store.CloseConnection()
 
 	//invokeThenExit(dashboard, app.InitPopWindow, store.CloseConnection)
-	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
+	invokeThenExit(listenDevice, app.ListenKeyboardDevice, store.CloseConnection)
 	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
+
+	if mouseListen {
+		device, err := app.SelectDevice()
+		if err != nil {
+			return
+		}
+		app.SetFormatTargetDevice(device)
+		app.ListenMouseDevice()
+		return
+	}
 
 	if interactiveListen {
 		device, err := app.SelectDevice()
@@ -204,7 +216,7 @@ func main() {
 			return
 		}
 		app.SetFormatTargetDevice(device)
-		app.ListenDevice()
+		app.ListenKeyboardDevice()
 		return
 	}
 
