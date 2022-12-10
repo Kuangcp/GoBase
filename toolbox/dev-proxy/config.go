@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
 
 type ProxyConf struct {
 	Name    string   `json:"name"`
-	Use     bool     `json:"use"`
+	Enable  bool     `json:"enable"`
 	Routers []string `json:"routers"`
 }
 
@@ -22,13 +23,6 @@ type ProxyConf struct {
 var proxyMap = make(map[*url.URL]*url.URL)
 var lock = &sync.RWMutex{}
 
-//	/api/a -> /a
-//
-// registerReplace(map[string]string{"http://host1:port1/api": "http://host2:port2"})
-//
-//	/api/a -> /api2/a
-//
-// registerReplace(map[string]string{"http://host1:port1/api": "http://host2:port2/api2"})
 func registerReplace(proxy map[string]string) {
 	lock.Lock()
 	proxyMap = make(map[*url.URL]*url.URL)
@@ -47,12 +41,18 @@ func registerReplace(proxy map[string]string) {
 	lock.Unlock()
 }
 
-// TODO 当前按Host维度替换，需要实现按路径维度替换
+// TODO 待实现源路径支持正则替换
+func needReplace(originUrl *url.URL, request *http.Request) bool {
+	sameHost := originUrl.Host == request.Host
+	samePath := originUrl.Path == "" || strings.HasPrefix(request.URL.Path, originUrl.Path)
+	return sameHost && samePath
+}
+
 func findTargetReplace(r *http.Request) (*url.URL, *url.URL) {
 	lock.RLock()
 	defer lock.RUnlock()
 	for k, v := range proxyMap {
-		if k.Host == r.Host {
+		if needReplace(k, r) {
 			return k, v
 		}
 	}
@@ -66,9 +66,19 @@ func initConfig() {
 		return
 	}
 
+	logger.SetLoggerConfig(&logger.LogConfig{
+		TimeFormat: "01-02 15:04:05",
+		File: &logger.FileLogger{
+			Filename:   home + "/.dev-proxy.log",
+			Level:      logger.DebugDesc,
+			Append:     true,
+			PermitMask: "0660",
+			MaxDays:    -1,
+		}})
+
 	configFile := home + "/.dev-proxy.json"
 	cleanAndRegister(configFile)
-	if checkConf {
+	if reloadConf {
 		go listenConfig(configFile)
 	}
 }
@@ -84,7 +94,7 @@ func cleanAndRegister(configFile string) {
 		}
 		proxy := make(map[string]string)
 		for _, conf := range confList {
-			if !conf.Use {
+			if !conf.Enable {
 				continue
 			}
 			logger.Info("Register group:", conf.Name)

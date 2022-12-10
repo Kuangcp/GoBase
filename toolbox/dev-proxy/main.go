@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	port      int
-	checkConf bool
+	port       int
+	reloadConf bool
 )
 
 func concatIgnoreSlash(left, right string) string {
@@ -103,9 +103,9 @@ func proxyReplace(proxyReq *http.Request) string {
 		path := handlePath(originUrl, targetUrl, proxyReq.URL.Path)
 		log := ""
 		if path == proxyReq.URL.Path {
-			log = fmt.Sprintf("proxy: %s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+" .")
+			log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+" .")
 		} else {
-			log = fmt.Sprintf("proxy: %s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+path)
+			log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+path)
 		}
 
 		proxyReq.Host = targetUrl.Host
@@ -122,7 +122,7 @@ func proxyReplace(proxyReq *http.Request) string {
 
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
-	flag.BoolVar(&checkConf, "c", false, "check config change")
+	flag.BoolVar(&reloadConf, "r", false, "auto reload changed config")
 	flag.Parse()
 
 	initConfig()
