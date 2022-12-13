@@ -87,7 +87,10 @@ func cleanAndRegister(configFile string) {
 			logger.Info("Register group:", conf.Name)
 			pair := len(conf.Routers) / 2
 			for i := 0; i < pair; i++ {
-				proxy[conf.Routers[i*2]] = conf.Routers[i*2+1]
+				match := conf.Routers[i*2]
+				replace := conf.Routers[i*2+1]
+				proxy[match] = replace
+				logger.Debug("Register", match, "=>", replace)
 			}
 		}
 
