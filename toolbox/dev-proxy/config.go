@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
-	"net/http"
-	"net/url"
 	"os"
-	"strings"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -19,44 +17,33 @@ type ProxyConf struct {
 	Routers []string `json:"routers"`
 }
 
-// origin url -> target url
-var proxyMap = make(map[*url.URL]*url.URL)
+var proxyValMap = make(map[string]string)
 var lock = &sync.RWMutex{}
 
-func registerReplace(proxy map[string]string) {
-	lock.Lock()
-	proxyMap = make(map[*url.URL]*url.URL)
-	for k, v := range proxy {
-		kUrl, err := url.Parse(k)
-		if err != nil {
-			continue
-		}
-		vUrl, err := url.Parse(v)
-		if err != nil {
-			continue
-		}
-		proxyMap[kUrl] = vUrl
-		logger.Info("register:", k, "=>", v)
-	}
-	lock.Unlock()
-}
+// 处理源路径到目标路径的转换
+// originConf 正则匹配规则
+// targetConf 正则替换规则
+// fullUrl    实际请求的完整路径
 
-// TODO 待实现源路径支持正则替换
-func needReplace(originUrl *url.URL, request *http.Request) bool {
-	sameHost := originUrl.Host == request.Host
-	samePath := originUrl.Path == "" || strings.HasPrefix(request.URL.Path, originUrl.Path)
-	return sameHost && samePath
-}
-
-func findTargetReplace(r *http.Request) (*url.URL, *url.URL) {
-	lock.RLock()
-	defer lock.RUnlock()
-	for k, v := range proxyMap {
-		if needReplace(k, r) {
-			return k, v
-		}
+// 例如：
+//
+//	原始 http://192.168.9.12:30011/api/(.*)
+//	目标 http://127.0.0.1:8081/api/v2/$1
+//	请求 http://192.168.9.12:30011/api/pageList
+//	结果 http://127.0.0.1:8081/api/v2/pageList
+func tryToReplacePath(originConf, targetConf, fullUrl string) string {
+	compile, err := regexp.Compile(originConf)
+	if err != nil {
+		logger.Error(err)
+		return ""
 	}
-	return nil, nil
+
+	replaceResult := compile.ReplaceAllString(fullUrl, targetConf)
+	if replaceResult == fullUrl {
+		return ""
+	}
+
+	return replaceResult
 }
 
 func initConfig() {
@@ -104,7 +91,7 @@ func cleanAndRegister(configFile string) {
 			}
 		}
 
-		registerReplace(proxy)
+		proxyValMap = proxy
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -16,30 +15,6 @@ var (
 	port       int
 	reloadConf bool
 )
-
-func concatIgnoreSlash(left, right string) string {
-	aslash := strings.HasSuffix(left, "/")
-	bslash := strings.HasPrefix(right, "/")
-	switch {
-	case aslash && bslash:
-		return left + right[1:]
-	case !aslash && !bslash:
-		return left + "/" + right
-	}
-	return left + right
-}
-
-func handlePath(origin, target *url.URL, path string) string {
-	// 原始路径去前缀
-	if origin.Path != "" && strings.HasPrefix(path, origin.Path) {
-		path = path[len(origin.Path):]
-	}
-	// 原始路径加前缀
-	if target.Path != "" {
-		path = concatIgnoreSlash(target.Path, path)
-	}
-	return path
-}
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodConnect {
@@ -50,7 +25,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq := new(http.Request)
 	*proxyReq = *r
 
-	log := proxyReplace(proxyReq)
+	log := proxyReplaceWithRegexp(proxyReq)
 
 	startMs := time.Now().UnixMilli()
 	if q := proxyReq.URL.RawQuery; q != "" {
@@ -97,27 +72,36 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func proxyReplace(proxyReq *http.Request) string {
-	originUrl, targetUrl := findTargetReplace(proxyReq)
-	if targetUrl != nil {
-		path := handlePath(originUrl, targetUrl, proxyReq.URL.Path)
-		log := ""
-		if path == proxyReq.URL.Path {
-			log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+" .")
-		} else {
-			log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, targetUrl.Host+path)
-		}
+func proxyReplaceWithRegexp(proxyReq *http.Request) string {
+	lock.RLock()
+	defer lock.RUnlock()
 
-		proxyReq.Host = targetUrl.Host
-		//o.URL.Scheme = targetURL.Scheme
-		proxyReq.URL.Host = targetUrl.Host
-		proxyReq.URL.Path = path
-		//o.URL.RawQuery = targetUrl.RawQuery
-		return log
-	} else {
-		//logger.Debug("direct:", proxyReq.Host)
-		return ""
+	for k, v := range proxyValMap {
+		fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
+		tryResult := tryToReplacePath(k, v, fullUrl)
+		if tryResult != "" {
+			parse, err := url.Parse(tryResult)
+			if err != nil {
+				logger.Error(err)
+			}
+
+			log := ""
+			if parse.Path == proxyReq.URL.Path {
+				log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, parse.Host+" .")
+			} else {
+				log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, parse.Host+parse.Path)
+			}
+
+			proxyReq.Host = parse.Host
+			//o.URL.Scheme = targetURL.Scheme
+			proxyReq.URL.Host = parse.Host
+			proxyReq.URL.Path = parse.Path
+			//o.URL.RawQuery = targetUrl.RawQuery
+			return log
+		}
 	}
+
+	return ""
 }
 
 func main() {
