@@ -25,9 +25,24 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq := new(http.Request)
 	*proxyReq = *r
 
-	log := proxyReplaceWithRegexp(proxyReq)
+	// replace
+	newUrl := findReplaceByRegexp(*proxyReq)
+	proxyLog := ""
+	if newUrl != nil {
+		if newUrl.Path == proxyReq.URL.Path {
+			proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
+		} else {
+			proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
+		}
 
-	startMs := time.Now().UnixMilli()
+		proxyReq.Host = newUrl.Host
+		//proxyReq.URL.Scheme = newUrl.Scheme
+		proxyReq.URL.Host = newUrl.Host
+		proxyReq.URL.Path = newUrl.Path
+		//proxyReq.URL.RawQuery = newUrl.RawQuery
+	}
+
+	// rebuild
 	if q := proxyReq.URL.RawQuery; q != "" {
 		proxyReq.URL.RawPath = proxyReq.URL.Path + "?" + q
 	} else {
@@ -38,19 +53,23 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
 
+	// TODO websocket
 	//if websocketHandler(w, r, proxyReq) {
 	//	return
 	//}
 
 	transport := http.DefaultTransport
+	startMs := time.Now().UnixMilli()
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
 	if err != nil {
-		logger.Error("%vms %v proxy error %v", endMs-startMs, log, err)
+		logger.Error("%3vms %v proxy error %v", endMs-startMs, proxyLog, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	} else if log != "" {
-		logger.Debug("%vms %v", endMs-startMs, log)
+	}
+
+	if proxyLog != "" {
+		logger.Debug("%3vms %v", endMs-startMs, proxyLog)
 	}
 
 	hdr := w.Header()
@@ -67,41 +86,31 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	if res.Body != nil {
 		written, err := io.Copy(w, res.Body)
 		if err != nil {
-			logger.Error(written, err)
+			logger.Error("%3vms %v %v", endMs-startMs, written, err)
 		}
 	}
 }
 
-func proxyReplaceWithRegexp(proxyReq *http.Request) string {
+func findReplaceByRegexp(proxyReq http.Request) *url.URL {
 	lock.RLock()
 	defer lock.RUnlock()
 
 	for k, v := range proxyValMap {
 		fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 		tryResult := tryToReplacePath(k, v, fullUrl)
-		if tryResult != "" {
-			parse, err := url.Parse(tryResult)
-			if err != nil {
-				logger.Error(err)
-			}
-
-			log := ""
-			if parse.Path == proxyReq.URL.Path {
-				log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, parse.Host+" .")
-			} else {
-				log = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, parse.Host+parse.Path)
-			}
-
-			proxyReq.Host = parse.Host
-			//o.URL.Scheme = targetURL.Scheme
-			proxyReq.URL.Host = parse.Host
-			proxyReq.URL.Path = parse.Path
-			//o.URL.RawQuery = targetUrl.RawQuery
-			return log
+		if tryResult == "" {
+			continue
 		}
+
+		parse, err := url.Parse(tryResult)
+		if err != nil {
+			logger.Error(err)
+		}
+
+		return parse
 	}
 
-	return ""
+	return nil
 }
 
 func main() {

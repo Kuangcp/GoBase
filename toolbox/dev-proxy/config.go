@@ -54,7 +54,7 @@ func initConfig() {
 	}
 
 	logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: "01-02 15:04:05",
+		TimeFormat: "01-02 15:04:05.000",
 		File: &logger.FileLogger{
 			Filename:   home + "/.dev-proxy.log",
 			Level:      logger.DebugDesc,
@@ -72,29 +72,34 @@ func initConfig() {
 
 func cleanAndRegister(configFile string) {
 	file, err := os.ReadFile(configFile)
-	if err == nil {
-		var confList []ProxyConf
-		err := json.Unmarshal(file, &confList)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		proxy := make(map[string]string)
-		for _, conf := range confList {
-			if !conf.Enable {
-				continue
-			}
-			logger.Info("Register group:", conf.Name)
-			pair := len(conf.Routers) / 2
-			for i := 0; i < pair; i++ {
-				match := conf.Routers[i*2]
-				replace := conf.Routers[i*2+1]
-				proxy[match] = replace
-				logger.Debug("Register", match, "=>", replace)
-			}
-		}
+	if err != nil {
+		logger.Error(err)
+		return
+	}
 
-		proxyValMap = proxy
+	lock.Lock()
+	defer lock.Unlock()
+
+	var confList []ProxyConf
+	err = json.Unmarshal(file, &confList)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	proxyValMap = make(map[string]string)
+	for _, conf := range confList {
+		if !conf.Enable {
+			continue
+		}
+		logger.Info("Register group:", conf.Name)
+		pair := len(conf.Routers) / 2
+		for i := 0; i < pair; i++ {
+			match := conf.Routers[i*2]
+			replace := conf.Routers[i*2+1]
+			proxyValMap[match] = replace
+			logger.Debug("Register", match, "=>", replace)
+		}
 	}
 }
 
@@ -104,7 +109,9 @@ func listenConfig(configFile string) {
 		stat, err := os.Stat(configFile)
 		if err != nil {
 			logger.Error(err)
+			continue
 		}
+
 		curModTime := stat.ModTime()
 		if curModTime.After(lastModTime) {
 			//logger.Info(stat.ModTime())
