@@ -17,8 +17,10 @@ type ProxyConf struct {
 	Routers []string `json:"routers"`
 }
 
-var proxyValMap = make(map[string]string)
-var lock = &sync.RWMutex{}
+var (
+	proxyValMap = make(map[string]string)
+	lock        = &sync.RWMutex{}
+)
 
 // 处理源路径到目标路径的转换
 // originConf 正则匹配规则
