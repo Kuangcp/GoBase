@@ -63,13 +63,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
 	if err != nil {
-		logger.Error("%3vms %v proxy error %v", endMs-startMs, proxyLog, err)
+		logger.Error("%4v %v proxy error %v", endMs-startMs, proxyLog, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if proxyLog != "" {
-		logger.Debug("%3vms %v", endMs-startMs, proxyLog)
+		logger.Debug("%4v %v", endMs-startMs, proxyLog)
 	}
 
 	hdr := w.Header()

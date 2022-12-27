@@ -66,13 +66,13 @@ func initConfig() {
 		}})
 
 	configFile := home + "/.dev-proxy.json"
-	cleanAndRegister(configFile)
+	cleanAndRegisterFromFile(configFile)
 	if reloadConf {
 		go listenConfig(configFile)
 	}
 }
 
-func cleanAndRegister(configFile string) {
+func cleanAndRegisterFromFile(configFile string) {
 	file, err := os.ReadFile(configFile)
 	if err != nil {
 		logger.Error(err)
@@ -100,14 +100,14 @@ func cleanAndRegister(configFile string) {
 			match := conf.Routers[i*2]
 			replace := conf.Routers[i*2+1]
 			proxyValMap[match] = replace
-			logger.Debug("Register", match, "=>", replace)
+			logger.Debug("Register", match, ctool.Yellow.Print("►"), ctool.Cyan.Print(replace))
 		}
 	}
 }
 
 func listenConfig(configFile string) {
 	var lastModTime = time.Now()
-	for range time.NewTicker(time.Second * 5).C {
+	for range time.NewTicker(time.Second * 2).C {
 		stat, err := os.Stat(configFile)
 		if err != nil {
 			logger.Error(err)
@@ -118,7 +118,7 @@ func listenConfig(configFile string) {
 		if curModTime.After(lastModTime) {
 			//logger.Info(stat.ModTime())
 			lastModTime = curModTime
-			cleanAndRegister(configFile)
+			cleanAndRegisterFromFile(configFile)
 		}
 	}
 }
