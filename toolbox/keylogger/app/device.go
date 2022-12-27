@@ -97,7 +97,7 @@ func ListenDevice() {
 			continue
 		}
 
-		handleResult := handleEvents(inputEvents, connection)
+		handleResult := handleEvents(inputEvents)
 		if !hasSuccess && handleResult {
 			hasSuccess = true
 			fmt.Println(ctk.Green.Print("\n    Listen success."))
@@ -161,9 +161,8 @@ func calculateKPM() {
 }
 
 // ns us ms s
-func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
+func handleEvents(inputEvents []InputEvent) bool {
 	today := time.Now()
-	todayStr := today.Format(store.DateFormat)
 	matchFlag := false
 	for _, inputEvent := range inputEvents {
 		if inputEvent.Code == 0 {
@@ -176,28 +175,15 @@ func handleEvents(inputEvents []InputEvent, conn *redis.Client) bool {
 		}
 
 		matchFlag = true
+
 		//fmt.Printf("%v           %v\n", event, inputEvent)
-		result, err := conn.ZIncr(store.GetRankKey(today),
-			redis.Z{Score: 1, Member: event.Scancode}).Result()
-		if err != nil {
-			fmt.Println("key zincr: ", result, err)
-			store.CloseRedisConnectionThenExit()
-		}
-		result, err = conn.ZIncr(store.TotalCount,
-			redis.Z{Score: 1, Member: todayStr}).Result()
-		if err != nil {
-			fmt.Println("total zincr: ", result, err)
-			store.CloseRedisConnectionThenExit()
-		}
-		// actual store us not ns
-		var num int64 = 0
+		store.IncrRankKey(today, event.Scancode)
+		store.IncrTotalCount(today)
+
 		keyNs := inputEvent.Time.Nano()
-		num, err = conn.ZAdd(store.GetDetailKey(today),
-			redis.Z{Score: float64(event.Scancode), Member: keyNs / 1000}).Result()
-		if err != nil {
-			fmt.Println("detail zadd: ", num, err)
-			store.CloseRedisConnectionThenExit()
-		}
+		store.AddKeyDetail(today, keyNs, event.Scancode)
+
+		// push ms
 		slideQueue.Push(keyNs / 1000_000)
 	}
 	return matchFlag
@@ -332,26 +318,20 @@ func printByColumn(columnCount int, dataLen int, toString func(index int) string
 }
 
 func handleRankByDate(time time.Time, conn *redis.Client) {
-	today := time.Format(store.DateFormat)
-
 	all := conn.HGetAll(store.KeyMap)
 	var keyMap map[string]string
 	if all != nil {
 		keyMap = all.Val()
 	}
-	totalScore := conn.ZScore(store.TotalCount, today)
 
-	maxKPMKey := store.GetTodayMaxKPMKey(time)
-	maxKPM, err := conn.Get(maxKPMKey).Result()
-	if err != nil {
-		maxKPM = "0"
-	}
+	totalScore := store.TotalCountVal(time)
+	maxKPM := store.MaxKPMVal(time)
 
 	fmt.Printf("\n%s | %s | %-3s | Total: %s \n",
 		ctk.Green.Printf("%-9s", time.Weekday()),
 		time.Format(ctk.YYYY_MM_DD),
 		ctk.Yellow.Printf("%3s", maxKPM),
-		ctk.Green.Printf("%-5d", int64(totalScore.Val())))
+		ctk.Green.Printf("%-5d", totalScore))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(store.GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
@@ -393,18 +373,14 @@ func parseTime(timeSegment string) (int, int) {
 func handleTotalByDate(time time.Time, conn *redis.Client) {
 	today := time.Format(store.DateFormat)
 	score := conn.ZScore(store.TotalCount, today)
-	maxKPMKey := store.GetTodayMaxKPMKey(time)
-	maxKPM, err := conn.Get(maxKPMKey).Result()
-	if err != nil {
-		maxKPM = "0"
-	}
+	maxKPM := store.MaxKPMVal(time)
 	fmt.Printf("%s %s %s %6v\n", time.Format(ctk.YYYY_MM_DD),
 		ctk.Green.Printf("%-9s", time.Weekday()),
 		ctk.Yellow.Printf("%4s", maxKPM),
 		int64(score.Val()))
 }
 
-//CacheKeyMap to redis
+// CacheKeyMap to redis
 func CacheKeyMap() {
 	device := OpenDevice()
 	if device == nil {
@@ -420,7 +396,7 @@ func CacheKeyMap() {
 	}
 }
 
-//PrintKeyMap show
+// PrintKeyMap show
 func PrintKeyMap() {
 	device := OpenDevice()
 	if device == nil {

@@ -23,6 +23,9 @@ const (
 func GetTodayMaxKPMKey(time time.Time) string {
 	return GetTodayMaxKPMKeyByString(time.Format(DateFormat))
 }
+func GetTodayTempKPMKey(time time.Time) string {
+	return GetTodayTempKPMKeyByString(time.Format(DateFormat))
+}
 
 func GetTodayTempKPMKeyByString(timeStr string) string {
 	return Prefix + timeStr + ":temp-kpm"
