@@ -69,7 +69,8 @@ func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
 func TestFindMedianSortedArrays(t *testing.T) {
 	assert.Equal(t, float64(6), findMedianSortedArrays([]int{3, 6}, []int{44}))
 	assert.Equal(t, float64(5), findMedianSortedArrays([]int{3, 6}, []int{1, 4, 7, 44}))
-
-	assert.Equal(t, float64(2.5), findMedianSortedArrays([]int{1, 2}, []int{3, 4}))
+	assert.Equal(t, 2.5, findMedianSortedArrays([]int{1, 2}, []int{3, 4}))
 	assert.Equal(t, float64(0), findMedianSortedArrays([]int{0, 0}, []int{0, 0}))
+	assert.Equal(t, float64(8), findMedianSortedArrays([]int{1, 2, 3, 4, 5, 6, 7, 8, 23, 25, 29}, []int{3, 4, 7, 11, 13, 14, 15, 16, 17, 18}))
+	assert.Equal(t, float64(6), findMedianSortedArrays([]int{1, 2, 3, 4, 5, 6, 7, 8, 23, 25, 29}, []int{}))
 }
