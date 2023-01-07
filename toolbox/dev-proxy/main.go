@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kuangcp/logger"
 	"io"
 	"net/http"
@@ -12,8 +14,10 @@ import (
 )
 
 var (
-	port       int
-	reloadConf bool
+	port        int
+	reloadConf  bool
+	queryServer bool
+	queryPort   int
 )
 
 func proxyHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,12 +32,21 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// replace
 	newUrl := findReplaceByRegexp(*proxyReq)
 	proxyLog := ""
+	id := ""
 	if newUrl != nil {
 		if newUrl.Path == proxyReq.URL.Path {
 			proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
 		} else {
 			proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
 		}
+
+		// 记录请求
+		id = uuid.New().String()
+		bodyBt, _ := io.ReadAll(proxyReq.Body)
+		//fmt.Println(string(bodyBt), err)
+		saveRequest(ReqLog{Id: id, Url: proxyReq.Host + proxyReq.URL.Path, Header: proxyReq.Header, Body: string(bodyBt)})
+		// 回写流
+		proxyReq.Body = io.NopCloser(bytes.NewBuffer(bodyBt))
 
 		proxyReq.Host = newUrl.Host
 		//proxyReq.URL.Scheme = newUrl.Scheme
@@ -116,12 +129,24 @@ func findReplaceByRegexp(proxyReq http.Request) *url.URL {
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
 	flag.BoolVar(&reloadConf, "r", false, "auto reload changed config")
+
+	flag.BoolVar(&queryServer, "q", false, "query log")
+	flag.IntVar(&queryPort, "qp", 1235, "port")
 	flag.Parse()
 
 	initConfig()
+	InitConnection()
+
+	if queryServer {
+		logger.Info("Start serving on 127.0.0.1:%d", queryPort)
+		http.HandleFunc("/list", func(writer http.ResponseWriter, request *http.Request) {
+			queryRequest()
+		})
+		http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
+		return
+	}
 
 	logger.Info("Start serving on 127.0.0.1:%d", port)
-
 	cert, err := genCertificate()
 	if err != nil {
 		logger.Fatal(err)

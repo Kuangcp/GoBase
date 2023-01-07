@@ -3,8 +3,14 @@ module dev-proxy
 go 1.19
 
 require (
+	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/kuangcp/gobase/pkg/ctool v1.0.8
 	github.com/kuangcp/logger v1.0.9
-	github.com/go-redis/redis v6.15.9+incompatible // indirect
+)
+
+require (
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.24.2 // indirect
 )
