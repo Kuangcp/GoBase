@@ -74,10 +74,18 @@ func receiveFile(header *multipart.FileHeader) error {
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.MultipartForm == nil {
+		log.Println("not exist any file")
+		w.Write([]byte("Error: not exist any file\n"))
+		return
+	}
+
 	var maxMib int64 = 10
 	err := r.ParseMultipartForm(maxMib << 20)
 	if err != nil {
-		log.Println(err)
+		log.Println("read form error:", err)
+		w.Write([]byte("Error: read form failed\n"))
+		return
 	}
 
 	for _, headers := range r.MultipartForm.File {
