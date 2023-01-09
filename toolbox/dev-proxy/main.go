@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/google/uuid"
@@ -44,7 +45,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		id = uuid.New().String()
 		bodyBt, _ := io.ReadAll(proxyReq.Body)
 		//fmt.Println(string(bodyBt), err)
-		saveRequest(ReqLog{Id: id, Url: proxyReq.Host + proxyReq.URL.Path, Header: proxyReq.Header, Body: string(bodyBt)})
+		saveRequest(ReqLog{Id: id, Url: proxyReq.Host + proxyReq.URL.Path, Header: proxyReq.Header, Body: string(bodyBt), Time: time.Now()})
 		// 回写流
 		proxyReq.Body = io.NopCloser(bytes.NewBuffer(bodyBt))
 
@@ -138,15 +139,10 @@ func main() {
 	InitConnection()
 
 	if queryServer {
-		logger.Info("Start serving on 127.0.0.1:%d", queryPort)
-		http.HandleFunc("/list", func(writer http.ResponseWriter, request *http.Request) {
-			queryRequest()
-		})
-		http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
-		return
+		go startQueryServer()
 	}
 
-	logger.Info("Start serving on 127.0.0.1:%d", port)
+	logger.Info("Start proxy server on 127.0.0.1:%d", port)
 	cert, err := genCertificate()
 	if err != nil {
 		logger.Fatal(err)
@@ -170,4 +166,27 @@ func main() {
 	//	logger.Error(err)
 	//}
 	//os.Exit(0)
+}
+
+func startQueryServer() {
+	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
+
+	http.HandleFunc("/list", func(writer http.ResponseWriter, request *http.Request) {
+		values := request.URL.Query()
+		page := values.Get("page")
+		size := values.Get("size")
+		pageResult := pageQueryReqLog(page, size)
+		result := ResultVO[*PageVO[ReqLog]]{}
+		if pageResult == nil {
+			result.Code = 101
+			result.Msg = "invalid data"
+		} else {
+			result.Code = 0
+			result.Data = pageResult
+		}
+		by, _ := json.Marshal(result)
+		writer.Write(by)
+	})
+
+	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
 }
