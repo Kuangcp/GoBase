@@ -13,13 +13,19 @@ import (
 
 type ProxyConf struct {
 	Name    string   `json:"name"`
-	Enable  bool     `json:"enable"`
+	Enable  int      `json:"enable"`
 	Routers []string `json:"routers"`
 }
+
+const (
+	configPath = "/.dev-proxy/dev-proxy.json"
+	logPath    = "/.dev-proxy/dev-proxy.log"
+)
 
 var (
 	proxyValMap = make(map[string]string)
 	lock        = &sync.RWMutex{}
+	dbPath      = "/.dev-proxy/leveldb-request-log"
 )
 
 // 处理源路径到目标路径的转换
@@ -58,14 +64,15 @@ func initConfig() {
 	logger.SetLoggerConfig(&logger.LogConfig{
 		TimeFormat: "01-02 15:04:05.000",
 		File: &logger.FileLogger{
-			Filename:   home + "/.dev-proxy.log",
+			Filename:   home + logPath,
 			Level:      logger.DebugDesc,
 			Append:     true,
 			PermitMask: "0660",
 			MaxDays:    -1,
 		}})
 
-	configFile := home + "/.dev-proxy.json"
+	configFile := home + configPath
+	dbPath = home + dbPath
 	cleanAndRegisterFromFile(configFile)
 	if reloadConf {
 		go listenConfig(configFile)
@@ -91,7 +98,7 @@ func cleanAndRegisterFromFile(configFile string) {
 
 	proxyValMap = make(map[string]string)
 	for _, conf := range confList {
-		if !conf.Enable {
+		if conf.Enable == 0 {
 			continue
 		}
 		logger.Info("Register group:", conf.Name)

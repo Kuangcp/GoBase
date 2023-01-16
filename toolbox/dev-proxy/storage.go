@@ -44,7 +44,7 @@ type (
 )
 
 func InitConnection() {
-	newDB, err := leveldb.OpenFile("log-db", nil)
+	newDB, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
 		logger.Painc(err)
 	}
