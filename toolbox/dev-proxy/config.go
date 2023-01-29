@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
+	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"sync"
@@ -52,6 +54,28 @@ func tryToReplacePath(originConf, targetConf, fullUrl string) string {
 	}
 
 	return replaceResult
+}
+
+func findReplaceByRegexp(proxyReq http.Request) *url.URL {
+	lock.RLock()
+	defer lock.RUnlock()
+
+	for k, v := range proxyValMap {
+		fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
+		tryResult := tryToReplacePath(k, v, fullUrl)
+		if tryResult == "" {
+			continue
+		}
+
+		parse, err := url.Parse(tryResult)
+		if err != nil {
+			logger.Error(err)
+		}
+
+		return parse
+	}
+
+	return nil
 }
 
 func initConfig() {
