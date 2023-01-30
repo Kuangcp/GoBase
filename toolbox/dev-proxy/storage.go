@@ -88,13 +88,8 @@ func CloseConnection() {
 
 func saveRequest(log ReqLog) {
 	now := time.Now()
-	t := now.Format("01:02:15:04_05.000")
-	marshal, err := json.Marshal(log)
-	if err != nil {
-		logger.Error(err)
-	}
-	key := t + "_" + log.Id[0:5]
-	db.Put([]byte(key), marshal, nil)
+	key := now.Format("01:02:15:04_05.000") + "_" + log.Id[0:5]
+	db.Put([]byte(key), toJSONBuffer(log).Bytes(), nil)
 	connection.ZAdd(TOTAL_REQ, redis.Z{Member: key, Score: float64(now.UnixNano())})
 }
 
@@ -102,12 +97,32 @@ func saveRequest(log ReqLog) {
 func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
 	pageI, _ := strconv.Atoi(page)
 	sizeI, _ := strconv.Atoi(size)
-	result, err := connection.ZRange(TOTAL_REQ, int64((pageI-1)*sizeI), int64(pageI*sizeI)).Result()
+	if sizeI <= 0 || pageI < 0 {
+		return nil
+	}
+
+	result, err := connection.ZRange(TOTAL_REQ, int64((pageI-1)*sizeI), int64(pageI*sizeI)-1).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil
 	}
+
 	pageResult := PageVO[ReqLog]{}
+	pageResult.Data = queryLogDetail(result)
+
+	i, err := connection.ZCard(TOTAL_REQ).Result()
+	if err == nil {
+		pageResult.Total = int(i)
+		pageResult.Page = int(i) / sizeI
+		if pageResult.Page*sizeI < pageResult.Total {
+			pageResult.Page += 1
+		}
+	}
+
+	return &pageResult
+}
+
+func queryLogDetail(result []string) []ReqLog {
 	var list []ReqLog
 	for i := range result {
 		key := result[i]
@@ -126,15 +141,5 @@ func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
 		}
 		list = append(list, l)
 	}
-	pageResult.Data = list
-	i, err := connection.ZCard(TOTAL_REQ).Result()
-	if err == nil {
-		pageResult.Total = int(i)
-		pageResult.Page = int(i) / sizeI
-		if pageResult.Page*sizeI < pageResult.Total {
-			pageResult.Page += 1
-		}
-	}
-
-	return &pageResult
+	return list
 }

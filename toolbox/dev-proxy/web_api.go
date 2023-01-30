@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/kuangcp/logger"
 	"net/http"
@@ -27,7 +26,25 @@ func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		result.Code = 0
 		result.Data = pageResult
+
+		hiddenHeader(pageResult)
 	}
-	by, _ := json.Marshal(result)
-	writer.Write(by)
+
+	buffer := toJSONBuffer(result)
+	writer.Write(buffer.Bytes())
+}
+
+func hiddenHeader(pageResult *PageVO[ReqLog]) {
+	if pageResult.Data == nil {
+		return
+	}
+	for _, v := range pageResult.Data {
+		header := v.Header
+		delete(header, "User-Agent")
+		delete(header, "Accept-Encoding")
+		delete(header, "Referer")
+		delete(header, "Cache-Control")
+		delete(header, "Accept-Language")
+		delete(header, "Pragma")
+	}
 }

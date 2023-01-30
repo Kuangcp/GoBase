@@ -89,7 +89,9 @@ func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) string {
 	id = uuid.New().String()
 	bodyBt, _ := io.ReadAll(proxyReq.Body)
 	//fmt.Println(string(bodyBt), err)
-	saveRequest(ReqLog{Id: id, Url: proxyReq.Host + proxyReq.URL.Path, Header: proxyReq.Header, Body: string(bodyBt), Time: time.Now()})
+
+	query, _ := url.QueryUnescape(proxyReq.URL.String())
+	saveRequest(ReqLog{Id: id, Url: query, Header: proxyReq.Header, Body: string(bodyBt), Time: time.Now()})
 	// 回写流
 	proxyReq.Body = io.NopCloser(bytes.NewBuffer(bodyBt))
 
