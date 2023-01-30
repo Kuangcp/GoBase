@@ -73,6 +73,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		res.Body = body
 		resMes := Message{Header: res.Header, Body: string(bytes)}
 		reqLog.Response = resMes
+		reqLog.ResTime = time.Now()
+		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 	}
 
 	w.WriteHeader(res.StatusCode)
@@ -82,6 +84,15 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Error("%3vms %v %v", endMs-startMs, written, err)
 		}
 	}
+}
+
+func fmtDuration(d time.Duration) string {
+	ms := d.Milliseconds()
+	d = d.Round(time.Millisecond)
+	if ms < 10_000 {
+		return fmt.Sprintf("%vms", ms)
+	}
+	return d.String()
 }
 
 func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog) {
@@ -99,7 +110,7 @@ func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog) {
 
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
 	reqMes := Message{Header: proxyReq.Header, Body: string(bodyBt)}
-	log := &ReqLog{Id: id, Url: query, Request: reqMes, Time: time.Now()}
+	log := &ReqLog{Id: id, Url: query, Request: reqMes, ReqTime: time.Now()}
 
 	proxyReq.Body = body
 	proxyReq.Host = newUrl.Host

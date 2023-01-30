@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	poolSize  = 5
-	PREFIX    = "dev-proxy:"
-	TOTAL_REQ = PREFIX + "total-req"
+	PoolSize = 5
+	Prefix   = "dev-proxy:"
+	TotalReq = Prefix + "total-req"
 )
 
 var (
@@ -28,12 +28,13 @@ type (
 		Body   string      `json:"body"`
 	}
 	ReqLog struct {
-		Id       string    `json:"id"`
-		Url      string    `json:"url"`
-		Request  Message   `json:"request"`
-		Response Message   `json:"response"`
-		Time     time.Time `json:"time"`
-		ResTime  time.Time `json:"resTime"`
+		Id          string    `json:"id"`
+		Url         string    `json:"url"`
+		ReqTime     time.Time `json:"reqTime"`
+		ResTime     time.Time `json:"resTime"`
+		ElapsedTime string    `json:"useTime"`
+		Request     Message   `json:"request"`
+		Response    Message   `json:"response"`
 	}
 	ResultVO[T any] struct {
 		Code int    `json:"code"`
@@ -56,7 +57,7 @@ func InitConnection() {
 
 	option := redis.Options{Addr: "127.0.0.1" + ":6667", Password: "", DB: 1}
 
-	option.PoolSize = poolSize
+	option.PoolSize = PoolSize
 	connection = redis.NewClient(&option)
 	if !isValidConnection(connection) {
 		os.Exit(1)
@@ -97,7 +98,7 @@ func saveRequest(log *ReqLog) {
 	now := time.Now()
 	key := now.Format("01-02 15:04:05.000") + " " + log.Id[0:6]
 	db.Put([]byte(key), toJSONBuffer(log).Bytes(), nil)
-	connection.ZAdd(TOTAL_REQ, redis.Z{Member: key, Score: float64(now.UnixNano())})
+	connection.ZAdd(TotalReq, redis.Z{Member: key, Score: float64(now.UnixNano())})
 }
 
 // page start with 1
@@ -108,7 +109,7 @@ func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
 		return nil
 	}
 
-	result, err := connection.ZRange(TOTAL_REQ, int64((pageI-1)*sizeI), int64(pageI*sizeI)-1).Result()
+	result, err := connection.ZRange(TotalReq, int64((pageI-1)*sizeI), int64(pageI*sizeI)-1).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil
@@ -117,7 +118,7 @@ func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
 	pageResult := PageVO[ReqLog]{}
 	pageResult.Data = queryLogDetail(result)
 
-	i, err := connection.ZCard(TOTAL_REQ).Result()
+	i, err := connection.ZCard(TotalReq).Result()
 	if err == nil {
 		pageResult.Total = int(i)
 		pageResult.Page = int(i) / sizeI
@@ -136,14 +137,14 @@ func queryLogDetail(result []string) []ReqLog {
 
 		value, err := db.Get([]byte(key), nil)
 		if err != nil {
-			logger.Error(key, err)
+			logger.Error("key:["+key+"] GET ERROR:", err)
 			continue
 		}
 
 		var l ReqLog
 		err = json.Unmarshal(value, &l)
 		if err != nil {
-			logger.Error(key, err)
+			logger.Error("key:["+key+"] GET ERROR:", err)
 			continue
 		}
 		list = append(list, l)

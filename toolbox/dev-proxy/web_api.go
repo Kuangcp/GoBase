@@ -10,8 +10,23 @@ func startQueryServer() {
 	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
 
 	http.HandleFunc("/list", pageListReqHistory)
+	http.HandleFunc("/flushAll", flushAllData)
 
 	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
+}
+
+func flushAllData(writer http.ResponseWriter, request *http.Request) {
+	result, err := connection.ZRange(TotalReq, 0, -1).Result()
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	for _, key := range result {
+		db.Delete([]byte(key), nil)
+	}
+
+	connection.Del(TotalReq)
 }
 
 func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
@@ -27,24 +42,28 @@ func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
 		result.Code = 0
 		result.Data = pageResult
 
-		hiddenHeader(pageResult)
+		hiddenHeaderEachLog(pageResult)
 	}
 
 	buffer := toJSONBuffer(result)
 	writer.Write(buffer.Bytes())
 }
 
-func hiddenHeader(pageResult *PageVO[ReqLog]) {
+func hiddenHeaderEachLog(pageResult *PageVO[ReqLog]) {
 	if pageResult.Data == nil {
 		return
 	}
 	for _, v := range pageResult.Data {
-		header := v.Request.Header
-		delete(header, "User-Agent")
-		delete(header, "Accept-Encoding")
-		delete(header, "Referer")
-		delete(header, "Cache-Control")
-		delete(header, "Accept-Language")
-		delete(header, "Pragma")
+		hiddenHeader(v.Request.Header)
+		hiddenHeader(v.Response.Header)
 	}
+}
+
+func hiddenHeader(header http.Header) {
+	delete(header, "User-Agent")
+	delete(header, "Accept-Encoding")
+	delete(header, "Referer")
+	delete(header, "Cache-Control")
+	delete(header, "Accept-Language")
+	delete(header, "Pragma")
 }
