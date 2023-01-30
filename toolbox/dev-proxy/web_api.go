@@ -39,7 +39,7 @@ func hiddenHeader(pageResult *PageVO[ReqLog]) {
 		return
 	}
 	for _, v := range pageResult.Data {
-		header := v.Header
+		header := v.Request.Header
 		delete(header, "User-Agent")
 		delete(header, "Accept-Encoding")
 		delete(header, "Referer")

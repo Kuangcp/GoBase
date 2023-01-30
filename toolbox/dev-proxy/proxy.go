@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kuangcp/logger"
@@ -20,11 +19,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq := new(http.Request)
 	*proxyReq = *r
 
-	// replace
+	// replace, if not use proxy, log will be nil
 	proxyLog := ""
+	var reqLog *ReqLog
 	findNewUrl := findReplaceByRegexp(*proxyReq)
 	if findNewUrl != nil {
-		proxyLog = rewriteRequest(findNewUrl, proxyReq)
+		proxyLog, reqLog = rewriteRequest(findNewUrl, proxyReq)
+		defer saveRequest(reqLog)
 	}
 
 	// rebuild
@@ -48,13 +49,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
 	if err != nil {
-		logger.Error("%4v %v proxy error %v", endMs-startMs, proxyLog, err)
+		logger.Error("%4vms %v proxy error %v", endMs-startMs, proxyLog, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if proxyLog != "" {
-		logger.Debug("%4v %v", endMs-startMs, proxyLog)
+		logger.Debug("%4vms %v", endMs-startMs, proxyLog)
 	}
 
 	hdr := w.Header()
@@ -67,6 +68,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Set-Cookie", c.Raw)
 	}
 
+	if reqLog != nil {
+		bytes, body := copyStream(res.Body)
+		res.Body = body
+		resMes := Message{Header: res.Header, Body: string(bytes)}
+		reqLog.Response = resMes
+	}
+
 	w.WriteHeader(res.StatusCode)
 	if res.Body != nil {
 		written, err := io.Copy(w, res.Body)
@@ -76,29 +84,28 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) string {
+func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog) {
 	var proxyLog string
 	var id string
 	if newUrl.Path == proxyReq.URL.Path {
-		proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
+		proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" same path")
 	} else {
 		proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
 	}
 
 	// 记录请求
 	id = uuid.New().String()
-	bodyBt, _ := io.ReadAll(proxyReq.Body)
-	//fmt.Println(string(bodyBt), err)
+	bodyBt, body := copyStream(proxyReq.Body)
 
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
-	saveRequest(ReqLog{Id: id, Url: query, Header: proxyReq.Header, Body: string(bodyBt), Time: time.Now()})
-	// 回写流
-	proxyReq.Body = io.NopCloser(bytes.NewBuffer(bodyBt))
+	reqMes := Message{Header: proxyReq.Header, Body: string(bodyBt)}
+	log := &ReqLog{Id: id, Url: query, Request: reqMes, Time: time.Now()}
 
+	proxyReq.Body = body
 	proxyReq.Host = newUrl.Host
 	//proxyReq.URL.Scheme = newUrl.Scheme
 	proxyReq.URL.Host = newUrl.Host
 	proxyReq.URL.Path = newUrl.Path
 	//proxyReq.URL.RawQuery = newUrl.RawQuery
-	return proxyLog
+	return proxyLog, log
 }

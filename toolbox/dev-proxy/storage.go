@@ -23,13 +23,17 @@ var (
 )
 
 type (
+	Message struct {
+		Header http.Header `json:"header"`
+		Body   string      `json:"body"`
+	}
 	ReqLog struct {
-		Id      string      `json:"id"`
-		Url     string      `json:"url"`
-		Header  http.Header `json:"header"`
-		Body    string      `json:"body"`
-		Time    time.Time   `json:"time"`
-		ResTime time.Time   `json:"resTime"`
+		Id       string    `json:"id"`
+		Url      string    `json:"url"`
+		Request  Message   `json:"request"`
+		Response Message   `json:"response"`
+		Time     time.Time `json:"time"`
+		ResTime  time.Time `json:"resTime"`
 	}
 	ResultVO[T any] struct {
 		Code int    `json:"code"`
@@ -86,9 +90,12 @@ func CloseConnection() {
 	}
 }
 
-func saveRequest(log ReqLog) {
+func saveRequest(log *ReqLog) {
+	if log == nil {
+		return
+	}
 	now := time.Now()
-	key := now.Format("01:02:15:04_05.000") + "_" + log.Id[0:5]
+	key := now.Format("01-02 15:04:05.000") + " " + log.Id[0:6]
 	db.Put([]byte(key), toJSONBuffer(log).Bytes(), nil)
 	connection.ZAdd(TOTAL_REQ, redis.Z{Member: key, Score: float64(now.UnixNano())})
 }
