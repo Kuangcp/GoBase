@@ -23,19 +23,29 @@ var (
 )
 
 type (
+	// storage in leveldb
 	Message struct {
 		Header http.Header `json:"header"`
 		Body   string      `json:"body"`
+		BodyT  any         `json:"bodyT,omitempty"`
 	}
-	ReqLog struct {
+	// use in rest api
+	MessageVO struct {
+		Header  http.Header `json:"header"`
+		Body    any         `json:"body"`
+		BodyStr *string     `json:"bodyStr,omitempty"`
+	}
+
+	ReqLog[T any] struct {
 		Id          string    `json:"id"`
 		Url         string    `json:"url"`
 		ReqTime     time.Time `json:"reqTime"`
 		ResTime     time.Time `json:"resTime"`
 		ElapsedTime string    `json:"useTime"`
-		Request     Message   `json:"request"`
-		Response    Message   `json:"response"`
+		Request     T         `json:"request"`
+		Response    T         `json:"response"`
 	}
+
 	ResultVO[T any] struct {
 		Code int    `json:"code"`
 		Msg  string `json:"msg"`
@@ -91,18 +101,16 @@ func CloseConnection() {
 	}
 }
 
-func saveRequest(log *ReqLog) {
+func saveReqLog(log *ReqLog[Message]) {
 	if log == nil {
 		return
 	}
-	now := time.Now()
-	key := now.Format("01-02 15:04:05.000") + " " + log.Id[0:6]
-	db.Put([]byte(key), toJSONBuffer(log).Bytes(), nil)
-	connection.ZAdd(TotalReq, redis.Z{Member: key, Score: float64(now.UnixNano())})
+
+	db.Put([]byte(log.Id), toJSONBuffer(log).Bytes(), nil)
 }
 
 // page start with 1
-func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
+func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 	pageI, _ := strconv.Atoi(page)
 	sizeI, _ := strconv.Atoi(size)
 	if sizeI <= 0 || pageI < 0 {
@@ -115,8 +123,22 @@ func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
 		return nil
 	}
 
-	pageResult := PageVO[ReqLog]{}
-	pageResult.Data = queryLogDetail(result)
+	pageResult := PageVO[*ReqLog[MessageVO]]{}
+	detail := queryLogDetail(result)
+	var data []*ReqLog[MessageVO]
+	for _, v := range detail {
+		reqLog := &ReqLog[MessageVO]{Id: v.Id, Url: v.Url, ReqTime: v.ReqTime, ResTime: v.ResTime, ElapsedTime: v.ElapsedTime,
+			Request:  MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)},
+			Response: MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}}
+		if reqLog.Request.Body == nil {
+			reqLog.Request.BodyStr = &v.Request.Body
+		}
+		if reqLog.Response.Body == nil {
+			reqLog.Response.BodyStr = &v.Response.Body
+		}
+		data = append(data, reqLog)
+	}
+	pageResult.Data = data
 
 	i, err := connection.ZCard(TotalReq).Result()
 	if err == nil {
@@ -130,8 +152,21 @@ func pageQueryReqLog(page, size string) *PageVO[ReqLog] {
 	return &pageResult
 }
 
-func queryLogDetail(result []string) []ReqLog {
-	var list []ReqLog
+func strToAny(body string) any {
+	if body == "" {
+		return nil
+	}
+	var d any
+	err := json.Unmarshal([]byte(body), &d)
+	if err != nil {
+		logger.Error(err)
+		return nil
+	}
+	return d
+}
+
+func queryLogDetail(result []string) []*ReqLog[Message] {
+	var list []*ReqLog[Message]
 	for i := range result {
 		key := result[i]
 
@@ -141,13 +176,13 @@ func queryLogDetail(result []string) []ReqLog {
 			continue
 		}
 
-		var l ReqLog
+		var l ReqLog[Message]
 		err = json.Unmarshal(value, &l)
 		if err != nil {
 			logger.Error("key:["+key+"] GET ERROR:", err)
 			continue
 		}
-		list = append(list, l)
+		list = append(list, &l)
 	}
 	return list
 }

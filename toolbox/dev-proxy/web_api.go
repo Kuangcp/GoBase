@@ -27,6 +27,7 @@ func flushAllData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	connection.Del(TotalReq)
+	logger.Info("delete: ", len(result))
 }
 
 func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
@@ -34,7 +35,7 @@ func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
 	page := values.Get("page")
 	size := values.Get("size")
 	pageResult := pageQueryReqLog(page, size)
-	result := ResultVO[*PageVO[ReqLog]]{}
+	result := ResultVO[*PageVO[*ReqLog[MessageVO]]]{}
 	if pageResult == nil {
 		result.Code = 101
 		result.Msg = "invalid data"
@@ -49,7 +50,7 @@ func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
 	writer.Write(buffer.Bytes())
 }
 
-func hiddenHeaderEachLog(pageResult *PageVO[ReqLog]) {
+func hiddenHeaderEachLog(pageResult *PageVO[*ReqLog[MessageVO]]) {
 	if pageResult.Data == nil {
 		return
 	}

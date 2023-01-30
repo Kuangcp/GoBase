@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/kuangcp/logger"
 	"io"
@@ -21,11 +22,11 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// replace, if not use proxy, log will be nil
 	proxyLog := ""
-	var reqLog *ReqLog
+	var reqLog *ReqLog[Message]
 	findNewUrl := findReplaceByRegexp(*proxyReq)
 	if findNewUrl != nil {
-		proxyLog, reqLog = rewriteRequest(findNewUrl, proxyReq)
-		defer saveRequest(reqLog)
+		proxyLog, reqLog = rewriteRequestAndBuildLog(findNewUrl, proxyReq)
+		defer saveReqLog(reqLog)
 	}
 
 	// rebuild
@@ -95,22 +96,25 @@ func fmtDuration(d time.Duration) string {
 	return d.String()
 }
 
-func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog) {
-	var proxyLog string
-	var id string
-	if newUrl.Path == proxyReq.URL.Path {
-		proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" same path")
-	} else {
-		proxyLog = fmt.Sprintf("%s => %s", proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
-	}
+func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog[Message]) {
+	now := time.Now()
+	id := uuid.New().String()
 
-	// 记录请求
-	id = uuid.New().String()
 	bodyBt, body := copyStream(proxyReq.Body)
-
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
 	reqMes := Message{Header: proxyReq.Header, Body: string(bodyBt)}
-	log := &ReqLog{Id: id, Url: query, Request: reqMes, ReqTime: time.Now()}
+	id = now.Format("01-02 15:04:05.000") + " " + id[0:8]
+	reqLog := &ReqLog[Message]{Id: id, Url: query, Request: reqMes, ReqTime: now}
+	connection.ZAdd(TotalReq, redis.Z{Member: reqLog.Id, Score: float64(reqLog.ReqTime.UnixNano())})
+
+	// record request log sort
+	reqSort, _ := connection.ZCard(TotalReq).Result()
+	var logStr string
+	if newUrl.Path == proxyReq.URL.Path {
+		logStr = fmt.Sprintf("(%v) %s => %s", reqSort, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
+	} else {
+		logStr = fmt.Sprintf("(%v) %s => %s", reqSort, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
+	}
 
 	proxyReq.Body = body
 	proxyReq.Host = newUrl.Host
@@ -118,5 +122,5 @@ func rewriteRequest(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog) {
 	proxyReq.URL.Host = newUrl.Host
 	proxyReq.URL.Path = newUrl.Path
 	//proxyReq.URL.RawQuery = newUrl.RawQuery
-	return proxyLog, log
+	return logStr, reqLog
 }
