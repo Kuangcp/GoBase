@@ -27,7 +27,6 @@ type (
 	Message struct {
 		Header http.Header `json:"header"`
 		Body   string      `json:"body"`
-		BodyT  any         `json:"bodyT,omitempty"`
 	}
 	// use in rest api
 	MessageVO struct {
@@ -127,16 +126,7 @@ func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 	detail := queryLogDetail(result)
 	var data []*ReqLog[MessageVO]
 	for _, v := range detail {
-		reqLog := &ReqLog[MessageVO]{Id: v.Id, Url: v.Url, ReqTime: v.ReqTime, ResTime: v.ResTime, ElapsedTime: v.ElapsedTime,
-			Request:  MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)},
-			Response: MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}}
-		if reqLog.Request.Body == nil {
-			reqLog.Request.BodyStr = &v.Request.Body
-		}
-		if reqLog.Response.Body == nil {
-			reqLog.Response.BodyStr = &v.Response.Body
-		}
-		data = append(data, reqLog)
+		data = append(data, copyLog(v))
 	}
 	pageResult.Data = data
 
@@ -150,6 +140,20 @@ func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 	}
 
 	return &pageResult
+}
+
+func copyLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
+	reqLog := &ReqLog[MessageVO]{
+		Id: v.Id, Url: v.Url, ReqTime: v.ReqTime, ResTime: v.ResTime, ElapsedTime: v.ElapsedTime,
+		Request:  MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)},
+		Response: MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}}
+	if reqLog.Request.Body == nil {
+		reqLog.Request.BodyStr = &v.Request.Body
+	}
+	if reqLog.Response.Body == nil {
+		reqLog.Response.BodyStr = &v.Response.Body
+	}
+	return reqLog
 }
 
 func strToAny(body string) any {
