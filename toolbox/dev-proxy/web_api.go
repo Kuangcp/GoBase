@@ -5,6 +5,7 @@ import (
 	"github.com/kuangcp/logger"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -13,8 +14,8 @@ func startQueryServer() {
 	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
 
 	http.HandleFunc("/list", pageListReqHistory)
-	http.HandleFunc("/curlCommand", buildCurlCommand)
-	http.HandleFunc("/replayReq", replayRequest)
+	http.HandleFunc("/curl", buildCurlCommand)
+	http.HandleFunc("/replay", replayRequest)
 	http.HandleFunc("/flushAll", flushAllData)
 
 	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
@@ -69,8 +70,8 @@ func buildCurlCommand(writer http.ResponseWriter, request *http.Request) {
 	writer.Write([]byte(strings.Join(res, "\n\n")))
 }
 
-func buildCommandBySort(sort int, selfProxy string) []string {
-	result, err := connection.ZRange(TotalReq, int64(sort-1), int64(sort-1)).Result()
+func buildCommandBySort(sortIdx int, selfProxy string) []string {
+	result, err := connection.ZRange(TotalReq, int64(sortIdx-1), int64(sortIdx-1)).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil
@@ -83,19 +84,27 @@ func buildCommandBySort(sort int, selfProxy string) []string {
 		}
 		cmd := "curl "
 		if selfProxy == "Y" {
-			cmd += " -x 127.0.0.1:1234 "
+			cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", port)
 		}
 		parseUrl, _ := url.Parse(detail.Url)
-
-		query := url.PathEscape(parseUrl.RawQuery)
-		query = strings.ReplaceAll(query, "&", "\\&")
-		cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path + "\\?" + query
-
-		for k, vl := range detail.Request.Header {
-			for _, v := range vl {
+		cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path
+		if parseUrl.RawQuery != "" {
+			query := url.PathEscape(parseUrl.RawQuery)
+			query = strings.ReplaceAll(query, "&", "\\&")
+			cmd += "\\?" + query
+		}
+		var key []string
+		for k := range detail.Request.Header {
+			key = append(key, k)
+		}
+		sort.Strings(key)
+		for _, k := range key {
+			val := detail.Request.Header.Values(k)
+			for _, v := range val {
 				cmd += fmt.Sprintf(" -H '%s: %s'", k, v)
 			}
 		}
+
 		if detail.Request.Body != "" {
 			cmd += fmt.Sprintf(" --data-raw $'%s'", detail.Request.Body)
 		}
