@@ -115,7 +115,10 @@ func saveReqLog(log *ReqLog[Message]) {
 func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 	pageI, _ := strconv.Atoi(page)
 	sizeI, _ := strconv.Atoi(size)
-	if sizeI <= 0 || pageI < 0 {
+	if sizeI <= 0 {
+		sizeI = 1
+	}
+	if pageI < 0 {
 		return nil
 	}
 

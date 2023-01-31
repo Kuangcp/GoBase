@@ -40,9 +40,9 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
 	selfProxy := query.Get("selfProxy")
-	sort, _ := strconv.Atoi(id)
+	sortIdx, _ := strconv.Atoi(id)
 
-	commandList := buildCommandBySort(sort, selfProxy)
+	commandList := buildCommandBySort(sortIdx, selfProxy)
 	if commandList == nil {
 		writer.Write([]byte(id + " not found"))
 		return
@@ -61,9 +61,9 @@ func buildCurlCommand(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
 	selfProxy := query.Get("selfProxy")
-	sort, _ := strconv.Atoi(id)
+	sortIdx, _ := strconv.Atoi(id)
 
-	res := buildCommandBySort(sort, selfProxy)
+	res := buildCommandBySort(sortIdx, selfProxy)
 	if res == nil {
 		return
 	}
