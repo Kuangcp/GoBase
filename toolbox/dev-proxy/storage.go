@@ -37,14 +37,15 @@ type (
 
 	ReqLog[T any] struct {
 		Id          string    `json:"id"`
+		Method      string    `json:"method"`
 		Url         string    `json:"url"`
+		Status      string    `json:"status"`
+		StatusCode  int       `json:"statusCode"`
 		ReqTime     time.Time `json:"reqTime"`
 		ResTime     time.Time `json:"resTime"`
 		ElapsedTime string    `json:"useTime"`
 		Request     T         `json:"request"`
 		Response    T         `json:"response"`
-		Status      string    `json:"status"`
-		StatusCode  int       `json:"statusCode"`
 	}
 
 	ResultVO[T any] struct {
@@ -143,7 +144,7 @@ func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
 	reqLog := &ReqLog[MessageVO]{
 		Id: v.Id, Url: v.Url, ReqTime: v.ReqTime, ResTime: v.ResTime, ElapsedTime: v.ElapsedTime,
-		Status: v.Status, StatusCode: v.StatusCode,
+		Status: v.Status, StatusCode: v.StatusCode, Method: v.Method,
 		Request:  MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)},
 		Response: MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}}
 	if reqLog.Request.Body == nil && v.Request.Body != "" {
@@ -172,20 +173,24 @@ func queryLogDetail(result []string) []*ReqLog[Message] {
 	var list []*ReqLog[Message]
 	for i := range result {
 		key := result[i]
-
-		value, err := db.Get([]byte(key), nil)
-		if err != nil {
-			logger.Error("key:["+key+"] GET ERROR:", err)
-			continue
-		}
-
-		var l ReqLog[Message]
-		err = json.Unmarshal(value, &l)
-		if err != nil {
-			logger.Error("key:["+key+"] GET ERROR:", err)
-			continue
-		}
-		list = append(list, &l)
+		l := getDetailByKey(key)
+		list = append(list, l)
 	}
 	return list
+}
+
+func getDetailByKey(key string) *ReqLog[Message] {
+	value, err := db.Get([]byte(key), nil)
+	if err != nil {
+		logger.Error("key:["+key+"] GET ERROR:", err)
+		return nil
+	}
+
+	var l ReqLog[Message]
+	err = json.Unmarshal(value, &l)
+	if err != nil {
+		logger.Error("key:["+key+"] GET ERROR:", err)
+		return nil
+	}
+	return &l
 }

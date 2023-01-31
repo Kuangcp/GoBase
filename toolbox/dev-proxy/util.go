@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/kuangcp/logger"
 	"io"
+	"os/exec"
 )
 
 // avoid & => \u0026
@@ -34,4 +35,19 @@ func convertList[T any, R any](src []T, mapFun func(T) R, filterFun func(T) bool
 		}
 	}
 	return result
+}
+
+func execCommand(command string) (string, bool) {
+	cmd := exec.Command("/usr/bin/bash", "-c", command)
+	var out bytes.Buffer
+
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		logger.Error(err)
+		return "", false
+	}
+
+	result := out.String()
+	return result, true
 }
