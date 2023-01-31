@@ -16,6 +16,17 @@ func toJSONBuffer(val any) *bytes.Buffer {
 	encoder.Encode(val)
 	return buffer
 }
+func copyObj[T any, R any](src T) *R {
+	jsonStr := toJSONBuffer(src).String()
+	var r R
+	rObj := &r
+	err := json.Unmarshal([]byte(jsonStr), rObj)
+	if err != nil {
+		logger.Error(err)
+		return nil
+	}
+	return rObj
+}
 
 func copyStream(src io.ReadCloser) ([]byte, io.ReadCloser) {
 	bodyBt, err := io.ReadAll(src)

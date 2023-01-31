@@ -142,17 +142,18 @@ func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 }
 
 func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
-	reqLog := &ReqLog[MessageVO]{
-		Id: v.Id, Url: v.Url, ReqTime: v.ReqTime, ResTime: v.ResTime, ElapsedTime: v.ElapsedTime,
-		Status: v.Status, StatusCode: v.StatusCode, Method: v.Method,
-		Request:  MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)},
-		Response: MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}}
+	reqLog := copyObj[*ReqLog[Message], ReqLog[MessageVO]](v)
+
+	reqLog.Request = MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)}
+	reqLog.Response = MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}
+
 	if reqLog.Request.Body == nil && v.Request.Body != "" {
 		reqLog.Request.BodyStr = &v.Request.Body
 	}
 	if reqLog.Response.Body == nil && v.Response.Body != "" {
 		reqLog.Response.BodyStr = &v.Response.Body
 	}
+
 	return reqLog
 }
 
