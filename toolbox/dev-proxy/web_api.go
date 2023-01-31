@@ -15,7 +15,7 @@ func startQueryServer() {
 	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
 }
 
-func flushAllData(writer http.ResponseWriter, request *http.Request) {
+func flushAllData(_ http.ResponseWriter, _ *http.Request) {
 	result, err := connection.ZRange(TotalReq, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
@@ -46,6 +46,7 @@ func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
 		hiddenHeaderEachLog(pageResult)
 	}
 
+	writer.Header().Set("Content-Type", "application/json")
 	buffer := toJSONBuffer(result)
 	writer.Write(buffer.Bytes())
 }

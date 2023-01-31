@@ -43,6 +43,8 @@ type (
 		ElapsedTime string    `json:"useTime"`
 		Request     T         `json:"request"`
 		Response    T         `json:"response"`
+		Status      string    `json:"status"`
+		StatusCode  int       `json:"statusCode"`
 	}
 
 	ResultVO[T any] struct {
@@ -116,19 +118,15 @@ func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 		return nil
 	}
 
-	result, err := connection.ZRange(TotalReq, int64((pageI-1)*sizeI), int64(pageI*sizeI)-1).Result()
+	keyList, err := connection.ZRange(TotalReq, int64((pageI-1)*sizeI), int64(pageI*sizeI)-1).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil
 	}
 
 	pageResult := PageVO[*ReqLog[MessageVO]]{}
-	detail := queryLogDetail(result)
-	var data []*ReqLog[MessageVO]
-	for _, v := range detail {
-		data = append(data, copyLog(v))
-	}
-	pageResult.Data = data
+	detail := queryLogDetail(keyList)
+	pageResult.Data = convertList(detail, convertLog, nil)
 
 	i, err := connection.ZCard(TotalReq).Result()
 	if err == nil {
@@ -142,15 +140,16 @@ func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
 	return &pageResult
 }
 
-func copyLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
+func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
 	reqLog := &ReqLog[MessageVO]{
 		Id: v.Id, Url: v.Url, ReqTime: v.ReqTime, ResTime: v.ResTime, ElapsedTime: v.ElapsedTime,
+		Status: v.Status, StatusCode: v.StatusCode,
 		Request:  MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)},
 		Response: MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}}
-	if reqLog.Request.Body == nil {
+	if reqLog.Request.Body == nil && v.Request.Body != "" {
 		reqLog.Request.BodyStr = &v.Request.Body
 	}
-	if reqLog.Response.Body == nil {
+	if reqLog.Response.Body == nil && v.Response.Body != "" {
 		reqLog.Response.BodyStr = &v.Response.Body
 	}
 	return reqLog

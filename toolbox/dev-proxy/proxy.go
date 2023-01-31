@@ -76,6 +76,8 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		reqLog.Response = resMes
 		reqLog.ResTime = time.Now()
 		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+		reqLog.Status = res.Status
+		reqLog.StatusCode = res.StatusCode
 	}
 
 	w.WriteHeader(res.StatusCode)

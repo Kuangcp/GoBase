@@ -25,3 +25,13 @@ func copyStream(src io.ReadCloser) ([]byte, io.ReadCloser) {
 
 	return bodyBt, io.NopCloser(bytes.NewBuffer(bodyBt))
 }
+
+func convertList[T any, R any](src []T, mapFun func(T) R, filterFun func(T) bool) []R {
+	var result []R
+	for _, d := range src {
+		if filterFun == nil || filterFun(d) {
+			result = append(result, mapFun(d))
+		}
+	}
+	return result
+}
