@@ -22,12 +22,16 @@ type ProxyConf struct {
 const (
 	configPath = "/.dev-proxy/dev-proxy.json"
 	logPath    = "/.dev-proxy/dev-proxy.log"
+	Open       = 1
+	Close      = 0
+	Proxy      = 2
 )
 
 var (
-	proxyValMap = make(map[string]string)
-	lock        = &sync.RWMutex{}
-	dbPath      = "/.dev-proxy/leveldb-request-log"
+	proxyValMap   = make(map[string]string)
+	proxySelfList []string
+	lock          = &sync.RWMutex{}
+	dbPath        = "/.dev-proxy/leveldb-request-log"
 )
 
 // 处理源路径到目标路径的转换
@@ -56,12 +60,22 @@ func tryToReplacePath(originConf, targetConf, fullUrl string) string {
 	return replaceResult
 }
 
-func findReplaceByRegexp(proxyReq http.Request) *url.URL {
+func matchConf(originConf, fullUrl string) bool {
+	compile, err := regexp.Compile(originConf)
+	if err != nil {
+		logger.Error(err)
+		return false
+	}
+
+	return compile.Match([]byte(fullUrl))
+}
+
+func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 	lock.RLock()
 	defer lock.RUnlock()
 
+	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 	for k, v := range proxyValMap {
-		fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 		tryResult := tryToReplacePath(k, v, fullUrl)
 		if tryResult == "" {
 			continue
@@ -72,10 +86,21 @@ func findReplaceByRegexp(proxyReq http.Request) *url.URL {
 			logger.Error(err)
 		}
 
-		return parse
+		return parse, Open
 	}
 
-	return nil
+	for _, conf := range proxySelfList {
+		if matchConf(conf, fullUrl) {
+			parse, err := url.Parse(fullUrl)
+			if err != nil {
+				logger.Error(err)
+			}
+
+			return parse, Proxy
+		}
+	}
+
+	return nil, Close
 }
 
 func initConfig() {
@@ -122,7 +147,12 @@ func cleanAndRegisterFromFile(configFile string) {
 
 	proxyValMap = make(map[string]string)
 	for _, conf := range confList {
-		if conf.Enable == 0 {
+		if conf.Enable == Close {
+			continue
+		}
+		// 代理自身
+		if conf.Enable == Proxy {
+			proxySelfList = append(proxySelfList, conf.Routers...)
 			continue
 		}
 		logger.Info("Register group:", conf.Name)

@@ -5,6 +5,7 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243249
 https://blog.csdn.net/FlayHigherGT/article/details/109243739  
 
 - [ ] websocket 代理
+- [ ] 代理自身, 做记录
 
 ## Config 
 

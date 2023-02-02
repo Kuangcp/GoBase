@@ -23,7 +23,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	// replace, if not use proxy, log will be nil
 	proxyLog := ""
 	var reqLog *ReqLog[Message]
-	findNewUrl := findReplaceByRegexp(*proxyReq)
+	findNewUrl, proxyType := findReplaceByRegexp(*proxyReq)
 	if findNewUrl != nil {
 		proxyLog, reqLog = rewriteRequestAndBuildLog(findNewUrl, proxyReq)
 		defer saveReqLog(reqLog)
@@ -56,6 +56,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if proxyLog != "" {
+		if proxyType == Proxy {
+			proxyLog += " SELF"
+		}
 		logger.Debug("%4vms %v", endMs-startMs, proxyLog)
 	}
 

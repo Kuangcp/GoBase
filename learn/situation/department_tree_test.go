@@ -12,8 +12,8 @@ import (
 
 var list = buildDepList()
 
-const repeatCount = 100
-const departmentCount = 10
+const repeatCount = 10000
+const departmentCount = 10000
 const writeFile = false
 
 var runCounter = 0
@@ -126,7 +126,7 @@ func buildTreeByLoop() *DepVO {
 }
 
 func findParentAndAppend(cid int, dep map[int]Dep, cache map[int]*DepVO) *DepVO {
-	logger.Info("seek", cid)
+	//logger.Info("seek", cid)
 	runCounter++
 	d, ok := dep[cid]
 	if !ok {
@@ -153,7 +153,7 @@ func findParentAndAppend(cid int, dep map[int]Dep, cache map[int]*DepVO) *DepVO 
 	cache[cid] = curDepVO
 
 	parent.appendChild(curDepVO)
-	logger.Info(curDepVO.Id, "->", parent.Id)
+	//logger.Info(curDepVO.Id, "->", parent.Id)
 	return curDepVO
 }
 

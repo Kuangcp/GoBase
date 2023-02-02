@@ -14,7 +14,7 @@ import (
 const (
 	PoolSize = 5
 	Prefix   = "dev-proxy:"
-	TotalReq = Prefix + "total-req"
+	TotalReq = Prefix + "total-req2"
 )
 
 var (
@@ -67,7 +67,7 @@ func InitConnection() {
 	}
 	db = newDB
 
-	option := redis.Options{Addr: "127.0.0.1" + ":6667", Password: "", DB: 1}
+	option := redis.Options{Addr: "192.168.9.155" + ":6667", Password: "", DB: 1}
 
 	option.PoolSize = PoolSize
 	connection = redis.NewClient(&option)
