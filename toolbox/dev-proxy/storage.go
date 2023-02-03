@@ -7,7 +7,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"net/http"
 	"os"
-	"strconv"
+	"strings"
 	"time"
 )
 
@@ -111,39 +111,6 @@ func saveReqLog(log *ReqLog[Message]) {
 	db.Put([]byte(log.Id), toJSONBuffer(log).Bytes(), nil)
 }
 
-// page start with 1
-func pageQueryReqLog(page, size string) *PageVO[*ReqLog[MessageVO]] {
-	pageI, _ := strconv.Atoi(page)
-	sizeI, _ := strconv.Atoi(size)
-	if sizeI <= 0 {
-		sizeI = 1
-	}
-	if pageI < 0 {
-		return nil
-	}
-
-	keyList, err := connection.ZRange(TotalReq, int64((pageI-1)*sizeI), int64(pageI*sizeI)-1).Result()
-	if err != nil {
-		logger.Error(err)
-		return nil
-	}
-
-	pageResult := PageVO[*ReqLog[MessageVO]]{}
-	detail := queryLogDetail(keyList)
-	pageResult.Data = convertList(detail, convertLog, nil)
-
-	i, err := connection.ZCard(TotalReq).Result()
-	if err == nil {
-		pageResult.Total = int(i)
-		pageResult.Page = int(i) / sizeI
-		if pageResult.Page*sizeI < pageResult.Total {
-			pageResult.Page += 1
-		}
-	}
-
-	return &pageResult
-}
-
 func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
 	reqLog := copyObj[*ReqLog[Message], ReqLog[MessageVO]](v)
 
@@ -181,6 +148,26 @@ func queryLogDetail(result []string) []*ReqLog[Message] {
 		list = append(list, l)
 	}
 	return list
+}
+
+func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
+	value, err := db.Get([]byte(key), nil)
+	if err != nil {
+		//logger.Error("key:["+key+"] GET ERROR:", err)
+		return nil
+	}
+
+	if kwd != "" && !strings.Contains(string(value), kwd) {
+		return nil
+	}
+
+	var l ReqLog[Message]
+	err = json.Unmarshal(value, &l)
+	if err != nil {
+		logger.Error("key:["+key+"] GET ERROR:", err)
+		return nil
+	}
+	return &l
 }
 
 func getDetailByKey(key string) *ReqLog[Message] {

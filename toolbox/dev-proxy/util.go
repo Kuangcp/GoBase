@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/kuangcp/logger"
 	"io"
+	"net/http"
 	"os/exec"
 )
 
@@ -16,6 +17,21 @@ func toJSONBuffer(val any) *bytes.Buffer {
 	encoder.Encode(val)
 	return buffer
 }
+
+func writeJsonRsp(writer http.ResponseWriter, val any) {
+	writer.Header().Set("Content-Type", "application/json")
+	buffer := toJSONBuffer(val)
+	writer.Write(buffer.Bytes())
+}
+
+func JSONFunc[T any](serviceFunc func(request *http.Request) T) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		buffer := toJSONBuffer(serviceFunc(request))
+		writer.Write(buffer.Bytes())
+	}
+}
+
 func copyObj[T any, R any](src T) *R {
 	jsonStr := toJSONBuffer(src).String()
 	var r R
@@ -61,4 +77,11 @@ func execCommand(command string) (string, bool) {
 
 	result := out.String()
 	return result, true
+}
+
+func RspStr(writer http.ResponseWriter, val string) {
+	_, err := writer.Write([]byte(val))
+	if err != nil {
+		logger.Error(err)
+	}
 }

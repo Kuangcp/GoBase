@@ -9,14 +9,15 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
 
 type ProxyConf struct {
-	Name    string   `json:"name"`
-	Enable  int      `json:"enable"`
-	Routers []string `json:"routers"`
+	Name      string   `json:"name"`
+	ProxyType int      `json:"proxy_type"`
+	Routers   []string `json:"routers"`
 }
 
 const (
@@ -147,11 +148,14 @@ func cleanAndRegisterFromFile(configFile string) {
 
 	proxyValMap = make(map[string]string)
 	for _, conf := range confList {
-		if conf.Enable == Close {
+		if conf.ProxyType == Close {
 			continue
 		}
 		// 代理自身
-		if conf.Enable == Proxy {
+		if conf.ProxyType == Proxy {
+			logger.Info("Register proxy group:", conf.Name)
+			logger.Debug("Register %v", strings.Join(conf.Routers, " , "))
+
 			proxySelfList = append(proxySelfList, conf.Routers...)
 			continue
 		}

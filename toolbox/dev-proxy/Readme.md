@@ -5,7 +5,6 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243249
 https://blog.csdn.net/FlayHigherGT/article/details/109243739  
 
 - [ ] websocket 代理
-- [ ] 代理自身, 做记录
 
 ## Config 
 
@@ -15,8 +14,16 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243739
   [
     {
       "name": "test",
-      "enable": 1,
+      "proxy_type": 1,
       "routers": ["http://192.168.1.2:12009/tg/(.*)", "http://127.0.0.1:8081/tg/test/$1"]
+    },
+    {
+      "name": "Proxy",
+      "proxy_type": 2,
+      "routers": [
+        "http://192.168.16.90:32009/tg-easy-fetch/(.*)",
+        "http://127.0.0.1:19011/(.*)"
+      ]
     }
   ]
 ```

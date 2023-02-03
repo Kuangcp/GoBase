@@ -8,12 +8,36 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
+
+type (
+	PageQueryParam struct {
+		page   int
+		size   int
+		kwd    string
+		prefix string
+	}
+)
+
+func (p PageQueryParam) buildStartEnd() (int64, int64) {
+	return int64((p.page - 1) * p.size), int64(p.page*p.size) - 1
+}
+
+func handleInterceptor(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now().UnixMilli()
+		h(w, r)
+		end := time.Now().UnixMilli()
+		logger.Info(r.URL.Path, end-start, "ms")
+	}
+}
 
 func startQueryServer() {
 	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
 
-	http.HandleFunc("/list", pageListReqHistory)
+	http.HandleFunc("/", searchPage)
+	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
 	http.HandleFunc("/curl", buildCurlCommand)
 	http.HandleFunc("/replay", replayRequest)
 	http.HandleFunc("/flushAll", flushAllData)
@@ -44,15 +68,15 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 
 	commandList := buildCommandBySort(sortIdx, selfProxy)
 	if commandList == nil {
-		writer.Write([]byte(id + " not found"))
+		RspStr(writer, id+" not found")
 		return
 	}
 	for _, c := range commandList {
 		result, success := execCommand(c)
 		if !success {
-			writer.Write([]byte("ERROR: \n" + c + "\n" + result + "\n"))
+			RspStr(writer, "ERROR: \n"+c+"\n"+result+"\n")
 		} else {
-			writer.Write([]byte(result))
+			RspStr(writer, result)
 		}
 	}
 }
@@ -68,6 +92,7 @@ func buildCurlCommand(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	writer.Write([]byte(strings.Join(res, "\n\n")))
+	RspStr(writer, strings.Join(res, "\n\n"))
 }
 
 func buildCommandBySort(sortIdx int, selfProxy string) []string {
@@ -115,42 +140,30 @@ func buildCommandBySort(sortIdx int, selfProxy string) []string {
 	return cmdList
 }
 
-func pageListReqHistory(writer http.ResponseWriter, request *http.Request) {
+func parseParam(request *http.Request) *PageQueryParam {
 	values := request.URL.Query()
 	page := values.Get("page")
 	size := values.Get("size")
-	pageResult := pageQueryReqLog(page, size)
-	result := ResultVO[*PageVO[*ReqLog[MessageVO]]]{}
-	if pageResult == nil {
-		result.Code = 101
-		result.Msg = "invalid data"
-	} else {
-		result.Code = 0
-		result.Data = pageResult
+	kwd := values.Get("kwd")
+	prefix := values.Get("prefix")
 
-		hiddenHeaderEachLog(pageResult)
+	pageI, _ := strconv.Atoi(page)
+	sizeI, _ := strconv.Atoi(size)
+	if sizeI <= 0 {
+		sizeI = 1
+	}
+	if pageI < 0 {
+		return nil
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	buffer := toJSONBuffer(result)
-	writer.Write(buffer.Bytes())
+	return &PageQueryParam{page: pageI, size: sizeI, kwd: kwd, prefix: prefix}
 }
 
-func hiddenHeaderEachLog(pageResult *PageVO[*ReqLog[MessageVO]]) {
-	if pageResult.Data == nil {
-		return
-	}
-	for _, v := range pageResult.Data {
-		hiddenHeader(v.Request.Header)
-		hiddenHeader(v.Response.Header)
-	}
-}
-
-func hiddenHeader(header http.Header) {
-	delete(header, "User-Agent")
-	delete(header, "Accept-Encoding")
-	delete(header, "Referer")
-	delete(header, "Cache-Control")
-	delete(header, "Accept-Language")
-	delete(header, "Pragma")
+func searchPage(writer http.ResponseWriter, request *http.Request) {
+	RspStr(writer, "<!DOCTYPE html>\n<html lang=\"en\"><body>")
+	RspStr(writer, "<form action=\"list\" style=\"text-align:center;\">"+
+		"<input name=\"page\" style=\"width:60px;\" type=\"number\"/>"+
+		"<input name=\"prefix\" style=\"width:100px;\"/>"+
+		"<input name=\"kwd\" style=\"width:280px;\"></input><button>Search</button> </form>")
+	RspStr(writer, "</body></html>")
 }
