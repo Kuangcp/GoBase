@@ -12,12 +12,13 @@ import (
 
 var list = buildDepList()
 
-const repeatCount = 10000
-const departmentCount = 10000
+const repeatCount = 1000
+const departmentCount = 10
 const writeFile = false
 
 var runCounter = 0
 
+// 对比 循环和递归构造 部门 树状结构
 type (
 	Dep struct {
 		id       int

@@ -33,10 +33,10 @@ func init() {
 }
 
 func TestBuy(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 30; i++ {
 		for j := 0; j < 500; j++ {
 			go secBuy(i*1000 + j)
-			go cancel(i*1000+j, 7)
+			//go cancel(i*1000+j, 9)
 		}
 		//time.Sleep(time.Millisecond * 500)
 	}

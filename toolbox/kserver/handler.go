@@ -81,6 +81,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var maxMib int64 = 10
+	// 非文件时采用这个限制，如果是文件类型的上传，会创建临时文件不会直接放在内存里
 	err := r.ParseMultipartForm(maxMib << 20)
 	if err != nil {
 		log.Println("read form error:", err)
