@@ -12,12 +12,12 @@ import (
 type (
 	KmDNS struct {
 		serviceName string
-		timeout     time.Duration
+		findTimeout time.Duration
 	}
 )
 
-func New(serviceName string, timeout time.Duration) *KmDNS {
-	return &KmDNS{serviceName: serviceName, timeout: timeout}
+func New(serviceName string, findTimeout time.Duration) *KmDNS {
+	return &KmDNS{serviceName: serviceName, findTimeout: findTimeout}
 }
 
 func (k *KmDNS) Server() {
@@ -40,8 +40,8 @@ func (k *KmDNS) Server() {
 	select {}
 }
 
-//FindMasterService
-func (k *KmDNS) FindMasterService() string {
+// ClientRequest 客户端解析寻找服务端地址
+func (k *KmDNS) ClientRequest() string {
 	addr, err := net.ResolveUDPAddr("udp", mdns.DefaultAddress)
 	if err != nil {
 		panic(err)
@@ -58,16 +58,17 @@ func (k *KmDNS) FindMasterService() string {
 	}
 
 	// 防止发出大量udp查询包 服务提供方不存在时，阻塞局域网
-	timeout, cancelFunc := context.WithTimeout(context.TODO(), k.timeout)
+	timeout, cancelFunc := context.WithTimeout(context.TODO(), k.findTimeout)
 	defer func() {
 		cancelFunc()
+		log.Println("cancel")
 		//logger.Info("cancel")
 	}()
 
 	answer, src, err := server.Query(timeout, k.serviceName)
 	log.Println(answer, src, err)
 	if err != nil {
-		return ""
+		return err.Error()
 	}
 	mdnsServer := src.String()
 	return mdnsServer[:len(mdnsServer)-4]

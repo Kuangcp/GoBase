@@ -2,16 +2,18 @@ package situation
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"testing"
+	"time"
 
 	_ "net/http/pprof"
 
 	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
-	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"github.com/kuangcp/logger"
 )
@@ -26,8 +28,8 @@ type (
 )
 
 const (
-	partsSize = 10000
-	poolSize  = 20000
+	partsSize = 40000
+	poolSize  = 90000
 )
 
 var (
@@ -39,6 +41,7 @@ func init() {
 		http.ListenAndServe("0.0.0.0:8897", nil)
 	}()
 }
+
 func TestGenParts(t *testing.T) {
 	parts := initParts()
 	marshal, _ := json.Marshal(parts)
@@ -69,7 +72,7 @@ func TestMergeCodeMapBench(t *testing.T) {
 }
 
 func readParts() []Parts {
-	file, err := ioutil.ReadFile("100w.json")
+	file, err := ioutil.ReadFile("b.json")
 	if err != nil {
 		return nil
 	}
@@ -172,4 +175,12 @@ func recursiveFind(cache map[string]*ctool.Set[string], total *ctool.Set[string]
 		}
 		recursiveFind(cache, total, i)
 	})
+}
+
+func TestParse(t *testing.T) {
+
+	milli := time.UnixMilli(585327600000)
+	fmt.Println(milli)
+
+	fmt.Println(time.UnixMilli(653414400000))
 }
