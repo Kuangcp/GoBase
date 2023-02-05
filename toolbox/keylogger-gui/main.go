@@ -73,7 +73,7 @@ var info = cuibase.HelpInfo{
 
 func init() {
 	flag.StringVar(&host, "host", "127.0.0.1", "")
-	flag.StringVar(&port, "port", "6667", "")
+	flag.StringVar(&port, "port", "6669", "")
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
 	flag.IntVar(&DashboardMs, "ms", DashboardMs, "")
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
-	store.InitConnection(option)
+	store.InitConnection(option, false)
 
 	if DashboardMsMode || (!DashboardMsMode && DashboardMs != DefaultRefreshMs) {
 		refreshPeriod = time.Millisecond * time.Duration(DashboardMs)

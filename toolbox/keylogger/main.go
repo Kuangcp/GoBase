@@ -191,7 +191,7 @@ func main() {
 	// 以下逻辑都依赖Redis
 	app.SetFormatTargetDevice(targetDevice)
 	app.SetTimePair(timePair)
-	store.InitConnection(option)
+	store.InitConnection(option, true)
 	defer store.CloseConnection()
 
 	//invokeThenExit(dashboard, app.InitPopWindow, store.CloseConnection)

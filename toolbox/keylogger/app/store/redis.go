@@ -18,18 +18,25 @@ func GetConnection() *redis.Client {
 	return connection
 }
 
-func InitConnection(option redis.Options) {
+func InitConnection(option redis.Options, verifyExit bool) {
 	option.PoolSize = poolSize
 	connection = redis.NewClient(&option)
-	if !isValidConnection(connection) {
-		os.Exit(1)
+
+	assertFunc := func(client *redis.Client) {
+		if !isValidConnection(client) {
+			if verifyExit {
+				os.Exit(1)
+			} else {
+				logger.Warn("redis connect failed")
+			}
+		}
 	}
+
+	assertFunc(connection)
 	go func() {
 		for {
-			time.Sleep(time.Second * 17)
-			if !isValidConnection(connection) {
-				os.Exit(1)
-			}
+			time.Sleep(time.Second * 23)
+			assertFunc(connection)
 		}
 	}()
 }
