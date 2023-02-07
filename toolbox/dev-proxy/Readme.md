@@ -11,21 +11,28 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243739
 ~/.dev-proxy.json
 
 ```json
-  [
-    {
-      "name": "test",
-      "proxy_type": 1,
-      "routers": ["http://192.168.1.2:12009/tg/(.*)", "http://127.0.0.1:8081/tg/test/$1"]
-    },
-    {
-      "name": "Proxy",
-      "proxy_type": 2,
-      "routers": [
-        "http://192.168.16.90:32009/tg-easy-fetch/(.*)",
-        "http://127.0.0.1:19011/(.*)"
-      ]
-    }
-  ]
+  {
+    "groups": [
+      {
+        "name": "Test",
+        "proxy_type": 1,
+        "routers": [
+          {
+            "proxy_type": 1,
+            "src": "http://localhost:32009/api1/(.*)",
+            "dst": "http://127.0.0.1:8081/api1/$1"
+          },
+          {
+            "proxy_type": 1,
+            "src": "http://localhost:32009/api1/table/add(.*)",
+            "dst": "http://127.0.0.1:8081/api1/table/tryApply$1"
+          }
+        ]
+      }
+    ],
+    "proxy": {}
+  }
+
 ```
 
 routers 每两个组成一对，前后元素构成源头和目标路径的映射。

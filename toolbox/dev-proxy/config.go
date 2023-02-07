@@ -14,11 +14,28 @@ import (
 	"time"
 )
 
-type ProxyConf struct {
-	Name      string   `json:"name"`
-	ProxyType int      `json:"proxy_type"`
-	Routers   []string `json:"routers"`
-}
+type (
+	ProxyRouter struct {
+		Src       string `json:"src"`
+		Dst       string `json:"dst"`
+		ProxyType int    `json:"proxy_type"`
+	}
+
+	ProxyGroup struct {
+		Name      string        `json:"name"`
+		ProxyType int           `json:"proxy_type"`
+		Routers   []ProxyRouter `json:"routers"`
+	}
+	ProxySelf struct {
+		Name      string   `json:"name"`
+		ProxyType int      `json:"proxy_type"`
+		Paths     []string `json:"paths"`
+	}
+	ProxyConf struct {
+		Groups    []ProxyGroup `json:"groups"`
+		ProxySelf *ProxySelf   `json:"proxy"`
+	}
+)
 
 const (
 	configPath = "/.dev-proxy/dev-proxy.json"
@@ -76,13 +93,20 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 	defer lock.RUnlock()
 
 	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
+	matchKey := ""
+	matchResult := ""
 	for k, v := range proxyValMap {
 		tryResult := tryToReplacePath(k, v, fullUrl)
 		if tryResult == "" {
 			continue
 		}
 
-		parse, err := url.Parse(tryResult)
+		if len(matchKey) < len(k) {
+			matchResult = tryResult
+		}
+	}
+	if len(matchResult) > 0 {
+		parse, err := url.Parse(matchResult)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -139,34 +163,34 @@ func cleanAndRegisterFromFile(configFile string) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	var confList []ProxyConf
-	err = json.Unmarshal(file, &confList)
+	var proxyConf ProxyConf
+	err = json.Unmarshal(file, &proxyConf)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
 	proxyValMap = make(map[string]string)
-	for _, conf := range confList {
+	for _, conf := range proxyConf.Groups {
 		if conf.ProxyType == Close {
 			continue
 		}
-		// 代理自身
-		if conf.ProxyType == Proxy {
-			logger.Info("Register proxy group:", conf.Name)
-			logger.Debug("Register %v", strings.Join(conf.Routers, " , "))
-
-			proxySelfList = append(proxySelfList, conf.Routers...)
-			continue
-		}
 		logger.Info("Register group:", conf.Name)
-		pair := len(conf.Routers) / 2
-		for i := 0; i < pair; i++ {
-			match := conf.Routers[i*2]
-			replace := conf.Routers[i*2+1]
-			proxyValMap[match] = replace
-			logger.Debug("Register", match, ctool.Yellow.Print("►"), ctool.Cyan.Print(replace))
+		for _, router := range conf.Routers {
+			if router.ProxyType == Close {
+				continue
+			}
+			proxyValMap[router.Src] = router.Dst
+			logger.Debug("Register", router.Src, ctool.Yellow.Print("►"), ctool.Cyan.Print(router.Dst))
 		}
+	}
+
+	// 代理自身
+	if proxyConf.ProxySelf != nil {
+		logger.Info("Register proxy group:", proxyConf.ProxySelf.Name)
+		logger.Debug("Register %v", strings.Join(proxyConf.ProxySelf.Paths, " , "))
+
+		proxySelfList = append(proxySelfList, proxyConf.ProxySelf.Paths...)
 	}
 }
 
