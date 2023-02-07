@@ -109,17 +109,16 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 	bodyBt, body := copyStream(proxyReq.Body)
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
 	reqMes := Message{Header: proxyReq.Header, Body: filterFileType(bodyBt)}
-	id = now.Format("01-02 15:04:05.000") + " " + id[0:8]
+	id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
+	longId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
 	reqLog := &ReqLog[Message]{Id: id, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
-	connection.ZAdd(TotalReq, redis.Z{Member: reqLog.Id, Score: float64(reqLog.ReqTime.UnixNano())})
+	connection.ZAdd(RequestList, redis.Z{Member: longId, Score: float64(reqLog.ReqTime.UnixNano())})
 
-	// record request log sort
-	reqSort, _ := connection.ZCard(TotalReq).Result()
 	var logStr string
 	if newUrl.Path == proxyReq.URL.Path {
-		logStr = fmt.Sprintf("(%v) %s => %s", reqSort, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
+		logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
 	} else {
-		logStr = fmt.Sprintf("(%v) %s => %s", reqSort, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
+		logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
 	}
 
 	proxyReq.Body = body

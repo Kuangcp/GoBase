@@ -37,7 +37,7 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 }
 
 func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
-	result, err := connection.ZRange(TotalReq, 0, -1).Result()
+	result, err := connection.ZRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil, 0
@@ -49,7 +49,7 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 		if !strings.HasPrefix(key, param.prefix) {
 			continue
 		}
-		log := matchDetailByKeyAndKwd(key, param.kwd)
+		log := matchDetailByKeyAndKwd(convertToDbKey(key), param.kwd)
 		if log != nil {
 			total++
 			list = append(list, convertLog(log))
@@ -67,7 +67,7 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 // page start with 1
 func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 	start, end := param.buildStartEnd()
-	keyList, err := connection.ZRange(TotalReq, start, end).Result()
+	keyList, err := connection.ZRange(RequestList, start, end).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil
@@ -77,7 +77,7 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 	detail := queryLogDetail(keyList)
 	pageResult.Data = convertList(detail, convertLog, nil)
 
-	i, err := connection.ZCard(TotalReq).Result()
+	i, err := connection.ZCard(RequestList).Result()
 	if err == nil {
 		pageResult.Total = int(i)
 		pageResult.Page = int(i) / param.size
