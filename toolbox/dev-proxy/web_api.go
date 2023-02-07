@@ -40,6 +40,7 @@ func startQueryServer() {
 	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
 	http.HandleFunc("/curl", buildCurlCommand)
 	http.HandleFunc("/replay", replayRequest)
+	http.HandleFunc("/del", delRequest)
 	http.HandleFunc("/flushAll", flushAllData)
 
 	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
@@ -58,6 +59,18 @@ func flushAllData(_ http.ResponseWriter, _ *http.Request) {
 
 	connection.Del(TotalReq)
 	logger.Info("delete: ", len(result))
+}
+
+func delRequest(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+	id := query.Get("id")
+	if id != "" {
+		connection.ZRem(TotalReq, id)
+		db.Delete([]byte(id), nil)
+		writeJsonRsp(writer, "OK")
+	} else {
+		writeJsonRsp(writer, id+" not exist")
+	}
 }
 
 func replayRequest(writer http.ResponseWriter, request *http.Request) {
@@ -130,8 +143,8 @@ func buildCommandBySort(sortIdx int, selfProxy string) []string {
 			}
 		}
 
-		if detail.Request.Body != "" {
-			cmd += fmt.Sprintf(" --data-raw $'%s'", detail.Request.Body)
+		if len(detail.Request.Body) > 0 {
+			cmd += fmt.Sprintf(" --data-raw $'%s'", string(detail.Request.Body))
 		}
 		//logger.Info(cmd)
 
