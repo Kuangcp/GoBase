@@ -13,8 +13,8 @@ import (
 
 const (
 	PoolSize = 5
-	Prefix   = "dev-proxy:"
-	TotalReq = Prefix + "total-req2"
+	Prefix   = "proxy:"
+	TotalReq = Prefix + "request-list"
 )
 
 var (
@@ -26,7 +26,7 @@ type (
 	// storage in leveldb
 	Message struct {
 		Header http.Header `json:"header"`
-		Body   string      `json:"body"`
+		Body   []byte      `json:"body"`
 	}
 	// use in rest api
 	MessageVO struct {
@@ -117,24 +117,35 @@ func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
 	reqLog.Request = MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)}
 	reqLog.Response = MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}
 
-	if reqLog.Request.Body == nil && v.Request.Body != "" {
-		reqLog.Request.BodyStr = &v.Request.Body
-	}
-	if reqLog.Response.Body == nil && v.Response.Body != "" {
-		reqLog.Response.BodyStr = &v.Response.Body
-	}
+	fillDefault(v.Request, &reqLog.Request)
+	fillDefault(v.Response, &reqLog.Response)
 
 	return reqLog
 }
 
-func strToAny(body string) any {
-	if body == "" {
+func fillDefault(src Message, vo *MessageVO) {
+	reqLen := len(src.Body)
+	if vo.Body != nil || reqLen <= 0 {
+		return
+	}
+
+	var str string
+	if reqLen > 0 && reqLen < 100 {
+		str = string(src.Body)
+	} else {
+		str = "请求体过大"
+	}
+	vo.BodyStr = &str
+}
+
+func strToAny(body []byte) any {
+	if body == nil || len(body) == 0 {
 		return nil
 	}
 	var d any
-	err := json.Unmarshal([]byte(body), &d)
+	err := json.Unmarshal(body, &d)
 	if err != nil {
-		logger.Error(err)
+		//logger.Error(err)
 		return nil
 	}
 	return d
@@ -164,7 +175,7 @@ func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
 	var l ReqLog[Message]
 	err = json.Unmarshal(value, &l)
 	if err != nil {
-		logger.Error("key:["+key+"] GET ERROR:", err)
+		logger.Error("key:["+key+"] GET ERROR:", err, len(value))
 		return nil
 	}
 	return &l
@@ -173,14 +184,14 @@ func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
 func getDetailByKey(key string) *ReqLog[Message] {
 	value, err := db.Get([]byte(key), nil)
 	if err != nil {
-		logger.Error("key:["+key+"] GET ERROR:", err)
+		logger.Error("key:["+key+"] GET ERROR:", err, len(value))
 		return nil
 	}
 
 	var l ReqLog[Message]
 	err = json.Unmarshal(value, &l)
 	if err != nil {
-		logger.Error("key:["+key+"] GET ERROR:", err)
+		logger.Error("key:["+key+"] GET ERROR:", err, len(value))
 		return nil
 	}
 	return &l

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -75,7 +76,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	if reqLog != nil {
 		bytes, body := copyStream(res.Body)
 		res.Body = body
-		resMes := Message{Header: res.Header, Body: string(bytes)}
+		resMes := Message{Header: res.Header, Body: bytes}
 		reqLog.Response = resMes
 		reqLog.ResTime = time.Now()
 		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
@@ -107,7 +108,7 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 
 	bodyBt, body := copyStream(proxyReq.Body)
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
-	reqMes := Message{Header: proxyReq.Header, Body: string(bodyBt)}
+	reqMes := Message{Header: proxyReq.Header, Body: filterFileType(bodyBt)}
 	id = now.Format("01-02 15:04:05.000") + " " + id[0:8]
 	reqLog := &ReqLog[Message]{Id: id, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
 	connection.ZAdd(TotalReq, redis.Z{Member: reqLog.Id, Score: float64(reqLog.ReqTime.UnixNano())})
@@ -128,4 +129,13 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 	proxyReq.URL.Path = newUrl.Path
 	//proxyReq.URL.RawQuery = newUrl.RawQuery
 	return logStr, reqLog
+}
+func filterFileType(body []byte) []byte {
+	// TODO 比较字节数组
+	str := string(body)
+	if strings.HasPrefix(str, "------") {
+		endIdx := strings.Index(str, "Content-Type:")
+		return []byte(str[:endIdx])
+	}
+	return body
 }
