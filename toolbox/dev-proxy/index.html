@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Dev Proxy</title>
+</head>
+
+<style>
+    a {
+        text-decoration: none;
+    }
+
+    .dir button {
+        width: 100px;
+        height: 30px;
+        margin-top: 10px;
+    }
+
+    #echoForm textarea {
+        width: 370px;
+        height: 180px;
+        resize: none;
+    }
+
+    #echoForm button {
+        width: 80px;
+        height: 30px;
+    }
+</style>
+<body>
+
+<form action="list" style="text-align:center;">
+    <input name="idx" style="width:60px;" type="number" id="idx"/>
+
+    <input name="prefix" style="width:100px;"/>
+    <input name="kwd" style="width:280px;"/>
+    <button>Search</button>
+
+    <br>
+
+    <input name="id" style="width:120px;" id="id"/>
+    <button type="button" onclick="replay()">Replay</button>
+
+</form>
+
+<script>
+    function replay() {
+        get("/replay?selfProxy=Y&id=" + document.getElementById("id").value + "&idx=" + document.getElementById("idx").value)
+    }
+
+    function get(url) {
+        // 1、创建xhr对象
+        const xhr = new XMLHttpRequest();
+
+        // 2、调用open函数   创建请求
+        xhr.open("GET", url);
+        // 3、调用send函数   发起请求
+        xhr.send();
+        // 4、监听onreadystatechange事件
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                //数据获取成功
+                // console.log(xhr.responseText);
+                // xhr.responseText返回的数据中有一个status和xhr.status完全不一样
+            }
+        };
+    }
+
+    function postJSON(url, body) {
+        //   1、创建xhr对象
+        const xhr = new XMLHttpRequest();
+        // 2、调用open函数 创建请求
+        xhr.open("POST", url);
+        // 3、设置conten-type属性  在发送之前对url所有字符编码
+        //  给该请求增加额外的请求头部
+        xhr.setRequestHeader(
+            "Content-Type",
+            "application/json"
+        );
+        // 4、调用send函数   发起请求
+        xhr.send(body);
+        // 5、监听事件
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                console.log(xhr.responseText);
+            }
+        };
+    }
+</script>
+</body>
+</html>

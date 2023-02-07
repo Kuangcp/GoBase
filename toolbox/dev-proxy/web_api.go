@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/kuangcp/logger"
 	"net/http"
@@ -20,6 +21,9 @@ type (
 	}
 )
 
+//go:embed index.html
+var indexPage string
+
 func (p PageQueryParam) buildStartEnd() (int64, int64) {
 	return int64((p.page - 1) * p.size), int64(p.page*p.size) - 1
 }
@@ -33,31 +37,22 @@ func handleInterceptor(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func startQueryServer() {
-	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
-
-	http.HandleFunc("/", searchPage)
-	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
-	http.HandleFunc("/curl", buildCurlCommand)
-	http.HandleFunc("/replay", replayRequest)
-	http.HandleFunc("/del", delRequest)
-	http.HandleFunc("/flushAll", flushAllData)
-
-	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
+func convertToDbKey(key string) string {
+	return strings.Split(key, "  ")[1]
 }
 
 func flushAllData(_ http.ResponseWriter, _ *http.Request) {
-	result, err := connection.ZRange(TotalReq, 0, -1).Result()
+	result, err := connection.ZRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
 	for _, key := range result {
-		db.Delete([]byte(key), nil)
+		db.Delete([]byte(convertToDbKey(key)), nil)
 	}
 
-	connection.Del(TotalReq)
+	connection.Del(RequestList)
 	logger.Info("delete: ", len(result))
 }
 
@@ -65,7 +60,7 @@ func delRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
 	if id != "" {
-		connection.ZRem(TotalReq, id)
+		connection.ZRem(RequestList, id)
 		db.Delete([]byte(id), nil)
 		writeJsonRsp(writer, "OK")
 	} else {
@@ -75,87 +70,87 @@ func delRequest(writer http.ResponseWriter, request *http.Request) {
 
 func replayRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
+	idx := query.Get("idx")
 	id := query.Get("id")
 	selfProxy := query.Get("selfProxy")
-	sortIdx, _ := strconv.Atoi(id)
+	if idx != "" && id == "" {
+		sortIdx, _ := strconv.Atoi(idx)
+		result, err := connection.ZRange(RequestList, int64(sortIdx-1), int64(sortIdx-1)).Result()
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		if len(result) == 0 {
+			return
+		}
+		id = convertToDbKey(result[0])
+	}
 
-	commandList := buildCommandBySort(sortIdx, selfProxy)
-	if commandList == nil {
+	command := buildCommandById(id, selfProxy)
+	if command == "" {
 		RspStr(writer, id+" not found")
 		return
 	}
-	for _, c := range commandList {
-		result, success := execCommand(c)
-		if !success {
-			RspStr(writer, "ERROR: \n"+c+"\n"+result+"\n")
-		} else {
-			RspStr(writer, result)
-		}
+	logger.Info("Replay ", id)
+	result, success := execCommand(command)
+	if !success {
+		RspStr(writer, "ERROR: \n"+command+"\n"+result+"\n")
+	} else {
+		RspStr(writer, result)
 	}
 }
 
-func buildCurlCommand(writer http.ResponseWriter, request *http.Request) {
+func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
 	selfProxy := query.Get("selfProxy")
-	sortIdx, _ := strconv.Atoi(id)
 
-	res := buildCommandBySort(sortIdx, selfProxy)
-	if res == nil {
+	res := buildCommandById(id, selfProxy)
+	if res == "" {
 		return
 	}
-	writer.Write([]byte(strings.Join(res, "\n\n")))
-	RspStr(writer, strings.Join(res, "\n\n"))
+	RspStr(writer, res)
 }
 
-func buildCommandBySort(sortIdx int, selfProxy string) []string {
-	result, err := connection.ZRange(TotalReq, int64(sortIdx-1), int64(sortIdx-1)).Result()
-	if err != nil {
-		logger.Error(err)
-		return nil
+func buildCommandById(id, selfProxy string) string {
+	detail := getDetailByKey(id)
+	if detail == nil {
+		return ""
 	}
-	var cmdList []string
-	for _, key := range result {
-		detail := getDetailByKey(key)
-		if detail == nil {
-			continue
-		}
-		cmd := "curl "
-		if selfProxy == "Y" {
-			cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", port)
-		}
-		parseUrl, _ := url.Parse(detail.Url)
-		cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path
-		if parseUrl.RawQuery != "" {
-			query := url.PathEscape(parseUrl.RawQuery)
-			query = strings.ReplaceAll(query, "&", "\\&")
-			cmd += "\\?" + query
-		}
-		var key []string
-		for k := range detail.Request.Header {
-			key = append(key, k)
-		}
-		sort.Strings(key)
-		for _, k := range key {
-			val := detail.Request.Header.Values(k)
-			for _, v := range val {
-				cmd += fmt.Sprintf(" -H '%s: %s'", k, v)
-			}
-		}
-
-		if len(detail.Request.Body) > 0 {
-			cmd += fmt.Sprintf(" --data-raw $'%s'", string(detail.Request.Body))
-		}
-		//logger.Info(cmd)
-
-		cmdList = append(cmdList, cmd)
+	cmd := "curl "
+	if selfProxy == "Y" {
+		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", port)
 	}
-	return cmdList
+	parseUrl, _ := url.Parse(detail.Url)
+	cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path
+	if parseUrl.RawQuery != "" {
+		query := url.PathEscape(parseUrl.RawQuery)
+		query = strings.ReplaceAll(query, "&", "\\&")
+		cmd += "\\?" + query
+	}
+	var key []string
+	for k := range detail.Request.Header {
+		key = append(key, k)
+	}
+	sort.Strings(key)
+	for _, k := range key {
+		val := detail.Request.Header.Values(k)
+		for _, v := range val {
+			cmd += fmt.Sprintf(" -H '%s: %s'", k, v)
+		}
+	}
+
+	if len(detail.Request.Body) > 0 {
+		cmd += fmt.Sprintf(" --data-raw $'%s'", string(detail.Request.Body))
+	}
+	//logger.Info(cmd)
+
+	return cmd
 }
 
 func parseParam(request *http.Request) *PageQueryParam {
 	values := request.URL.Query()
-	page := values.Get("page")
+	page := values.Get("idx")
 	size := values.Get("size")
 	kwd := values.Get("kwd")
 	prefix := values.Get("prefix")
@@ -165,18 +160,13 @@ func parseParam(request *http.Request) *PageQueryParam {
 	if sizeI <= 0 {
 		sizeI = 1
 	}
-	if pageI < 0 {
-		return nil
+	if pageI <= 1 {
+		pageI = 1
 	}
 
 	return &PageQueryParam{page: pageI, size: sizeI, kwd: kwd, prefix: prefix}
 }
 
 func searchPage(writer http.ResponseWriter, request *http.Request) {
-	RspStr(writer, "<!DOCTYPE html>\n<html lang=\"en\"><body>")
-	RspStr(writer, "<form action=\"list\" style=\"text-align:center;\">"+
-		"<input name=\"page\" style=\"width:60px;\" type=\"number\"/>"+
-		"<input name=\"prefix\" style=\"width:100px;\"/>"+
-		"<input name=\"kwd\" style=\"width:280px;\"></input><button>Search</button> </form>")
-	RspStr(writer, "</body></html>")
+	RspStr(writer, indexPage)
 }

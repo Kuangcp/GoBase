@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	PoolSize = 5
-	Prefix   = "proxy:"
-	TotalReq = Prefix + "request-list"
+	PoolSize    = 5
+	Prefix      = "proxy:"
+	RequestList = Prefix + "request-list"
 )
 
 var (
@@ -151,11 +151,11 @@ func strToAny(body []byte) any {
 	return d
 }
 
-func queryLogDetail(result []string) []*ReqLog[Message] {
+func queryLogDetail(keyList []string) []*ReqLog[Message] {
 	var list []*ReqLog[Message]
-	for i := range result {
-		key := result[i]
-		l := getDetailByKey(key)
+	for i := range keyList {
+		key := keyList[i]
+		l := getDetailByKey(convertToDbKey(key))
 		list = append(list, l)
 	}
 	return list

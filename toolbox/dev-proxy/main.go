@@ -15,6 +15,19 @@ var (
 	queryPort   int
 )
 
+func startQueryServer() {
+	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
+
+	http.HandleFunc("/", searchPage)
+	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
+	http.HandleFunc("/curl", buildCurlCommandApi)
+	http.HandleFunc("/replay", replayRequest)
+	http.HandleFunc("/del", delRequest)
+	http.HandleFunc("/flushAll", flushAllData)
+
+	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
+}
+
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
 	flag.BoolVar(&reloadConf, "r", false, "auto reload changed config")
