@@ -101,11 +101,14 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 			continue
 		}
 
+		logger.Debug("match", k, tryResult)
 		if len(matchKey) < len(k) {
 			matchResult = tryResult
+			matchKey = k
 		}
 	}
 	if len(matchResult) > 0 {
+		logger.Debug("Final", matchKey, matchResult)
 		parse, err := url.Parse(matchResult)
 		if err != nil {
 			logger.Error(err)
@@ -135,11 +138,15 @@ func initConfig() {
 		return
 	}
 
+	logLevel := logger.InformationalDesc
+	if debug {
+		logLevel = logger.DebugDesc
+	}
 	logger.SetLoggerConfig(&logger.LogConfig{
 		TimeFormat: "01-02 15:04:05.000",
 		File: &logger.FileLogger{
 			Filename:   home + logPath,
-			Level:      logger.DebugDesc,
+			Level:      logLevel,
 			Append:     true,
 			PermitMask: "0660",
 			MaxDays:    -1,

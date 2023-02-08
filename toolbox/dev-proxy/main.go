@@ -11,6 +11,7 @@ import (
 var (
 	port        int
 	reloadConf  bool
+	debug       bool
 	queryServer bool
 	queryPort   int
 )
@@ -31,6 +32,7 @@ func startQueryServer() {
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
 	flag.BoolVar(&reloadConf, "r", false, "auto reload changed config")
+	flag.BoolVar(&debug, "d", false, "debug mode")
 
 	flag.BoolVar(&queryServer, "q", false, "query log")
 	flag.IntVar(&queryPort, "qp", 1235, "port")

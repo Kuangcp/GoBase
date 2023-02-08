@@ -51,7 +51,11 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
 	if err != nil {
-		logger.Error("%4vms %v proxy error %v", endMs-startMs, proxyLog, err)
+		if proxyLog == "" {
+			logger.Error("%4vms %v proxy error %v", endMs-startMs, r.URL.String(), err)
+		} else {
+			logger.Error("%4vms %v proxy error %v", endMs-startMs, proxyLog, err)
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
