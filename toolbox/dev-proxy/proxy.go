@@ -51,6 +51,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
 	if err != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			logger.Error("%v proxy error %v", r.URL.String(), "down")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		if proxyLog == "" {
 			logger.Error("%4vms %v proxy error %v", endMs-startMs, r.URL.String(), err)
 		} else {

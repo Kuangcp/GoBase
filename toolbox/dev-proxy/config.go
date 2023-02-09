@@ -59,10 +59,8 @@ var (
 
 // 例如：
 //
-//	原始 http://192.168.9.12:30011/api/(.*)
-//	目标 http://127.0.0.1:8081/api/v2/$1
-//	请求 http://192.168.9.12:30011/api/pageList
-//	结果 http://127.0.0.1:8081/api/v2/pageList
+//	原始 http://192.168.9.12:30011/api/(.*)       目标 http://127.0.0.1:8081/api/v2/$1
+//	请求 http://192.168.9.12:30011/api/pageList   结果 http://127.0.0.1:8081/api/v2/pageList
 func tryToReplacePath(originConf, targetConf, fullUrl string) string {
 	compile, err := regexp.Compile(originConf)
 	if err != nil {
@@ -101,14 +99,14 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 			continue
 		}
 
-		logger.Debug("match", k, tryResult)
+		//logger.Debug("match", k, tryResult)
 		if len(matchKey) < len(k) {
 			matchResult = tryResult
 			matchKey = k
 		}
 	}
 	if len(matchResult) > 0 {
-		logger.Debug("Final", matchKey, matchResult)
+		//logger.Debug("Final", matchKey, matchResult)
 		parse, err := url.Parse(matchResult)
 		if err != nil {
 			logger.Error(err)
@@ -197,7 +195,12 @@ func cleanAndRegisterFromFile(configFile string) {
 		logger.Info("Register proxy group:", proxyConf.ProxySelf.Name)
 		logger.Debug("Register %v", strings.Join(proxyConf.ProxySelf.Paths, " , "))
 
-		proxySelfList = append(proxySelfList, proxyConf.ProxySelf.Paths...)
+		for _, path := range proxyConf.ProxySelf.Paths {
+			if path == "" {
+				continue
+			}
+			proxySelfList = append(proxySelfList, path)
+		}
 	}
 }
 
