@@ -46,6 +46,7 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 		return nil, 0
 	}
 
+	startIdx := (param.page - 1) * param.size
 	total := 0
 	var list []*ReqLog[MessageVO]
 	for _, key := range result {
@@ -55,12 +56,11 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 		log := matchDetailByKeyAndKwd(convertToDbKey(key), param.kwd)
 		if log != nil {
 			total++
-			list = append(list, convertLog(log))
-			//if total < param.page {
-			//	list = append(list, convertLog(log))
-			//}
+			if total > startIdx {
+				list = append(list, convertLog(log))
+			}
 		}
-		if len(list) == param.page {
+		if len(list) == param.size {
 			break
 		}
 	}
