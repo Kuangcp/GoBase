@@ -58,15 +58,20 @@
     }
 
     .req-req-body {
+        font-size: small;
         max-width: 450px;
         max-height: 80px;
         overflow: auto;
     }
 
     .req-rsp-body {
+        font-size: small;
         max-width: 550px;
         max-height: 80px;
         overflow: auto;
+    }
+    .req-use-time {
+        font-size: small;
     }
 </style>
 <body>
@@ -164,10 +169,10 @@
 
     function buildLine(i, l) {
         return "<tr>" +
-            "<td> 【" + (parseInt(i) + 1) + "】 " + l.id + "</td>" +
+            "<td class='req-use-time'> 【" + (parseInt(i) + 1) + "】 " + l.id + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td>" + new Date(Date.parse(l.reqTime)).format('MM-dd.hh:mm:ss') + "</td>" +
-            "<td>" + l.useTime + "</td>" +
+            "<td class='req-use-time'>" + l.useTime + "</td>" +
             "<td> <div class='req-req-body'>" + JSON.stringify(l.request.body) + "</div></td>" +
             "<td> <div class='req-rsp-body'>" + JSON.stringify(l.response.body) + "</div></td>" +
             '<td> ' +
