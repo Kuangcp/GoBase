@@ -9,28 +9,25 @@ import (
 )
 
 var (
-	port        int
-	reloadConf  bool
-	debug       bool
-	queryServer bool
-	queryPort   int
+	port       int
+	reloadConf bool
+	debug      bool
+	queryPort  int
 )
 
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
+	flag.IntVar(&queryPort, "qp", 1235, "port")
+
 	flag.BoolVar(&reloadConf, "r", false, "auto reload changed config")
 	flag.BoolVar(&debug, "d", false, "debug mode")
 
-	flag.BoolVar(&queryServer, "q", false, "query log")
-	flag.IntVar(&queryPort, "qp", 1235, "port")
 	flag.Parse()
 
 	initConfig()
 	InitConnection()
 
-	if queryServer {
-		go startQueryServer()
-	}
+	go startQueryServer()
 
 	logger.Info("Start proxy server on 127.0.0.1:%d", port)
 	cert, err := genCertificate()

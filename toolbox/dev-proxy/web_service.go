@@ -18,7 +18,7 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 		return result
 	}
 	var pageResult *PageVO[*ReqLog[MessageVO]]
-	if param.kwd != "" || param.prefix != "" {
+	if param.kwd != "" || param.date != "" {
 		list, total := pageQueryReqLogByKwd(param)
 		pageResult = &PageVO[*ReqLog[MessageVO]]{}
 		pageResult.Data = list
@@ -50,7 +50,7 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 	total := 0
 	var list []*ReqLog[MessageVO]
 	for _, key := range result {
-		if !strings.HasPrefix(key, param.prefix) {
+		if !strings.HasPrefix(key, param.date) {
 			continue
 		}
 		log := matchDetailByKeyAndKwd(convertToDbKey(key), param.kwd)
@@ -69,15 +69,24 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 
 // page start with 1
 func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
-	start, end := param.buildStartEnd()
-	keyList, err := connection.ZRange(RequestList, start, end).Result()
-	if err != nil {
-		logger.Error(err)
-		return nil
+	pageResult := PageVO[*ReqLog[MessageVO]]{}
+	var detail []*ReqLog[Message]
+	if param.id != "" {
+		val := getDetailByKey(param.id)
+		if val == nil {
+			return nil
+		}
+		detail = append(detail, val)
+	} else {
+		start, end := param.buildStartEnd()
+		keyList, err := connection.ZRange(RequestList, start, end).Result()
+		if err != nil {
+			logger.Error(err)
+			return nil
+		}
+		detail = queryLogDetail(keyList)
 	}
 
-	pageResult := PageVO[*ReqLog[MessageVO]]{}
-	detail := queryLogDetail(keyList)
 	pageResult.Data = convertList(detail, convertLog, nil)
 
 	i, err := connection.ZCard(RequestList).Result()
@@ -133,6 +142,9 @@ func hiddenHeaderEachLog(pageResult *PageVO[*ReqLog[MessageVO]]) {
 		return
 	}
 	for _, v := range pageResult.Data {
+		if v == nil {
+			continue
+		}
 		hiddenHeader(v.Request.Header)
 		hiddenHeader(v.Response.Header)
 	}

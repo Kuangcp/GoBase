@@ -12,10 +12,11 @@ import (
 
 type (
 	PageQueryParam struct {
-		page   int
-		size   int
-		kwd    string
-		prefix string
+		page int
+		size int
+		id   string
+		kwd  string
+		date string
 	}
 )
 
@@ -57,7 +58,7 @@ func convertToDbKey(key string) string {
 	return strings.Split(key, "  ")[1]
 }
 
-func flushAllData(_ http.ResponseWriter, _ *http.Request) {
+func flushAllData(writer http.ResponseWriter, _ *http.Request) {
 	result, err := connection.ZRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
@@ -70,18 +71,26 @@ func flushAllData(_ http.ResponseWriter, _ *http.Request) {
 
 	connection.Del(RequestList)
 	logger.Info("delete: ", len(result))
+	RspStr(writer, "OK")
 }
 
 func delRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
-	if id != "" {
-		connection.ZRem(RequestList, id)
-		db.Delete([]byte(id), nil)
-		writeJsonRsp(writer, "OK")
-	} else {
-		writeJsonRsp(writer, id+" not exist")
+	if id == "" {
+		writeJsonRsp(writer, "id param not exist")
+		return
 	}
+
+	detail := getDetailByKey(id)
+	if detail == nil {
+		writeJsonRsp(writer, id+" not exist")
+		return
+	}
+
+	connection.ZRem(RequestList, detail.CacheId)
+	db.Delete([]byte(id), nil)
+	writeJsonRsp(writer, Success("OK"))
 }
 
 func replayRequest(writer http.ResponseWriter, request *http.Request) {
@@ -131,9 +140,10 @@ func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
 func parseParam(request *http.Request) *PageQueryParam {
 	values := request.URL.Query()
 	page := values.Get("idx")
+	id := values.Get("id")
 	size := values.Get("size")
 	kwd := values.Get("kwd")
-	prefix := values.Get("prefix")
+	date := values.Get("date")
 
 	pageI, _ := strconv.Atoi(page)
 	sizeI, _ := strconv.Atoi(size)
@@ -144,7 +154,11 @@ func parseParam(request *http.Request) *PageQueryParam {
 		pageI = 1
 	}
 
-	return &PageQueryParam{page: pageI, size: sizeI, kwd: kwd, prefix: prefix}
+	if date != "" {
+		vals := strings.Split(date, "-")
+		date = strings.Join(vals[1:], "-")
+	}
+	return &PageQueryParam{page: pageI, size: sizeI, id: id, kwd: kwd, date: date}
 }
 
 func searchPage(writer http.ResponseWriter, request *http.Request) {
