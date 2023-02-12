@@ -30,7 +30,14 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243739
         ]
       }
     ],
-    "proxy": {}
+    "proxy": {
+      "name": "抓包",
+      "proxy_type": 1,
+      "paths": [
+        "http://192.168.1.2:3209/api/(.*)",
+        "http://192.168.1.9:3210/v1/user/(.*)"
+      ]
+    }
   }
 
 ```
