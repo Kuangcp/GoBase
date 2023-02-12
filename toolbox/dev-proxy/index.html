@@ -104,8 +104,41 @@
     </tbody>
 </table>
 <script>
+    // 显示loading遮罩层
+    function loading() {
+        let mask_bg = document.createElement('div')
+        mask_bg.id = 'mask_bg'
+        mask_bg.style.position = 'absolute'
+        mask_bg.style.top = '0px'
+        mask_bg.style.left = '0px'
+        mask_bg.style.width = '100%'
+        mask_bg.style.height = '100%'
+        mask_bg.style.backgroundColor = '#777'
+        mask_bg.style.opacity = 0.6
+        mask_bg.style.zIndex = 10001
+        document.body.appendChild(mask_bg)
+        let mask_msg = document.createElement('div')
+        mask_msg.style.position = 'absolute'
+        mask_msg.style.top = '35%'
+        mask_msg.style.left = '42%'
+        mask_msg.style.backgroundColor = 'white'
+        mask_msg.style.border = '#336699 1px solid'
+        mask_msg.style.textAlign = 'center'
+        mask_msg.style.fontSize = '1.1em'
+        mask_msg.style.fontWeight = 'bold'
+        mask_msg.style.padding = '0.5em 3em 0.5em 3em'
+        mask_msg.style.zIndex = 10002
+        mask_msg.innerText = 'Loading ...'
+        mask_bg.appendChild(mask_msg)
+    }
+    // 关闭遮罩层
+    function loaded() {
+        let mask_bg = document.getElementById('mask_bg')
+        if (mask_bg != null) mask_bg.parentNode.removeChild(mask_bg)
+    }
+
     Date.prototype.format = function (format) {
-        var o = {
+        let o = {
             "M+": this.getMonth() + 1, //month
             "d+": this.getDate(), //day
             "h+": this.getHours(), //hour
@@ -173,6 +206,7 @@
 
     function replayById(id) {
         get("/replay?selfProxy=Y&id=" + id, function (data) {
+            search()
             let maxLen = 400
             if (data && data.length > maxLen) {
                 // console.log(data.substring(0,maxLen))
@@ -180,7 +214,6 @@
             } else {
                 alert(data);
             }
-            search()
         })
     }
 
@@ -189,9 +222,9 @@
     }
 
     function get(url, successFuc, failFunc) {
+        loading()
         // 1、创建xhr对象
         const xhr = new XMLHttpRequest();
-
         // 2、调用open函数   创建请求
         xhr.open("GET", url);
         // 3、调用send函数   发起请求
@@ -210,6 +243,7 @@
                     failFunc(xhr.responseText);
                 }
             }
+            loaded()
         };
     }
 
