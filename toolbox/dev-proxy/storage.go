@@ -37,6 +37,7 @@ type (
 
 	ReqLog[T any] struct {
 		Id          string    `json:"id"`
+		CacheId     string    `json:"cacheId"`
 		Method      string    `json:"method"`
 		Url         string    `json:"url"`
 		Status      string    `json:"status"`
@@ -60,6 +61,12 @@ type (
 	}
 )
 
+func Success[T any](data T) ResultVO[T] {
+	return ResultVO[T]{
+		Code: 0,
+		Data: data,
+	}
+}
 func InitConnection() {
 	newDB, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
@@ -112,6 +119,9 @@ func saveReqLog(log *ReqLog[Message]) {
 }
 
 func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
+	if v == nil {
+		return nil
+	}
 	reqLog := copyObj[*ReqLog[Message], ReqLog[MessageVO]](v)
 
 	reqLog.Request = MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)}
@@ -156,7 +166,11 @@ func queryLogDetail(keyList []string) []*ReqLog[Message] {
 	for i := range keyList {
 		key := keyList[i]
 		l := getDetailByKey(convertToDbKey(key))
-		list = append(list, l)
+		if l != nil {
+			list = append(list, l)
+		} else {
+			logger.Warn(key)
+		}
 	}
 	return list
 }
@@ -171,9 +185,14 @@ func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
 	tr := string(value)
 	var l ReqLog[Message]
 	err = json.Unmarshal(value, &l)
-	if kwd != "" && !strings.Contains(tr, kwd) && !strings.Contains(string(l.Request.Body), kwd) && !strings.Contains(string(l.Response.Body), kwd) {
+
+	if kwd != "" &&
+		!strings.Contains(tr, kwd) &&
+		!strings.Contains(string(l.Request.Body), kwd) &&
+		!strings.Contains(string(l.Response.Body), kwd) {
 		return nil
 	}
+
 	if err != nil {
 		logger.Error("key:["+key+"] GET ERROR:", err, len(value))
 		return nil

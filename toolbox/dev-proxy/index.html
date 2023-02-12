@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
+<html lang="en" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -76,16 +76,15 @@
     <input name="idx" style="width:60px;" type="number" id="idx" placeholder="idx" min="1"/>
     <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1"/>
 
-    <input name="prefix" id="prefix" style="width:100px;" placeholder="prefix"/>
+    <input name="id" style="width:120px;" id="id" placeholder="id"/>
+    <button type="button" onclick="replay()">Replay</button>
+    <input type="date" id="date">
     <input name="kwd" id="kwd" style="width:280px;" placeholder="key word"/>
     <button type="button" onclick="search()">Search</button>
     <button type="button" onclick="refresh()">Reload</button>
 
-    <input name="id" style="width:120px;" id="id" placeholder="id"/>
-    <button type="button" onclick="replay()">Replay</button>
-
-    <input id="pageDiv" disabled style="width: 40px"/>
-    <input id="totalDiv" disabled style="width: 40px"/>
+    Page: <span id="pageDiv"  style="width: 40px"></span>
+    Total: <span id="totalDiv"  style="width: 40px"></span>
 
 </form>
 <table id="req-log">
@@ -171,13 +170,16 @@
             "<td>" + l.useTime + "</td>" +
             "<td> <div class='req-req-body'>" + JSON.stringify(l.request.body) + "</div></td>" +
             "<td> <div class='req-rsp-body'>" + JSON.stringify(l.response.body) + "</div></td>" +
-            '<td> <button type="button" onclick="replayById(\'' + l.id + '\')">Replay</button>' +
-            '<button type="button" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button></td>' +
+            '<td> ' +
+            '<button type="button" onclick="replayById(\'' + l.id + '\')">Replay</button>' +
+            '<button type="button" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
+            '<button type="button" onclick="deleteReq(\'' + l.id + '\')">Delete</button>' +
+            '</td>' +
             "</tr>";
     }
 
     function search() {
-        get("/list?" + appendParam("id", "idx", "prefix", "kwd", "size"), function (data) {
+        get("/list?" + appendParam("id", "idx", "date", "kwd", "size"), function (data) {
             let result = JSON.parse(data);
             let table = document.getElementById("req-log-body");
             let head = document.getElementById("req-log-head");
@@ -186,8 +188,9 @@
             if (!result.data) {
                 return
             }
-            document.getElementById("pageDiv").value = result.data.page
-            document.getElementById("totalDiv").value = result.data.total
+
+            document.getElementById("pageDiv").innerHTML = result.data.page
+            document.getElementById("totalDiv").innerHTML = result.data.total
             if (!result.data.data || result.data.data.length <= 0) {
                 return
             }
@@ -210,6 +213,13 @@
     function copyCurlCommand(id) {
         get("/curl?selfProxy=Y&id=" + id, async function (data) {
             await navigator.clipboard.writeText(data);
+        })
+    }
+
+    function deleteReq(id) {
+        get("/del?id=" + id, function (data) {
+            console.log(data)
+            search()
         })
     }
 

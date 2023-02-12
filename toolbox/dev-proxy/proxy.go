@@ -120,9 +120,9 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
 	reqMes := Message{Header: proxyReq.Header, Body: filterFileType(bodyBt)}
 	id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
-	longId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
-	reqLog := &ReqLog[Message]{Id: id, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
-	connection.ZAdd(RequestList, redis.Z{Member: longId, Score: float64(reqLog.ReqTime.UnixNano())})
+	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
+	reqLog := &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
+	connection.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
 
 	var logStr string
 	if newUrl.Path == proxyReq.URL.Path {
