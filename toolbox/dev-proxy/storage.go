@@ -168,12 +168,12 @@ func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
 		return nil
 	}
 
-	if kwd != "" && !strings.Contains(string(value), kwd) {
-		return nil
-	}
-
+	tr := string(value)
 	var l ReqLog[Message]
 	err = json.Unmarshal(value, &l)
+	if kwd != "" && !strings.Contains(tr, kwd) && !strings.Contains(string(l.Request.Body), kwd) && !strings.Contains(string(l.Response.Body), kwd) {
+		return nil
+	}
 	if err != nil {
 		logger.Error("key:["+key+"] GET ERROR:", err, len(value))
 		return nil
