@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/kuangcp/logger"
 	"net/http"
+	"net/url"
+	"sort"
 	"strings"
 )
 
@@ -87,6 +90,42 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 	}
 
 	return &pageResult
+}
+
+func buildCommandById(id, selfProxy string) string {
+	detail := getDetailByKey(id)
+	if detail == nil {
+		return ""
+	}
+	cmd := "curl "
+	if selfProxy == "Y" {
+		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", port)
+	}
+	parseUrl, _ := url.Parse(detail.Url)
+	cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path
+	if parseUrl.RawQuery != "" {
+		query := url.PathEscape(parseUrl.RawQuery)
+		query = strings.ReplaceAll(query, "&", "\\&")
+		cmd += "\\?" + query
+	}
+	var key []string
+	for k := range detail.Request.Header {
+		key = append(key, k)
+	}
+	sort.Strings(key)
+	for _, k := range key {
+		val := detail.Request.Header.Values(k)
+		for _, v := range val {
+			cmd += fmt.Sprintf(" -H '%s: %s'", k, v)
+		}
+	}
+
+	if len(detail.Request.Body) > 0 {
+		cmd += fmt.Sprintf(" --data-raw $'%s'", string(detail.Request.Body))
+	}
+	//logger.Info(cmd)
+
+	return cmd
 }
 
 func hiddenHeaderEachLog(pageResult *PageVO[*ReqLog[MessageVO]]) {

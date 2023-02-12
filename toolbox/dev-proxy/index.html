@@ -27,29 +27,168 @@
         width: 80px;
         height: 30px;
     }
+
+    /*.req-log-body tr {*/
+    /*    background-color: lightgray;*/
+    /*}*/
+
+    /*设置奇数行颜色*/
+    .req-log-body tr:nth-child(odd) {
+        /*background-color: #EAEBFF;*/
+        /*background-color: #ECF1DF;*/
+        background-color: #D9E5BD;
+        /*background-color: #f3e7e9;*/
+    }
+
+    /*设置偶数行颜色*/
+    .req-log-body tr:nth-child(even) {
+        /*background: white;*/
+        /*background: #E5E0ED;*/
+        background: #ECF1DF;
+        /*background: #dad4ec;*/
+    }
+
+    .req-log-body td {
+        /*padding-right: 8px;*/
+    }
+
+    .req-url {
+        max-width: 750px;
+        overflow: auto;
+    }
+
+    .req-req-body {
+        max-width: 450px;
+        max-height: 100px;
+        overflow: auto;
+    }
+
+    .req-rsp-body {
+        max-width: 550px;
+        max-height: 100px;
+        overflow: auto;
+    }
 </style>
 <body>
 
-<form action="list" style="text-align:center;">
-    <input name="idx" style="width:60px;" type="number" id="idx"/>
+<form style="text-align:center;">
+    <input name="idx" style="width:60px;" type="number" id="idx" placeholder="idx" min="1"/>
+    <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1"/>
 
-    <input name="prefix" style="width:100px;"/>
-    <input name="kwd" style="width:280px;"/>
-    <button>Search</button>
+    <input name="prefix" id="prefix" style="width:100px;" placeholder="prefix"/>
+    <input name="kwd" id="kwd" style="width:280px;" placeholder="key word"/>
+    <button type="button" onclick="search()">Search</button>
+    <button type="button" onclick="refresh()">Reload</button>
 
-    <br>
-
-    <input name="id" style="width:120px;" id="id"/>
+    <input name="id" style="width:120px;" id="id" placeholder="id"/>
     <button type="button" onclick="replay()">Replay</button>
+    <span id="pageDiv"></span>
+    <span id="totalDiv"></span>
 
 </form>
+<table id="req-log">
 
+    <thead>
+    <th>Idx</th>
+    <th>Id</th>
+    <th>Request Time</th>
+    <th>Method</th>
+    <th>Time</th>
+    <th>URL</th>
+    <th>Request</th>
+    <th>Response</th>
+    <th>Action</th>
+    </thead>
+    <tbody id="req-log-body" style="border: solid" class="req-log-body">
+
+    </tbody>
+</table>
 <script>
-    function replay() {
-        get("/replay?selfProxy=Y&id=" + document.getElementById("id").value + "&idx=" + document.getElementById("idx").value)
+    Date.prototype.format = function (format) {
+        var o = {
+            "M+": this.getMonth() + 1, //month
+            "d+": this.getDate(), //day
+            "h+": this.getHours(), //hour
+            "m+": this.getMinutes(), //minute
+            "s+": this.getSeconds(), //second
+            "q+": Math.floor((this.getMonth() + 3) / 3), //quarter
+            "S": this.getMilliseconds() //millisecond
+        }
+        if (/(y+)/.test(format)) format = format.replace(RegExp.$1,
+            (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (let k in o) if (new RegExp("(" + k + ")").test(format))
+            format = format.replace(RegExp.$1,
+                RegExp.$1.length === 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length));
+        return format;
     }
 
-    function get(url) {
+    function val(idStr) {
+        return document.getElementById(idStr).value
+    }
+
+    function refresh() {
+        window.location.reload();
+    }
+
+    // input A,B
+    // output A=1&B=2
+    function appendParam(...varList) {
+        let list = []
+        for (let v of varList) {
+            list.push(v + "=" + val(v))
+        }
+        return list.join("&")
+    }
+
+    function search() {
+        get("/list?" + appendParam("id", "idx", "prefix", "kwd", "size"), function (data) {
+            let result = JSON.parse(data);
+            let table = document.getElementById("req-log-body");
+            table.innerHTML = ""
+            if (!result.data) {
+                return
+            }
+            document.getElementById("pageDiv").innerText = result.data.page
+            document.getElementById("totalDiv").innerText = result.data.total
+            if (!result.data.data || result.data.data.length <= 0) {
+                return
+            }
+
+            for (let i in result.data.data) {
+                let l = result.data.data[i]
+                table.innerHTML += "<tr>" +
+                    "<td>" + (parseInt(i) + 1) + "</td>" +
+                    "<td>" + l.id + "</td>" +
+                    "<td>" + new Date(Date.parse(l.reqTime)).format('MM-dd.hh:mm:ss') + "</td>" +
+                    "<td>" + l.method + "</td>" +
+                    "<td>" + l.useTime + "</td>" +
+                    "<td> <div class='req-url'> " + l.url + " </div></td>" +
+                    "<td> <div class='req-req-body'>" + JSON.stringify(l.request.body) + "</div></td>" +
+                    "<td> <div class='req-rsp-body'>" + JSON.stringify(l.response.body) + "</div></td>" +
+                    '<td> <button type="button" onclick="replayById(\'' + l.id + '\')">Replay</button></td>' +
+                    "</tr>"
+            }
+        })
+    }
+
+    function replayById(id) {
+        get("/replay?selfProxy=Y&id=" + id, function (data) {
+            let maxLen = 400
+            if (data && data.length > maxLen) {
+                // console.log(data.substring(0,maxLen))
+                alert(data.substring(0, maxLen) + "  ...")
+            } else {
+                alert(data);
+            }
+            search()
+        })
+    }
+
+    function replay() {
+        replayById(val("id"))
+    }
+
+    function get(url, successFuc, failFunc) {
         // 1、创建xhr对象
         const xhr = new XMLHttpRequest();
 
@@ -63,6 +202,13 @@
                 //数据获取成功
                 // console.log(xhr.responseText);
                 // xhr.responseText返回的数据中有一个status和xhr.status完全不一样
+                if (successFuc) {
+                    successFuc(xhr.responseText);
+                }
+            } else {
+                if (failFunc) {
+                    failFunc(xhr.responseText);
+                }
             }
         };
     }
