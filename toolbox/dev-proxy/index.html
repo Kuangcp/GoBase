@@ -115,7 +115,7 @@
 <form style="text-align:center;">
     <!--顺序索引或者分页大小-->
     <input name="idx" style="width:60px;" type="number" id="idx" placeholder="idx" min="1"/>
-    <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1"/>
+    <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1" value="10"/>
 
     <input name="id" style="width:120px;" id="id" placeholder="id"/>
     <button type="button" class="req-btn req-btn-replay" onclick="replay()">Replay</button>
@@ -124,7 +124,7 @@
     <button type="button" class="req-btn req-btn-curl" onclick="search()">Search</button>
     <button type="button" onclick="refresh()">Reload</button>
 
-    Page: <span id="pageDiv" onclick="copyPage()" style="width: 40px"></span>
+    Page: <span id="pageDiv" onclick="setLastPage()" style="width: 40px"></span>
     Total: <span id="totalDiv" style="width: 40px"></span>
 
 </form>
@@ -261,8 +261,8 @@
         })
     }
 
-    async function copyPage() {
-        await navigator.clipboard.writeText(document.getElementById("pageDiv").innerText)
+    async function setLastPage() {
+        document.getElementById("idx").value = document.getElementById("pageDiv").innerText
     }
 
     async function copyVal(txt) {

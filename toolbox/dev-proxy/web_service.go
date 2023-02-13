@@ -40,7 +40,7 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 }
 
 func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
-	result, err := connection.ZRange(RequestList, 0, -1).Result()
+	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil, 0
@@ -79,7 +79,7 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 		detail = append(detail, val)
 	} else {
 		start, end := param.buildStartEnd()
-		keyList, err := connection.ZRange(RequestList, start, end).Result()
+		keyList, err := connection.ZRevRange(RequestList, start, end).Result()
 		if err != nil {
 			logger.Error(err)
 			return nil
