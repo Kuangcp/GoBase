@@ -7,6 +7,15 @@
 </head>
 
 <style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        height: 100vh;
+    }
+
     a {
         text-decoration: none;
     }
@@ -28,24 +37,30 @@
         height: 30px;
     }
 
-    /*.req-log-body tr {*/
-    /*    background-color: lightgray;*/
-    /*}*/
+    #req-log {
+        margin-top: 10px;
+    }
+
+    .req-log-body tr {
+        width: 100vw;
+    }
 
     /*设置奇数行颜色*/
     .req-log-body tr:nth-child(odd) {
         /*background-color: #EAEBFF;*/
         /*background-color: #ECF1DF;*/
-        background-color: #D9E5BD;
+        background-color: #F2FFD3;
         /*background-color: #f3e7e9;*/
+        /*background-color: lightgreen;*/
     }
 
     /*设置偶数行颜色*/
     .req-log-body tr:nth-child(even) {
         /*background: white;*/
         /*background: #E5E0ED;*/
-        background: #ECF1DF;
+        background: #F2F5EC;
         /*background: #dad4ec;*/
+        /*background: #ECF1DF;*/
     }
 
     .req-log-body td {
@@ -55,6 +70,7 @@
     .req-url {
         max-width: 850px;
         overflow: auto;
+        font-weight: bold;
     }
 
     .req-req-body {
@@ -70,8 +86,28 @@
         max-height: 80px;
         overflow: auto;
     }
+
     .req-use-time {
         font-size: small;
+    }
+
+    .req-btn {
+        border-radius: 4px;
+        border: none;
+        margin: 1px;
+        padding: 2px;
+    }
+
+    .req-btn-replay {
+        background-color: lightgreen;
+    }
+
+    .req-btn-curl {
+        background-color: lightskyblue;
+    }
+
+    .req-btn-delete {
+        background-color: lightcoral;
     }
 </style>
 <body>
@@ -82,14 +118,14 @@
     <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1"/>
 
     <input name="id" style="width:120px;" id="id" placeholder="id"/>
-    <button type="button" onclick="replay()">Replay</button>
+    <button type="button" class="req-btn req-btn-replay" onclick="replay()">Replay</button>
     <input type="date" id="date">
     <input name="kwd" id="kwd" style="width:280px;" placeholder="key word"/>
-    <button type="button" onclick="search()">Search</button>
+    <button type="button" class="req-btn req-btn-curl" onclick="search()">Search</button>
     <button type="button" onclick="refresh()">Reload</button>
 
-    Page: <span id="pageDiv"  style="width: 40px"></span>
-    Total: <span id="totalDiv"  style="width: 40px"></span>
+    Page: <span id="pageDiv" onclick="copyPage()" style="width: 40px"></span>
+    Total: <span id="totalDiv" style="width: 40px"></span>
 
 </form>
 <table id="req-log">
@@ -97,6 +133,14 @@
     <tbody id="req-log-body" style="border: solid" class="req-log-body"></tbody>
 </table>
 <script>
+
+    // 初始化
+    init()
+
+    function init() {
+        search()
+    }
+
     // 显示loading遮罩层
     function loading() {
         let mask_bg = document.createElement('div')
@@ -169,16 +213,17 @@
 
     function buildLine(i, l) {
         return "<tr>" +
-            "<td class='req-use-time'> 【" + (parseInt(i) + 1) + "】 " + l.id + "</td>" +
+            "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> 【" + (parseInt(i) + 1) + "】 " + l.id + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
-            "<td>" + new Date(Date.parse(l.reqTime)).format('MM-dd.hh:mm:ss') + "</td>" +
+            "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
             "<td> <div class='req-req-body'>" + JSON.stringify(l.request.body) + "</div></td>" +
+            "<td> " + l.statusCode + "</td>" +
             "<td> <div class='req-rsp-body'>" + JSON.stringify(l.response.body) + "</div></td>" +
             '<td> ' +
-            '<button type="button" onclick="replayById(\'' + l.id + '\')">Replay</button>' +
-            '<button type="button" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
-            '<button type="button" onclick="deleteReq(\'' + l.id + '\')">Delete</button>' +
+            '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Replay</button>' +
+            '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
+            '<button type="button" class="req-btn req-btn-delete" onclick="deleteReq(\'' + l.id + '\')">Del</button>' +
             '</td>' +
             "</tr>";
     }
@@ -205,6 +250,7 @@
                 "            <th>请求时间</th>" +
                 "            <th>耗时</th>" +
                 "            <th>请求</th>" +
+                "            <th>Code</th>" +
                 "            <th>响应</th>" +
                 "            <th>操作</th>"
 
@@ -213,6 +259,14 @@
                 table.innerHTML += buildLine(i, l)
             }
         })
+    }
+
+    async function copyPage() {
+        await navigator.clipboard.writeText(document.getElementById("pageDiv").innerText)
+    }
+
+    async function copyVal(txt) {
+        await navigator.clipboard.writeText(txt)
     }
 
     function copyCurlCommand(id) {
