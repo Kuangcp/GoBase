@@ -153,6 +153,9 @@ func parseParam(request *http.Request) *PageQueryParam {
 	if pageI <= 1 {
 		pageI = 1
 	}
+	if kwd != "" {
+		kwd = strings.TrimSpace(kwd)
+	}
 
 	if date != "" {
 		vals := strings.Split(date, "-")

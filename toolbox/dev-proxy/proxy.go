@@ -66,10 +66,12 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			logger.Error("%4vms %v proxy error %v", endMs-startMs, proxyLog, err)
 		}
-		reqLog.Status = fmt.Sprint(http.StatusInternalServerError, " server error")
-		reqLog.StatusCode = 99
-		reqLog.ResTime = time.Now()
-		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+		if reqLog != nil {
+			reqLog.Status = fmt.Sprint(http.StatusInternalServerError, " server error")
+			reqLog.StatusCode = 99
+			reqLog.ResTime = time.Now()
+			reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
