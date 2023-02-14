@@ -8,7 +8,7 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243739
 
 ## Config 
 
-~/.dev-proxy.json
+~/.dev-proxy/dev-proxy.json
 
 ```json
   {

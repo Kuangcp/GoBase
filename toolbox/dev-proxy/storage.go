@@ -74,10 +74,19 @@ func InitConnection() {
 	}
 	db = newDB
 
-	option := redis.Options{Addr: "192.168.9.155" + ":6667", Password: "", DB: 1}
+	var opt redis.Options
+	redisConf := proxyConf.Redis
+	if redisConf != nil {
+		poolSize := PoolSize
+		if redisConf.PoolSize != 0 {
+			poolSize = redisConf.PoolSize
+		}
+		opt = redis.Options{Addr: redisConf.Addr, Password: redisConf.Password, DB: redisConf.DB, PoolSize: poolSize}
+	} else {
+		opt = redis.Options{Addr: "192.168.9.155" + ":6667", Password: "", DB: 1, PoolSize: PoolSize}
+	}
 
-	option.PoolSize = PoolSize
-	connection = redis.NewClient(&option)
+	connection = redis.NewClient(&opt)
 	if !isValidConnection(connection) {
 		os.Exit(1)
 	}
