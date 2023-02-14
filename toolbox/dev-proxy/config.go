@@ -26,14 +26,24 @@ type (
 		ProxyType int           `json:"proxy_type"`
 		Routers   []ProxyRouter `json:"routers"`
 	}
+
 	ProxySelf struct {
 		Name      string   `json:"name"`
 		ProxyType int      `json:"proxy_type"`
 		Paths     []string `json:"paths"`
 	}
+
+	RedisConf struct {
+		Addr     string `json:"addr"`
+		Password string `json:"password"`
+		DB       int    `json:"db"`
+		PoolSize int    `json:"pool_size"`
+	}
+
 	ProxyConf struct {
 		Groups    []ProxyGroup `json:"groups"`
 		ProxySelf *ProxySelf   `json:"proxy"`
+		Redis     *RedisConf   `json:"redis"`
 	}
 )
 
@@ -46,6 +56,7 @@ const (
 )
 
 var (
+	proxyConf     ProxyConf
 	proxyValMap   = make(map[string]string)
 	proxySelfList []string
 	lock          = &sync.RWMutex{}
@@ -168,7 +179,6 @@ func cleanAndRegisterFromFile(configFile string) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	var proxyConf ProxyConf
 	err = json.Unmarshal(file, &proxyConf)
 	if err != nil {
 		logger.Error(err)
