@@ -23,7 +23,11 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 		pageResult = &PageVO[*ReqLog[MessageVO]]{}
 		pageResult.Data = list
 		pageResult.Total = total
-		pageResult.Page = 1
+		page := total / param.size
+		if page*param.size < total {
+			page++
+		}
+		pageResult.Page = page
 	} else {
 		pageResult = pageQueryReqLogByIndex(param)
 	}
@@ -47,6 +51,7 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 	}
 
 	startIdx := (param.page - 1) * param.size
+	maxIdx := (param.page + 4) * param.size
 	total := 0
 	var list []*ReqLog[MessageVO]
 	for _, key := range result {
@@ -54,13 +59,14 @@ func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 			continue
 		}
 		log := matchDetailByKeyAndKwd(convertToDbKey(key), param.kwd)
-		if log != nil {
-			total++
-			if total > startIdx {
-				list = append(list, convertLog(log))
-			}
+		if log == nil {
+			continue
 		}
-		if len(list) == param.size {
+		total++
+		if total > startIdx && len(list) < param.size {
+			list = append(list, convertLog(log))
+		}
+		if total >= maxIdx {
 			break
 		}
 	}

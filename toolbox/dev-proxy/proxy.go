@@ -17,6 +17,13 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		handleHttps(w, r)
 		return
 	}
+	defer func() {
+		re := recover()
+		if re != nil {
+			logger.Error("代理异常: ", re)
+			w.WriteHeader(911)
+		}
+	}()
 
 	proxyReq := new(http.Request)
 	*proxyReq = *r
@@ -154,7 +161,9 @@ func filterFileType(body []byte) []byte {
 	str := string(body)
 	if strings.HasPrefix(str, "------") {
 		endIdx := strings.Index(str, "Content-Type:")
-		return []byte(str[:endIdx])
+		if endIdx != -1 {
+			return []byte(str[:endIdx])
+		}
 	}
 	return body
 }

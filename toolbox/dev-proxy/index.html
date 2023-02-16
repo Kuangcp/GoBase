@@ -40,6 +40,9 @@
     #req-log {
         margin-top: 10px;
     }
+    #req-log-head{
+        color: seagreen;
+    }
 
     .req-log-body tr {
         width: 100vw;
@@ -70,21 +73,24 @@
     .req-url {
         max-width: 850px;
         overflow: auto;
-        font-weight: bold;
+        font-size: medium;
+        /*font-weight: bold;*/
     }
 
     .req-req-body {
         font-size: small;
         max-width: 450px;
-        max-height: 80px;
+        max-height: 90px;
         overflow: auto;
+        word-wrap: break-word;
     }
 
     .req-rsp-body {
         font-size: small;
         max-width: 550px;
-        max-height: 80px;
+        max-height: 90px;
         overflow: auto;
+        word-wrap: break-word;
     }
 
     .req-use-time {
@@ -139,6 +145,13 @@
 
     function init() {
         search()
+        let item = document.getElementById("kwd");
+        item.addEventListener("keyup", function(event) {
+            event.preventDefault();
+            if (event.keyCode === 13) {
+                search()
+            }
+        });
     }
 
     // 显示loading遮罩层
@@ -213,7 +226,7 @@
 
     function buildLine(i, l) {
         return "<tr>" +
-            "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> 【" + (parseInt(i) + 1) + "】 " + l.id + "</td>" +
+            "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> <span style='color:rebeccapurple'> [ " + (parseInt(i) + 1) + " ] </span> " + l.id + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
@@ -250,7 +263,7 @@
                 "            <th>请求时间</th>" +
                 "            <th>耗时</th>" +
                 "            <th>请求</th>" +
-                "            <th>Code</th>" +
+                "            <th title='98 不可达 99 服务异常'>Code</th>" +
                 "            <th>响应</th>" +
                 "            <th>操作</th>"
 
@@ -263,6 +276,7 @@
 
     async function setLastPage() {
         document.getElementById("idx").value = document.getElementById("pageDiv").innerText
+        search()
     }
 
     async function copyVal(txt) {
