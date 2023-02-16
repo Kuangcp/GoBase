@@ -2,35 +2,13 @@ package app
 
 import (
 	"embed"
-	"log"
 	"net/http"
-	"os/exec"
-	"runtime"
 
 	"github.com/getlantern/systray"
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ghelp"
 	"github.com/kuangcp/logger"
-	"github.com/zserge/lorca"
 )
-
-func OpenWebView(url string) {
-	if "windows" == runtime.GOOS {
-		ui, err := lorca.New(url, "", 1024, 768)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer ui.Close()
-		<-ui.Done()
-	} else {
-		command := exec.Command("webview-cmd-wrapper",
-			"-url", url, "-width", "1024", "-height", "768", "-title", "Hosts-Group")
-		err := command.Start()
-		if err != nil {
-			logger.Fatal(err.Error())
-		}
-	}
-}
 
 func WebServer(f embed.FS, port string) {
 	gin.SetMode(gin.ReleaseMode)

@@ -56,7 +56,7 @@ func addPageLinkItem() {
 					logger.Fatal(err.Error())
 				}
 			case <-pageURL.ClickedCh:
-				go OpenWebView("http://localhost:" + PortStr)
+				open.Run("http://localhost:" + PortStr)
 			}
 		}
 	}()
