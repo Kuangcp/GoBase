@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>Dev Proxy</title>
+
+    <link rel="stylesheet"
+          href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 </head>
 
 <style>
@@ -230,7 +234,7 @@
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
-            "<td> <div class='req-req-body'>" + JSON.stringify(l.request.body) + "</div></td>" +
+            "<td> <div class='req-req-body'> <pre><code >" + JSON.stringify(l.request.body) + "</code></pre></div></td>" +
             "<td> " + l.statusCode + "</td>" +
             "<td> <div class='req-rsp-body'>" + JSON.stringify(l.response.body) + "</div></td>" +
             '<td> ' +

@@ -4,8 +4,10 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kuangcp/logger"
 	"net/http"
+	"os"
 )
 
 var (
@@ -14,6 +16,16 @@ var (
 	debug      bool
 	queryPort  int
 )
+
+func init() {
+	hostname, err := os.Hostname()
+	if err != nil {
+		logger.Error("Random hostname. err:", err)
+		hostname = uuid.NewString()
+	}
+
+	RequestList += hostname
+}
 
 func main() {
 	flag.IntVar(&port, "p", 1234, "port")
@@ -29,6 +41,7 @@ func main() {
 
 	go startQueryServer()
 
+	logger.Info("list key: ", RequestList)
 	logger.Info("Start proxy server on 127.0.0.1:%d", port)
 	cert, err := genCertificate()
 	if err != nil {
