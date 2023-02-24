@@ -21,24 +21,27 @@ type (
 		Value   string
 		Comment string
 
-		DefaultVar interface{}
+		Bool    bool
+		BoolVar *bool
 
-		BoolType    bool
-		BoolVar     *bool
-		Float64Type bool
-		Float64Var  *float64
-		IntType     bool
-		IntVar      *int
-		Int64Type   bool
-		Int64Var    *int64
-		StringType  bool
-		StringVar   *string
-		UintType    bool
-		UintVar     *uint
+		Float64    float64
+		Float64Var *float64
+
+		IntVar *int
+		Int    int
+
+		Int64    int64
+		Int64Var *int64
+
+		String    string
+		StringVar *string
+
+		Uint    uint
+		UintVar *uint
 	}
 	HelpInfo struct {
 		Version       string
-		BuildVersion  string
+		BuildVersion  string // from go build command eg: go install -ldflags "-X main.buildVersion=1.0.2"
 		Description   string
 		SingleFlagLen int
 		DoubleFlagLen int
@@ -83,7 +86,24 @@ func (helpInfo HelpInfo) Parse() {
 	flag.Usage = helpInfo.PrintHelp
 
 	for _, flagVO := range helpInfo.Flags {
-		flag.BoolVar(flagVO.BoolVar, flagVO.Short[1:], false, "")
+		flag.BoolVar(flagVO.BoolVar, flagVO.Short[1:], false, flagVO.Comment)
+	}
+	for _, opt := range helpInfo.Options {
+		if opt.IntVar != nil {
+			flag.IntVar(opt.IntVar, opt.Short[1:], opt.Int, opt.Comment)
+		}
+		if opt.Float64Var != nil {
+			flag.Float64Var(opt.Float64Var, opt.Short[1:], opt.Float64, opt.Comment)
+		}
+		if opt.Int64Var != nil {
+			flag.Int64Var(opt.Int64Var, opt.Short[1:], opt.Int64, opt.Comment)
+		}
+		if opt.StringVar != nil {
+			flag.StringVar(opt.StringVar, opt.Short[1:], opt.String, opt.Comment)
+		}
+		if opt.UintVar != nil {
+			flag.UintVar(opt.UintVar, opt.Short[1:], opt.Uint, opt.Comment)
+		}
 	}
 	flag.Parse()
 }

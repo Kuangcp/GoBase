@@ -2,19 +2,20 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"net/http"
 	"os"
 )
 
 var (
-	port       int
-	reloadConf bool
-	debug      bool
-	queryPort  int
+	port         int
+	reloadConf   bool
+	debug        bool
+	queryPort    int
+	buildVersion string
 )
 
 func init() {
@@ -27,14 +28,22 @@ func init() {
 	RequestList += hostname
 }
 
+var helpInfo = ctool.HelpInfo{
+	Description:  "Http proxy for reroute and trace",
+	BuildVersion: buildVersion,
+	Version:      "1.0.3",
+	Flags: []ctool.ParamVO{
+		{Short: "-r", BoolVar: &reloadConf, Comment: "auto reload changed config"},
+		{Short: "-d", BoolVar: &debug, Comment: "debug mode"},
+	},
+	Options: []ctool.ParamVO{
+		{Short: "-qp", IntVar: &queryPort, Int: 1235, Value: "port", Comment: "web port"},
+		{Short: "-p", IntVar: &port, Int: 1234, Value: "port", Comment: "port"},
+	},
+}
+
 func main() {
-	flag.IntVar(&port, "p", 1234, "port")
-	flag.IntVar(&queryPort, "qp", 1235, "port")
-
-	flag.BoolVar(&reloadConf, "r", false, "auto reload changed config")
-	flag.BoolVar(&debug, "d", false, "debug mode")
-
-	flag.Parse()
+	helpInfo.Parse()
 
 	initConfig()
 	InitConnection()

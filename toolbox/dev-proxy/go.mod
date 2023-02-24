@@ -16,3 +16,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.24.2 // indirect
 )
+
+replace (
+	github.com/kuangcp/gobase/pkg/ctool  => ../../pkg/ctool
+)
