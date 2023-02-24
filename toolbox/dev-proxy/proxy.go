@@ -135,7 +135,7 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 
 	bodyBt, body := copyStream(proxyReq.Body)
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
-	reqMes := Message{Header: proxyReq.Header, Body: filterFileType(bodyBt)}
+	reqMes := Message{Header: proxyReq.Header, Body: filterFormType(bodyBt)}
 	id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
 	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
 	reqLog := &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
@@ -156,14 +156,19 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 	//proxyReq.URL.RawQuery = newUrl.RawQuery
 	return logStr, reqLog
 }
-func filterFileType(body []byte) []byte {
-	// TODO 比较字节数组
-	str := string(body)
-	if strings.HasPrefix(str, "------") {
-		endIdx := strings.Index(str, "Content-Type:")
-		if endIdx != -1 {
-			return []byte(str[:endIdx])
+
+// request body : start with "------"
+func filterFormType(s []byte) []byte {
+	if len(s) > 7 && s[0] == 45 && s[1] == 45 && s[2] == 45 &&
+		s[3] == 45 && s[4] == 45 && s[5] == 45 && s[6] == 45 {
+		var r []byte
+		for _, i := range s {
+			if i == 10 {
+				return r
+			}
+			r = append(r, i)
 		}
+		return r
 	}
-	return body
+	return nil
 }
