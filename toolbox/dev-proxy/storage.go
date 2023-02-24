@@ -12,14 +12,14 @@ import (
 )
 
 const (
-	PoolSize    = 5
-	Prefix      = "proxy:"
-	RequestList = Prefix + "request-list"
+	PoolSize = 5
+	Prefix   = "proxy:"
 )
 
 var (
-	connection *redis.Client
-	db         *leveldb.DB
+	connection  *redis.Client
+	db          *leveldb.DB
+	RequestList = Prefix + "request-list:"
 )
 
 type (

@@ -30,8 +30,8 @@ func startQueryServer() {
 		http.Handle("/", http.FileServer(http.Dir(".")))
 	} else {
 		http.HandleFunc("/", searchPage)
-
 	}
+
 	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
 	http.HandleFunc("/curl", handleInterceptor(buildCurlCommandApi))
 	http.HandleFunc("/replay", replayRequest)
