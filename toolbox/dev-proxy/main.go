@@ -66,13 +66,4 @@ func main() {
 	}
 
 	logger.Fatal(server.ListenAndServe())
-
-	//err := http.ListenAndServe(fmt.Sprintf(":%d", port),
-	//	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	//		proxyHandler(w, r)
-	//	}))
-	//if err != nil {
-	//	logger.Error(err)
-	//}
-	//os.Exit(0)
 }

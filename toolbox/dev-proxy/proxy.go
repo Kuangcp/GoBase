@@ -37,6 +37,11 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		defer saveReqLog(reqLog)
 	}
 
+	// TODO websocket
+	//if websocketHandler(w, r, proxyReq) {
+	//	return
+	//}
+
 	// rebuild
 	if q := proxyReq.URL.RawQuery; q != "" {
 		proxyReq.URL.RawPath = proxyReq.URL.Path + "?" + q
@@ -47,11 +52,6 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq.ProtoMajor = 1
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
-
-	// TODO websocket
-	//if websocketHandler(w, r, proxyReq) {
-	//	return
-	//}
 
 	transport := http.DefaultTransport
 	startMs := time.Now().UnixMilli()
@@ -170,5 +170,5 @@ func filterFormType(s []byte) []byte {
 		}
 		return r
 	}
-	return nil
+	return s
 }
