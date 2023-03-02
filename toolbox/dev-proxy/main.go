@@ -3,11 +3,9 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"net/http"
-	"os"
 )
 
 var (
@@ -19,16 +17,6 @@ var (
 	proxyUri     string
 	proxy        bool
 )
-
-func init() {
-	hostname, err := os.Hostname()
-	if err != nil {
-		logger.Error("Random hostname. err:", err)
-		hostname = uuid.NewString()
-	}
-
-	RequestList += hostname
-}
 
 var helpInfo = ctool.HelpInfo{
 	Description:  "Http proxy for reroute and trace",

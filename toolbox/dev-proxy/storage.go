@@ -19,7 +19,8 @@ const (
 var (
 	connection  *redis.Client
 	db          *leveldb.DB
-	RequestList = Prefix + "request-list:"
+	RequestList = ""
+	listVar     = Prefix + "request-list"
 )
 
 type (

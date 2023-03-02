@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"net/http"
@@ -44,6 +45,7 @@ type (
 		Groups    []ProxyGroup `json:"groups"`
 		ProxySelf *ProxySelf   `json:"proxy"`
 		Redis     *RedisConf   `json:"redis"`
+		Id        string       `json:"id"`
 	}
 )
 
@@ -146,6 +148,11 @@ func initConfig() {
 		fmt.Println(err)
 		return
 	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		logger.Error("Random hostname. err:", err)
+		hostname = uuid.NewString()
+	}
 
 	logLevel := logger.InformationalDesc
 	if debug {
@@ -164,6 +171,14 @@ func initConfig() {
 	configFile := home + configPath
 	dbPath = home + dbPath
 	cleanAndRegisterFromFile(configFile)
+
+	if proxyConf.Id == "" {
+		listVar += ":" + hostname + ":tmp-" + uuid.NewString()[:6]
+	} else {
+		listVar += ":" + hostname + ":" + proxyConf.Id
+	}
+
+	RequestList = listVar
 	if reloadConf {
 		go listenConfig(configFile)
 	}
