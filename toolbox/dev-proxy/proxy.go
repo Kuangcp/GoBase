@@ -17,6 +17,7 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		handleHttps(w, r)
 		return
 	}
+	markHeader(w)
 	defer func() {
 		re := recover()
 		if re != nil {
@@ -56,11 +57,11 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	uri, _ := url.Parse(proxyUri)
 	var transport *http.Transport
 	if proxy {
-		transport = http.DefaultTransport.(*http.Transport)
-	} else {
 		transport = &http.Transport{
 			Proxy: http.ProxyURL(uri),
 		}
+	} else {
+		transport = http.DefaultTransport.(*http.Transport)
 	}
 
 	startMs := time.Now().UnixMilli()
@@ -129,6 +130,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func markHeader(w http.ResponseWriter) {
+	w.Header().Add("Server", "dev-proxy")
+}
 func fmtDuration(d time.Duration) string {
 	ms := d.Milliseconds()
 	d = d.Round(time.Millisecond)
