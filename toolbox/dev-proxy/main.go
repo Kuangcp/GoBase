@@ -16,6 +16,8 @@ var (
 	debug        bool
 	queryPort    int
 	buildVersion string
+	proxyUri     string
+	proxy        bool
 )
 
 func init() {
@@ -35,10 +37,12 @@ var helpInfo = ctool.HelpInfo{
 	Flags: []ctool.ParamVO{
 		{Short: "-r", BoolVar: &reloadConf, Comment: "auto reload changed config"},
 		{Short: "-d", BoolVar: &debug, Comment: "debug mode"},
+		{Short: "-x", BoolVar: &proxy, Comment: "proxy mode"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-qp", IntVar: &queryPort, Int: 1235, Value: "port", Comment: "web port"},
 		{Short: "-p", IntVar: &port, Int: 1234, Value: "port", Comment: "port"},
+		{Short: "-pu", StringVar: &proxyUri, String: "http://localhost:7890", Value: "uri", Comment: "proxy uri"},
 	},
 }
 

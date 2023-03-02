@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <title>Dev Proxy</title>
 
-    <!--    <link rel="stylesheet"-->
-    <!--          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">-->
-    <!--    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>-->
+    <!--  Download Resource https://highlightjs.org/download/ -->
 
-<!--    <link rel="stylesheet" href="default.min.css">-->
-    <link rel="stylesheet" href="static/monokai-sublime.min.css">
-<!--    <link rel="stylesheet" href="static/vs2015.min.css">-->
+    <!--    <link rel="stylesheet" href="default.min.css">-->
+    <link rel="stylesheet" href="monokai-sublime.min.css">
+    <!--    <link rel="stylesheet" href="vs2015.min.css">-->
 
-    <script src="static/highlight.min.js"></script>
-    <script src="static/json.min.js"></script>
+    <script src="highlight.min.js"></script>
 
 </head>
 
@@ -131,7 +128,7 @@
         background-color: lightcoral;
     }
 
-    code{
+    code {
         white-space: break-spaces;
     }
 </style>
@@ -171,7 +168,6 @@
                 search()
             }
         });
-        // hljs.highlightAll()
     }
 
     // 显示loading遮罩层
@@ -252,7 +248,7 @@
             "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
             "<td > <div class='req-req-body'> <pre class='hljs'><code>" + JSON.stringify(l.request.body) + "</code></pre></div></td>" +
-            "<td> <div class='req-rsp-body'> <pre class='hljs'><code class='language-json'>" + JSON.stringify(l.response.body) + "</code></pre></div></td>" +
+            "<td> <div class='req-rsp-body'> <pre class='hljs'><code class='language-json'>" + JSON.stringify(l.response.body, null, 2) + "</code></pre></div></td>" +
             '<td> ' +
             '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Replay</button>' +
             '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
