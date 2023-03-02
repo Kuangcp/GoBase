@@ -17,7 +17,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		handleHttps(w, r)
 		return
 	}
-	markHeader(w)
+
+	w.Header().Add("Server", "dev-proxy")
+
 	defer func() {
 		re := recover()
 		if re != nil {
@@ -67,29 +69,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	startMs := time.Now().UnixMilli()
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
+	waste := endMs - startMs
 	if err != nil {
-		if strings.Contains(err.Error(), "connect: connection refused") {
-			logger.Error("%v proxy error %v", r.URL.String(), "down")
-			reqLog.Status = fmt.Sprint(http.StatusServiceUnavailable, " server refused")
-			reqLog.StatusCode = 98
-			reqLog.ResTime = time.Now()
-			reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		if proxyLog == "" {
-			logger.Error("%4vms %v proxy error %v", endMs-startMs, r.URL.String(), err)
-		} else {
-			logger.Error("%4vms %v proxy error %v", endMs-startMs, proxyLog, err)
-		}
-		if reqLog != nil {
-			reqLog.Status = fmt.Sprint(http.StatusInternalServerError, " server error")
-			reqLog.StatusCode = 99
-			reqLog.ResTime = time.Now()
-			reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
-		}
-		w.WriteHeader(http.StatusInternalServerError)
+		handleError(w, r, err, reqLog, proxyLog, waste)
 		return
 	}
 
@@ -97,42 +79,72 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 		if proxyType == Proxy {
 			proxyLog += " SELF"
 		}
-		logger.Debug("%4vms %v", endMs-startMs, proxyLog)
+		logger.Debug("%4vms %v", waste, proxyLog)
 	}
 
-	hdr := w.Header()
-	for k, vv := range res.Header {
-		for _, v := range vv {
-			hdr.Add(k, v)
-		}
-	}
-	for _, c := range res.Cookies() {
-		w.Header().Add("Set-Cookie", c.Raw)
-	}
+	copyHeader(w, res)
+	fillReqLogResponse(reqLog, res)
 
-	if reqLog != nil {
-		bytes, body := copyStream(res.Body)
-		res.Body = body
-		resMes := Message{Header: res.Header, Body: bytes}
-		reqLog.Response = resMes
-		reqLog.ResTime = time.Now()
-		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
-		reqLog.Status = res.Status
-		reqLog.StatusCode = res.StatusCode
-	}
-
-	w.WriteHeader(res.StatusCode)
 	if res.Body != nil {
 		written, err := io.Copy(w, res.Body)
 		if err != nil {
-			logger.Error("%3vms %v %v", endMs-startMs, written, err)
+			logger.Error("%3vms %v %v", waste, written, err)
 		}
 	}
 }
 
-func markHeader(w http.ResponseWriter) {
-	w.Header().Add("Server", "dev-proxy")
+func copyHeader(w http.ResponseWriter, res *http.Response) {
+	header := w.Header()
+	for k, vv := range res.Header {
+		for _, v := range vv {
+			header.Add(k, v)
+		}
+	}
+	for _, c := range res.Cookies() {
+		header.Add("Set-Cookie", c.Raw)
+	}
+	w.WriteHeader(res.StatusCode)
 }
+
+func fillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
+	if reqLog == nil {
+		return
+	}
+	bytes, body := copyStream(res.Body)
+	res.Body = body
+	resMes := Message{Header: res.Header, Body: bytes}
+	reqLog.Response = resMes
+	reqLog.ResTime = time.Now()
+	reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+	reqLog.Status = res.Status
+	reqLog.StatusCode = res.StatusCode
+}
+
+func handleError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqLog[Message], proxyLog string, waste int64) {
+	if strings.Contains(err.Error(), "connect: connection refused") {
+		logger.Error("%v proxy error %v", r.URL.String(), "down")
+		reqLog.Status = fmt.Sprint(http.StatusServiceUnavailable, " server refused")
+		reqLog.StatusCode = 98
+		reqLog.ResTime = time.Now()
+		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	if proxyLog == "" {
+		logger.Error("%4vms %v proxy error %v", waste, r.URL.String(), err)
+	} else {
+		logger.Error("%4vms %v proxy error %v", waste, proxyLog, err)
+	}
+	if reqLog != nil {
+		reqLog.Status = fmt.Sprint(http.StatusInternalServerError, " server error")
+		reqLog.StatusCode = 99
+		reqLog.ResTime = time.Now()
+		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+}
+
 func fmtDuration(d time.Duration) string {
 	ms := d.Milliseconds()
 	d = d.Round(time.Millisecond)
