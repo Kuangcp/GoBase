@@ -20,16 +20,34 @@ type (
 	}
 )
 
-//go:embed index.html
+//go:embed static/index.html
 var indexPage string
+
+//go:embed static/monokai-sublime.min.css
+var sublimeStyle string
+
+//go:embed static/highlight.min.js
+var highlightJs string
+
+//go:embed static/json.min.js
+var jsonJs string
+
+const (
+	jsT   = "text/javascript; charset=utf-8"
+	cssT  = "text/css; charset=utf-8"
+	htmlT = "text/html; charset=utf-8"
+)
 
 func startQueryServer() {
 	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
 
 	if debug {
-		http.Handle("/", http.FileServer(http.Dir(".")))
+		http.Handle("/", http.FileServer(http.Dir("./static")))
 	} else {
-		http.HandleFunc("/", searchPage)
+		http.HandleFunc("/", bindStatic(indexPage, htmlT))
+		http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeStyle, cssT))
+		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
+		http.HandleFunc("/json.min.js", bindStatic(jsonJs, jsT))
 	}
 
 	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
@@ -164,6 +182,9 @@ func parseParam(request *http.Request) *PageQueryParam {
 	return &PageQueryParam{page: pageI, size: sizeI, id: id, kwd: kwd, date: date}
 }
 
-func searchPage(writer http.ResponseWriter, request *http.Request) {
-	RspStr(writer, indexPage)
+func bindStatic(s, contentType string) func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Add("Content-Type", contentType)
+		RspStr(writer, s)
+	}
 }

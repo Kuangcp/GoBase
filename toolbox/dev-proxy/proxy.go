@@ -53,7 +53,16 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
 
-	transport := http.DefaultTransport
+	uri, _ := url.Parse(proxyUri)
+	var transport *http.Transport
+	if proxy {
+		transport = http.DefaultTransport.(*http.Transport)
+	} else {
+		transport = &http.Transport{
+			Proxy: http.ProxyURL(uri),
+		}
+	}
+
 	startMs := time.Now().UnixMilli()
 	res, err := transport.RoundTrip(proxyReq)
 	endMs := time.Now().UnixMilli()
