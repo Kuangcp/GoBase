@@ -1,0 +1,133 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    height: 100vh;
+}
+
+a {
+    text-decoration: none;
+}
+
+.dir button {
+    width: 100px;
+    height: 30px;
+    margin-top: 10px;
+}
+
+#echoForm textarea {
+    width: 370px;
+    height: 180px;
+    resize: none;
+}
+
+#echoForm button {
+    width: 80px;
+    height: 30px;
+}
+
+#req-log {
+    margin-top: 10px;
+    float: left;
+}
+
+#req-log-head {
+    color: seagreen;
+}
+
+.req-log-body tr {
+    width: 100vw;
+    height: 50px;
+}
+
+/*设置奇数行颜色*/
+.req-log-body tr:nth-child(odd) {
+    /*background-color: #EAEBFF;*/
+    /*background-color: #ECF1DF;*/
+    background-color: #F2FFD3;
+    /*background-color: #f3e7e9;*/
+    /*background-color: lightgreen;*/
+}
+
+/*设置偶数行颜色*/
+.req-log-body tr:nth-child(even) {
+    /*background: white;*/
+    /*background: #E5E0ED;*/
+    background: #F2F5EC;
+    /*background: #dad4ec;*/
+    /*background: #ECF1DF;*/
+}
+
+.req-log-body td {
+    /*padding-right: 8px;*/
+}
+
+.req-url {
+    max-width: 850px;
+    overflow: auto;
+    font-size: medium;
+    /*font-weight: bold;*/
+}
+
+.req-use-time {
+    font-size: small;
+}
+
+.req-btn {
+    border-radius: 4px;
+    border: none;
+    margin: 1px;
+    padding: 2px;
+}
+
+.req-btn-replay {
+    background-color: lightgreen;
+}
+
+.req-btn-curl {
+    background-color: lightskyblue;
+}
+
+.req-btn-delete {
+    background-color: lightcoral;
+}
+
+code {
+    white-space: break-spaces;
+}
+
+#detail {
+    height: 90vh;
+    width: 650px;
+    float: left;
+    margin-left: 5px;
+    /*background-color: #66d9ef;*/
+}
+
+.req-req-head {
+    font-size: small;
+    max-height: 150px;
+    overflow: auto;
+    word-wrap: break-word;
+    border-radius: 8px;
+}
+.req-req-body {
+    font-size: small;
+    max-height: 400px;
+    overflow: auto;
+    word-wrap: break-word;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    margin-top: 2px;
+}
+
+.req-rsp-body {
+    margin-top: 4px;
+    font-size: small;
+    max-height: 500px;
+    overflow: auto;
+    word-wrap: break-word;
+    border-radius: 8px;
+}
