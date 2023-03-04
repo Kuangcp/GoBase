@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/pkg/cuibase"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"log"
 	"time"
@@ -51,18 +51,18 @@ var (
 	buildVersion string
 )
 
-var info = cuibase.HelpInfo{
+var info = ctool.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.1.0",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -6,
-	Flags: []cuibase.ParamVO{
+	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help info"},
 		{Short: "-m", BoolVar: &DashboardMsMode, Comment: "show time with ms"},
 	},
-	Options: []cuibase.ParamVO{
+	Options: []ctool.ParamVO{
 		{Short: "-host", Value: "host", Comment: "redis host"},
 		{Short: "-port", Value: "port", Comment: "redis port"},
 		{Short: "-pwd", Value: "pwd", Comment: "redis password"},
@@ -73,7 +73,7 @@ var info = cuibase.HelpInfo{
 
 func init() {
 	flag.StringVar(&host, "host", "127.0.0.1", "")
-	flag.StringVar(&port, "port", "6669", "")
+	flag.StringVar(&port, "port", "6667", "")
 	flag.StringVar(&pwd, "pwd", "", "")
 	flag.IntVar(&db, "db", 5, "")
 	flag.IntVar(&DashboardMs, "ms", DashboardMs, "")
@@ -86,6 +86,8 @@ func main() {
 		info.PrintHelp()
 		return
 	}
+
+	go notifyAny()
 
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
 	store.InitConnection(option, false)
