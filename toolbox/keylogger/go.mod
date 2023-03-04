@@ -13,7 +13,6 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.19.0 // indirect
-	github.com/webview/webview v0.0.0-20210330151455-f540d88dde4e
 )
 
 replace github.com/kuangcp/gobase/pkg/ghelp => ./../../pkg/ghelp
