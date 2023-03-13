@@ -39,7 +39,7 @@ a {
 
 .req-log-body tr {
     width: 100vw;
-    height: 50px;
+    height: 55px;
 }
 
 /*设置奇数行颜色*/
@@ -65,7 +65,7 @@ a {
 }
 
 .req-url {
-    max-width: 850px;
+    max-width: 800px;
     overflow: auto;
     font-size: medium;
     /*font-weight: bold;*/
@@ -89,6 +89,10 @@ a {
 .req-btn-curl {
     background-color: lightskyblue;
 }
+.req-btn-page {
+    background-color: lightpink;
+}
+
 
 .req-btn-delete {
     background-color: lightcoral;
