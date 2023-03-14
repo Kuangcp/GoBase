@@ -42,25 +42,32 @@ type (
 	}
 
 	ProxyConf struct {
-		Groups    []ProxyGroup `json:"groups"`
-		ProxySelf *ProxySelf   `json:"proxy"`
-		Redis     *RedisConf   `json:"redis"`
-		Id        string       `json:"id"`
+		Groups     []ProxyGroup `json:"groups"`
+		ProxySelf  *ProxySelf   `json:"proxy"` // 抓包地址
+		ProxyBlock *ProxySelf   `json:"block"` // 抓包地址黑名单
+		Redis      *RedisConf   `json:"redis"`
+		Id         string       `json:"id"`
 	}
 )
 
 const (
 	configPath = "/.dev-proxy/dev-proxy.json"
 	logPath    = "/.dev-proxy/dev-proxy.log"
-	Open       = 1
-	Close      = 0
-	Proxy      = 2
+
+	Open  = 1 // 开启配置
+	Close = 0 // 关闭配置
+
+	Direct  = 0 // 直连
+	Replace = 1 // 代理替换
+	Proxy   = 2 // 抓包代理
+
 )
 
 var (
 	proxyConf     ProxyConf
 	proxyValMap   = make(map[string]string)
-	proxySelfList []string
+	proxySelfList []string // 代理抓包类型的地址
+	blockList     []string // 直连类型的地址
 	lock          = &sync.RWMutex{}
 	dbPath        = "/.dev-proxy/leveldb-request-log"
 )
@@ -106,6 +113,13 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 	matchKey := ""
 	matchResult := ""
+
+	for _, conf := range blockList {
+		if matchConf(conf, fullUrl) {
+			return nil, Direct
+		}
+	}
+
 	for k, v := range proxyValMap {
 		tryResult := tryToReplacePath(k, v, fullUrl)
 		if tryResult == "" {
@@ -125,7 +139,7 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 			logger.Error(err)
 		}
 
-		return parse, Open
+		return parse, Replace
 	}
 
 	for _, conf := range proxySelfList {
@@ -139,7 +153,7 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 		}
 	}
 
-	return nil, Close
+	return nil, Direct
 }
 
 func initConfig() {
@@ -201,6 +215,7 @@ func cleanAndRegisterFromFile(configFile string) {
 	}
 
 	proxyValMap = make(map[string]string)
+	proxySelfList = []string{}
 	for _, conf := range proxyConf.Groups {
 		if conf.ProxyType == Close {
 			continue
@@ -216,7 +231,7 @@ func cleanAndRegisterFromFile(configFile string) {
 	}
 
 	// 代理自身
-	if proxyConf.ProxySelf != nil {
+	if proxyConf.ProxySelf != nil && proxyConf.ProxySelf.ProxyType == Open {
 		logger.Info("Register proxy group:", proxyConf.ProxySelf.Name)
 		logger.Debug("Register %v", strings.Join(proxyConf.ProxySelf.Paths, " , "))
 
@@ -225,6 +240,19 @@ func cleanAndRegisterFromFile(configFile string) {
 				continue
 			}
 			proxySelfList = append(proxySelfList, path)
+		}
+	}
+
+	// 代理自身
+	if proxyConf.ProxyBlock != nil && proxyConf.ProxyBlock.ProxyType == Open {
+		logger.Info("Register proxy group:", proxyConf.ProxyBlock.Name)
+		logger.Debug("Register %v", strings.Join(proxyConf.ProxyBlock.Paths, " , "))
+
+		for _, path := range proxyConf.ProxyBlock.Paths {
+			if path == "" {
+				continue
+			}
+			blockList = append(blockList, path)
 		}
 	}
 }
