@@ -118,6 +118,12 @@ func CloseConnection() {
 	if err != nil {
 		logger.Error("close redis connection error: ", err)
 	}
+	if db != nil {
+		err := db.Close()
+		if err != nil {
+			logger.Error("close leveldb error", err)
+		}
+	}
 }
 
 func saveReqLog(log *ReqLog[Message]) {
