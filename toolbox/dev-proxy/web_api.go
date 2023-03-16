@@ -95,11 +95,50 @@ func flushAllData(writer http.ResponseWriter, _ *http.Request) {
 func delRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
-	if id == "" {
-		writeJsonRsp(writer, "id param not exist")
+	path := query.Get("path")
+
+	if id != "" {
+		deleteById(writer, id)
 		return
 	}
 
+	if path != "" {
+		deleteByPath(writer, path)
+		return
+	}
+
+	writeJsonRsp(writer, "invalid param")
+}
+
+func deleteByPath(writer http.ResponseWriter, path string) {
+	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
+	if err != nil {
+		logger.Error(err)
+		writeJsonRsp(writer, err.Error())
+		return
+	}
+
+	total := 0
+	for _, key := range result {
+		log := matchDetailByKeyAndKwd(convertToDbKey(key), path)
+		if log == nil {
+			continue
+		}
+		total++
+
+		//logger.Info(log.Url)
+		connection.ZRem(RequestList, log.CacheId)
+		db.Delete([]byte(log.Id), nil)
+		if total >= 5000 {
+			writeJsonRsp(writer, "out of count")
+			return
+		}
+	}
+
+	writeJsonRsp(writer, Success("OK"))
+}
+
+func deleteById(writer http.ResponseWriter, id string) {
 	detail := getDetailByKey(id)
 	if detail == nil {
 		writeJsonRsp(writer, id+" not exist")

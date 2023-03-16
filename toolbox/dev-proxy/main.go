@@ -39,6 +39,7 @@ func main() {
 
 	initConfig()
 	InitConnection()
+	defer CloseConnection()
 
 	go startQueryServer()
 
