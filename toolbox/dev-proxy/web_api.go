@@ -2,8 +2,11 @@ package main
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/kuangcp/logger"
+	"github.com/syndtr/goleveldb/leveldb/util"
 	"net/http"
 	"strconv"
 	"strings"
@@ -53,7 +56,9 @@ func startQueryServer() {
 	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
 	http.HandleFunc("/curl", handleInterceptor(buildCurlCommandApi))
 	http.HandleFunc("/replay", replayRequest)
-	http.HandleFunc("/del", delRequest)
+	http.HandleFunc("/del", handleInterceptor(delRequest))
+	http.HandleFunc("/stat", handleInterceptor(statsApi))
+	http.HandleFunc("/uploadCache", handleInterceptor(uploadCacheApi))
 	http.HandleFunc("/flushAll", handleInterceptor(flushAllData))
 
 	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
@@ -92,6 +97,65 @@ func flushAllData(writer http.ResponseWriter, _ *http.Request) {
 	RspStr(writer, "OK")
 }
 
+func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
+	iterator := db.NewIterator(nil, nil)
+	for iterator.Next() {
+		bts := iterator.Value()
+		var l ReqLog[Message]
+		err := json.Unmarshal(bts, &l)
+		if err != nil {
+			logger.Error("key:["+string(iterator.Key())+"] GET ERROR:", err)
+			continue
+		}
+		connection.ZAdd(RequestList, redis.Z{Member: l.CacheId, Score: float64(l.ReqTime.UnixNano())})
+	}
+	writeJsonRsp(writer, "OK")
+}
+
+func statsApi(writer http.ResponseWriter, request *http.Request) {
+	minS := request.URL.Query().Get("min")
+	maxS := request.URL.Query().Get("max")
+	min, _ := strconv.Atoi(minS)
+	if min < 1 {
+		min = 50
+	}
+	max, _ := strconv.Atoi(maxS)
+	if max < 1 {
+		max = 100
+	}
+
+	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
+	if err != nil {
+		logger.Error(err)
+		writeJsonRsp(writer, err.Error())
+		return
+	}
+
+	countMap := make(map[string]int)
+	resultMap := make(map[string]int)
+	for _, key := range result {
+		log := getDetailByKey(convertToDbKey(key))
+		if log == nil {
+			logger.Warn(key)
+			connection.ZRem(RequestList, key)
+			continue
+		}
+		val, ok := countMap[log.Url]
+		if !ok {
+			countMap[log.Url] = 1
+		} else {
+			countMap[log.Url] = val + 1
+		}
+	}
+	logger.Info(len(countMap))
+	for k, v := range countMap {
+		if v >= min && v <= max {
+			resultMap[k] = v
+		}
+	}
+	writeJsonRsp(writer, resultMap)
+}
+
 func delRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	id := query.Get("id")
@@ -104,6 +168,8 @@ func delRequest(writer http.ResponseWriter, request *http.Request) {
 
 	if path != "" {
 		deleteByPath(writer, path)
+		logger.Info("start compact")
+		db.CompactRange(util.Range{})
 		return
 	}
 
