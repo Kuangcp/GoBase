@@ -22,7 +22,7 @@ var (
 )
 
 const (
-	width            = 84
+	width            = 90
 	height           = 10
 	DefaultRefreshMs = 57
 	appId            = "com.github.kuangcp.keylogger"
