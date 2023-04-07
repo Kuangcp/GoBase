@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/gotk3/gotk3/cairo"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
+	"github.com/shirou/gopsutil/mem"
 	"log"
 	"time"
 	"unsafe"
@@ -87,6 +89,7 @@ func main() {
 		return
 	}
 
+	//main2()
 	go notifyAny()
 
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
@@ -98,9 +101,11 @@ func main() {
 	logger.Info("refresh:", refreshPeriod)
 
 	gtk.Init(nil)
-	app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
-	app.Connect("activate", createWindow)
-	app.Run(nil)
+	//app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
+	//app.Connect("activate", createWindow)
+	createWindow()
+	//app.Run(nil)
+	gtk.Main()
 }
 
 func createWindow() {
@@ -108,8 +113,9 @@ func createWindow() {
 	win.SetDefaultSize(width, height)
 
 	win.SetPosition(gtk.WIN_POS_MOUSE)
-	gridWidget := createLabelWidget()
+	gridWidget := createGridView()
 	win.Add(gridWidget)
+
 	win.Connect("destroy", gtk.MainQuit)
 	bindMouseActionForWindow()
 
@@ -121,7 +127,7 @@ func createWindow() {
 }
 
 // https://developer.gnome.org/gtk4/unstable/GtkLabel.html
-func createLabelWidget() *gtk.Widget {
+func createGridView() *gtk.Widget {
 	grid, err := gtk.GridNew()
 	if err != nil {
 		log.Fatal("Unable to create grid:", err)
@@ -133,10 +139,36 @@ func createLabelWidget() *gtk.Widget {
 		log.Fatal("Unable to create label:", err)
 	}
 
-	grid.Add(kpmLabel)
 	kpmLabel.SetMarkup(latestLabelStr(time.Now()))
 	kpmLabel.SetHExpand(true)
 	kpmLabel.SetVExpand(true)
+
+	da, err := gtk.DrawingAreaNew()
+	if err != nil {
+		log.Fatal("", err)
+	}
+
+	grid.Attach(da, 0, 0, width, height)
+	grid.Attach(kpmLabel, 0, 0, width, height)
+
+	// Data
+	unitSize := 1.0
+	x := 0.0
+
+	da.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
+		cr.SetSourceRGB(0, 255, 100)
+		cr.Rectangle(0.0, 0.0, unitSize+x, unitSize)
+		cr.Fill()
+	})
+
+	go func() {
+		for range time.NewTicker(time.Second * 1).C {
+			memInfo, _ := mem.VirtualMemory()
+			//fmt.Println(memInfo.UsedPercent)
+			x = (100 - memInfo.UsedPercent) * width / 100
+			win.QueueDraw()
+		}
+	}()
 
 	return &grid.Container.Widget
 }

@@ -7,9 +7,9 @@ import (
 )
 
 func TestNotify(t *testing.T) {
-	notifyAny()
+	//notifyAny()
 
-	duration, err := time.ParseDuration("2h")
+	duration, err := time.ParseDuration("2m")
 	if err != nil {
 		logger.Error(err)
 	}

@@ -8,6 +8,7 @@ require (
 	github.com/kuangcp/gobase/pkg/ctool v1.0.9
 	github.com/kuangcp/gobase/toolbox/keylogger v0.0.0-20220417170000-8b486ea221d8
 	github.com/kuangcp/logger v1.0.8
+	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 )
 
 replace github.com/kuangcp/gobase/toolbox/keylogger v0.0.0-20220417170000-8b486ea221d8 => ../keylogger
