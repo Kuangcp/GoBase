@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gotk3/gotk3/cairo"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/shirou/gopsutil/mem"
@@ -9,17 +10,14 @@ import (
 )
 
 const (
-	refreshSec = 5
+	refreshSec = 1
 )
 
 type MonitorItem struct {
-	initX, initY, x, y, red, green, blue float64
-	deltaFunc                            func() float64
-	widget                               *gtk.DrawingArea
-}
-
-func (t *MonitorItem) delta() {
-	t.x = t.deltaFunc()
+	initX, initY, x, y float64
+	red, green, blue   float64
+	deltaFunc          func(*MonitorItem)
+	widget             *gtk.DrawingArea
 }
 
 // https://docs.gtk.org/gtk3/class.DrawingArea.html
@@ -39,20 +37,23 @@ func (t *MonitorItem) buildItem() *gtk.DrawingArea {
 	return t.widget
 }
 
-func memoryInfo() float64 {
+func memoryInfo(t *MonitorItem) {
 	memInfo, _ := mem.VirtualMemory()
-	return (100 - memInfo.UsedPercent) * width / 100
+	t.x = (100 - memInfo.UsedPercent) * width / 200
 }
 
-func swapMemoryInfo() float64 {
+func swapMemoryInfo(t *MonitorItem) {
 	memInfo, _ := mem.SwapMemory()
-	return -memInfo.UsedPercent * width / 100
+	t.initX = width/2 + (100-memInfo.UsedPercent)*width/200
+	t.initX = float64(int64(t.initX))
+	t.x = width - t.initX
+	fmt.Println(t.initX, t.x)
 }
 
 func refreshDrawArea(items []*MonitorItem) {
 	for range time.NewTicker(time.Second * refreshSec).C {
 		for _, i := range items {
-			i.delta()
+			i.deltaFunc(i)
 		}
 		win.QueueDraw()
 	}
