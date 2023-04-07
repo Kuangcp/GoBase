@@ -4,10 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/gotk3/gotk3/cairo"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
-	"github.com/shirou/gopsutil/mem"
 	"log"
 	"time"
 	"unsafe"
@@ -101,10 +99,12 @@ func main() {
 	logger.Info("refresh:", refreshPeriod)
 
 	gtk.Init(nil)
+
 	//app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
 	//app.Connect("activate", createWindow)
-	createWindow()
 	//app.Run(nil)
+
+	createWindow()
 	gtk.Main()
 }
 
@@ -142,33 +142,18 @@ func createGridView() *gtk.Widget {
 	kpmLabel.SetMarkup(latestLabelStr(time.Now()))
 	kpmLabel.SetHExpand(true)
 	kpmLabel.SetVExpand(true)
-
-	da, err := gtk.DrawingAreaNew()
-	if err != nil {
-		log.Fatal("", err)
-	}
-
-	grid.Attach(da, 0, 0, width, height)
 	grid.Attach(kpmLabel, 0, 0, width, height)
 
-	// Data
-	unitSize := 1.0
-	x := 0.0
+	var items []*MonitorItem
+	item1 := &MonitorItem{initX: 0, initY: 0, red: 0, green: 255, blue: 100, deltaFunc: memoryInfo}
+	grid.Attach(item1.buildItem(), 0, 0, width, height)
+	items = append(items, item1)
 
-	da.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
-		cr.SetSourceRGB(0, 255, 100)
-		cr.Rectangle(0.0, 0.0, unitSize+x, unitSize)
-		cr.Fill()
-	})
+	item2 := &MonitorItem{initX: width, initY: 2, red: 53, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
+	grid.Attach(item2.buildItem(), 0, 0, width, height)
+	items = append(items, item2)
 
-	go func() {
-		for range time.NewTicker(time.Second * 1).C {
-			memInfo, _ := mem.VirtualMemory()
-			//fmt.Println(memInfo.UsedPercent)
-			x = (100 - memInfo.UsedPercent) * width / 100
-			win.QueueDraw()
-		}
-	}()
+	go refreshDrawArea(items)
 
 	return &grid.Container.Widget
 }
