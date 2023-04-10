@@ -146,12 +146,9 @@ func createGridView() *gtk.Widget {
 
 	var items []*MonitorItem
 	item1 := &MonitorItem{initX: 0, initY: 0, red: 0, green: 255, blue: 100, deltaFunc: memoryInfo}
-	grid.Attach(item1.buildItem(), 0, 0, width, height)
-	items = append(items, item1)
-
-	item2 := &MonitorItem{initX: width, initY: 2, red: 53, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
-	grid.Attach(item2.buildItem(), 0, 0, width, height)
-	items = append(items, item2)
+	item2 := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
+	items = append(items, item1, item2)
+	buildLineItem(grid, item1, item2)
 
 	go refreshDrawArea(items)
 
