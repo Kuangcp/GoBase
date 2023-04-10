@@ -11,7 +11,7 @@ import (
 
 const (
 	refreshSec = 1
-	lineWeight = 1.0
+	lineWeight = 1.5
 )
 
 type MonitorItem struct {
@@ -27,8 +27,9 @@ func buildLineItem(grid *gtk.Grid, left, right *MonitorItem) {
 		log.Fatal("", err)
 	}
 	mid.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
-		cr.SetSourceRGB(0, 200, 0)
-		cr.Rectangle(width/2-2, 0, lineWeight+2, lineWeight)
+		cr.SetSourceRGB(0, 0, 0)
+		//cr.SetSourceRGB(54, 106, 206)
+		cr.Rectangle(width/2-0.5, 0, lineWeight+0.5, lineWeight)
 		cr.Fill()
 	})
 	grid.Attach(mid, 0, 0, width, height)
@@ -55,10 +56,9 @@ func (t *MonitorItem) buildItem() *gtk.DrawingArea {
 		log.Fatal("", err)
 	}
 
-	unitSize := 1.0
 	da.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
 		cr.SetSourceRGB(t.red, t.green, t.blue)
-		cr.Rectangle(t.initX, t.initY, unitSize+t.x, unitSize+t.y)
+		cr.Rectangle(t.initX, t.initY, lineWeight+t.x, lineWeight+t.y)
 		cr.Fill()
 	})
 	t.widget = da
