@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -28,7 +28,7 @@ func TestQueue(t *testing.T) {
 }
 
 func TestFuture(t *testing.T) {
-	future, _ := New(PoolOption{size: 3})
+	future, _ := New(PoolOption{Size: 3})
 	var res []*FutureTask
 	for i := 0; i < 80; i++ {
 		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
@@ -60,7 +60,7 @@ func TestFutureGet(t *testing.T) {
 		id   int
 		name string
 	}
-	future, _ := New(PoolOption{size: 2})
+	future, _ := New(PoolOption{Size: 2})
 	var res []*FutureTask
 	for i := 0; i < 7; i++ {
 		fi := i
@@ -104,7 +104,7 @@ func TestFutureGetWithCancel(t *testing.T) {
 		id   int
 		name string
 	}
-	future, _ := NewFuturePool(PoolOption{size: 6})
+	future, _ := NewFuturePool(PoolOption{Size: 6})
 
 	var res []*FutureTask
 	for i := 0; i < 30; i++ {
@@ -151,7 +151,7 @@ func TestFutureGetWithCancel(t *testing.T) {
 func TestNewTmpWithFuture(t *testing.T) {
 	log.Println("start")
 	//future, _ := NewTmpWithFuture(30, time.Second*4)
-	future, err := NewTmpFuturePool(PoolOption{size: 30, timeout: time.Second * 7})
+	future, err := NewTmpFuturePool(PoolOption{Size: 30, Timeout: time.Second * 7})
 	if err != nil {
 		log.Println(err)
 		return
@@ -175,7 +175,7 @@ func TestNewTmpWithFuture(t *testing.T) {
 }
 
 func TestLongWait(t *testing.T) {
-	pool, err := NewFuturePool(PoolOption{size: 3})
+	pool, err := NewFuturePool(PoolOption{Size: 3})
 	if err != nil {
 		return
 	}
@@ -186,7 +186,7 @@ func TestLongWait(t *testing.T) {
 			if err2 != nil {
 				return nil, err2
 			}
-			all, err2 := ioutil.ReadAll(rsp.Body)
+			all, err2 := io.ReadAll(rsp.Body)
 			return all, err2
 		}})
 		log.Println("submit")
