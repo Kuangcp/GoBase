@@ -53,7 +53,7 @@ var (
 
 var info = ctool.HelpInfo{
 	Description:   "Record key input, show rank",
-	Version:       "1.1.0",
+	Version:       "1.2.0",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
