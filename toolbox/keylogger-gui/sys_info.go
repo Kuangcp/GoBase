@@ -11,7 +11,7 @@ import (
 
 const (
 	refreshSec = 1
-	lineWeight = 1.5
+	lineWeight = 1.1
 )
 
 type MonitorItem struct {

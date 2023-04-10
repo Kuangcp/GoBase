@@ -145,10 +145,10 @@ func createGridView() *gtk.Widget {
 	grid.Attach(kpmLabel, 0, 0, width, height)
 
 	var items []*MonitorItem
-	item1 := &MonitorItem{initX: 0, initY: 0, red: 0, green: 255, blue: 100, deltaFunc: memoryInfo}
-	item2 := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
-	items = append(items, item1, item2)
-	buildLineItem(grid, item1, item2)
+	left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfo}
+	right := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
+	items = append(items, left, right)
+	buildLineItem(grid, left, right)
 
 	go refreshDrawArea(items)
 
@@ -195,10 +195,15 @@ func latestLabelStr(now time.Time) string {
 
 	// style https://blog.csdn.net/bitscro/article/details/3874616
 	return "<span font_family='Cascadia Mono PL' font_desc='10'>" +
+		// time
 		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(timeFmt)) + "</span>\n" +
+		// kpm
 		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
-		"<span foreground='gray'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
-		"<span foreground='white'>" + fmt.Sprintf("%-6d", total) + "</span></span>"
+		// max kpm
+		"<span foreground='gray' font_desc='8'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
+		// today total
+		"<span foreground='white' font_desc='6'>" + fmt.Sprintf("%-6d", total) + "</span>" +
+		"</span>"
 }
 
 // 从缓存中更新窗口内面板
