@@ -1,7 +1,12 @@
 package app
 
 import (
+	"github.com/pkg/errors"
+	"os/exec"
+	"os/user"
+	"strconv"
 	"sync"
+	"syscall"
 
 	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/toolbox/hosts-group/app/icon"
@@ -18,7 +23,7 @@ func OnReady() {
 	systray.SetTitle("Hosts Group")
 	systray.SetTooltip("Hosts Group")
 
-	addPageLinkItem()
+	//addPageLinkItem()
 
 	versionItem := systray.AddMenuItem("v"+Info.Version, Info.Version)
 	versionItem.Disable()
@@ -51,15 +56,68 @@ func addPageLinkItem() {
 			//case <-winItem.ClickedCh:
 			//	go OpenWebView("http://localhost:"+PortStr)
 			case <-feedbackURL.ClickedCh:
+
 				err := open.Run("https://github.com/Kuangcp/GoBase/issues")
 				if err != nil {
 					logger.Fatal(err.Error())
 				}
 			case <-pageURL.ClickedCh:
-				open.Run("http://localhost:" + PortStr)
+				openWithNormalUser("http://localhost:" + PortStr)
+				//open.Run("http://localhost:" + PortStr)
 			}
 		}
 	}()
+}
+
+func openWithNormalUser(input string) {
+	cmd := exec.Command("xdg-open", input)
+	//cmd := exec.Command("sleep", "10m")
+	err := setUserAttr(cmd, "zk")
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	err = cmd.Run()
+	if err != nil {
+		logger.Error(err)
+	}
+}
+
+// 修改启动进程所属用户
+func setUserAttr(cmd *exec.Cmd, name string) error {
+	// 检测用户是否存在
+	sysUser, err := user.Lookup(name)
+	logger.Info(sysUser.Uid, sysUser.Gid)
+	if err != nil {
+		return errors.Wrapf(err, "invalid user %s", name)
+	}
+	// set process attr
+	// 获取用户 id
+	uid, err := strconv.ParseUint(sysUser.Uid, 10, 32)
+	if err != nil {
+		return err
+	}
+	// 获取用户组 id
+	gid, err := strconv.ParseUint(sysUser.Gid, 10, 32)
+	if err != nil {
+		return err
+	}
+	attr := cmd.SysProcAttr
+
+	logger.Info("attr: ", attr)
+	if attr == nil {
+		attr = &syscall.SysProcAttr{}
+	}
+	//设置进程执行用户
+	attr.Credential = &syscall.Credential{
+		Uid:         uint32(uid),
+		Gid:         uint32(gid),
+		NoSetGroups: false,
+	}
+
+	cmd.SysProcAttr = attr
+	return nil
 }
 
 func addFileItem(vo FileItemVO, s *sync.WaitGroup) {
