@@ -19,9 +19,12 @@ Support nginx
 
 *******************
 ## Install
+1. https://codemirror.net/5/ 或者  https://codemirror.net/5/codemirror.zip 下载后，复制对应文件到项目目录中
+
+*******************
 > Linux
 
-`make install`
+`go install`
 
 *******************
 
