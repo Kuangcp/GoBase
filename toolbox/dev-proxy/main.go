@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"net/http"
@@ -58,5 +59,9 @@ func main() {
 		}),
 	}
 
-	logger.Fatal(server.ListenAndServe())
+	go func() {
+		logger.Fatal(server.ListenAndServe())
+	}()
+
+	systray.Run(OnReady, OnExit)
 }

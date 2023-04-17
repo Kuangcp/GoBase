@@ -100,12 +100,12 @@ func main() {
 
 	gtk.Init(nil)
 
-	//app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
-	//app.Connect("activate", createWindow)
-	//app.Run(nil)
+	app, _ = gtk.ApplicationNew(appId, glib.APPLICATION_FLAGS_NONE)
+	app.Connect("activate", createWindow)
+	app.Run(nil)
 
-	createWindow()
-	gtk.Main()
+	//createWindow()
+	//gtk.Main()
 }
 
 func createWindow() {

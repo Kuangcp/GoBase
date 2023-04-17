@@ -4,7 +4,7 @@
 # 1-4 complete convert /static/favicon.svg to app/icon for tray icon use
 
 imgFile=static/favicon.ico
-OUTPUT=app/icon/iconunix.go
+OUTPUT=iconunix.go
 
 down_dep() {
   cmd=$1
