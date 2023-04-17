@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 # doc: https://github.com/getlantern/systray/tree/master/example
 
@@ -56,13 +56,6 @@ if [ -z "$GOPATH" ]; then
   exit
 fi
 
-if [ ! -f hosts.syso ]; then
-  rsrc -manifest hosts-group.exe.mainfest -ico $imgFile -o hosts.syso
-  echo 3/6 Finish build icon syso
-else
-  echo 3/6 Finish build icon syso by cache
-fi
-
 if [ -z "$imgFile" ]; then
   echo Please specify a PNG file
   exit
@@ -80,20 +73,31 @@ if [ $? -ne 0 ]; then
   echo Failure generating $OUTPUT
   exit
 fi
-echo 4/6 Finish Generating $OUTPUT
+echo 3/6 Finish Generating $OUTPUT
 
 go mod tidy
 
-echo 5/6 Finish package exe icon, tray icon
+echo 4/6 Finish package exe icon, tray icon
 
-version=$(go run . -v)
+##########
+# Windows
+##########
 
-CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui" -o hosts-group.$version.exe
-
-if [ -f hosts-group.$version.exe ]; then
-  echo
-  upx hosts-group.$version.exe
-  echo
-
-  echo 6/6 Finish hosts-group.$version.exe
-fi
+#if [ ! -f hosts.syso ]; then
+#  rsrc -manifest hosts-group.exe.mainfest -ico $imgFile -o hosts.syso
+#  echo 5/6 Windows Finish build icon syso
+#else
+#  echo 5/6 Windows Finish build icon syso by cache
+#fi
+#
+#version=$(go run . -v)
+#
+#CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui" -o hosts-group.$version.exe
+#
+#if [ -f hosts-group.$version.exe ]; then
+#  echo
+#  upx hosts-group.$version.exe
+#  echo
+#
+#  echo 6/6 Windows Finish hosts-group.$version.exe
+#fi
