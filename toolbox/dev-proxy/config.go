@@ -42,11 +42,11 @@ type (
 	}
 
 	ProxyConf struct {
-		Groups     []ProxyGroup `json:"groups"`
-		ProxySelf  *ProxySelf   `json:"proxy"` // 抓包地址
-		ProxyBlock *ProxySelf   `json:"block"` // 抓包地址黑名单
-		Redis      *RedisConf   `json:"redis"`
-		Id         string       `json:"id"`
+		Groups     []*ProxyGroup `json:"groups"`
+		ProxySelf  *ProxySelf    `json:"proxy"` // 抓包地址
+		ProxyBlock *ProxySelf    `json:"block"` // 抓包地址黑名单
+		Redis      *RedisConf    `json:"redis"`
+		Id         string        `json:"id"`
 	}
 )
 
@@ -71,6 +71,18 @@ var (
 	lock          = &sync.RWMutex{}
 	dbPath        = "/.dev-proxy/leveldb-request-log"
 )
+
+func (g *ProxyGroup) hasUse() bool {
+	return g.ProxyType == Open
+}
+
+func (g *ProxyGroup) switchUse() {
+	if g.hasUse() {
+		g.ProxyType = Close
+	} else {
+		g.ProxyType = Open
+	}
+}
 
 // 处理源路径到目标路径的转换
 // originConf 正则匹配规则
@@ -214,6 +226,10 @@ func cleanAndRegisterFromFile(configFile string) {
 		return
 	}
 
+	reloadConfByCacheObj()
+}
+
+func reloadConfByCacheObj() {
 	proxyValMap = make(map[string]string)
 	proxySelfList = []string{}
 	for _, conf := range proxyConf.Groups {
