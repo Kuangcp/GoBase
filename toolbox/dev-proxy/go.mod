@@ -10,6 +10,7 @@ require (
 	github.com/kuangcp/gobase/pkg/ctool v1.0.8
 	github.com/kuangcp/logger v1.0.9
 	github.com/syndtr/goleveldb v1.0.0
+	github.com/tidwall/pretty v1.2.1
 )
 
 require (

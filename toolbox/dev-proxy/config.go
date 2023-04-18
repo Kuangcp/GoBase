@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
+	"github.com/tidwall/pretty"
 	"net/http"
 	"net/url"
 	"os"
@@ -42,11 +43,11 @@ type (
 	}
 
 	ProxyConf struct {
+		Id         string        `json:"id"`
+		Redis      *RedisConf    `json:"redis"`
 		Groups     []*ProxyGroup `json:"groups"`
 		ProxySelf  *ProxySelf    `json:"proxy"` // 抓包地址
 		ProxyBlock *ProxySelf    `json:"block"` // 抓包地址黑名单
-		Redis      *RedisConf    `json:"redis"`
-		Id         string        `json:"id"`
 	}
 )
 
@@ -64,12 +65,13 @@ const (
 )
 
 var (
-	proxyConf     ProxyConf
-	proxyValMap   = make(map[string]string)
-	proxySelfList []string // 代理抓包类型的地址
-	blockList     []string // 直连类型的地址
-	lock          = &sync.RWMutex{}
-	dbPath        = "/.dev-proxy/leveldb-request-log"
+	proxyConf      ProxyConf
+	proxyValMap    = make(map[string]string)
+	proxySelfList  []string // 代理抓包类型的地址
+	blockList      []string // 直连类型的地址
+	lock           = &sync.RWMutex{}
+	dbPath         = "/.dev-proxy/leveldb-request-log"
+	configFilePath = ""
 )
 
 func (g *ProxyGroup) hasUse() bool {
@@ -194,9 +196,9 @@ func initConfig() {
 			MaxDays:    -1,
 		}})
 
-	configFile := home + configPath
+	configFilePath = home + configPath
 	dbPath = home + dbPath
-	cleanAndRegisterFromFile(configFile)
+	cleanAndRegisterFromFile(configFilePath)
 
 	if proxyConf.Id == "" {
 		listVar += ":" + hostname + ":tmp-" + uuid.NewString()[:6]
@@ -206,8 +208,20 @@ func initConfig() {
 
 	RequestList = listVar
 	if reloadConf {
-		go listenConfig(configFile)
+		go listenConfig(configFilePath)
 	}
+}
+
+func storeByMemory() {
+	bts, err := json.Marshal(proxyConf)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	var Options = &pretty.Options{Width: 80, Prefix: "", Indent: "  ", SortKeys: false}
+	fmtBts := pretty.PrettyOptions(bts, Options)
+
+	os.WriteFile(configFilePath, fmtBts, 0644)
 }
 
 func cleanAndRegisterFromFile(configFile string) {
