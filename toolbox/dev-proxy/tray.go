@@ -20,6 +20,7 @@ var (
 
 func OnExit() {
 	logger.Info("exit")
+	storeByMemory()
 }
 
 func OnReady() {
