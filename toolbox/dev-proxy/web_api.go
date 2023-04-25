@@ -35,10 +35,20 @@ var highlightJs string
 //go:embed static/json.min.js
 var jsonJs string
 
+//go:embed static/main.js
+var mainJs string
+
+//go:embed static/main.css
+var mainCss string
+
+//go:embed static/favicon.ico
+var icon string
+
 const (
 	jsT   = "text/javascript; charset=utf-8"
 	cssT  = "text/css; charset=utf-8"
 	htmlT = "text/html; charset=utf-8"
+	iconT = "image/vnd.microsoft.icon"
 )
 
 func startQueryServer() {
@@ -48,9 +58,11 @@ func startQueryServer() {
 		http.Handle("/", http.FileServer(http.Dir("./static")))
 	} else {
 		http.HandleFunc("/", bindStatic(indexPage, htmlT))
+		http.HandleFunc("/favicon.ico", bindStatic(icon, iconT))
 		http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeStyle, cssT))
 		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
-		http.HandleFunc("/json.min.js", bindStatic(jsonJs, jsT))
+		http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
+		http.HandleFunc("/main.css", bindStatic(mainCss, cssT))
 	}
 
 	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))

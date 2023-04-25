@@ -3,7 +3,7 @@
 # doc: https://github.com/getlantern/systray/tree/master/example
 # 1-4 complete convert /static/favicon.svg to app/icon for tray icon use
 # svgFile=static/favicon.svg
-svgFile=static/支付-支付宝.svg
+svgFile=static/favicon.svg
 imgFile=static/favicon.ico
 OUTPUT=iconunix.go
 

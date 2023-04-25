@@ -8,8 +8,8 @@
     <!--  Download Resource https://highlightjs.org/download/ -->
     <link rel="stylesheet" href="monokai-sublime.min.css">
     <link rel="stylesheet" href="main.css">
-    <script src="main.js"></script>
     <script src="highlight.min.js"></script>
+    <script src="main.js"></script>
 </head>
 <body>
 
@@ -35,6 +35,11 @@
     <tbody id="req-log-body" style="border: solid" class="req-log-body"></tbody>
 </table>
 <div id="detail">
+    <div class="detail-nav">
+        <span id="detail-nav-header" onclick="showDetailTab('header')">Header</span>
+        <span id="detail-nav-request" onclick="showDetailTab('request')">Request</span>
+        <span id="detail-nav-response" onclick="showDetailTab('response')">Response</span>
+    </div>
     <div id="detail-request-head"></div>
     <div id="detail-request"></div>
     <div id="detail-response-head"></div>
@@ -86,6 +91,52 @@
             list.push(v + "=" + val(v))
         }
         return list.join("&")
+    }
+
+    function showDetailTab(type) {
+        let navH = document.getElementById("detail-nav-header")
+        let navR = document.getElementById("detail-nav-request")
+        let navS = document.getElementById("detail-nav-response")
+
+        let rh = document.getElementById("detail-request-head")
+        let r = document.getElementById("detail-request")
+        let sh = document.getElementById("detail-response-head")
+        let s = document.getElementById("detail-response")
+
+        if (type === 'header') {
+            rh.style.display = "block"
+            sh.style.display = "block"
+
+            r.style.display = "none"
+            s.style.display = "none"
+
+            navH.setAttribute("class", "nav-active")
+            navR.setAttribute("class", "nav-inactive")
+            navS.setAttribute("class", "nav-inactive")
+        }
+        if (type === 'request') {
+            rh.style.display = "none"
+            sh.style.display = "none"
+
+            r.style.display = "block"
+            s.style.display = "none"
+
+            navH.setAttribute("class", "nav-inactive")
+            navR.setAttribute("class", "nav-active")
+            navS.setAttribute("class", "nav-inactive")
+        }
+        if (type === 'response') {
+            rh.style.display = "none"
+            sh.style.display = "none"
+
+            r.style.display = "none"
+            s.style.display = "block"
+
+
+            navH.setAttribute("class", "nav-inactive")
+            navR.setAttribute("class", "nav-inactive")
+            navS.setAttribute("class", "nav-active")
+        }
     }
 
     function showDetail(id) {
