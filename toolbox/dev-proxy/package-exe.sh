@@ -2,7 +2,8 @@
 
 # doc: https://github.com/getlantern/systray/tree/master/example
 # 1-4 complete convert /static/favicon.svg to app/icon for tray icon use
-
+# svgFile=static/favicon.svg
+svgFile=static/favicon.svg
 imgFile=static/favicon.ico
 OUTPUT=iconunix.go
 
@@ -46,7 +47,8 @@ isCmdExist convert imagemagick
 echo 1/6 Start build
 
 if [ ! -f static/favicon.ico ]; then
-  convert -density 300 static/favicon.svg -background transparent -colors 256 -define icon:auto-resize static/favicon.ico
+  # convert -density 300 $svgFile -background none -colors 256 -define icon:auto-resize static/favicon.ico
+  convert -background none -density 300 $svgFile -define icon:auto-resize static/favicon.ico
   echo 2/6 Finish convert svg to ico
 else
   echo 2/6 Finish convert svg to ico by cache
@@ -67,9 +69,9 @@ if [ ! -f "$imgFile" ]; then
   exit
 fi
 
-mkdir -p app/icon/
+# mkdir -p app/icon/
 rm $OUTPUT
-cat "$imgFile" | $GOPATH/bin/2goarray Data icon >>$OUTPUT
+cat "$imgFile" | $GOPATH/bin/2goarray Data main >>$OUTPUT
 if [ $? -ne 0 ]; then
   echo Failure generating $OUTPUT
   exit
