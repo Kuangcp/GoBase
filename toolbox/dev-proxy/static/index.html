@@ -154,12 +154,12 @@
 
         return "<tr onclick='showDetail(\"" + l.id + "\")'>" +
             "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> <span style='color:rebeccapurple'> [ " + (parseInt(i) + 1) + " ] </span> " + l.id + "</td>" +
-            "<td style='font-size: small;width: 20px'> " + l.statusCode + "</td>" +
+            "<td style='font-size: small;width: 20px'> " + l.method+'<br/>'+l.statusCode + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
             '<td> ' +
-            '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Replay</button>' +
+            '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Re</button>' +
             '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
             '<button type="button" class="req-btn req-btn-delete" onclick="deleteReq(\'' + l.id + '\')">Del</button>' +
             '</td>' +

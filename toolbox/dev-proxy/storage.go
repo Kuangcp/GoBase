@@ -13,7 +13,7 @@ import (
 
 const (
 	PoolSize = 5
-	Prefix   = "proxy:"
+	Prefix   = "proxy"
 )
 
 var (
@@ -21,8 +21,8 @@ var (
 	db             *leveldb.DB
 	RequestList    = "" // redis key (03-16 18:27:45.653 80b85e3c653) leveldb key (80b85e3c653)
 	RequestUrlList = ""
-	listVar        = Prefix + "request-list"
-	urlListVar     = Prefix + "request-list"
+	listFmt        = "%s:%s:request-list"
+	urlListFmt     = "%s:%s:request-url-list"
 )
 
 type (
