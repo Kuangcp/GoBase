@@ -17,10 +17,12 @@ const (
 )
 
 var (
-	connection  *redis.Client
-	db          *leveldb.DB
-	RequestList = "" // redis(03-16 18:27:45.653 80b85e3c653) leveldb (80b85e3c653)
-	listVar     = Prefix + "request-list"
+	connection     *redis.Client
+	db             *leveldb.DB
+	RequestList    = "" // redis key (03-16 18:27:45.653 80b85e3c653) leveldb key (80b85e3c653)
+	RequestUrlList = ""
+	listVar        = Prefix + "request-list"
+	urlListVar     = Prefix + "request-list"
 )
 
 type (
