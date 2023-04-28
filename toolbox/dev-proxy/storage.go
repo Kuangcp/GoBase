@@ -191,6 +191,9 @@ func queryLogDetail(keyList []string) []*ReqLog[Message] {
 	return list
 }
 
+// key: redis key
+// kwd 关键字
+// url 以及header等所有字符串
 func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
 	value, err := db.Get([]byte(key), nil)
 	if err != nil {

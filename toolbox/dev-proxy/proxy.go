@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
@@ -106,13 +108,38 @@ func copyHeader(w http.ResponseWriter, res *http.Response) {
 	w.WriteHeader(res.StatusCode)
 }
 
+func handleCompressed(msg *Message, res *http.Response) {
+	encoding := res.Header.Get("Content-Encoding")
+	if encoding == "" {
+		return
+	}
+	if encoding == "gzip" {
+		reader, err := gzip.NewReader(bytes.NewBuffer(msg.Body))
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		defer reader.Close()
+		var buff bytes.Buffer
+
+		_, err = io.Copy(&buff, reader)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		msg.Body = buff.Bytes()
+	}
+}
+
 func fillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
 	if reqLog == nil {
 		return
 	}
-	bytes, body := copyStream(res.Body)
+	bodyBts, body := copyStream(res.Body)
 	res.Body = body
-	resMes := Message{Header: res.Header, Body: bytes}
+	resMes := Message{Header: res.Header, Body: bodyBts}
+	handleCompressed(&resMes, res)
+
 	reqLog.Response = resMes
 	reqLog.ResTime = time.Now()
 	reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
