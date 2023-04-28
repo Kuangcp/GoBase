@@ -198,13 +198,17 @@ func initConfig() {
 	dbPath = home + dbPath
 	cleanAndRegisterFromFile(configFile)
 
+	var suffix string
 	if proxyConf.Id == "" {
-		listVar += ":" + hostname + ":tmp-" + uuid.NewString()[:6]
+		suffix = ":" + hostname + ":tmp-" + uuid.NewString()[:6]
 	} else {
-		listVar += ":" + hostname + ":" + proxyConf.Id
+		suffix = ":" + hostname + ":" + proxyConf.Id
 	}
+	listVar += suffix
+	urlListVar += suffix
 
 	RequestList = listVar
+	RequestUrlList = urlListVar
 	if reloadConf {
 		go listenConfig(configFile)
 	}
