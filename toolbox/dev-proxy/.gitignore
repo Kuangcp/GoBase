@@ -1,3 +1,4 @@
 *-db/
 iconunix.go
+iconwin.go
 *.ico

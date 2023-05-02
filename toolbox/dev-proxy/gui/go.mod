@@ -4,6 +4,8 @@ go 1.19
 
 replace github.com/kuangcp/gobase/toolbox/dev-proxy => ../../dev-proxy
 
+//replace github.com/kuangcp/gobase/pkg/ctool => ../../../pkg/ctool
+
 require (
 	github.com/getlantern/systray v1.2.1
 	github.com/kuangcp/gobase/toolbox/dev-proxy v0.0.0-00010101000000-000000000000
@@ -23,7 +25,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/kuangcp/gobase/pkg/ctool v1.0.8 // indirect
+	github.com/kuangcp/gobase/pkg/ctool v1.1.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
