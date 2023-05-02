@@ -14,6 +14,7 @@ import (
 func TestParseUrl(t *testing.T) {
 	parse, err := url.Parse("http://127.0.0.1:19011/$1")
 	fmt.Println(parse.Host, parse.Path, err)
+	fmt.Println(parse.String())
 
 	conf := ProxyGroup{Name: "sss", ProxyType: 1, Routers: []ProxyRouter{
 		{Src: "http://192.168.16.91:32149", Dst: "http://127.0.0.1:19011"},

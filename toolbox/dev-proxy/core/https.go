@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"crypto/rand"
@@ -17,7 +17,7 @@ import (
 // https://mojotv.cn/2018/12/26/how-to-create-a-https-proxy-service-in-100-lines-of-code
 // https://github.com/golang/go/issues/46319
 // https://github.com/Zartenc/httpsproxy.git
-func genCertificate() (cert tls.Certificate, err error) {
+func GenCertificate() (cert tls.Certificate, err error) {
 	rawCert, rawKey, err := generateKeyPair()
 	if err != nil {
 		return

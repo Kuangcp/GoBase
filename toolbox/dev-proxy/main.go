@@ -3,65 +3,55 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"net/http"
 )
 
-var (
-	port         int
-	reloadConf   bool
-	debug        bool
-	queryPort    int
-	buildVersion string
-	proxyUri     string
-	proxy        bool
-)
-
 var helpInfo = ctool.HelpInfo{
 	Description:  "Http proxy for reroute and trace",
-	BuildVersion: buildVersion,
+	BuildVersion: core.BuildVersion,
 	Version:      "1.0.3",
 	Flags: []ctool.ParamVO{
-		{Short: "-r", BoolVar: &reloadConf, Comment: "auto reload changed config"},
-		{Short: "-d", BoolVar: &debug, Comment: "debug mode"},
-		{Short: "-x", BoolVar: &proxy, Comment: "proxy mode"},
+		{Short: "-r", BoolVar: &core.ReloadConf, Comment: "auto reload changed config"},
+		{Short: "-d", BoolVar: &core.Debug, Comment: "debug mode"},
+		{Short: "-x", BoolVar: &core.HttpProxy, Comment: "proxy mode"},
 	},
 	Options: []ctool.ParamVO{
-		{Short: "-qp", IntVar: &queryPort, Int: 1235, Value: "port", Comment: "web port"},
-		{Short: "-p", IntVar: &port, Int: 1234, Value: "port", Comment: "port"},
-		{Short: "-pu", StringVar: &proxyUri, String: "http://localhost:7890", Value: "uri", Comment: "proxy uri"},
+		{Short: "-qp", IntVar: &core.QueryPort, Int: 1235, Value: "port", Comment: "web port"},
+		{Short: "-p", IntVar: &core.Port, Int: 1234, Value: "port", Comment: "port"},
+		{Short: "-pu", StringVar: &core.HttpProxyUri, String: "http://localhost:7890", Value: "uri", Comment: "proxy uri"},
 	},
 }
 
 func main() {
 	helpInfo.Parse()
 
-	initConfig()
-	InitConnection()
-	defer CloseConnection()
+	core.InitConfig()
+	core.InitConnection()
+	defer core.CloseConnection()
 
-	go startQueryServer()
+	go core.StartQueryServer()
 
-	logger.Info("list key: ", RequestList)
-	logger.Info("Start proxy server on 127.0.0.1:%d", port)
-	cert, err := genCertificate()
+	logger.Info("list key: ", core.RequestList)
+	logger.Info("Start proxy server on 127.0.0.1:%d", core.Port)
+	cert, err := core.GenCertificate()
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	server := &http.Server{
-		Addr:      fmt.Sprintf("0.0.0.0:%d", port),
+		Addr:      fmt.Sprintf("0.0.0.0:%d", core.Port),
 		TLSConfig: &tls.Config{Certificates: []tls.Certificate{cert}},
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			proxyHandler(w, r)
+			core.ProxyHandler(w, r)
 		}),
 	}
 
-	go func() {
-		logger.Fatal(server.ListenAndServe())
-	}()
+	//go func() {
+	logger.Fatal(server.ListenAndServe())
+	//}()
 
-	systray.Run(OnReady, OnExit)
+	//systray.Run(gui.OnReady, gui.OnExit)
 }

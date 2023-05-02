@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	_ "embed"
@@ -51,10 +51,10 @@ const (
 	iconT = "image/vnd.microsoft.icon"
 )
 
-func startQueryServer() {
-	logger.Info("Start query server on 127.0.0.1:%d", queryPort)
+func StartQueryServer() {
+	logger.Info("Start query server on 127.0.0.1:%d", QueryPort)
 
-	if debug {
+	if Debug {
 		http.Handle("/", http.FileServer(http.Dir("./static")))
 	} else {
 		http.HandleFunc("/", bindStatic(indexPage, htmlT))
@@ -73,7 +73,7 @@ func startQueryServer() {
 	http.HandleFunc("/uploadCache", handleInterceptor(uploadCacheApi))
 	http.HandleFunc("/flushAll", handleInterceptor(flushAllData))
 
-	http.ListenAndServe(fmt.Sprintf(":%v", queryPort), nil)
+	http.ListenAndServe(fmt.Sprintf(":%v", QueryPort), nil)
 }
 
 func (p PageQueryParam) buildStartEnd() (int64, int64) {

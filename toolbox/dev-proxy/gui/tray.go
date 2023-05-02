@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/getlantern/systray"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"sync"
 )
@@ -24,7 +25,7 @@ func OnExit() {
 }
 
 func OnReady() {
-	systray.SetTemplateIcon(Data, Data)
+	//systray.SetTemplateIcon(Data, Data)
 	systray.SetTitle("Hosts Group")
 	systray.SetTooltip("Hosts Group")
 
@@ -43,16 +44,16 @@ func OnReady() {
 	systray.AddSeparator()
 
 	var latch sync.WaitGroup
-	for _, vo := range proxyConf.Groups {
+	for _, vo := range core.ProxyConfVar.Groups {
 		latch.Add(1)
 		addFileItem(vo, &latch)
 		latch.Wait()
 	}
 }
 
-func addFileItem(vo *ProxyGroup, s *sync.WaitGroup) {
+func addFileItem(vo *core.ProxyGroup, s *sync.WaitGroup) {
 	go func() {
-		checkbox := systray.AddMenuItemCheckbox(vo.Name, "Check Me", vo.hasUse())
+		checkbox := systray.AddMenuItemCheckbox(vo.Name, "Check Me", vo.HasUse())
 		fileMap.Store(vo.Name, checkbox)
 		if s != nil {
 			s.Done()
@@ -60,10 +61,10 @@ func addFileItem(vo *ProxyGroup, s *sync.WaitGroup) {
 		for {
 			select {
 			case <-checkbox.ClickedCh:
-				useState := vo.hasUse()
+				useState := vo.HasUse()
 
-				vo.switchUse()
-				reloadConfByCacheObj()
+				vo.SwitchUse()
+				core.ReloadConfByCacheObj()
 
 				// Windows need this line, linux not need
 				updateCheckBox(useState, checkbox)

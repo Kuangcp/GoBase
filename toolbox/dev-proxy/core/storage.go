@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -78,7 +78,7 @@ func InitConnection() {
 	db = newDB
 
 	var opt redis.Options
-	redisConf := proxyConf.Redis
+	redisConf := ProxyConfVar.Redis
 	if redisConf != nil {
 		poolSize := PoolSize
 		if redisConf.PoolSize != 0 {
