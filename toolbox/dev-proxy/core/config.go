@@ -23,6 +23,12 @@ type (
 		ProxyType int    `json:"proxy_type"`
 	}
 
+	ProxySwitch interface {
+		HasUse() bool
+		SwitchUse()
+		GetName() string
+	}
+
 	ProxyGroup struct {
 		Name      string        `json:"name"`
 		ProxyType int           `json:"proxy_type"`
@@ -74,11 +80,27 @@ var (
 	configFilePath = ""
 )
 
+func (p *ProxyGroup) GetName() string {
+	return p.Name
+}
 func (g *ProxyGroup) HasUse() bool {
 	return g.ProxyType == Open
 }
-
 func (g *ProxyGroup) SwitchUse() {
+	if g.HasUse() {
+		g.ProxyType = Close
+	} else {
+		g.ProxyType = Open
+	}
+}
+
+func (p *ProxySelf) GetName() string {
+	return p.Name
+}
+func (g *ProxySelf) HasUse() bool {
+	return g.ProxyType == Open
+}
+func (g *ProxySelf) SwitchUse() {
 	if g.HasUse() {
 		g.ProxyType = Close
 	} else {
@@ -246,6 +268,7 @@ func cleanAndRegisterFromFile(configFile string) {
 }
 
 func ReloadConfByCacheObj() {
+	logger.Info("Start reload proxy rule")
 	proxyValMap = make(map[string]string)
 	proxySelfList = []string{}
 	for _, conf := range ProxyConfVar.Groups {

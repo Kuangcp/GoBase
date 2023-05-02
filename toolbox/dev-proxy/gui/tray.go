@@ -4,6 +4,7 @@ import (
 	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
+	"reflect"
 	"sync"
 )
 
@@ -25,7 +26,7 @@ func OnExit() {
 }
 
 func OnReady() {
-	//systray.SetTemplateIcon(Data, Data)
+	systray.SetTemplateIcon(Data, Data)
 	systray.SetTitle("Hosts Group")
 	systray.SetTooltip("Hosts Group")
 
@@ -43,21 +44,22 @@ func OnReady() {
 
 	systray.AddSeparator()
 
-	var latch sync.WaitGroup
+	//var latch sync.WaitGroup
 	for _, vo := range core.ProxyConfVar.Groups {
-		latch.Add(1)
-		addFileItem(vo, &latch)
-		latch.Wait()
+		addFileItem(vo)
 	}
+	addFileItem(core.ProxyConfVar.ProxySelf)
+	addFileItem(core.ProxyConfVar.ProxyBlock)
 }
 
-func addFileItem(vo *core.ProxyGroup, s *sync.WaitGroup) {
+func addFileItem(vo core.ProxySwitch) {
+	if vo == nil || (reflect.ValueOf(vo).Kind() == reflect.Ptr && reflect.ValueOf(vo).IsNil()) {
+		return
+	}
+	checkbox := systray.AddMenuItemCheckbox(vo.GetName(), "Check Me", vo.HasUse())
+	fileMap.Store(vo.GetName(), checkbox)
 	go func() {
-		checkbox := systray.AddMenuItemCheckbox(vo.Name, "Check Me", vo.HasUse())
-		fileMap.Store(vo.Name, checkbox)
-		if s != nil {
-			s.Done()
-		}
+		//checkbox.AddSubMenuItem()
 		for {
 			select {
 			case <-checkbox.ClickedCh:
