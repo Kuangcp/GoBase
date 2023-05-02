@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"fmt"
@@ -114,7 +114,7 @@ func buildCommandById(id, selfProxy string) string {
 	}
 	cmd := "curl "
 	if selfProxy == "Y" {
-		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", port)
+		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", Port)
 	}
 	parseUrl, _ := url.Parse(detail.Url)
 	cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path

@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -65,7 +65,7 @@ const (
 )
 
 var (
-	proxyConf      ProxyConf
+	ProxyConfVar   ProxyConf
 	proxyValMap    = make(map[string]string)
 	proxySelfList  []string // 代理抓包类型的地址
 	blockList      []string // 直连类型的地址
@@ -74,12 +74,12 @@ var (
 	configFilePath = ""
 )
 
-func (g *ProxyGroup) hasUse() bool {
+func (g *ProxyGroup) HasUse() bool {
 	return g.ProxyType == Open
 }
 
-func (g *ProxyGroup) switchUse() {
-	if g.hasUse() {
+func (g *ProxyGroup) SwitchUse() {
+	if g.HasUse() {
 		g.ProxyType = Close
 	} else {
 		g.ProxyType = Open
@@ -170,7 +170,7 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 	return nil, Direct
 }
 
-func initConfig() {
+func InitConfig() {
 	home, err := ctool.Home()
 	if err != nil {
 		fmt.Println(err)
@@ -183,7 +183,7 @@ func initConfig() {
 	}
 
 	logLevel := logger.InformationalDesc
-	if debug {
+	if Debug {
 		logLevel = logger.DebugDesc
 	}
 	logger.SetLoggerConfig(&logger.LogConfig{
@@ -201,21 +201,21 @@ func initConfig() {
 	cleanAndRegisterFromFile(configFilePath)
 
 	var hostId string
-	if proxyConf.Id == "" {
+	if ProxyConfVar.Id == "" {
 		hostId = hostname + ":tmp-" + uuid.NewString()[:6]
 	} else {
-		hostId = hostname + ":" + proxyConf.Id
+		hostId = hostname + ":" + ProxyConfVar.Id
 	}
 
 	RequestList = fmt.Sprintf(listFmt, Prefix, hostId)
 	RequestUrlList = fmt.Sprintf(urlListFmt, Prefix, hostId)
-	if reloadConf {
+	if ReloadConf {
 		go listenConfig(configFilePath)
 	}
 }
 
 func storeByMemory() {
-	bts, err := json.Marshal(proxyConf)
+	bts, err := json.Marshal(ProxyConfVar)
 	if err != nil {
 		logger.Error(err)
 		return
@@ -236,19 +236,19 @@ func cleanAndRegisterFromFile(configFile string) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	err = json.Unmarshal(file, &proxyConf)
+	err = json.Unmarshal(file, &ProxyConfVar)
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
-	reloadConfByCacheObj()
+	ReloadConfByCacheObj()
 }
 
-func reloadConfByCacheObj() {
+func ReloadConfByCacheObj() {
 	proxyValMap = make(map[string]string)
 	proxySelfList = []string{}
-	for _, conf := range proxyConf.Groups {
+	for _, conf := range ProxyConfVar.Groups {
 		if conf.ProxyType == Close {
 			continue
 		}
@@ -263,11 +263,11 @@ func reloadConfByCacheObj() {
 	}
 
 	// 代理自身
-	if proxyConf.ProxySelf != nil && proxyConf.ProxySelf.ProxyType == Open {
-		logger.Info("Register proxy group:", proxyConf.ProxySelf.Name)
-		logger.Debug("Register %v", strings.Join(proxyConf.ProxySelf.Paths, " , "))
+	if ProxyConfVar.ProxySelf != nil && ProxyConfVar.ProxySelf.ProxyType == Open {
+		logger.Info("Register proxy group:", ProxyConfVar.ProxySelf.Name)
+		logger.Debug("Register %v", strings.Join(ProxyConfVar.ProxySelf.Paths, " , "))
 
-		for _, path := range proxyConf.ProxySelf.Paths {
+		for _, path := range ProxyConfVar.ProxySelf.Paths {
 			if path == "" {
 				continue
 			}
@@ -276,11 +276,11 @@ func reloadConfByCacheObj() {
 	}
 
 	// 代理自身
-	if proxyConf.ProxyBlock != nil && proxyConf.ProxyBlock.ProxyType == Open {
-		logger.Info("Register proxy group:", proxyConf.ProxyBlock.Name)
-		logger.Debug("Register %v", strings.Join(proxyConf.ProxyBlock.Paths, " , "))
+	if ProxyConfVar.ProxyBlock != nil && ProxyConfVar.ProxyBlock.ProxyType == Open {
+		logger.Info("Register proxy group:", ProxyConfVar.ProxyBlock.Name)
+		logger.Debug("Register %v", strings.Join(ProxyConfVar.ProxyBlock.Paths, " , "))
 
-		for _, path := range proxyConf.ProxyBlock.Paths {
+		for _, path := range ProxyConfVar.ProxyBlock.Paths {
 			if path == "" {
 				continue
 			}

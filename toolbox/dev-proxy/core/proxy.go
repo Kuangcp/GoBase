@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func proxyHandler(w http.ResponseWriter, r *http.Request) {
+func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodConnect {
 		handleHttps(w, r)
 		return
@@ -58,9 +58,9 @@ func proxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
 
-	uri, _ := url.Parse(proxyUri)
+	uri, _ := url.Parse(HttpProxyUri)
 	var transport *http.Transport
-	if proxy {
+	if HttpProxy {
 		transport = &http.Transport{
 			Proxy: http.ProxyURL(uri),
 		}
