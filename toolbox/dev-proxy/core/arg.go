@@ -35,8 +35,6 @@ var HelpInfo = ctool.HelpInfo{
 }
 
 func StartMainServer() {
-	HelpInfo.Parse()
-
 	InitConfig()
 	InitConnection()
 	defer CloseConnection()
