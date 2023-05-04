@@ -19,7 +19,7 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 	}
 	var pageResult *PageVO[*ReqLog[MessageVO]]
 	if param.kwd != "" || param.date != "" {
-		list, total := pageQueryReqLogByKwd(param)
+		list, total := pageQueryReqLogByUrlKwd(param)
 		pageResult = &PageVO[*ReqLog[MessageVO]]{}
 		pageResult.Data = list
 		pageResult.Total = total
@@ -43,6 +43,55 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 	return result
 }
 
+// search url
+func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
+	var cursor uint64 = 0
+	const fetchSize int64 = 100
+	const maxPage = 6
+
+	keys, cursor, err := connection.HScan(RequestUrlList, cursor, "", fetchSize).Result()
+	if err != nil {
+		logger.Error(err)
+		return nil, 0
+	}
+
+	startIdx := (param.page - 1) * param.size
+	maxIdx := (param.page + maxPage) * param.size
+	total := 0
+	var list []*ReqLog[MessageVO]
+	for len(keys) > 0 {
+		for i := 0; i < len(keys); i += 2 {
+			key := keys[i]
+			val := keys[i+1]
+
+			if !strings.Contains(val, url.QueryEscape(param.kwd)) {
+				continue
+			}
+
+			total++
+			if total > startIdx && len(list) < param.size {
+				log := getDetailByKey(key)
+				list = append(list, convertLog(log))
+			}
+			if total >= maxIdx {
+				break
+			}
+		}
+		// logger.Info("new loop", cursor)
+		keys, cursor, err = connection.HScan(RequestUrlList, cursor, "", fetchSize).Result()
+		if err != nil {
+			logger.Error(err)
+			break
+		}
+		// finish full scan
+		if cursor == 0 {
+			break
+		}
+	}
+	return list, total
+}
+
+// search url and header body
 func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
 	if err != nil {
