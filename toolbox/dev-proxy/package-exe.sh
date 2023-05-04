@@ -3,9 +3,9 @@
 # doc: https://github.com/getlantern/systray/tree/master/example
 # 1-4 complete convert /static/favicon.svg to app/icon for tray icon use
 # svgFile=static/favicon.svg
-svgFile=static/favicon.svg
-imgFile=static/favicon.ico
-OUTPUT=iconunix.go
+svgFile=core/static/favicon.svg
+imgFile=core/static/favicon.ico
+OUTPUT=gui/iconunix.go
 
 down_dep() {
   cmd=$1
