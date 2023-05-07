@@ -48,7 +48,7 @@ echo 1/6 Start build
 
 if [ ! -f static/favicon.ico ]; then
   # convert -density 300 $svgFile -background none -colors 256 -define icon:auto-resize static/favicon.ico
-  convert -background none -density 300 $svgFile -define icon:auto-resize static/favicon.ico
+  convert -background none -density 300 $svgFile -define icon:auto-resize $imgFile
   echo 2/6 Finish convert svg to ico
 else
   echo 2/6 Finish convert svg to ico by cache
