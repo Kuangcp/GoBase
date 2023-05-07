@@ -113,7 +113,7 @@ func createWindow() {
 	win.SetDefaultSize(width, height)
 
 	win.SetPosition(gtk.WIN_POS_MOUSE)
-	gridWidget := createGridView()
+	gridWidget := createMainGrid()
 	win.Add(gridWidget)
 
 	win.Connect("destroy", gtk.MainQuit)
@@ -122,12 +122,14 @@ func createWindow() {
 	app.AddWindow(win)
 	win.ShowAll()
 
+	// TODO 系统信息2D绘制
+
 	// 启动后的计算并刷新缓存
 	go timeoutRefresh(refreshPeriod)
 }
 
 // https://developer.gnome.org/gtk4/unstable/GtkLabel.html
-func createGridView() *gtk.Widget {
+func createMainGrid() *gtk.Widget {
 	grid, err := gtk.GridNew()
 	if err != nil {
 		log.Fatal("Unable to create grid:", err)
