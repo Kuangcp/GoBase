@@ -24,16 +24,16 @@ type (
 )
 
 //go:embed static/index.html
-var indexPage string
+var indexHtml string
 
 //go:embed static/monokai-sublime.min.css
-var sublimeStyle string
+var sublimeCss string
 
 //go:embed static/highlight.min.js
 var highlightJs string
 
 //go:embed static/json.min.js
-var jsonJs string
+var jsonMinJs string
 
 //go:embed static/main.js
 var mainJs string
@@ -57,21 +57,25 @@ func StartQueryServer() {
 	if Debug {
 		http.Handle("/", http.FileServer(http.Dir("./static")))
 	} else {
-		http.HandleFunc("/", bindStatic(indexPage, htmlT))
+		http.HandleFunc("/", bindStatic(indexHtml, htmlT))
 		http.HandleFunc("/favicon.ico", bindStatic(icon, iconT))
-		http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeStyle, cssT))
-		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
-		http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
+		http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeCss, cssT))
 		http.HandleFunc("/main.css", bindStatic(mainCss, cssT))
+
+		http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
+		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
+		http.HandleFunc("/json.min.js", bindStatic(jsonMinJs, jsT))
+
 	}
 
-	http.HandleFunc("/list", handleInterceptor(JSONFunc(pageListReqHistory)))
-	http.HandleFunc("/curl", handleInterceptor(buildCurlCommandApi))
+	http.HandleFunc("/list", rtTimeInterceptor(JSONFunc(pageListReqHistory)))
+	http.HandleFunc("/curl", rtTimeInterceptor(buildCurlCommandApi))
 	http.HandleFunc("/replay", replayRequest)
-	http.HandleFunc("/del", handleInterceptor(delRequest))
-	http.HandleFunc("/stat", handleInterceptor(statsApi))
-	http.HandleFunc("/uploadCache", handleInterceptor(uploadCacheApi))
-	http.HandleFunc("/flushAll", handleInterceptor(flushAllData))
+	http.HandleFunc("/del", rtTimeInterceptor(delRequest))
+	http.HandleFunc("/urlFrequency", rtTimeInterceptor(urlFrequencyApi))
+	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(urlTimeAnalysis))
+	http.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
+	http.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
 
 	http.ListenAndServe(fmt.Sprintf(":%v", QueryPort), nil)
 }
@@ -80,7 +84,7 @@ func (p PageQueryParam) buildStartEnd() (int64, int64) {
 	return int64((p.page - 1) * p.size), int64(p.page*p.size) - 1
 }
 
-func handleInterceptor(h http.HandlerFunc) http.HandlerFunc {
+func rtTimeInterceptor(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now().UnixMilli()
 		h(w, r)
@@ -124,7 +128,12 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 	writeJsonRsp(writer, "OK")
 }
 
-func statsApi(writer http.ResponseWriter, request *http.Request) {
+// TODO 按域名 天 维度 统计访问频次
+func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
+
+}
+
+func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 	minS := request.URL.Query().Get("min")
 	maxS := request.URL.Query().Get("max")
 	min, _ := strconv.Atoi(minS)
