@@ -1,52 +1,14 @@
 package main
 
 import (
-	"flag"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"log"
 	"strconv"
 	"strings"
 
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/cuibase"
 	"github.com/kuangcp/sizedwaitgroup"
 )
-
-var debugFlag = false
-
-var (
-	fromAddr string
-	fromPwd  string
-	fromDB   int
-
-	toAddr string
-	toPwd  string
-	toDB   int
-)
-
-func init() {
-	flag.StringVar(&fromAddr, "f.addr", "127.0.0.1:6379", "from redis address")
-	flag.StringVar(&fromPwd, "f.pwd", "", "from redis password")
-	flag.IntVar(&fromDB, "f.db", 2, "from redis db")
-	flag.StringVar(&toAddr, "t.addr", "127.0.0.1:6379", "to redis address")
-	flag.StringVar(&toPwd, "t.pwd", "", "to redis password")
-	flag.IntVar(&toDB, "t.db", 3, "to redis db")
-}
-
-func main() {
-	flag.Parse()
-
-	Action(SyncAllKey,
-		&redis.Options{
-			Addr:     fromAddr,
-			Password: fromPwd,
-			DB:       fromDB,
-		},
-		&redis.Options{
-			Addr:     toAddr,
-			Password: toPwd,
-			DB:       toDB,
-		}, false)
-}
 
 func logDebug(msg string, v ...interface{}) {
 	if debugFlag {
@@ -55,11 +17,11 @@ func logDebug(msg string, v ...interface{}) {
 }
 
 func logInfo(msg string, v ...interface{}) {
-	log.Println(cuibase.Green, msg, v, cuibase.End)
+	log.Println(ctool.Green, msg, v, ctool.End)
 }
 
 func logWarn(msg string, v ...interface{}) {
-	log.Println(cuibase.Yellow, msg, v, cuibase.End)
+	log.Println(ctool.Yellow, msg, v, ctool.End)
 }
 
 func scanAllKey(origin *redis.Client) []string {
