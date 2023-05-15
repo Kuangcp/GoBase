@@ -35,7 +35,6 @@ var HelpInfo = ctool.HelpInfo{
 }
 
 func StartMainServer() {
-	InitConfig()
 	InitConnection()
 	defer CloseConnection()
 
@@ -54,9 +53,5 @@ func StartMainServer() {
 		}),
 	}
 
-	//go func() {
 	logger.Fatal(server.ListenAndServe())
-	//}()
-
-	//systray.Run(gui.OnReady, gui.OnExit)
 }
