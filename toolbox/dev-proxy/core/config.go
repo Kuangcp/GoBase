@@ -281,14 +281,13 @@ func ReloadConfByCacheObj() {
 				continue
 			}
 			proxyValMap[router.Src] = router.Dst
-			logger.Debug("Register", router.Src, ctool.Yellow.Print("►"), ctool.Cyan.Print(router.Dst))
+			logger.Debug("Register", ctool.White.Print(router.Src), ctool.Yellow.Print("►"), ctool.Cyan.Print(router.Dst))
 		}
 	}
 
 	// 代理自身
 	if ProxyConfVar.ProxySelf != nil && ProxyConfVar.ProxySelf.ProxyType == Open {
-		logger.Info("Register proxy group:", ProxyConfVar.ProxySelf.Name)
-		logger.Debug("Register %v", strings.Join(ProxyConfVar.ProxySelf.Paths, " , "))
+		logger.Debug("Register track: %v \n %v", ProxyConfVar.ProxySelf.Name, strings.Join(ProxyConfVar.ProxySelf.Paths, " \n "))
 
 		for _, path := range ProxyConfVar.ProxySelf.Paths {
 			if path == "" {
@@ -300,8 +299,7 @@ func ReloadConfByCacheObj() {
 
 	// 代理自身
 	if ProxyConfVar.ProxyBlock != nil && ProxyConfVar.ProxyBlock.ProxyType == Open {
-		logger.Info("Register proxy group:", ProxyConfVar.ProxyBlock.Name)
-		logger.Debug("Register %v", strings.Join(ProxyConfVar.ProxyBlock.Paths, " , "))
+		logger.Debug("Register block: %v \n %v", ProxyConfVar.ProxyBlock.Name, strings.Join(ProxyConfVar.ProxyBlock.Paths, " \n "))
 
 		for _, path := range ProxyConfVar.ProxyBlock.Paths {
 			if path == "" {

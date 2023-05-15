@@ -8,14 +8,6 @@ import (
 	"sync"
 )
 
-type (
-	FileItemVO struct {
-		Name    string `json:"name"`
-		Use     bool   `json:"use"`
-		Content string `json:"content,omitempty"`
-	}
-)
-
 var (
 	fileMap sync.Map
 )
@@ -27,14 +19,10 @@ func OnExit() {
 
 func OnReady() {
 	systray.SetTemplateIcon(Data, Data)
-	systray.SetTitle("Hosts Group")
-	systray.SetTooltip("Hosts Group")
+	systray.SetTitle("Dev Proxy")
+	systray.SetTooltip("Dev Proxy")
 
-	//addPageLinkItem()
-
-	//versionItem := systray.AddMenuItem("v"+Info.Version, Info.Version)
-	//versionItem.Disable()
-	exitItem := systray.AddMenuItem("Exit", "Exit the whole app")
+	exitItem := systray.AddMenuItem("Exit  (v"+core.HelpInfo.Version+")", "Exit the whole app")
 	go func() {
 		<-exitItem.ClickedCh
 		logger.Info("Requesting quit")
@@ -44,7 +32,6 @@ func OnReady() {
 
 	systray.AddSeparator()
 
-	//var latch sync.WaitGroup
 	for _, vo := range core.ProxyConfVar.Groups {
 		addFileItem(vo)
 	}
@@ -59,7 +46,6 @@ func addFileItem(vo core.ProxySwitch) {
 	checkbox := systray.AddMenuItemCheckbox(vo.GetName(), "Check Me", vo.HasUse())
 	fileMap.Store(vo.GetName(), checkbox)
 	go func() {
-		//checkbox.AddSubMenuItem()
 		for {
 			select {
 			case <-checkbox.ClickedCh:

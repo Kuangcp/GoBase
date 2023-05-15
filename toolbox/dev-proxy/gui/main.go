@@ -7,6 +7,7 @@ import (
 
 func main() {
 	core.HelpInfo.Parse()
+	core.InitConfig()
 
 	go core.StartQueryServer()
 	go core.StartMainServer()
