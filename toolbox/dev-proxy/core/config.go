@@ -57,27 +57,29 @@ type (
 	}
 )
 
-const (
-	configPath = "/.dev-proxy/dev-proxy.json"
-	logPath    = "/.dev-proxy/dev-proxy.log"
+var (
+	// 文件相对路径
+	configFilePath = "/.dev-proxy/dev-proxy.json"
+	logFilePath    = "/.dev-proxy/dev-proxy.log"
+	proxyFilePath  = "/.dev-proxy/dev-proxy.pac"
+	dbDirPath      = "/.dev-proxy/leveldb-request-log"
+)
 
+const (
 	Open  = 1 // 开启配置
 	Close = 0 // 关闭配置
 
 	Direct  = 0 // 直连
 	Replace = 1 // 代理替换
 	Proxy   = 2 // 抓包代理
-
 )
 
 var (
-	ProxyConfVar   ProxyConf
-	proxyValMap    = make(map[string]string)
-	proxySelfList  []string // 代理抓包类型的地址
-	blockList      []string // 直连类型的地址
-	lock           = &sync.RWMutex{}
-	dbPath         = "/.dev-proxy/leveldb-request-log"
-	configFilePath = ""
+	ProxyConfVar  ProxyConf
+	proxyValMap   = make(map[string]string)
+	proxySelfList []string // 代理抓包类型的地址
+	blockList     []string // 直连类型的地址
+	lock          = &sync.RWMutex{}
 )
 
 func (p *ProxyGroup) GetName() string {
@@ -211,15 +213,16 @@ func InitConfig() {
 	logger.SetLoggerConfig(&logger.LogConfig{
 		TimeFormat: "01-02 15:04:05.000",
 		File: &logger.FileLogger{
-			Filename:   home + logPath,
+			Filename:   home + logFilePath,
 			Level:      logLevel,
 			Append:     true,
 			PermitMask: "0660",
 			MaxDays:    -1,
 		}})
 
-	configFilePath = home + configPath
-	dbPath = home + dbPath
+	proxyFilePath = home + proxyFilePath
+	configFilePath = home + configFilePath
+	dbDirPath = home + dbDirPath
 	cleanAndRegisterFromFile(configFilePath)
 
 	var hostId string
