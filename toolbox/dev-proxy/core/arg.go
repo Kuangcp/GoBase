@@ -28,9 +28,8 @@ var HelpInfo = ctool.HelpInfo{
 		{Short: "-x", BoolVar: &HttpProxy, Comment: "proxy mode"},
 	},
 	Options: []ctool.ParamVO{
-		{Short: "-qp", IntVar: &QueryPort, Int: 1235, Value: "port", Comment: "web port"},
-		{Short: "-p", IntVar: &Port, Int: 1234, Value: "port", Comment: "port"},
-		{Short: "-pu", StringVar: &HttpProxyUri, String: "http://localhost:7890", Value: "uri", Comment: "proxy uri"},
+		{Short: "-w", IntVar: &QueryPort, Int: 1235, Value: "port", Comment: "web port"},
+		{Short: "-p", IntVar: &Port, Int: 1234, Value: "port", Comment: "proxy port"},
 	},
 }
 

@@ -71,7 +71,7 @@ func Success[T any](data T) ResultVO[T] {
 	}
 }
 func InitConnection() {
-	newDB, err := leveldb.OpenFile(dbPath, nil)
+	newDB, err := leveldb.OpenFile(dbDirPath, nil)
 	if err != nil {
 		logger.Painc(err)
 	}

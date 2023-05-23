@@ -8,6 +8,7 @@ import (
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -44,11 +45,17 @@ var mainCss string
 //go:embed static/favicon.ico
 var icon string
 
+// https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file
+//
+//go:embed static/proxy.pac
+var pacFile string
+
 const (
 	jsT   = "text/javascript; charset=utf-8"
 	cssT  = "text/css; charset=utf-8"
 	htmlT = "text/html; charset=utf-8"
 	iconT = "image/vnd.microsoft.icon"
+	pacT  = "application/x-ns-proxy-autoconfig"
 )
 
 func StartQueryServer() {
@@ -65,7 +72,7 @@ func StartQueryServer() {
 		http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
 		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
 		http.HandleFunc("/json.min.js", bindStatic(jsonMinJs, jsT))
-
+		http.HandleFunc("/proxy.pac", PacFileApi)
 	}
 
 	http.HandleFunc("/list", rtTimeInterceptor(JSONFunc(pageListReqHistory)))
@@ -266,6 +273,17 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 		RspStr(writer, "ERROR: \n"+command+"\n"+result+"\n")
 	} else {
 		RspStr(writer, result)
+	}
+}
+
+// PacFileApi 默认使用缺省文件，优先使用独立配置文件
+func PacFileApi(writer http.ResponseWriter, request *http.Request) {
+	fileBt, err := os.ReadFile(proxyFilePath)
+	if err != nil || fileBt == nil || len(fileBt) == 0 {
+		logger.Error(err)
+		bindStatic(pacFile, pacT)(writer, request)
+	} else {
+		RspStr(writer, string(fileBt))
 	}
 }
 
