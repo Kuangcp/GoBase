@@ -37,9 +37,12 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyLog := ""
 	var reqLog *ReqLog[Message]
 	findNewUrl, proxyType := findReplaceByRegexp(*proxyReq)
+	ignoreStorage := matchIgnoreStorage(*proxyReq)
 	if findNewUrl != nil {
-		proxyLog, reqLog = rewriteRequestAndBuildLog(findNewUrl, proxyReq)
-		defer saveReqLog(reqLog)
+		proxyLog, reqLog = rewriteRequestAndBuildLog(findNewUrl, proxyReq, ignoreStorage)
+		if !ignoreStorage {
+			defer saveReqLog(reqLog)
+		}
 	}
 
 	// TODO websocket
@@ -76,8 +79,11 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Debug("%4vms %v", waste, proxyLog)
 	}
 
-	copyHeader(w, res)
-	fillReqLogResponse(reqLog, res)
+	copyResponseHeader(w, res)
+
+	if !ignoreStorage {
+		fillReqLogResponse(reqLog, res)
+	}
 
 	if res.Body != nil {
 		written, err := io.Copy(w, res.Body)
@@ -87,7 +93,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func copyHeader(w http.ResponseWriter, res *http.Response) {
+func copyResponseHeader(w http.ResponseWriter, res *http.Response) {
 	header := w.Header()
 	for k, vv := range res.Header {
 		for _, v := range vv {
@@ -173,7 +179,7 @@ func fmtDuration(d time.Duration) string {
 	return d.String()
 }
 
-func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string, *ReqLog[Message]) {
+func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreStorage bool) (string, *ReqLog[Message]) {
 	now := time.Now()
 	id := uuid.New().String()
 
@@ -185,9 +191,11 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request) (string,
 	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
 	reqLog := &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
 
-	// redis cache
-	connection.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
-	connection.HSet(RequestUrlList, id, proxyReq.URL.String())
+	if !ignoreStorage {
+		// redis cache
+		connection.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
+		connection.HSet(RequestUrlList, id, proxyReq.URL.String())
+	}
 
 	var logStr string
 	if newUrl.Path == proxyReq.URL.Path {

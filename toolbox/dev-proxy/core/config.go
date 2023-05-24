@@ -49,11 +49,12 @@ type (
 	}
 
 	ProxyConf struct {
-		Id         string        `json:"id"`
-		Redis      *RedisConf    `json:"redis"`
-		Groups     []*ProxyGroup `json:"groups"`
-		ProxySelf  *ProxySelf    `json:"proxy"` // 抓包地址
-		ProxyBlock *ProxySelf    `json:"block"` // 抓包地址黑名单
+		Id          string        `json:"id"`
+		Redis       *RedisConf    `json:"redis"`
+		Groups      []*ProxyGroup `json:"groups"`
+		ProxySelf   *ProxySelf    `json:"proxy"`  // 抓包地址
+		ProxyBlock  *ProxySelf    `json:"block"`  // 抓包地址黑名单
+		ProxyDirect *ProxySelf    `json:"direct"` // 不经过代理转发，直连
 	}
 )
 
@@ -78,7 +79,8 @@ var (
 	ProxyConfVar  ProxyConf
 	proxyValMap   = make(map[string]string)
 	proxySelfList []string // 代理抓包类型的地址
-	blockList     []string // 直连类型的地址
+	blockList     []string // 代理但是不抓包类型的地址
+	directList    []string // 直连类型的地址
 	lock          = &sync.RWMutex{}
 )
 
@@ -144,6 +146,16 @@ func matchConf(originConf, fullUrl string) bool {
 	return compile.Match([]byte(fullUrl))
 }
 
+func matchIgnoreStorage(proxyReq http.Request) bool {
+	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
+	for _, conf := range blockList {
+		if matchConf(conf, fullUrl) {
+			return true
+		}
+	}
+	return false
+}
+
 func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 	lock.RLock()
 	defer lock.RUnlock()
@@ -152,7 +164,7 @@ func findReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 	matchKey := ""
 	matchResult := ""
 
-	for _, conf := range blockList {
+	for _, conf := range directList {
 		if matchConf(conf, fullUrl) {
 			return nil, Direct
 		}
@@ -288,28 +300,32 @@ func ReloadConfByCacheObj() {
 		}
 	}
 
-	// 代理自身
-	if ProxyConfVar.ProxySelf != nil && ProxyConfVar.ProxySelf.ProxyType == Open {
-		logger.Debug("Register track: %v \n %v", ProxyConfVar.ProxySelf.Name, strings.Join(ProxyConfVar.ProxySelf.Paths, " \n "))
+	// 代理，存储
+	parsePath(ProxyConfVar.ProxySelf, "track", func(s string) {
+		proxySelfList = append(proxySelfList, s)
+	})
+	// 代理，不存储日志
+	parsePath(ProxyConfVar.ProxyBlock, "block", func(s string) {
+		blockList = append(blockList, s)
+	})
+	// 直连，不存储
+	parsePath(ProxyConfVar.ProxyDirect, "direct", func(s string) {
+		directList = append(directList, s)
+	})
+}
 
-		for _, path := range ProxyConfVar.ProxySelf.Paths {
-			if path == "" {
-				continue
-			}
-			proxySelfList = append(proxySelfList, path)
-		}
+func parsePath(proxy *ProxySelf, name string, listAppendFunc func(string)) {
+	if proxy == nil || proxy.ProxyType != Open {
+		return
 	}
+	logger.Debug("Register %v: %v \n %v", name, proxy.Name, strings.Join(proxy.Paths, " \n "))
 
-	// 代理自身
-	if ProxyConfVar.ProxyBlock != nil && ProxyConfVar.ProxyBlock.ProxyType == Open {
-		logger.Debug("Register block: %v \n %v", ProxyConfVar.ProxyBlock.Name, strings.Join(ProxyConfVar.ProxyBlock.Paths, " \n "))
-
-		for _, path := range ProxyConfVar.ProxyBlock.Paths {
-			if path == "" {
-				continue
-			}
-			blockList = append(blockList, path)
+	for _, path := range proxy.Paths {
+		if path == "" {
+			continue
 		}
+		listAppendFunc(path)
+		//directList = append(directList, path)
 	}
 }
 
