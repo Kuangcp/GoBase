@@ -106,7 +106,7 @@ func copyResponseHeader(w http.ResponseWriter, res *http.Response) {
 	w.WriteHeader(res.StatusCode)
 }
 
-func handleCompressed(msg *Message, res *http.Response) {
+func HandleCompressed(msg *Message, res *http.Response) {
 	encoding := res.Header.Get("Content-Encoding")
 	if encoding == "" {
 		return
@@ -133,14 +133,14 @@ func fillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
 	if reqLog == nil {
 		return
 	}
-	bodyBts, body := copyStream(res.Body)
+	bodyBts, body := CopyStream(res.Body)
 	res.Body = body
 	resMes := Message{Header: res.Header, Body: bodyBts}
-	handleCompressed(&resMes, res)
+	HandleCompressed(&resMes, res)
 
 	reqLog.Response = resMes
 	reqLog.ResTime = time.Now()
-	reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+	reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 	reqLog.Status = res.Status
 	reqLog.StatusCode = res.StatusCode
 }
@@ -151,7 +151,7 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqL
 		reqLog.Status = fmt.Sprint(http.StatusServiceUnavailable, " server refused")
 		reqLog.StatusCode = 98
 		reqLog.ResTime = time.Now()
-		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+		reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
@@ -165,12 +165,12 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqL
 		reqLog.Status = fmt.Sprint(http.StatusInternalServerError, " server error")
 		reqLog.StatusCode = 99
 		reqLog.ResTime = time.Now()
-		reqLog.ElapsedTime = fmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+		reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 	}
 	w.WriteHeader(http.StatusInternalServerError)
 }
 
-func fmtDuration(d time.Duration) string {
+func FmtDuration(d time.Duration) string {
 	ms := d.Milliseconds()
 	d = d.Round(time.Millisecond)
 	if ms < 10_000 {
@@ -183,7 +183,7 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreSt
 	now := time.Now()
 	id := uuid.New().String()
 
-	bodyBt, body := copyStream(proxyReq.Body)
+	bodyBt, body := CopyStream(proxyReq.Body)
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
 	reqMes := Message{Header: proxyReq.Header, Body: filterFormType(bodyBt)}
 
