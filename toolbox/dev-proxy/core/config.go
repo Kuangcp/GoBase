@@ -325,7 +325,6 @@ func parsePath(proxy *ProxySelf, name string, listAppendFunc func(string)) {
 			continue
 		}
 		listAppendFunc(path)
-		//directList = append(directList, path)
 	}
 }
 

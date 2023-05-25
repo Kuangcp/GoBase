@@ -44,7 +44,7 @@ func copyObj[T any, R any](src T) *R {
 	return rObj
 }
 
-func copyStream(src io.ReadCloser) ([]byte, io.ReadCloser) {
+func CopyStream(src io.ReadCloser) ([]byte, io.ReadCloser) {
 	bodyBt, err := io.ReadAll(src)
 	if err != nil {
 		logger.Error(err)
