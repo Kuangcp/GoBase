@@ -19,14 +19,14 @@ type EventHandler struct{}
 
 func (e *EventHandler) Connect(ctx *goproxy.Context, rw http.ResponseWriter) {
 	// 保存的数据可以在后面的回调方法中获取
-	ctx.Data["req_id"] = "uuid"
+	//ctx.Data["req_id"] = "uuid"
 
 	// 禁止访问某个域名
-	if strings.Contains(ctx.Req.URL.Host, "example.com") {
-		rw.WriteHeader(http.StatusForbidden)
-		ctx.Abort()
-		return
-	}
+	//if strings.Contains(ctx.Req.URL.Host, "example.com") {
+	//	rw.WriteHeader(http.StatusForbidden)
+	//	ctx.Abort()
+	//	return
+	//}
 }
 
 func (e *EventHandler) Auth(ctx *goproxy.Context, rw http.ResponseWriter) {
@@ -35,7 +35,8 @@ func (e *EventHandler) Auth(ctx *goproxy.Context, rw http.ResponseWriter) {
 
 func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	// 修改header
-	ctx.Req.Header.Add("X-Request-Id", ctx.Data["req_id"].(string))
+	//ctx.Req.Header.Add("X-Request-Id", ctx.Data["req_id"].(string))
+
 	// 设置X-Forwarded-For
 	if clientIP, _, err := net.SplitHostPort(ctx.Req.RemoteAddr); err == nil {
 		if prior, ok := ctx.Req.Header["X-Forwarded-For"]; ok {
@@ -73,9 +74,10 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	reqLog.ElapsedTime = core.FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 	reqLog.Status = resp.Status
 	reqLog.StatusCode = resp.StatusCode
+	// TODO save leveldb redis
 }
 
-// 设置上级代理
+// ParentProxy 设置上级代理
 func (e *EventHandler) ParentProxy(req *http.Request) (*url.URL, error) {
 	//return url.Parse("http://localhost:1087")
 	return nil, nil
@@ -91,22 +93,20 @@ func (e *EventHandler) Finish(ctx *goproxy.Context) {
 	fmt.Printf("请求结束 URL:%s %v\n", ctx.Req.URL, reqLog)
 }
 
-// 记录错误日志
+// ErrorLog 记录错误日志
 func (e *EventHandler) ErrorLog(err error) {
 	log.Println(err)
 }
 
 func (e *EventHandler) WebSocketSendMessage(ctx *goproxy.Context, messageType *int, p *[]byte) {
 	//TODO implement me
-	panic("implement me")
 }
 
 func (e *EventHandler) WebSocketReceiveMessage(ctx *goproxy.Context, messageType *int, p *[]byte) {
 	//TODO implement me
-	panic("implement me")
 }
 
-// 实现证书缓存接口
+// Cache 实现证书缓存接口
 type Cache struct {
 	m sync.Map
 }
@@ -126,10 +126,10 @@ func (c *Cache) Get(host string) *tls.Certificate {
 func HttpsProxy() {
 	proxy := goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         fmt.Sprintf(":%d", core.Port),
 		Handler:      proxy,
-		ReadTimeout:  1 * time.Minute,
-		WriteTimeout: 1 * time.Minute,
+		ReadTimeout:  10 * time.Minute,
+		WriteTimeout: 10 * time.Minute,
 	}
 	err := server.ListenAndServe()
 	if err != nil {
