@@ -68,7 +68,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	endMs := time.Now().UnixMilli()
 	waste := endMs - startMs
 	if err != nil {
-		handleError(w, r, err, reqLog, proxyLog, waste)
+		handleUpStreamError(w, r, err, reqLog, proxyLog, waste)
 		return
 	}
 
@@ -145,29 +145,31 @@ func fillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
 	reqLog.StatusCode = res.StatusCode
 }
 
-func handleError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqLog[Message], proxyLog string, waste int64) {
-	if strings.Contains(err.Error(), "connect: connection refused") {
-		logger.Error("%v proxy error %v", r.URL.String(), "down")
-		reqLog.Status = fmt.Sprint(http.StatusServiceUnavailable, " server refused")
-		reqLog.StatusCode = 98
-		reqLog.ResTime = time.Now()
-		reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
-		w.WriteHeader(http.StatusServiceUnavailable)
-		return
-	}
-
+// handleUpStreamError 处理上游服务不可用
+func handleUpStreamError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqLog[Message], proxyLog string, waste int64) {
 	if proxyLog == "" {
 		logger.Error("%4vms %v proxy error %v", waste, r.URL.String(), err)
 	} else {
 		logger.Error("%4vms %v proxy error %v", waste, proxyLog, err)
 	}
+
 	if reqLog != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			logger.Error("%v proxy error %v", r.URL.String(), "down")
+			reqLog.Status = fmt.Sprint(http.StatusServiceUnavailable, " server refused")
+			reqLog.StatusCode = 98
+			reqLog.ResTime = time.Now()
+			reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		reqLog.Status = fmt.Sprint(http.StatusInternalServerError, " server error")
 		reqLog.StatusCode = 99
 		reqLog.ResTime = time.Now()
 		reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 	}
-	w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(http.StatusServiceUnavailable)
 }
 
 func FmtDuration(d time.Duration) string {
