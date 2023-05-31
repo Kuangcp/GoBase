@@ -36,12 +36,12 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// replace, if not use proxy, log will be nil
 	proxyLog := ""
 	var reqLog *ReqLog[Message]
-	findNewUrl, proxyType := findReplaceByRegexp(*proxyReq)
-	ignoreStorage := matchIgnoreStorage(*proxyReq)
+	findNewUrl, proxyType := FindReplaceByRegexp(*proxyReq)
+	ignoreStorage := MatchIgnoreStorage(*proxyReq)
 	if findNewUrl != nil {
-		proxyLog, reqLog = rewriteRequestAndBuildLog(findNewUrl, proxyReq, ignoreStorage)
+		proxyLog, reqLog = RewriteRequestAndBuildLog(findNewUrl, proxyReq, ignoreStorage)
 		if !ignoreStorage {
-			defer saveReqLog(reqLog)
+			defer SaveReqLog(reqLog)
 		}
 	}
 
@@ -68,7 +68,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	endMs := time.Now().UnixMilli()
 	waste := endMs - startMs
 	if err != nil {
-		handleUpStreamError(w, r, err, reqLog, proxyLog, waste)
+		HandleRespError(w, r, err, reqLog, proxyLog, waste)
 		return
 	}
 
@@ -79,10 +79,10 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Debug("%4vms %v", waste, proxyLog)
 	}
 
-	copyResponseHeader(w, res)
+	CopyResponseHeader(w, res)
 
 	if !ignoreStorage {
-		fillReqLogResponse(reqLog, res)
+		FillReqLogResponse(reqLog, res)
 	}
 
 	if res.Body != nil {
@@ -93,7 +93,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func copyResponseHeader(w http.ResponseWriter, res *http.Response) {
+func CopyResponseHeader(w http.ResponseWriter, res *http.Response) {
 	header := w.Header()
 	for k, vv := range res.Header {
 		for _, v := range vv {
@@ -129,7 +129,7 @@ func HandleCompressed(msg *Message, res *http.Response) {
 	}
 }
 
-func fillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
+func FillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
 	if reqLog == nil {
 		return
 	}
@@ -145,8 +145,7 @@ func fillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
 	reqLog.StatusCode = res.StatusCode
 }
 
-// handleUpStreamError 处理上游服务不可用
-func handleUpStreamError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqLog[Message], proxyLog string, waste int64) {
+func HandleRespError(w http.ResponseWriter, r *http.Request, err error, reqLog *ReqLog[Message], proxyLog string, waste int64) {
 	if proxyLog == "" {
 		logger.Error("%4vms %v proxy error %v", waste, r.URL.String(), err)
 	} else {
@@ -181,7 +180,7 @@ func FmtDuration(d time.Duration) string {
 	return d.String()
 }
 
-func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreStorage bool) (string, *ReqLog[Message]) {
+func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreStorage bool) (string, *ReqLog[Message]) {
 	now := time.Now()
 	id := uuid.New().String()
 
@@ -195,8 +194,8 @@ func rewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreSt
 
 	if !ignoreStorage {
 		// redis cache
-		connection.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
-		connection.HSet(RequestUrlList, id, proxyReq.URL.String())
+		Conn.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
+		Conn.HSet(RequestUrlList, id, proxyReq.URL.String())
 	}
 
 	var logStr string

@@ -105,7 +105,7 @@ func convertToDbKey(key string) string {
 }
 
 func flushAllData(writer http.ResponseWriter, _ *http.Request) {
-	result, err := connection.ZRange(RequestList, 0, -1).Result()
+	result, err := Conn.ZRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		return
@@ -115,7 +115,7 @@ func flushAllData(writer http.ResponseWriter, _ *http.Request) {
 		db.Delete([]byte(convertToDbKey(key)), nil)
 	}
 
-	connection.Del(RequestList)
+	Conn.Del(RequestList)
 	logger.Info("delete: ", len(result))
 	RspStr(writer, "OK")
 }
@@ -130,7 +130,7 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 			logger.Error("key:["+string(iterator.Key())+"] GET ERROR:", err)
 			continue
 		}
-		connection.ZAdd(RequestList, redis.Z{Member: l.CacheId, Score: float64(l.ReqTime.UnixNano())})
+		Conn.ZAdd(RequestList, redis.Z{Member: l.CacheId, Score: float64(l.ReqTime.UnixNano())})
 	}
 	writeJsonRsp(writer, "OK")
 }
@@ -152,7 +152,7 @@ func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 		max = 100
 	}
 
-	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
+	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		writeJsonRsp(writer, err.Error())
@@ -165,7 +165,7 @@ func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 		log := getDetailByKey(convertToDbKey(key))
 		if log == nil {
 			logger.Warn(key)
-			connection.ZRem(RequestList, key)
+			Conn.ZRem(RequestList, key)
 			continue
 		}
 		val, ok := countMap[log.Url]
@@ -205,7 +205,7 @@ func delRequest(writer http.ResponseWriter, request *http.Request) {
 }
 
 func deleteByPath(writer http.ResponseWriter, path string) {
-	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
+	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		writeJsonRsp(writer, err.Error())
@@ -221,7 +221,7 @@ func deleteByPath(writer http.ResponseWriter, path string) {
 		total++
 
 		//logger.Info(log.Url)
-		connection.ZRem(RequestList, log.CacheId)
+		Conn.ZRem(RequestList, log.CacheId)
 		db.Delete([]byte(log.Id), nil)
 		if total >= 5000 {
 			writeJsonRsp(writer, "out of count")
@@ -239,7 +239,7 @@ func deleteById(writer http.ResponseWriter, id string) {
 		return
 	}
 
-	connection.ZRem(RequestList, detail.CacheId)
+	Conn.ZRem(RequestList, detail.CacheId)
 	db.Delete([]byte(id), nil)
 	writeJsonRsp(writer, Success("OK"))
 }
@@ -251,7 +251,7 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 	selfProxy := query.Get("selfProxy")
 	if idx != "" && id == "" {
 		sortIdx, _ := strconv.Atoi(idx)
-		result, err := connection.ZRange(RequestList, int64(sortIdx-1), int64(sortIdx-1)).Result()
+		result, err := Conn.ZRange(RequestList, int64(sortIdx-1), int64(sortIdx-1)).Result()
 		if err != nil {
 			logger.Error(err)
 			return

@@ -49,7 +49,7 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 	const fetchSize int64 = 100
 	const maxPage = 6
 
-	keys, cursor, err := connection.HScan(RequestUrlList, cursor, "", fetchSize).Result()
+	keys, cursor, err := Conn.HScan(RequestUrlList, cursor, "", fetchSize).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil, 0
@@ -78,7 +78,7 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 			}
 		}
 		// logger.Info("new loop", cursor)
-		keys, cursor, err = connection.HScan(RequestUrlList, cursor, "", fetchSize).Result()
+		keys, cursor, err = Conn.HScan(RequestUrlList, cursor, "", fetchSize).Result()
 		if err != nil {
 			logger.Error(err)
 			break
@@ -93,7 +93,7 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 
 // search url and header body
 func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
-	result, err := connection.ZRevRange(RequestList, 0, -1).Result()
+	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil, 0
@@ -134,7 +134,7 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 		detail = append(detail, val)
 	} else {
 		start, end := param.buildStartEnd()
-		keyList, err := connection.ZRevRange(RequestList, start, end).Result()
+		keyList, err := Conn.ZRevRange(RequestList, start, end).Result()
 		if err != nil {
 			logger.Error(err)
 			return nil
@@ -144,7 +144,7 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 
 	pageResult.Data = convertList(detail, convertLog, nil)
 
-	i, err := connection.ZCard(RequestList).Result()
+	i, err := Conn.ZCard(RequestList).Result()
 	if err == nil {
 		pageResult.Total = int(i)
 		pageResult.Page = int(i) / param.size
