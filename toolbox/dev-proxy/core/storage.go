@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	connection     *redis.Client
+	Conn           *redis.Client
 	db             *leveldb.DB
 	RequestList    = "" // redis key (03-16 18:27:45.653 80b85e3c653) leveldb key (80b85e3c653)
 	RequestUrlList = ""
@@ -89,14 +89,14 @@ func InitConnection() {
 		opt = redis.Options{Addr: "192.168.9.155" + ":6667", Password: "", DB: 1, PoolSize: PoolSize}
 	}
 
-	connection = redis.NewClient(&opt)
-	if !isValidConnection(connection) {
+	Conn = redis.NewClient(&opt)
+	if !isValidConnection(Conn) {
 		os.Exit(1)
 	}
 	go func() {
 		for {
 			time.Sleep(time.Second * 17)
-			if !isValidConnection(connection) {
+			if !isValidConnection(Conn) {
 				os.Exit(1)
 			}
 		}
@@ -113,12 +113,12 @@ func isValidConnection(client *redis.Client) bool {
 }
 
 func CloseConnection() {
-	if connection == nil {
+	if Conn == nil {
 		return
 	}
-	err := connection.Close()
+	err := Conn.Close()
 	if err != nil {
-		logger.Error("close redis connection error: ", err)
+		logger.Error("close redis Conn error: ", err)
 	}
 	if db != nil {
 		err := db.Close()
@@ -128,7 +128,7 @@ func CloseConnection() {
 	}
 }
 
-func saveReqLog(log *ReqLog[Message]) {
+func SaveReqLog(log *ReqLog[Message]) {
 	if log == nil {
 		return
 	}

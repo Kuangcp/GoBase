@@ -3,8 +3,9 @@ package app
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/google/uuid"
+	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
+	"github.com/kuangcp/logger"
 	"github.com/ouqiang/goproxy"
 	"log"
 	"net"
@@ -38,43 +39,77 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	//ctx.Req.Header.Add("X-Request-Id", ctx.Data["req_id"].(string))
 
 	// 设置X-Forwarded-For
-	if clientIP, _, err := net.SplitHostPort(ctx.Req.RemoteAddr); err == nil {
-		if prior, ok := ctx.Req.Header["X-Forwarded-For"]; ok {
+	proxyReq := ctx.Req
+	if clientIP, _, err := net.SplitHostPort(proxyReq.RemoteAddr); err == nil {
+		if prior, ok := proxyReq.Header["X-Forwarded-For"]; ok {
 			clientIP = strings.Join(prior, ", ") + ", " + clientIP
 		}
-		ctx.Req.Header.Set("X-Forwarded-For", clientIP)
+		proxyReq.Header.Set("X-Forwarded-For", clientIP)
 	}
-	bodyBt, body := core.CopyStream(ctx.Req.Body)
-	ctx.Req.Body = body
+	proxyLog := ""
+	var reqLog *core.ReqLog[core.Message]
+	findNewUrl, proxyType := core.FindReplaceByRegexp(*proxyReq)
+	ignoreStorage := core.MatchIgnoreStorage(*proxyReq)
+	if findNewUrl != nil {
+		proxyLog, reqLog = core.RewriteRequestAndBuildLog(findNewUrl, proxyReq, ignoreStorage)
+	}
+
+	// rebuild
+	if q := proxyReq.URL.RawQuery; q != "" {
+		proxyReq.URL.RawPath = proxyReq.URL.Path + "?" + q
+	} else {
+		proxyReq.URL.RawPath = proxyReq.URL.Path
+	}
+	proxyReq.Proto = "HTTP/1.1"
+	proxyReq.ProtoMajor = 1
+	proxyReq.ProtoMinor = 1
+	proxyReq.Close = false
 
 	now := time.Now()
-	id := uuid.New().String()
-	query, _ := url.QueryUnescape(ctx.Req.URL.String())
-	id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
-	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
-	reqMes := core.Message{Header: ctx.Req.Header, Body: bodyBt}
-	ctx.Data["RLog"] = &core.ReqLog[core.Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: ctx.Req.Method}
+	ctx.Data["ReqCtx"] = &ReqCtx{reqLog: reqLog, proxyLog: proxyLog, proxyType: proxyType, startMs: now.UnixMilli()}
 }
 
 func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response, err error) {
 	if err != nil {
 		return
 	}
-	v := ctx.Data["RLog"]
-	reqLog := v.(*core.ReqLog[core.Message])
+	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
+	reqLog := reqCtx.reqLog
+
+	startMs := reqCtx.startMs
+
 	bodyBt, body := core.CopyStream(resp.Body)
 	resp.Body = body
 
 	resMes := core.Message{Header: resp.Header, Body: bodyBt}
 
+	endMs := time.Now().UnixMilli()
+	waste := endMs - startMs
+	if err != nil {
+		// TODO
+		//core.HandleRespError(resp, r, err, reqLog, proxyLog, waste)
+		return
+	}
+
+	if reqCtx.proxyLog != "" {
+		if reqCtx.proxyType == core.Proxy {
+			reqCtx.proxyLog += " SELF"
+		}
+		logger.Debug("%4vms %v", waste, reqCtx.proxyLog)
+	}
+
+	// 由于此处Response
 	core.HandleCompressed(&resMes, resp)
 
-	reqLog.Response = resMes
-	reqLog.ResTime = time.Now()
-	reqLog.ElapsedTime = core.FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
-	reqLog.Status = resp.Status
-	reqLog.StatusCode = resp.StatusCode
 	// TODO save leveldb redis
+	if !reqCtx.ignoreStorage && reqLog != nil {
+		core.FillReqLogResponse(reqLog, resp)
+		// redis cache
+		core.Conn.ZAdd(core.RequestList, redis.Z{Member: reqLog.CacheId, Score: float64(reqLog.ReqTime.UnixNano())})
+		core.Conn.HSet(core.RequestUrlList, reqLog.Id, ctx.Req.URL.String())
+
+		core.SaveReqLog(reqLog)
+	}
 }
 
 // ParentProxy 设置上级代理
@@ -84,13 +119,6 @@ func (e *EventHandler) ParentProxy(req *http.Request) (*url.URL, error) {
 }
 
 func (e *EventHandler) Finish(ctx *goproxy.Context) {
-	reqLog := ctx.Data["RLog"].(*core.ReqLog[core.Message])
-
-	for k, v := range reqLog.Response.Header {
-		fmt.Println(k, "<=>", v)
-	}
-	fmt.Println(string(reqLog.Response.Body))
-	fmt.Printf("请求结束 URL:%s %v\n", ctx.Req.URL, reqLog)
 }
 
 // ErrorLog 记录错误日志
@@ -123,7 +151,11 @@ func (c *Cache) Get(host string) *tls.Certificate {
 	return v.(*tls.Certificate)
 }
 
+// HttpsProxy replaced core.StartMainServer
 func HttpsProxy() {
+	logger.Info("list key: ", core.RequestList)
+	logger.Info("Start proxy server on 127.0.0.1:%d", core.Port)
+
 	proxy := goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", core.Port),

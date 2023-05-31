@@ -33,9 +33,6 @@ var HelpInfo = ctool.HelpInfo{
 }
 
 func StartMainServer() {
-	//InitConnection()
-	//defer CloseConnection()
-
 	logger.Info("list key: ", RequestList)
 	logger.Info("Start proxy server on 127.0.0.1:%d", Port)
 	cert, err := GenCertificate()

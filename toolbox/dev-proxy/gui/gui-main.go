@@ -2,6 +2,9 @@ package main
 
 import (
 	"github.com/getlantern/systray"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
+
+	//"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 )
 
@@ -13,10 +16,10 @@ func main() {
 	defer core.CloseConnection()
 
 	// TODO 替换proxy实现
-	//go app.HttpsProxy()
+	go app.HttpsProxy()
 
 	go core.StartQueryServer()
-	go core.StartMainServer()
+	//go core.StartMainServer()
 
 	systray.Run(OnReady, OnExit)
 }
