@@ -4,6 +4,7 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/conf"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -12,8 +13,6 @@ import (
 	"github.com/kuangcp/gobase/toolbox/keylogger/app"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/web"
-
-	"github.com/kuangcp/logger"
 
 	"github.com/go-redis/redis"
 )
@@ -85,17 +84,13 @@ var (
 	debug       bool
 	notOpenPage bool
 	option      redis.Options
-	logPath     string
 )
 var (
 	buildVersion string
 )
-var (
-	mainDir = "/.config/app-conf/keylogger"
-)
 
 func init() {
-	configLogger()
+	conf.ConfigLogger()
 
 	flag.BoolVar(&help, "help", false, "")
 	flag.StringVar(&timePair, "t", "1", "")
@@ -107,37 +102,6 @@ func init() {
 	flag.IntVar(&db, "db", 5, "")
 
 	flag.StringVar(&webPort, "P", "9902", "")
-}
-
-func configLogger() {
-	//logger.SetLogPathTrim("/keylogger/")
-
-	home, err := ctk.Home()
-	ctk.CheckIfError(err)
-	mainDir = home + mainDir
-
-	err = os.MkdirAll(mainDir, 0755)
-	ctk.CheckIfError(err)
-	logDir := mainDir + "/log"
-
-	err = os.MkdirAll(logDir, 0755)
-	ctk.CheckIfError(err)
-
-	logPath = logDir + "/main.log"
-	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: ctk.YYYY_MM_DD_HH_MM_SS_MS,
-		Console: &logger.ConsoleLogger{
-			Level:    logger.DebugDesc,
-			Colorful: true,
-		},
-		File: &logger.FileLogger{
-			Filename:   logPath,
-			Level:      logger.DebugDesc,
-			Colorful:   true,
-			Append:     true,
-			PermitMask: "0660",
-		},
-	})
 }
 
 func pprofDebug() {
@@ -176,7 +140,7 @@ func main() {
 	pprofDebug()
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
 	if showLog {
-		fmt.Println(logPath)
+		fmt.Println(conf.LogPath)
 		return
 	}
 

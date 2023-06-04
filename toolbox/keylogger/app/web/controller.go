@@ -108,6 +108,8 @@ type (
 	}
 )
 
+var commonLabel = LabelVO{Show: false, Position: "insideRight"}
+
 func valueOf(value string) (LineTimeUnit, error) {
 	switch value {
 	case string(TimeUnitDay):
@@ -119,7 +121,10 @@ func valueOf(value string) (LineTimeUnit, error) {
 	}
 }
 
-var commonLabel = LabelVO{Show: false, Position: "insideRight"}
+func ExportDetail(c *gin.Context) {
+	store.ExportDetailToCsv(time.Now())
+	ghelp.GinSuccess(c)
+}
 
 func CalendarMap(c *gin.Context) {
 	conn := store.GetConnection()
@@ -252,7 +257,7 @@ func MultipleHeatMap(c *gin.Context) {
 	ghelp.GinSuccessWith(c, weeksMap)
 }
 
-//HeatMap 热力图
+// HeatMap 热力图
 func HeatMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
@@ -367,7 +372,7 @@ func HourLineChart(c *gin.Context, param *QueryParam) {
 
 }
 
-//LineMap 折线图 柱状图
+// LineMap 折线图 柱状图
 func LineMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {

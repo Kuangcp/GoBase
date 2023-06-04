@@ -3,6 +3,9 @@ package store
 import (
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/toolbox/keylogger/app/conf"
+	"github.com/kuangcp/logger"
 	"time"
 )
 
@@ -62,4 +65,25 @@ func MaxKPMVal(time time.Time) string {
 		tempValue = "0"
 	}
 	return tempValue
+}
+
+func ExportDetailToCsv(day time.Time) {
+	key := GetDetailKey(day)
+	conn := GetConnection()
+	result, err := conn.ZRangeWithScores(key, 0, -1).Result()
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	dayFmt := day.Format("2006-01-02")
+	writer, err := ctk.NewWriter(conf.LogDir+"/"+dayFmt+"-detail.csv", true)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	defer writer.Close()
+	for _, v := range result {
+		writer.WriteLine(fmt.Sprintf("%v,%v", v.Score, v.Member))
+	}
 }
