@@ -284,8 +284,8 @@ func cleanAndRegisterFromFile(configFile string) {
 
 func ReloadConfByCacheObj() {
 	logger.Info("Start reload proxy rule")
+
 	proxyValMap = make(map[string]string)
-	proxySelfList = []string{}
 	for _, conf := range ProxyConfVar.Groups {
 		if conf.ProxyType == Close {
 			continue
@@ -296,19 +296,25 @@ func ReloadConfByCacheObj() {
 				continue
 			}
 			proxyValMap[router.Src] = router.Dst
-			logger.Debug("Register", ctool.White.Print(router.Src), ctool.Yellow.Print("►"), ctool.Cyan.Print(router.Dst))
+			logger.Debug("Register", ctool.White.Print(router.Src),
+				ctool.Yellow.Print("►"), ctool.Cyan.Print(router.Dst))
 		}
 	}
 
 	// 代理，存储
+	proxySelfList = []string{}
 	parsePath(ProxyConfVar.ProxySelf, "track", func(s string) {
 		proxySelfList = append(proxySelfList, s)
 	})
+
 	// 代理，不存储日志
+	blockList = []string{}
 	parsePath(ProxyConfVar.ProxyBlock, "block", func(s string) {
 		blockList = append(blockList, s)
 	})
+
 	// 直连，不存储
+	directList = []string{}
 	parsePath(ProxyConfVar.ProxyDirect, "direct", func(s string) {
 		directList = append(directList, s)
 	})
