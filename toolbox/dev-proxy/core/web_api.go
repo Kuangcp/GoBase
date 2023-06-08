@@ -8,6 +8,7 @@ import (
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -120,6 +121,7 @@ func flushAllData(writer http.ResponseWriter, _ *http.Request) {
 	RspStr(writer, "OK")
 }
 
+// upload leveldb data to redis
 func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 	iterator := db.NewIterator(nil, nil)
 	for iterator.Next() {
@@ -131,6 +133,7 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 			continue
 		}
 		Conn.ZAdd(RequestList, redis.Z{Member: l.CacheId, Score: float64(l.ReqTime.UnixNano())})
+		Conn.HSet(RequestUrlList, l.Id, l.Url)
 	}
 	writeJsonRsp(writer, "OK")
 }
@@ -152,59 +155,80 @@ func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 		max = 100
 	}
 
-	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
+	result, err := Conn.HGetAll(RequestUrlList).Result()
 	if err != nil {
 		logger.Error(err)
 		writeJsonRsp(writer, err.Error())
 		return
 	}
 
-	countMap := make(map[string]int)
-	resultMap := make(map[string]int)
-	for _, key := range result {
-		log := getDetailByKey(convertToDbKey(key))
-		if log == nil {
-			logger.Warn(key)
-			Conn.ZRem(RequestList, key)
+	type Val struct {
+		UrlMap  map[string]int
+		HostMap map[string]int
+	}
+
+	allUrlMap := make(map[string]int)
+	urlMap := make(map[string]int)
+	for _, v := range result {
+		val, ok := allUrlMap[v]
+		if !ok {
+			allUrlMap[v] = 1
+		} else {
+			allUrlMap[v] = val + 1
+		}
+	}
+
+	//logger.Info(len(allUrlMap))
+	for k, v := range allUrlMap {
+		if v >= min && v <= max {
+			urlMap[k] = v
+		}
+	}
+	allHostMap := make(map[string]int)
+	for k, v := range urlMap {
+		parse, err := url.Parse(k)
+		if err != nil {
+			logger.Error(err)
 			continue
 		}
-		val, ok := countMap[log.Url]
+		h, ok := allHostMap[parse.Host]
 		if !ok {
-			countMap[log.Url] = 1
+			allHostMap[parse.Host] = v
 		} else {
-			countMap[log.Url] = val + 1
+			allHostMap[parse.Host] = h + v
 		}
 	}
-	logger.Info(len(countMap))
-	for k, v := range countMap {
-		if v >= min && v <= max {
-			resultMap[k] = v
-		}
-	}
-	writeJsonRsp(writer, resultMap)
+	writeJsonRsp(writer, Val{UrlMap: urlMap, HostMap: allHostMap})
 }
 
 func delRequest(writer http.ResponseWriter, request *http.Request) {
+	// id 精准删除
 	query := request.URL.Query()
 	id := query.Get("id")
-	path := query.Get("path")
-
 	if id != "" {
 		deleteById(writer, id)
 		return
 	}
 
+	// 按路径模糊删除
+	size := query.Get("size")
+	sizeI, err := strconv.Atoi(size)
+	if err != nil {
+		sizeI = 1
+	}
+	path := query.Get("path")
 	if path != "" {
-		deleteByPath(writer, path)
-		logger.Info("start compact")
+		deleteByPath(writer, path, sizeI)
+		logger.Info("start compact leveldb")
 		db.CompactRange(util.Range{})
+		logger.Info("finish compact")
 		return
 	}
 
 	writeJsonRsp(writer, "invalid param")
 }
 
-func deleteByPath(writer http.ResponseWriter, path string) {
+func deleteByPath(writer http.ResponseWriter, path string, size int) {
 	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
@@ -220,16 +244,17 @@ func deleteByPath(writer http.ResponseWriter, path string) {
 		}
 		total++
 
-		//logger.Info(log.Url)
+		//logger.Info(log.Url, log.CacheId, log.Id)
 		Conn.ZRem(RequestList, log.CacheId)
+		Conn.HDel(RequestUrlList, log.Id)
 		db.Delete([]byte(log.Id), nil)
-		if total >= 5000 {
+		if total >= size {
 			writeJsonRsp(writer, "out of count")
 			return
 		}
 	}
 
-	writeJsonRsp(writer, Success("OK"))
+	writeJsonRsp(writer, Success(fmt.Sprintf("Finish delete: %v", total)))
 }
 
 func deleteById(writer http.ResponseWriter, id string) {
