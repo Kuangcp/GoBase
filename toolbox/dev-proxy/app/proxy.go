@@ -7,7 +7,6 @@ import (
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"github.com/ouqiang/goproxy"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -66,7 +65,13 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	proxyReq.Close = false
 
 	now := time.Now()
-	ctx.Data["ReqCtx"] = &ReqCtx{reqLog: reqLog, proxyLog: proxyLog, proxyType: proxyType, startMs: now.UnixMilli()}
+	ctx.Data["ReqCtx"] = &ReqCtx{
+		reqLog:        reqLog,
+		proxyLog:      proxyLog,
+		ignoreStorage: ignoreStorage,
+		proxyType:     proxyType,
+		startMs:       now.UnixMilli(),
+	}
 }
 
 func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response, err error) {
@@ -85,11 +90,6 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 
 	endMs := time.Now().UnixMilli()
 	waste := endMs - startMs
-	if err != nil {
-		// TODO
-		//core.HandleRespError(resp, r, err, reqLog, proxyLog, waste)
-		return
-	}
 
 	if reqCtx.proxyLog != "" {
 		if reqCtx.proxyType == core.Proxy {
@@ -98,11 +98,9 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		logger.Debug("%4vms %v", waste, reqCtx.proxyLog)
 	}
 
-	// 由于此处Response
 	core.HandleCompressed(&resMes, resp)
 
-	// TODO save leveldb redis
-	if !reqCtx.ignoreStorage && reqLog != nil {
+	if !reqCtx.ignoreStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
 		core.FillReqLogResponse(reqLog, resp)
 		// redis cache
 		core.Conn.ZAdd(core.RequestList, redis.Z{Member: reqLog.CacheId, Score: float64(reqLog.ReqTime.UnixNano())})
@@ -123,7 +121,7 @@ func (e *EventHandler) Finish(ctx *goproxy.Context) {
 
 // ErrorLog 记录错误日志
 func (e *EventHandler) ErrorLog(err error) {
-	log.Println(err)
+	logger.Error(err)
 }
 
 func (e *EventHandler) WebSocketSendMessage(ctx *goproxy.Context, messageType *int, p *[]byte) {
