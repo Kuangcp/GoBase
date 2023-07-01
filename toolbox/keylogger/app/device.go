@@ -181,7 +181,7 @@ func handleEvents(inputEvents []InputEvent) bool {
 		store.IncrTotalCount(today)
 
 		keyNs := inputEvent.Time.Nano()
-		//store.AddKeyDetail(today, keyNs, event.Scancode)
+		store.AddKeyDetail(today, keyNs, event.Scancode)
 
 		// push ms
 		slideQueue.Push(keyNs / 1000_000)
