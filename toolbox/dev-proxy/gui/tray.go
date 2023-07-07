@@ -35,21 +35,24 @@ func OnReady() {
 	for _, vo := range core.ProxyConfVar.Groups {
 		addFileItem(vo)
 	}
+	systray.AddSeparator()
 	addFileItem(core.ProxyConfVar.ProxySelf)
 	addFileItem(core.ProxyConfVar.ProxyBlock)
-	go func() {
-		for {
-			select {
-			case g := <-core.ConfigReload:
-				logger.Info("all config reload", g)
-				fileMap.Range(func(key, value any) bool {
-					updateCheckBox(key.(core.ProxySwitch).HasUse(), value.(*systray.MenuItem))
-					return true
-				})
-			}
-		}
 
-	}()
+	go refreshUIByConfigReload()
+}
+
+func refreshUIByConfigReload() {
+	for {
+		select {
+		case <-core.ConfigReload:
+			logger.Info("config reload, start refresh ui")
+			fileMap.Range(func(key, value any) bool {
+				updateCheckBox(key.(core.ProxySwitch).HasUse(), value.(*systray.MenuItem))
+				return true
+			})
+		}
+	}
 }
 
 func addFileItem(vo core.ProxySwitch) {
