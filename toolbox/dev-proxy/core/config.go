@@ -82,6 +82,7 @@ var (
 	blockList     []string // 代理但是不抓包类型的地址
 	directList    []string // 直连类型的地址
 	lock          = &sync.RWMutex{}
+	ConfigReload  = make(chan bool, 1)
 )
 
 func (p *ProxyGroup) GetName() string {
@@ -280,6 +281,7 @@ func cleanAndRegisterFromFile(configFile string) {
 	}
 
 	ReloadConfByCacheObj()
+	ConfigReload <- true
 }
 
 func ReloadConfByCacheObj() {
@@ -345,7 +347,7 @@ func listenConfig(configFile string) {
 
 		curModTime := stat.ModTime()
 		if curModTime.After(lastModTime) {
-			//logger.Info(stat.ModTime())
+			logger.Info(stat.ModTime())
 			execCommand("notify-send -i folder-new Dev-Proxy 'start reload config file'")
 			lastModTime = curModTime
 			cleanAndRegisterFromFile(configFile)
