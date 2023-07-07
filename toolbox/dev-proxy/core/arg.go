@@ -20,7 +20,7 @@ var (
 var HelpInfo = ctool.HelpInfo{
 	Description:  "Http proxy for reroute and trace",
 	BuildVersion: BuildVersion,
-	Version:      "1.0.3",
+	Version:      "1.0.4",
 	Flags: []ctool.ParamVO{
 		{Short: "-r", BoolVar: &ReloadConf, Comment: "auto reload changed config"},
 		{Short: "-d", BoolVar: &Debug, Comment: "debug mode"},

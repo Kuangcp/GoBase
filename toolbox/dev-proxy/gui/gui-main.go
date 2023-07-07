@@ -15,7 +15,6 @@ func main() {
 	core.InitConnection()
 	defer core.CloseConnection()
 
-	// TODO 替换proxy实现
 	go app.HttpsProxy()
 
 	go core.StartQueryServer()
