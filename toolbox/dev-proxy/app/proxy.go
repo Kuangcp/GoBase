@@ -78,6 +78,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	if err != nil {
 		return
 	}
+	resp.Header.Add("Ack", "dev-proxy")
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
 	reqLog := reqCtx.reqLog
 

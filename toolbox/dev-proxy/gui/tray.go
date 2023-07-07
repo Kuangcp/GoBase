@@ -37,6 +37,19 @@ func OnReady() {
 	}
 	addFileItem(core.ProxyConfVar.ProxySelf)
 	addFileItem(core.ProxyConfVar.ProxyBlock)
+	go func() {
+		for {
+			select {
+			case g := <-core.ConfigReload:
+				logger.Info("all config reload", g)
+				fileMap.Range(func(key, value any) bool {
+					updateCheckBox(key.(core.ProxySwitch).HasUse(), value.(*systray.MenuItem))
+					return true
+				})
+			}
+		}
+
+	}()
 }
 
 func addFileItem(vo core.ProxySwitch) {
@@ -44,7 +57,7 @@ func addFileItem(vo core.ProxySwitch) {
 		return
 	}
 	checkbox := systray.AddMenuItemCheckbox(vo.GetName(), "Check Me", vo.HasUse())
-	fileMap.Store(vo.GetName(), checkbox)
+	fileMap.Store(vo, checkbox)
 	go func() {
 		for {
 			select {
@@ -55,16 +68,17 @@ func addFileItem(vo core.ProxySwitch) {
 				core.ReloadConfByCacheObj()
 
 				// Windows need this line, linux not need
-				updateCheckBox(useState, checkbox)
+				// 手动更新内存标记为正确的值 选中or不选中
+				updateCheckBox(!useState, checkbox)
 			}
 		}
 	}()
 }
 
-func updateCheckBox(useState bool, checkbox *systray.MenuItem) {
-	if useState {
-		checkbox.Uncheck()
-	} else {
+func updateCheckBox(use bool, checkbox *systray.MenuItem) {
+	if use {
 		checkbox.Check()
+	} else {
+		checkbox.Uncheck()
 	}
 }
