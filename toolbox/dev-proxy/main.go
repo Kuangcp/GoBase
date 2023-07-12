@@ -13,6 +13,10 @@ func main() {
 	defer core.CloseConnection()
 
 	go core.StartQueryServer()
-	//core.StartMainServer()
-	app.HttpsProxy()
+
+	if core.HttpProxy {
+		go core.StartMainServer()
+	} else {
+		go app.HttpsProxy()
+	}
 }

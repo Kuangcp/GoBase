@@ -32,9 +32,10 @@ var HelpInfo = ctool.HelpInfo{
 	},
 }
 
+// StartMainServer HTTP代理和修改 HTTPS转发
 func StartMainServer() {
 	logger.Info("list key: ", RequestList)
-	logger.Info("Start proxy server on 127.0.0.1:%d", Port)
+	logger.Info("Start HTTP proxy server on 127.0.0.1:%d", Port)
 	cert, err := GenCertificate()
 	if err != nil {
 		logger.Fatal(err)

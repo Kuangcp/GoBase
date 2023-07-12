@@ -20,7 +20,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Server", "dev-proxy")
+	w.Header().Add("Ack", "dev-proxy")
 
 	defer func() {
 		re := recover()

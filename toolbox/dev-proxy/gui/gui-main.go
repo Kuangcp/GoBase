@@ -15,10 +15,13 @@ func main() {
 	core.InitConnection()
 	defer core.CloseConnection()
 
-	go app.HttpsProxy()
+	if core.HttpProxy {
+		go core.StartMainServer()
+	} else {
+		go app.HttpsProxy()
+	}
 
 	go core.StartQueryServer()
-	//go core.StartMainServer()
 
 	systray.Run(OnReady, OnExit)
 }
