@@ -53,7 +53,7 @@ routers 每两个组成一对，前后元素构成源头和目标路径的映射
   - /api/a -> /api2/a
   - host1:port1/api2/a -> host1:port1/api2/a
 
-
+> 当前代理有两套实现：一个需要安装证书支持HTTPS解密和修改，另一个仅支持HTTPS密文转发，但是都支持HTTP代理和修改。
 
 # TODO 
 1. 按URL域名统计请求频率和时间分布
