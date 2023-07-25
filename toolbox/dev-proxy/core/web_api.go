@@ -303,7 +303,7 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 
 // PacFileApi 默认使用缺省文件，优先使用独立配置文件
 func PacFileApi(writer http.ResponseWriter, request *http.Request) {
-	fileBt, err := os.ReadFile(proxyFilePath)
+	fileBt, err := os.ReadFile(pacFilePath)
 	if err != nil || fileBt == nil || len(fileBt) == 0 {
 		logger.Error(err)
 		bindStatic(pacFile, pacT)(writer, request)
