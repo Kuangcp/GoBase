@@ -15,6 +15,8 @@ var (
 	QueryPort    int
 	BuildVersion string
 	HttpProxy    bool
+	JsonPath     string
+	PacPath      string
 )
 
 var HelpInfo = ctool.HelpInfo{
@@ -29,6 +31,8 @@ var HelpInfo = ctool.HelpInfo{
 	Options: []ctool.ParamVO{
 		{Short: "-w", IntVar: &QueryPort, Int: 1235, Value: "port", Comment: "web port"},
 		{Short: "-p", IntVar: &Port, Int: 1234, Value: "port", Comment: "proxy port"},
+		{Short: "-j", StringVar: &JsonPath, String: "", Value: "path", Comment: "json config file abs path"},
+		{Short: "-a", StringVar: &PacPath, String: "", Value: "path", Comment: "pac file abs path"},
 	},
 }
 

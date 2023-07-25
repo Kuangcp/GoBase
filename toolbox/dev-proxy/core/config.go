@@ -62,7 +62,7 @@ var (
 	// 文件相对路径
 	configFilePath = "/.dev-proxy/dev-proxy.json"
 	logFilePath    = "/.dev-proxy/dev-proxy.log"
-	proxyFilePath  = "/.dev-proxy/dev-proxy.pac"
+	pacFilePath    = "/.dev-proxy/dev-proxy.pac"
 	dbDirPath      = "/.dev-proxy/leveldb-request-log"
 )
 
@@ -233,8 +233,17 @@ func InitConfig() {
 			MaxDays:    -1,
 		}})
 
-	proxyFilePath = home + proxyFilePath
-	configFilePath = home + configFilePath
+	if JsonPath != "" {
+		configFilePath = JsonPath
+	} else {
+		configFilePath = home + configFilePath
+	}
+	if PacPath != "" {
+		pacFilePath = PacPath
+	} else {
+		pacFilePath = home + pacFilePath
+	}
+
 	dbDirPath = home + dbDirPath
 	cleanAndRegisterFromFile(configFilePath)
 
@@ -248,7 +257,7 @@ func InitConfig() {
 	RequestList = fmt.Sprintf(listFmt, Prefix, hostId)
 	RequestUrlList = fmt.Sprintf(urlListFmt, Prefix, hostId)
 	if ReloadConf {
-		go listenConfig(configFilePath)
+		go listenConfig()
 	}
 }
 
@@ -336,10 +345,10 @@ func parsePath(proxy *ProxySelf, name string, listAppendFunc func(string)) {
 	}
 }
 
-func listenConfig(configFile string) {
+func listenConfig() {
 	var lastModTime = time.Now()
 	for range time.NewTicker(time.Second * 2).C {
-		stat, err := os.Stat(configFile)
+		stat, err := os.Stat(configFilePath)
 		if err != nil {
 			logger.Error(err)
 			continue
@@ -350,7 +359,7 @@ func listenConfig(configFile string) {
 			logger.Info(stat.ModTime())
 			execCommand("notify-send -i folder-new Dev-Proxy 'start reload config file'")
 			lastModTime = curModTime
-			cleanAndRegisterFromFile(configFile)
+			cleanAndRegisterFromFile(configFilePath)
 		}
 	}
 }
