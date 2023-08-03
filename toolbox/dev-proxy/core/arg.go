@@ -26,7 +26,7 @@ var HelpInfo = ctool.HelpInfo{
 	Flags: []ctool.ParamVO{
 		{Short: "-r", BoolVar: &ReloadConf, Comment: "auto reload changed config"},
 		{Short: "-d", BoolVar: &Debug, Comment: "debug mode"},
-		{Short: "-x", BoolVar: &HttpProxy, Comment: "proxy mode"},
+		{Short: "-x", BoolVar: &HttpProxy, Comment: "only track http proxy, default capture https packet"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-w", IntVar: &QueryPort, Int: 1235, Value: "port", Comment: "web port"},
