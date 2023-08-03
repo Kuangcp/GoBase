@@ -15,6 +15,8 @@ const (
 	SYN_FLAG = 0x02 // SYN标志位
 )
 
+// sysctl -w net.ipv4.tcp_fin_timeout=1 # 默认60s
+// sysctl -w net.ipv4.tcp_tw_reuse=1 # 默认0
 func main() {
 	flag.StringVar(&addr, "t", "", "ip:port")
 	flag.IntVar(&con, "c", 10, "concurrency")
