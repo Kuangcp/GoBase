@@ -1,7 +1,9 @@
 package weblevel
 
 import (
+	"crypto/md5"
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"log"
 	"testing"
 	"time"
@@ -11,6 +13,73 @@ var client Client
 
 func init() {
 	client = NewClient("localhost", 33742)
+}
+
+// 对比内存中目录和磁盘目录性能差异
+// sudo mkdir /mnt/tmp
+// sudo mount -t tmpfs -o size=100m tmpfs /mnt/tmp
+func TestDiffServer(t *testing.T) {
+	memDB, err := NewServer(&Options{Port: 33740, DBPath: "/mnt/tmp/mem-db"})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	go memDB.Bootstrap()
+
+	levelDB, err := NewServer(&Options{Port: 33741, DBPath: "disk-db"})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	levelDB.Bootstrap()
+}
+
+func putData(cli *WebClient) {
+	for i := 0; i < 900000; i++ {
+		iStr := fmt.Sprint("do", i)
+		sum := md5.Sum([]byte(iStr))
+		cli.Set(iStr, fmt.Sprintf("%x", sum))
+	}
+}
+
+// 写入有点点差异，读取
+//
+//	52.812s 46% mem write
+//	57.363s 50% disk write
+//	 1947ms  1% mem
+//	 1887ms  1% disk
+
+// dd if=/dev/zero bs=1M count=50 of=b
+//50+0 records in
+//50+0 records out
+//52428800 bytes (52 MB, 50 MiB) copied, 0.0208666 s, 2.5 GB/s
+
+// dd if=/dev/zero bs=1M count=50 of=b
+//50+0 records in
+//50+0 records out
+//52428800 bytes (52 MB, 50 MiB) copied, 0.0120049 s, 4.4 GB/s
+func TestInitDiffServer(t *testing.T) {
+	memCli := NewClient("localhost", 33740)
+	diskCli := NewClient("localhost", 33741)
+
+	watch := ctool.NewStopWatch()
+
+	watch.Start("mem write")
+	putData(memCli)
+	watch.Stop()
+
+	watch.Start("disk write")
+	putData(diskCli)
+	watch.Stop()
+
+	watch.Start("mem")
+	memCli.PrefixSearch("do")
+	watch.Stop()
+
+	watch.Start("disk")
+	diskCli.PrefixSearch("do")
+	watch.Stop()
+	fmt.Println(watch.PrettyPrint())
 }
 
 func TestServer(t *testing.T) {
@@ -45,7 +114,7 @@ func TestWebClient_Get(t *testing.T) {
 }
 
 func TestRollingTxt(t *testing.T) {
-	s := "20220626_021829_Masquerade-マスカレード-葵つかさアサ芸SEXY女優写真集[172P]_172P"
+	s := "202206"
 
 	runes := []rune(s)
 	showWin := 20
