@@ -15,8 +15,8 @@ func main() {
 	go core.StartQueryServer()
 
 	if core.HttpProxy {
-		go core.StartMainServer()
+		core.StartMainServer()
 	} else {
-		go app.HttpsProxy()
+		app.HttpsProxy()
 	}
 }
