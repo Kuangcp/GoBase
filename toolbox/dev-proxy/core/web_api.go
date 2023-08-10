@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"net/http"
@@ -140,7 +141,43 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 
 // TODO 按域名 天 维度 统计访问频次
 func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
+	zR, err := Conn.ZRangeWithScores(RequestList, 0, -1).Result()
+	if err != nil {
+		writeJsonRsp(writer, err.Error())
+		return
+	}
 
+	// 天 -> 域名 -> 次数
+	dayMap := make(map[string]map[string]int)
+
+	for i, val := range zR {
+		if i > 10 {
+			break
+		}
+		cols := strings.Split(val.Member.(string), " ")
+		id := cols[3]
+		hitTime := time.UnixMicro(int64(val.Score) / 1000)
+		hitDay := hitTime.Format(ctool.YYYY_MM_DD)
+		m, ok := dayMap[hitDay]
+		if !ok {
+			m = make(map[string]int)
+			dayMap[hitDay] = m
+		}
+
+		u, err := Conn.HGet(RequestUrlList, id).Result()
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+		c, ok := m[u]
+		if !ok {
+			m[u] = 1
+		} else {
+			m[u] = c + 1
+		}
+	}
+
+	logger.Info(dayMap)
 }
 
 func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
