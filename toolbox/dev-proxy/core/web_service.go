@@ -64,7 +64,7 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 			key := keys[i]
 			val := keys[i+1]
 
-			if !strings.Contains(val, url.QueryEscape(param.kwd)) {
+			if !strings.Contains(url.QueryEscape(val), url.QueryEscape(param.kwd)) {
 				continue
 			}
 

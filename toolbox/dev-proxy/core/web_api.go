@@ -141,16 +141,23 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 
 func splitArray(l []string, batch int) [][]string {
 	var result [][]string
+	var s = []string{}
 	for _, l := range l {
-		var s []string
+		if len(s) == batch {
+			result = append(result, s)
+			s = []string{}
+		}
 		s = append(s, l)
+	}
+	if len(s) > 0 {
 		result = append(result, s)
 	}
 	return result
 }
 
-// TODO 按域名 天 维度 统计访问频次
 func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+	timeType := query.Get("type")
 	zR, err := Conn.ZRangeWithScores(RequestList, 0, -1).Result()
 	if err != nil {
 		writeJsonRsp(writer, err.Error())
@@ -160,38 +167,45 @@ func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	// 天 -> 域名 -> 次数
 	dayMap := make(map[string]map[string]int)
 
+	// 得到id
 	var ids []string
-	uMap := make(map[string]string)
-	for i, val := range zR {
-		if i > 10 {
-			break
-		}
+	for _, val := range zR {
 		cols := strings.Split(val.Member.(string), " ")
 		id := cols[3]
 
 		ids = append(ids, id)
-		//u, err := Conn.HGet(RequestUrlList, id).Result()
-		//if err != nil {
-		//	logger.Error(err)
-		//	continue
-		//}
-		//c, ok := m[u]
-		//if !ok {
-		//	m[u] = 1
-		//} else {
-		//	m[u] = c + 1
-		//}
 	}
 
-	for _, id := range ids {
-		Conn.HMGet(RequestUrlList, id)
+	// 批量得到url
+	// id -> host
+	uMap := make(map[string]string)
+	array := splitArray(ids, 100)
+	for _, ba := range array {
+		result, err := Conn.HMGet(RequestUrlList, ba...).Result()
+		if err != nil {
+			continue
+		}
+		for i := range ba {
+			path := result[i].(string)
+			parse, err := url.Parse(path)
+			if err != nil {
+				continue
+			}
+
+			uMap[ba[i]] = parse.Host
+		}
 	}
 
+	timeS := ctool.YYYY_MM_DD
+	if timeType == "month" {
+		timeS = ctool.YYYY_MM
+	}
+	// 按天聚合结果
 	for _, val := range zR {
 		cols := strings.Split(val.Member.(string), " ")
 		id := cols[3]
 		hitTime := time.UnixMicro(int64(val.Score) / 1000)
-		hitDay := hitTime.Format(ctool.YYYY_MM_DD)
+		hitDay := hitTime.Format(timeS)
 		m, ok := dayMap[hitDay]
 		if !ok {
 			m = make(map[string]int)
@@ -207,7 +221,7 @@ func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	logger.Info(dayMap)
+	writeJsonRsp(writer, dayMap)
 }
 
 func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
@@ -311,7 +325,7 @@ func deleteByPath(writer http.ResponseWriter, path string, size int) {
 		}
 		total++
 
-		//logger.Info(log.Url, log.CacheId, log.Id)
+		logger.Info(log.Url, log.CacheId, log.Id)
 		Conn.ZRem(RequestList, log.CacheId)
 		Conn.HDel(RequestUrlList, log.Id)
 		db.Delete([]byte(log.Id), nil)
