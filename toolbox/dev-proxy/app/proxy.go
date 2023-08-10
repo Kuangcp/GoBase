@@ -105,7 +105,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		core.FillReqLogResponse(reqLog, resp)
 		// redis cache
 		core.Conn.ZAdd(core.RequestList, redis.Z{Member: reqLog.CacheId, Score: float64(reqLog.ReqTime.UnixNano())})
-		core.Conn.HSet(core.RequestUrlList, reqLog.Id, ctx.Req.URL.String())
+		core.Conn.HSet(core.RequestUrlList, reqLog.Id, reqLog.Url)
 
 		core.SaveReqLog(reqLog)
 	}
