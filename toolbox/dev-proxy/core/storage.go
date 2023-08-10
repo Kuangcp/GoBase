@@ -19,8 +19,8 @@ const (
 var (
 	Conn           *redis.Client
 	db             *leveldb.DB
-	RequestList    = "" // redis key (member: 03-16 18:27:45.653 80b85e3c653, score: nanoTime) leveldb key (80b85e3c653)
-	RequestUrlList = "" // key: id value: url
+	RequestList    = "" // ZSet redis key (member: 03-16 18:27:45.653 80b85e3c653, score: nanoTime) leveldb key (80b85e3c653)
+	RequestUrlList = "" // Hash key: id value: url
 	listFmt        = "%s:%s:request-list"
 	urlListFmt     = "%s:%s:request-url-list"
 )
@@ -106,7 +106,7 @@ func InitConnection() {
 func isValidConnection(client *redis.Client) bool {
 	_, err := client.Ping().Result()
 	if err != nil {
-		logger.Error("ping redis failed:", err)
+		logger.Error("ping redis failed:", client.Options(), err)
 		return false
 	}
 	return true

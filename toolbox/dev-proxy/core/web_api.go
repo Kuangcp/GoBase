@@ -139,6 +139,16 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 	writeJsonRsp(writer, "OK")
 }
 
+func splitArray(l []string, batch int) [][]string {
+	var result [][]string
+	for _, l := range l {
+		var s []string
+		s = append(s, l)
+		result = append(result, s)
+	}
+	return result
+}
+
 // TODO 按域名 天 维度 统计访问频次
 func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	zR, err := Conn.ZRangeWithScores(RequestList, 0, -1).Result()
@@ -150,10 +160,34 @@ func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	// 天 -> 域名 -> 次数
 	dayMap := make(map[string]map[string]int)
 
+	var ids []string
+	uMap := make(map[string]string)
 	for i, val := range zR {
 		if i > 10 {
 			break
 		}
+		cols := strings.Split(val.Member.(string), " ")
+		id := cols[3]
+
+		ids = append(ids, id)
+		//u, err := Conn.HGet(RequestUrlList, id).Result()
+		//if err != nil {
+		//	logger.Error(err)
+		//	continue
+		//}
+		//c, ok := m[u]
+		//if !ok {
+		//	m[u] = 1
+		//} else {
+		//	m[u] = c + 1
+		//}
+	}
+
+	for _, id := range ids {
+		Conn.HMGet(RequestUrlList, id)
+	}
+
+	for _, val := range zR {
 		cols := strings.Split(val.Member.(string), " ")
 		id := cols[3]
 		hitTime := time.UnixMicro(int64(val.Score) / 1000)
@@ -164,11 +198,7 @@ func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 			dayMap[hitDay] = m
 		}
 
-		u, err := Conn.HGet(RequestUrlList, id).Result()
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
+		u := uMap[id]
 		c, ok := m[u]
 		if !ok {
 			m[u] = 1
