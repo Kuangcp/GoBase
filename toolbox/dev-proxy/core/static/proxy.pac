@@ -22,7 +22,7 @@ function FindProxyForURL(url, host) {
     shExpMatch(url, "*gmail.com*") ||
     shExpMatch(url, "*google.dev*") ||
     shExpMatch(url, "*twitter.com*") ||
-    shExpMatch(url, "*github.com*") ||
+    shExpMatch(url, "*github.*") ||
     shExpMatch(url, "*youtube.com*") ||
     shExpMatch(url, "*wikipedia.org*")
   ) {
