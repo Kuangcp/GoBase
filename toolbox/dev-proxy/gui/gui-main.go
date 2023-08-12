@@ -15,8 +15,8 @@ func main() {
 	core.InitConnection()
 	defer core.CloseConnection()
 
-	if core.HttpProxy {
-		go core.StartMainServer()
+	if core.HttpMode {
+		go core.HttpProxy()
 	} else {
 		go app.HttpsProxy()
 	}

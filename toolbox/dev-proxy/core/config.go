@@ -66,15 +66,6 @@ var (
 	dbDirPath      = "/.dev-proxy/leveldb-request-log"
 )
 
-const (
-	Open  = 1 // 开启配置
-	Close = 0 // 关闭配置
-
-	Direct  = 0 // 直连
-	Replace = 1 // 代理替换
-	Proxy   = 2 // 抓包代理
-)
-
 var (
 	ProxyConfVar  ProxyConf
 	proxyValMap   = make(map[string]string)
@@ -88,9 +79,11 @@ var (
 func (p *ProxyGroup) GetName() string {
 	return p.Name
 }
+
 func (g *ProxyGroup) HasUse() bool {
 	return g.ProxyType == Open
 }
+
 func (g *ProxyGroup) SwitchUse() {
 	if g.HasUse() {
 		g.ProxyType = Close
@@ -102,9 +95,11 @@ func (g *ProxyGroup) SwitchUse() {
 func (p *ProxySelf) GetName() string {
 	return p.Name
 }
+
 func (g *ProxySelf) HasUse() bool {
 	return g.ProxyType == Open
 }
+
 func (g *ProxySelf) SwitchUse() {
 	if g.HasUse() {
 		g.ProxyType = Close
@@ -227,10 +222,14 @@ func InitConfig() {
 		TimeFormat: "01-02 15:04:05.000",
 		File: &logger.FileLogger{
 			Filename:   home + logFilePath,
-			Level:      logLevel,
+			Level:      logger.DebugDesc,
 			Append:     true,
 			PermitMask: "0660",
 			MaxDays:    -1,
+		},
+		Console: &logger.ConsoleLogger{
+			Level:    logLevel,
+			Colorful: true,
 		}})
 
 	if JsonPath != "" {

@@ -61,7 +61,7 @@ const (
 )
 
 func StartQueryServer() {
-	logger.Info("Start query server on 127.0.0.1:%d", QueryPort)
+	logger.Info("Start query server on 127.0.0.1:%d", ApiPort)
 
 	if Debug {
 		http.Handle("/", http.FileServer(http.Dir("./static")))
@@ -74,7 +74,7 @@ func StartQueryServer() {
 		http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
 		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
 		http.HandleFunc("/json.min.js", bindStatic(jsonMinJs, jsT))
-		http.HandleFunc("/proxy.pac", PacFileApi)
+		http.HandleFunc(PacUrl, PacFileApi)
 	}
 
 	http.HandleFunc("/list", rtTimeInterceptor(JSONFunc(pageListReqHistory)))
@@ -86,7 +86,7 @@ func StartQueryServer() {
 	http.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
 	http.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
 
-	http.ListenAndServe(fmt.Sprintf(":%v", QueryPort), nil)
+	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), nil)
 }
 
 func (p PageQueryParam) buildStartEnd() (int64, int64) {

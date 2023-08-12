@@ -150,10 +150,11 @@ func (c *Cache) Get(host string) *tls.Certificate {
 	return v.(*tls.Certificate)
 }
 
-// HttpsProxy replaced core.StartMainServer HTTP HTTPS 代理修改，密文解密
+// HttpsProxy replaced core.HttpProxy HTTP HTTPS 代理修改，密文解密
 func HttpsProxy() {
 	logger.Info("list key: ", core.RequestList)
 	logger.Info("Start HTTPS proxy server on 127.0.0.1:%d", core.Port)
+	logger.Warn("Pac: 127.0.0.1:%d%v", core.ApiPort, core.PacUrl)
 
 	proxy := goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{

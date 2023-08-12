@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/tls"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
@@ -228,4 +229,25 @@ func filterFormType(s []byte) []byte {
 		return r
 	}
 	return s
+}
+
+// HttpProxy HTTP代理和修改 HTTPS转发
+func HttpProxy() {
+	logger.Info("list key: ", RequestList)
+	logger.Info("Start HTTP proxy server on 127.0.0.1:%d", Port)
+	logger.Warn("Pac: 127.0.0.1:%d%v", ApiPort, PacUrl)
+	cert, err := GenCertificate()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	server := &http.Server{
+		Addr:      fmt.Sprintf("0.0.0.0:%d", Port),
+		TLSConfig: &tls.Config{Certificates: []tls.Certificate{cert}},
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ProxyHandler(w, r)
+		}),
+	}
+
+	logger.Fatal(server.ListenAndServe())
 }
