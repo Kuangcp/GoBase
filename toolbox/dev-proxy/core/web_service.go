@@ -14,7 +14,7 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 	param := parseParam(request)
 	if param == nil {
 		result.Code = 101
-		result.Msg = "invalid data"
+		result.Msg = "invalid param"
 		return result
 	}
 	var pageResult *PageVO[*ReqLog[MessageVO]]
