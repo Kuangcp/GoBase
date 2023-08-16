@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/kuangcp/gobase/pkg/ctool v1.1.0
+	github.com/kuangcp/gobase/pkg/ratelimiter v1.0.1
 	github.com/kuangcp/logger v1.0.9
 	github.com/ouqiang/goproxy v1.3.2
 	github.com/syndtr/goleveldb v1.0.0

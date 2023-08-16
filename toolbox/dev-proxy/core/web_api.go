@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/ratelimiter"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"net/http"
@@ -61,6 +62,7 @@ const (
 )
 
 func StartQueryServer() {
+	limiter := ratelimiter.CreateLeakyLimiter(2)
 	logger.Info("Start query server on 127.0.0.1:%d", ApiPort)
 
 	if Debug {
@@ -77,7 +79,7 @@ func StartQueryServer() {
 		http.HandleFunc(PacUrl, PacFileApi)
 	}
 
-	http.HandleFunc("/list", rtTimeInterceptor(JSONFunc(pageListReqHistory)))
+	http.HandleFunc("/list", rtTimeAndLimitInterceptor(JSONFunc(pageListReqHistory), limiter))
 	http.HandleFunc("/curl", rtTimeInterceptor(buildCurlCommandApi))
 	http.HandleFunc("/replay", replayRequest)
 	http.HandleFunc("/del", rtTimeInterceptor(delRequest))
@@ -95,6 +97,22 @@ func (p PageQueryParam) buildStartEnd() (int64, int64) {
 
 func rtTimeInterceptor(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now().UnixMilli()
+		h(w, r)
+		end := time.Now().UnixMilli()
+		logger.Info(r.URL.Path, end-start, "ms")
+	}
+}
+
+func rtTimeAndLimitInterceptor(h http.HandlerFunc, limiter ratelimiter.RateLimiter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !limiter.TryAcquire() {
+			buffer := toJSONBuffer(ResultVO[string]{Code: 101, Msg: "频繁请求"})
+			w.Write(buffer.Bytes())
+			return
+		}
+		limiter.Acquire()
+
 		start := time.Now().UnixMilli()
 		h(w, r)
 		end := time.Now().UnixMilli()

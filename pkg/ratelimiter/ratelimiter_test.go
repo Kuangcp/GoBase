@@ -34,3 +34,26 @@ func TestConcur(t *testing.T) {
 
 	time.Sleep(time.Hour)
 }
+
+func TestTimeout(t *testing.T) {
+	limiter := CreateLeakyLimiter(7)
+	ls := []int{4, 6, 7, 2, 8, 5, 1, 9, 8}
+	for _, i := range ls {
+
+		fi := i
+		go func() {
+			for k := 0; k < fi; k++ {
+				//log.Println("start", fi)
+				wait := limiter.TryAcquireWait(time.Second * 1)
+				if wait {
+					limiter.Acquire()
+					log.Println("end", fi)
+				} else {
+					log.Println("timeout", fi)
+				}
+			}
+		}()
+	}
+
+	time.Sleep(time.Hour)
+}
