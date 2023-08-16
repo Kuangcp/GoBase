@@ -1,4 +1,4 @@
-package hystrix
+package ratelimiter
 
 import "time"
 
