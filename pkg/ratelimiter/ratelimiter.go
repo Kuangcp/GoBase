@@ -11,6 +11,8 @@ type RateLimiter interface {
 
 	TryAcquire() bool
 	TryAcquireN(n int) bool
+	TryAcquireWait(timeout time.Duration) bool
+	TryAcquireNWait(n int, timeout time.Duration) bool
 }
 
 func CreateLeakyLimiter(rate int) RateLimiter {
@@ -39,18 +41,38 @@ func (l *LeakyBucket) producer() {
 	}
 }
 func (l *LeakyBucket) TryAcquire() bool {
-	return len(l.buffer) > 0
+	return l.TryAcquireN(1)
+}
+
+func (l *LeakyBucket) TryAcquireWait(timeout time.Duration) bool {
+	return l.TryAcquireNWait(1, timeout)
 }
 
 func (l *LeakyBucket) TryAcquireN(n int) bool {
-	if n < 0 {
+	if n < 1 {
 		return false
 	}
-	return len(l.buffer) > n
+	return len(l.buffer) >= n
+}
+
+func (l *LeakyBucket) TryAcquireNWait(n int, duration time.Duration) bool {
+	if n < 1 {
+		return false
+	}
+	start := time.Now()
+	for {
+		time.Sleep(time.Millisecond * 10)
+		if len(l.buffer) >= n {
+			return true
+		}
+		if time.Now().Sub(start).Nanoseconds() > duration.Nanoseconds() {
+			return false
+		}
+	}
 }
 
 func (l *LeakyBucket) SetRate(rate int) {
-	if rate < 0 {
+	if rate < 1 {
 		rate = 1
 	}
 	l.rate = rate
@@ -63,6 +85,9 @@ func (l *LeakyBucket) Acquire() int64 {
 }
 
 func (l LeakyBucket) AcquireN(n int) int64 {
+	if n < 1 {
+		return 0
+	}
 	start := time.Now().UnixMicro()
 	for i := 0; i < n; i++ {
 		<-l.buffer
