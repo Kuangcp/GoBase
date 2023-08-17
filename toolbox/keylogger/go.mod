@@ -3,7 +3,7 @@ module github.com/kuangcp/gobase/toolbox/keylogger
 go 1.16
 
 require (
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.9.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/gvalkov/golang-evdev v0.0.0-20191114124502-287e62b94bcb
 	github.com/kuangcp/gobase/pkg/ctk v1.0.9
