@@ -121,6 +121,66 @@ func valueOf(value string) (LineTimeUnit, error) {
 	}
 }
 
+// SyncDetails 从Redis迁移入LevelDB（除当天外的数据）
+func SyncDetails(c *gin.Context) {
+	SyncAllDetails()
+	ghelp.GinSuccess(c)
+}
+func ScheduleSyncAllDetails() {
+	for range time.NewTicker(time.Hour * 24 * 5).C {
+		logger.Info("sync details")
+		SyncAllDetails()
+	}
+}
+
+func SyncAllDetails() {
+	conn := store.GetConnection()
+
+	today := store.GetDetailKey(time.Now())
+	var cursor uint64 = 0
+	first := true
+	for cursor != 0 || first {
+		first = false
+		keys, u, err := conn.Scan(cursor, store.Prefix+"*", 1000).Result()
+		if err != nil {
+			logger.Error(err)
+		}
+		for _, k := range keys {
+			// 当天数据不全，不转移
+			if today == k {
+				logger.Info("ignore today", k)
+			}
+			if strings.HasSuffix(k, "detail") {
+				logger.Info("Sync: ", k)
+				syncDetail(k)
+			}
+		}
+
+		cursor = u
+	}
+}
+
+func syncDetail(key string) {
+	list := store.QueryDetailByKey(key)
+	if list == nil {
+		logger.Warn("no data")
+		return
+	}
+
+	text := ""
+	for _, d := range list {
+		text += d.ToString() + "\n"
+	}
+	db := store.GetDb()
+	err := db.Put([]byte(key), []byte(text), nil)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	conn := store.GetConnection()
+	conn.Del(key)
+}
+
 func ExportDetail(c *gin.Context) {
 	store.ExportDetailToCsv(time.Now())
 	ghelp.GinSuccess(c)
@@ -318,49 +378,27 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	}
 }
 
-func readDetailToMap(
-	curDay string,
-	mutex *sync.Mutex,
-	totalMap map[int]map[int]int) {
+// TODO 支持 leveldb
+func readDetailToMap(curDay string, mutex *sync.Mutex, totalMap map[int]map[int]int) {
 
-	var lastCursor uint64 = 0
-	first := true
+	list := store.QueryDetailByDay(curDay)
+	for _, d := range list {
+		curStrokeTime := time.Unix(d.HitTime/1000_000, 0)
+		weekDay := int(curStrokeTime.Weekday())
 
-	totalCount := 0
-	for lastCursor != 0 || first {
-		result, cursor, err := store.GetConnection().
-			ZScan(store.GetDetailKeyByString(curDay), lastCursor, "", 600).Result()
-		ctk.CheckIfError(err)
-		lastCursor = cursor
-		first = false
-		for i := range result {
-			// ignore keyCode
-			if i%2 == 1 {
-				continue
+		actionRoundLock(mutex, func() {
+			dayMap := totalMap[weekDay]
+			//curStr := cur.Format(DateFormat)
+			//if curStr != curDay {
+			//	logger.Error("error detail data", curStr, curDay)
+			//}
+			if dayMap == nil {
+				dayMap = make(map[int]int)
+				totalMap[weekDay] = dayMap
 			}
-			//logger.Info(result[i], result[i+1])
-
-			timestamp, err := strconv.ParseInt(result[i], 0, 64)
-			ctk.CheckIfError(err)
-			curStrokeTime := time.Unix(timestamp/1000_000, 0)
-			weekDay := int(curStrokeTime.Weekday())
-
-			actionRoundLock(mutex, func() {
-				dayMap := totalMap[weekDay]
-				//curStr := cur.Format(DateFormat)
-				//if curStr != curDay {
-				//	logger.Error("error detail data", curStr, curDay)
-				//}
-				if dayMap == nil {
-					dayMap = make(map[int]int)
-					totalMap[weekDay] = dayMap
-				}
-				dayMap[curStrokeTime.Hour()] += 1
-			})
-		}
-		totalCount += len(result)
+			dayMap[curStrokeTime.Hour()] += 1
+		})
 	}
-	//logger.Info(day, totalCount/2)
 }
 
 func actionRoundLock(mutex *sync.Mutex, action func()) {
