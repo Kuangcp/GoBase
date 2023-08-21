@@ -154,7 +154,9 @@ func main() {
 	store.InitConnection(option, true)
 	defer store.CloseConnection()
 
-	//invokeThenExit(dashboard, app.InitPopWindow, store.CloseConnection)
+	store.InitDb()
+	go web.ScheduleSyncAllDetails()
+
 	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
 	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
 

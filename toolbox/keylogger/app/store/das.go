@@ -9,6 +9,17 @@ import (
 	"time"
 )
 
+type (
+	DetailVO struct {
+		Code    int
+		HitTime int64
+	}
+)
+
+func (d *DetailVO) ToString() string {
+	return fmt.Sprintf("%v,%v", d.Code, d.HitTime)
+}
+
 func AddKeyDetail(time time.Time, keyNs int64, keyCode uint16) {
 	conn := GetConnection()
 	// store us not ns
@@ -68,11 +79,9 @@ func MaxKPMVal(time time.Time) string {
 }
 
 func ExportDetailToCsv(day time.Time) {
-	key := GetDetailKey(day)
-	conn := GetConnection()
-	result, err := conn.ZRangeWithScores(key, 0, -1).Result()
-	if err != nil {
-		logger.Error(err)
+	list := QueryDetailByDay(day.Format(DateFormat))
+	if list == nil {
+		logger.Warn("no detail data")
 		return
 	}
 
@@ -83,7 +92,7 @@ func ExportDetailToCsv(day time.Time) {
 		return
 	}
 	defer writer.Close()
-	for _, v := range result {
-		writer.WriteLine(fmt.Sprintf("%v,%v", v.Score, v.Member))
+	for _, v := range list {
+		writer.WriteLine(v.ToString())
 	}
 }

@@ -58,6 +58,7 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildPath("/weeksHeatMap"), MultipleHeatMap)
 	router.GET(buildPath("/calendarMap"), CalendarMap)
 	router.GET(buildPath("/exportDetail"), ExportDetail)
+	router.GET(buildPath("/syncDetails"), SyncDetails)
 }
 
 func buildPath(path string) string {

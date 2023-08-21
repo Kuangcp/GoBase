@@ -10,6 +10,7 @@ var (
 	MainDir = "/.config/app-conf/keylogger"
 	LogDir  = MainDir + "/log"
 	LogPath string
+	DbPath  string
 )
 
 func ConfigLogger() {
@@ -22,6 +23,8 @@ func ConfigLogger() {
 	err = os.MkdirAll(MainDir, 0755)
 	ctk.CheckIfError(err)
 	LogDir = home + LogDir
+
+	DbPath = MainDir + "/db"
 
 	err = os.MkdirAll(LogDir, 0755)
 	ctk.CheckIfError(err)
