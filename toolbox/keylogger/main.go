@@ -21,6 +21,7 @@ import (
 var fs embed.FS
 
 var user = ctk.Red.Print("root")
+var redisStr = ctk.Cyan.Print("redis")
 var info = ctk.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.1.0",
@@ -35,23 +36,23 @@ var info = ctk.HelpInfo{
 		{Short: "-p", BoolVar: &printKeyMap, Comment: user + " print key map"},
 		{Short: "-c", BoolVar: &cacheKeyMap, Comment: user + " cache key map"},
 		{Short: "-s", BoolVar: &listenDevice, Comment: user + " listen keyboard with last device or specific device"},
-		{Short: "-i", BoolVar: &interactiveListen, Comment: user + " listen keyboard with interactive select device"},
-		{Short: "-T", BoolVar: &printDay, Comment: "print daily total by before x day ago and duration"},
-		{Short: "-R", BoolVar: &printDayRank, Comment: "print daily rank by before x day ago and duration"},
-		{Short: "-r", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration"},
+		{Short: "-i", BoolVar: &interactiveListen, Comment: user + " listen keyboard with interactive select device\n"},
+		{Short: "-dt", BoolVar: &printDay, Comment: "print daily total by before x day ago and duration"},
+		{Short: "-dr", BoolVar: &printDayRank, Comment: "print daily rank by before x day ago and duration"},
+		{Short: "-tr", BoolVar: &printTotalRank, Comment: "print total rank by before x day ago and duration\n"},
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
-		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file"},
-		{Short: "-O", BoolVar: &notOpenPage, Comment: "not open url by browser"},
+		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file(must run on root dir)"},
+		{Short: "-O", BoolVar: &notOpenPage, Comment: "not auto open web page by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
 	Options: []ctk.ParamVO{
-		{Short: "-t", Value: "x,duration", Comment: "before x day ago and duration. For -T and -R"},
-		{Short: "-e", Value: "device", Comment: "operation target device. For -p -ca -s"},
+		{Short: "-t", Value: "x,duration", Comment: "before x day ago and duration. Provide to " + ctk.Green.Print("-T") + " " + ctk.Green.Print("-R") + " for use"},
+		{Short: "-e", Value: "device", Comment: "operation target device. Provide to " + ctk.Green.Print("-p -ca -s") + " for use"},
 		{Short: "-P", Value: "port", Comment: "web Server port. default 9902"},
-		{Short: "-host", Value: "host", Comment: "redis host"},
-		{Short: "-port", Value: "port", Comment: "redis port"},
-		{Short: "-pwd", Value: "pwd", Comment: "redis password"},
-		{Short: "-db", Value: "db", Comment: "redis db"},
+		{Short: "-host", Value: "host", Comment: redisStr + " host"},
+		{Short: "-port", Value: "port", Comment: redisStr + " port"},
+		{Short: "-pwd", Value: "pwd", Comment: redisStr + " password"},
+		{Short: "-db", Value: "db", Comment: redisStr + " db"},
 	},
 }
 

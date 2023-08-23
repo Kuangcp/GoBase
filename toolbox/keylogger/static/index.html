@@ -47,9 +47,10 @@
     <button onclick="lineChart()">折线图</button>
     <button onclick="barChart()">柱状图</button>
     <button onclick="heatmapChart()">热力图</button>
+    <button onclick="syncDetails()">存入LevelDB</button>
 
-    <button onclick="window.location='/s/weeks.html'" >每周热力图</button>
-    <button onclick="window.location='/s/calendar.html'" >年视图</button>
+    <button onclick="window.location='/s/weeks.html'">每周热力图</button>
+    <button onclick="window.location='/s/calendar.html'">年视图</button>
 </div>
 
 <div id="main" class="line-chart"></div>
@@ -257,6 +258,14 @@
             chart.setOption(option);
         });
         return chart
+    }
+
+    function syncDetails() {
+        handleGet("/syncDetails", function (response) {
+            console.log('syncDetails', response)
+        }, function (data) {
+            alert('连接失败' + data.responseText)
+        });
     }
 
     function fillDataByURL(url, chart) {
