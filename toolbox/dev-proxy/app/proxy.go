@@ -48,9 +48,9 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	proxyLog := ""
 	var reqLog *core.ReqLog[core.Message]
 	findNewUrl, proxyType := core.FindReplaceByRegexp(*proxyReq)
-	ignoreStorage := core.MatchIgnoreStorage(*proxyReq)
+	needStorage := core.MatchNeedStorage(*proxyReq)
 	if findNewUrl != nil {
-		proxyLog, reqLog = core.RewriteRequestAndBuildLog(findNewUrl, proxyReq, ignoreStorage)
+		proxyLog, reqLog = core.RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
 	}
 
 	// rebuild
@@ -66,11 +66,11 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 
 	now := time.Now()
 	ctx.Data["ReqCtx"] = &ReqCtx{
-		reqLog:        reqLog,
-		proxyLog:      proxyLog,
-		ignoreStorage: ignoreStorage,
-		proxyType:     proxyType,
-		startMs:       now.UnixMilli(),
+		reqLog:      reqLog,
+		proxyLog:    proxyLog,
+		needStorage: needStorage,
+		proxyType:   proxyType,
+		startMs:     now.UnixMilli(),
 	}
 }
 
@@ -101,7 +101,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 
 	core.HandleCompressed(&resMes, resp)
 
-	if !reqCtx.ignoreStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
+	if !reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
 		core.FillReqLogResponse(reqLog, resp)
 		// redis cache
 		core.Conn.ZAdd(core.RequestList, redis.Z{Member: reqLog.CacheId, Score: float64(reqLog.ReqTime.UnixNano())})
@@ -154,7 +154,7 @@ func (c *Cache) Get(host string) *tls.Certificate {
 func HttpsProxy() {
 	logger.Info("list key: ", core.RequestList)
 	logger.Info("Start HTTPS proxy server on 127.0.0.1:%d", core.Port)
-	logger.Warn("Pac: 127.0.0.1:%d%v", core.ApiPort, core.PacUrl)
+	logger.Warn("Pac: http://127.0.0.1:%d%v", core.ApiPort, core.PacUrl)
 
 	proxy := goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{

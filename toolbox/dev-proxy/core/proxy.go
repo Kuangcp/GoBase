@@ -38,10 +38,10 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyLog := ""
 	var reqLog *ReqLog[Message]
 	findNewUrl, proxyType := FindReplaceByRegexp(*proxyReq)
-	ignoreStorage := MatchIgnoreStorage(*proxyReq)
+	needStorage := MatchNeedStorage(*proxyReq)
 	if findNewUrl != nil {
-		proxyLog, reqLog = RewriteRequestAndBuildLog(findNewUrl, proxyReq, ignoreStorage)
-		if !ignoreStorage {
+		proxyLog, reqLog = RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
+		if needStorage {
 			defer SaveReqLog(reqLog)
 		}
 	}
@@ -82,7 +82,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 	CopyResponseHeader(w, res)
 
-	if !ignoreStorage {
+	if needStorage {
 		FillReqLogResponse(reqLog, res)
 	}
 
@@ -181,7 +181,7 @@ func FmtDuration(d time.Duration) string {
 	return d.String()
 }
 
-func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreStorage bool) (string, *ReqLog[Message]) {
+func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStorage bool) (string, *ReqLog[Message]) {
 	now := time.Now()
 	id := uuid.New().String()
 
@@ -193,17 +193,17 @@ func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, ignoreSt
 	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
 	reqLog := &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
 
-	if !ignoreStorage {
+	var logStr string
+	if needStorage {
 		// redis cache
 		Conn.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
 		Conn.HSet(RequestUrlList, id, proxyReq.URL.String())
-	}
 
-	var logStr string
-	if newUrl.Path == proxyReq.URL.Path {
-		logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
-	} else {
-		logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
+		if newUrl.Path == proxyReq.URL.Path {
+			logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
+		} else {
+			logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
+		}
 	}
 
 	proxyReq.Body = body
@@ -235,7 +235,7 @@ func filterFormType(s []byte) []byte {
 func HttpProxy() {
 	logger.Info("list key: ", RequestList)
 	logger.Info("Start HTTP proxy server on 127.0.0.1:%d", Port)
-	logger.Warn("Pac: 127.0.0.1:%d%v", ApiPort, PacUrl)
+	logger.Warn("Pac: http://127.0.0.1:%d%v", ApiPort, PacUrl)
 	cert, err := GenCertificate()
 	if err != nil {
 		logger.Fatal(err)

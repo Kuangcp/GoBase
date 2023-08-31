@@ -142,14 +142,14 @@ func matchConf(originConf, fullUrl string) bool {
 	return compile.Match([]byte(fullUrl))
 }
 
-func MatchIgnoreStorage(proxyReq http.Request) bool {
+func MatchNeedStorage(proxyReq http.Request) bool {
 	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 	for _, conf := range blockList {
 		if matchConf(conf, fullUrl) {
-			return true
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
