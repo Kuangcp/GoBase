@@ -26,6 +26,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/kuangcp/gobase/pkg/ctool v1.1.0 // indirect
+	github.com/kuangcp/gobase/pkg/ratelimiter v1.0.1 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/ouqiang/goproxy v1.3.2 // indirect
 	github.com/ouqiang/websocket v1.6.2 // indirect
