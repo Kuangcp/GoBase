@@ -250,7 +250,7 @@ func InitConfig() {
 		conf := ProxyConf{
 			Id: uuid.NewString()[:5],
 			Redis: &RedisConf{
-				Addr:     "",
+				Addr:     "127.0.0.1:6379",
 				DB:       0,
 				PoolSize: 3,
 			},
@@ -260,6 +260,8 @@ func InitConfig() {
 				}},
 			},
 			ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
+			ProxySelf:   &ProxySelf{Name: "proxy", ProxyType: Open, Paths: []string{"http://172.22.133.255:8990/(.*)"}},
+			ProxyBlock:  &ProxySelf{Name: "block", ProxyType: Open, Paths: []string{"http://172.22.133.255:8991/(.*)"}},
 		}
 		storeByMemory(conf)
 	}
