@@ -244,6 +244,26 @@ func InitConfig() {
 	}
 
 	dbDirPath = home + dbDirPath
+	exist := ctool.IsFileExist(configFilePath)
+	if !exist {
+		logger.Warn("init new config")
+		conf := ProxyConf{
+			Id: uuid.NewString()[:5],
+			Redis: &RedisConf{
+				Addr:     "",
+				DB:       0,
+				PoolSize: 3,
+			},
+			Groups: []*ProxyGroup{
+				{Name: "temp", ProxyType: Close, Routers: []ProxyRouter{
+					{Src: "http://127.0.0.1/(.*)", Dst: "http://127.0.0.1/$1", ProxyType: Open},
+				}},
+			},
+			ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
+		}
+		storeByMemory(conf)
+	}
+
 	cleanAndRegisterFromFile(configFilePath)
 
 	var hostId string
@@ -253,6 +273,7 @@ func InitConfig() {
 		hostId = hostname + ":" + ProxyConfVar.Id
 	}
 
+	hostId = "zk-pc:pc"
 	RequestList = fmt.Sprintf(listFmt, Prefix, hostId)
 	RequestUrlList = fmt.Sprintf(urlListFmt, Prefix, hostId)
 	if ReloadConf {
@@ -260,8 +281,8 @@ func InitConfig() {
 	}
 }
 
-func storeByMemory() {
-	bts, err := json.Marshal(ProxyConfVar)
+func storeByMemory(conf ProxyConf) {
+	bts, err := json.Marshal(conf)
 	if err != nil {
 		logger.Error(err)
 		return
