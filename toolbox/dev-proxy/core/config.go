@@ -246,24 +246,7 @@ func InitConfig() {
 	dbDirPath = home + dbDirPath
 	exist := ctool.IsFileExist(configFilePath)
 	if !exist {
-		logger.Warn("init new config")
-		conf := ProxyConf{
-			Id: uuid.NewString()[:5],
-			Redis: &RedisConf{
-				Addr:     "127.0.0.1:6379",
-				DB:       0,
-				PoolSize: 3,
-			},
-			Groups: []*ProxyGroup{
-				{Name: "temp", ProxyType: Close, Routers: []ProxyRouter{
-					{Src: "http://127.0.0.1/(.*)", Dst: "http://127.0.0.1/$1", ProxyType: Open},
-				}},
-			},
-			ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
-			ProxySelf:   &ProxySelf{Name: "proxy", ProxyType: Open, Paths: []string{"http://172.22.133.255:8990/(.*)"}},
-			ProxyBlock:  &ProxySelf{Name: "block", ProxyType: Open, Paths: []string{"http://172.22.133.255:8991/(.*)"}},
-		}
-		storeByMemory(conf)
+		initMainProxyJson()
 	}
 
 	cleanAndRegisterFromFile(configFilePath)
@@ -281,6 +264,27 @@ func InitConfig() {
 	if ReloadConf {
 		go listenConfig()
 	}
+}
+
+func initMainProxyJson() {
+	logger.Warn("init new config")
+	conf := ProxyConf{
+		Id: uuid.NewString()[:5],
+		Redis: &RedisConf{
+			Addr:     "127.0.0.1:6379",
+			DB:       0,
+			PoolSize: 3,
+		},
+		Groups: []*ProxyGroup{
+			{Name: "temp", ProxyType: Close, Routers: []ProxyRouter{
+				{Src: "http://127.0.0.1/(.*)", Dst: "http://127.0.0.1/$1", ProxyType: Open},
+			}},
+		},
+		ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
+		ProxySelf:   &ProxySelf{Name: "proxy", ProxyType: Open, Paths: []string{"http://172.22.133.255:8990/(.*)"}},
+		ProxyBlock:  &ProxySelf{Name: "block", ProxyType: Open, Paths: []string{"http://172.22.133.255:8991/(.*)"}},
+	}
+	storeByMemory(conf)
 }
 
 func storeByMemory(conf ProxyConf) {
