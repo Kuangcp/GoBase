@@ -45,6 +45,13 @@ type (
 	}
 )
 
+type (
+	GroupItem struct {
+		key any
+		val []any
+	}
+)
+
 // Concat returns a concatenated Stream.
 func Concat(s Stream, others ...Stream) Stream {
 	return s.Concat(others...)
@@ -78,36 +85,6 @@ func Range(source <-chan any) Stream {
 	return Stream{
 		source: source,
 	}
-}
-
-// AllMach returns whether all elements of this stream match the provided predicate.
-// May not evaluate the predicate on all elements if not necessary for determining the result.
-// If the stream is empty then true is returned and the predicate is not evaluated.
-func (s Stream) AllMach(predicate func(item any) bool) bool {
-	for item := range s.source {
-		if !predicate(item) {
-			// make sure the former goroutine not block, and current func returns fast.
-			go drain(s.source)
-			return false
-		}
-	}
-
-	return true
-}
-
-// AnyMach returns whether any elements of this stream match the provided predicate.
-// May not evaluate the predicate on all elements if not necessary for determining the result.
-// If the stream is empty then false is returned and the predicate is not evaluated.
-func (s Stream) AnyMach(predicate func(item any) bool) bool {
-	for item := range s.source {
-		if predicate(item) {
-			// make sure the former goroutine not block, and current func returns fast.
-			go drain(s.source)
-			return true
-		}
-	}
-
-	return false
 }
 
 // Buffer buffers the items into a queue with size n.
@@ -156,14 +133,6 @@ func (s Stream) Concat(others ...Stream) Stream {
 	return Range(source)
 }
 
-// Count counts the number of elements in the result.
-func (s Stream) Count() (count int) {
-	for range s.source {
-		count++
-	}
-	return
-}
-
 // Distinct removes the duplicated items base on the given KeyFunc.
 func (s Stream) Distinct(fn KeyFunc) Stream {
 	source := make(chan any)
@@ -198,17 +167,6 @@ func (s Stream) Filter(fn FilterFunc, opts ...Option) Stream {
 	}, opts...)
 }
 
-// First returns the first item, nil if no items.
-func (s Stream) First() any {
-	for item := range s.source {
-		// make sure the former goroutine not block, and current func returns fast.
-		go drain(s.source)
-		return item
-	}
-
-	return nil
-}
-
 // ForAll handles the streaming elements from the source and no later streams.
 func (s Stream) ForAll(fn ForAllFunc) {
 	fn(s.source)
@@ -233,8 +191,8 @@ func (s Stream) Group(fn KeyFunc) Stream {
 
 	source := make(chan any)
 	go func() {
-		for _, group := range groups {
-			source <- group
+		for k, group := range groups {
+			source <- GroupItem{key: k, val: group}
 		}
 		close(source)
 	}()
@@ -274,30 +232,11 @@ func (s Stream) Head(n int64) Stream {
 	return Range(source)
 }
 
-// Last returns the last item, or nil if no items.
-func (s Stream) Last() (item any) {
-	for item = range s.source {
-	}
-	return
-}
-
 // Map converts each item to another corresponding item, which means it's a 1:1 model.
 func (s Stream) Map(fn MapFunc, opts ...Option) Stream {
 	return s.Walk(func(item any, pipe chan<- any) {
 		pipe <- fn(item)
 	}, opts...)
-}
-
-// Max returns the maximum item from the underlying source.
-func (s Stream) Max(less LessFunc) any {
-	var max any
-	for item := range s.source {
-		if max == nil || less(max, item) {
-			max = item
-		}
-	}
-
-	return max
 }
 
 // Merge merges all the items into a slice and generates a new stream.
@@ -312,33 +251,6 @@ func (s Stream) Merge() Stream {
 	close(source)
 
 	return Range(source)
-}
-
-// Min returns the minimum item from the underlying source.
-func (s Stream) Min(less LessFunc) any {
-	var min any
-	for item := range s.source {
-		if min == nil || less(item, min) {
-			min = item
-		}
-	}
-
-	return min
-}
-
-// NoneMatch returns whether all elements of this stream don't match the provided predicate.
-// May not evaluate the predicate on all elements if not necessary for determining the result.
-// If the stream is empty then true is returned and the predicate is not evaluated.
-func (s Stream) NoneMatch(predicate func(item any) bool) bool {
-	for item := range s.source {
-		if predicate(item) {
-			// make sure the former goroutine not block, and current func returns fast.
-			go drain(s.source)
-			return false
-		}
-	}
-
-	return true
 }
 
 // Parallel applies the given ParallelFunc to each item concurrently with given number of workers.
@@ -518,6 +430,110 @@ func (s Stream) walkUnlimited(fn WalkFunc, option *rxOptions) Stream {
 	}()
 
 	return Range(pipe)
+}
+
+//////////
+//  The following functions are all final operations
+//////////
+
+// First returns the first item, nil if no items.
+func (s Stream) First() any {
+	for item := range s.source {
+		// make sure the former goroutine not block, and current func returns fast.
+		go drain(s.source)
+		return item
+	}
+
+	return nil
+}
+
+// Last returns the last item, or nil if no items.
+func (s Stream) Last() (item any) {
+	for item = range s.source {
+	}
+	return
+}
+
+// Min returns the minimum item from the underlying source.
+func (s Stream) Min(less LessFunc) any {
+	var min any
+	for item := range s.source {
+		if min == nil || less(item, min) {
+			min = item
+		}
+	}
+
+	return min
+}
+
+// Max returns the maximum item from the underlying source.
+func (s Stream) Max(less LessFunc) any {
+	var max any
+	for item := range s.source {
+		if max == nil || less(max, item) {
+			max = item
+		}
+	}
+
+	return max
+}
+
+// Count counts the number of elements in the result.
+func (s Stream) Count() (count int) {
+	for range s.source {
+		count++
+	}
+	return
+}
+
+// AllMach returns whether all elements of this stream match the provided predicate.
+// May not evaluate the predicate on all elements if not necessary for determining the result.
+// If the stream is empty then true is returned and the predicate is not evaluated.
+func (s Stream) AllMach(predicate func(item any) bool) bool {
+	for item := range s.source {
+		if !predicate(item) {
+			// make sure the former goroutine not block, and current func returns fast.
+			go drain(s.source)
+			return false
+		}
+	}
+
+	return true
+}
+
+// AnyMach returns whether any elements of this stream match the provided predicate.
+// May not evaluate the predicate on all elements if not necessary for determining the result.
+// If the stream is empty then false is returned and the predicate is not evaluated.
+func (s Stream) AnyMach(predicate func(item any) bool) bool {
+	for item := range s.source {
+		if predicate(item) {
+			// make sure the former goroutine not block, and current func returns fast.
+			go drain(s.source)
+			return true
+		}
+	}
+
+	return false
+}
+
+// NoneMatch returns whether all elements of this stream don't match the provided predicate.
+// May not evaluate the predicate on all elements if not necessary for determining the result.
+// If the stream is empty then true is returned and the predicate is not evaluated.
+func (s Stream) NoneMatch(predicate func(item any) bool) bool {
+	for item := range s.source {
+		if predicate(item) {
+			// make sure the former goroutine not block, and current func returns fast.
+			go drain(s.source)
+			return false
+		}
+	}
+
+	return true
+}
+
+func (s Stream) Collect(c *Collector) any {
+	c.s = s
+	return c.collect()
 }
 
 // UnlimitedWorkers lets the caller use as many workers as the tasks.
