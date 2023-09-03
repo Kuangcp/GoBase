@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"go.uber.org/goleak"
 	"io"
@@ -172,9 +173,9 @@ func TestGroup(t *testing.T) {
 			v := item.(int)
 			return v / 10
 		}).ForEach(func(item any) {
-			v := item.([]any)
+			v := item.(GroupItem)
 			var group []int
-			for _, each := range v {
+			for _, each := range v.val {
 				group = append(group, each.(int))
 			}
 			groups = append(groups, group)
@@ -184,6 +185,32 @@ func TestGroup(t *testing.T) {
 		for _, group := range groups {
 			assert.Equal(t, 2, len(group))
 			assert.True(t, group[0]/10 == group[1]/10)
+		}
+	})
+}
+
+type User struct {
+	id     int
+	name   string
+	areaId int
+}
+
+func TestGroupConstruct(t *testing.T) {
+	Just(1, 8, 10, 11, 20, 21).Map(func(item any) any {
+		v := item.(int)
+		return User{
+			id:     v,
+			name:   fmt.Sprint(v),
+			areaId: v / 3,
+		}
+	}).Group(func(item any) any {
+		v := item.(User)
+		return v.areaId
+	}).ForEach(func(item any) {
+		l := item.(GroupItem)
+		for _, i := range l.val {
+			u := i.(User)
+			fmt.Println("area:", l.key, " user:", u.id, u.name)
 		}
 	})
 }
