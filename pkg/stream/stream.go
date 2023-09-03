@@ -531,11 +531,6 @@ func (s Stream) NoneMatch(predicate func(item any) bool) bool {
 	return true
 }
 
-func (s Stream) Collect(c *Collector) any {
-	c.s = s
-	return c.collect()
-}
-
 // UnlimitedWorkers lets the caller use as many workers as the tasks.
 func UnlimitedWorkers() Option {
 	return func(opts *rxOptions) {
