@@ -1,4 +1,4 @@
-module stream
+module github.com/kuangcp/gobase/pkg/stream
 
 go 1.20
 
