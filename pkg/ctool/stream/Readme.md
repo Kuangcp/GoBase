@@ -7,3 +7,7 @@ copy from https://github.com/zeromicro/go-zero/blob/master/core/fx/stream.go
 1. groupingBy
 2. Collector
    - toList
+   - toMap
+   - flatMap
+   - joining
+
