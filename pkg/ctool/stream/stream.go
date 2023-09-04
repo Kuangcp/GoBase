@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 )
@@ -83,7 +82,7 @@ func JustN(n int) Stream {
 }
 
 // Just converts the given arbitrary items to a Stream.
-func Just(items ...any) Stream {
+func Just[T any](items ...T) Stream {
 	source := make(chan any, len(items))
 	for _, item := range items {
 		source <- item
@@ -579,10 +578,6 @@ func WithWorkers(workers int) Option {
 			opts.workers = workers
 		}
 	}
-}
-
-func ToString(item any) any {
-	return fmt.Sprint(item)
 }
 
 // buildOptions returns a rxOptions with given customizations.

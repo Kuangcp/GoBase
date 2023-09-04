@@ -113,6 +113,12 @@ func TestJust(t *testing.T) {
 		assert.Equal(t, 10, result)
 	})
 }
+func TestJustT(t *testing.T) {
+	var s = []string{"x", "2"}
+	Just(s).ForEach(func(item any) {
+		fmt.Println(item)
+	})
+}
 
 func TestDistinct(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
@@ -147,7 +153,7 @@ func TestFilter(t *testing.T) {
 
 func TestFirst(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
-		assert.Nil(t, Just().First())
+		assert.Nil(t, Just[int]().First())
 		assert.Equal(t, "foo", Just("foo").First())
 		assert.Equal(t, "foo", Just("foo", "bar").First())
 	})
@@ -255,7 +261,7 @@ func TestHeadMore(t *testing.T) {
 func TestLast(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
 		goroutines := runtime.NumGoroutine()
-		assert.Nil(t, Just().Last())
+		assert.Nil(t, Just[int]().Last())
 		assert.Equal(t, "foo", Just("foo").Last())
 		assert.Equal(t, "bar", Just("foo", "bar").Last())
 		// let scheduler schedule first
@@ -367,6 +373,20 @@ func TestSort(t *testing.T) {
 			prev = next
 		})
 	})
+}
+
+func TestSortWithOriginMemory(t *testing.T) {
+	var s = []int{1, 4, 5, 2, 11, 2, 4, 5}
+	Just(s...).Sort(func(a, b any) bool {
+		return a.(int) < b.(int)
+	})
+	fmt.Println(s)
+	rs := Just(s...).Sort(func(a, b any) bool {
+		return a.(int) < b.(int)
+	})
+	ss := ToList[int](rs)
+	fmt.Println(s)
+	fmt.Println(ss)
 }
 
 func TestSplit(t *testing.T) {

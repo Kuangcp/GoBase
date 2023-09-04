@@ -5,10 +5,6 @@ import (
 	"reflect"
 )
 
-func Self[R any](a any) R {
-	return a.(R)
-}
-
 func ToList[R any](s Stream) []R {
 	return ToListFunc[R](s, nil)
 }
