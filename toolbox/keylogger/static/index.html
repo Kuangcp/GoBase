@@ -262,7 +262,7 @@
 
     function syncDetails() {
         handleGet("/syncDetails", function (response) {
-            console.log('syncDetails', response)
+            alert('同步完成')
         }, function (data) {
             alert('连接失败' + data.responseText)
         });

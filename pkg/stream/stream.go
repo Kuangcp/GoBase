@@ -1,12 +1,14 @@
 package stream
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 )
 
 const (
-	defaultWorkers = 16
+	// defaultWorkers here set 1 make stream keep order
+	defaultWorkers = 1
 	minWorkers     = 1
 )
 
@@ -32,7 +34,7 @@ type (
 	MapFunc func(item any) any
 	// Option defines the method to customize a Stream.
 	Option func(opts *rxOptions)
-	// ParallelFunc defines the method to handle elements parallelly.
+	// ParallelFunc defines the method to handle elements parallel.
 	ParallelFunc func(item any)
 	// ReduceFunc defines the method to reduce all the elements in a Stream.
 	ReduceFunc func(pipe <-chan any) (any, error)
@@ -65,6 +67,17 @@ func From(generate GenerateFunc) Stream {
 		defer close(source)
 		generate(source)
 	})
+
+	return Range(source)
+}
+
+// JustN produce 1...n number serial
+func JustN(n int) Stream {
+	source := make(chan any, n)
+	for i := 1; i <= n; i++ {
+		source <- i
+	}
+	close(source)
 
 	return Range(source)
 }
@@ -239,6 +252,19 @@ func (s Stream) Map(fn MapFunc, opts ...Option) Stream {
 	}, opts...)
 }
 
+// Flat make item flat to items
+func (s Stream) Flat(flat func(any) Stream) Stream {
+	source := make(chan any)
+	go func() {
+		for item := range s.source {
+			for innerItem := range flat(item).source {
+				source <- innerItem
+			}
+		}
+	}()
+	return Range(source)
+}
+
 // Merge merges all the items into a slice and generates a new stream.
 func (s Stream) Merge() Stream {
 	var items []any
@@ -260,7 +286,7 @@ func (s Stream) Parallel(fn ParallelFunc, opts ...Option) {
 	}, opts...).Done()
 }
 
-// Reduce is an utility method to let the caller deal with the underlying channel.
+// Reduce is a utility method to let the caller deal with the underlying channel.
 func (s Stream) Reduce(fn ReduceFunc) (any, error) {
 	return fn(s.source)
 }
@@ -547,6 +573,10 @@ func WithWorkers(workers int) Option {
 			opts.workers = workers
 		}
 	}
+}
+
+func ToString(item any) any {
+	return fmt.Sprint(item)
 }
 
 // buildOptions returns a rxOptions with given customizations.
