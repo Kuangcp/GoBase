@@ -2,7 +2,7 @@ package stream
 
 import (
 	"context"
-	"github.com/kuangcp/logger"
+	"log"
 	"runtime/debug"
 )
 
@@ -17,7 +17,7 @@ func Recover(cleanups ...func()) {
 
 	if p := recover(); p != nil {
 		//logx.ErrorStack(p)
-		logger.Error(p)
+		log.Println(p)
 	}
 }
 
@@ -29,6 +29,6 @@ func RecoverCtx(ctx context.Context, cleanups ...func()) {
 
 	if p := recover(); p != nil {
 		//logx.WithContext(ctx).Errorf("%+v\n%s", p, debug.Stack())
-		logger.Error("%+v\n%s", p, debug.Stack())
+		log.Printf("%+v\n%s", p, debug.Stack())
 	}
 }

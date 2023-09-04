@@ -2,7 +2,6 @@ package stream
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"go.uber.org/goleak"
 	"io"
@@ -304,7 +303,7 @@ func TestMap(t *testing.T) {
 
 		// Map(...) works even WithWorkers(0)
 		for i, test := range tests {
-			t.Run(uuid.NewString(), func(t *testing.T) {
+			t.Run(ctool.RandomAlpha(5), func(t *testing.T) {
 				var result int
 				var workers int
 				if i%2 == 0 {

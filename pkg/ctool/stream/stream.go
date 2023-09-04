@@ -254,14 +254,20 @@ func (s Stream) Map(fn MapFunc, opts ...Option) Stream {
 
 // Flat make item flat to items
 func (s Stream) Flat(flat func(any) Stream) Stream {
+	// create current action channel
 	source := make(chan any)
+	// put data to channel by async
 	go func() {
 		for item := range s.source {
 			for innerItem := range flat(item).source {
 				source <- innerItem
 			}
 		}
+		// close current channel
+		close(source)
 	}()
+
+	// generate stream for next action
 	return Range(source)
 }
 
