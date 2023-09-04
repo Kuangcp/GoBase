@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/google/uuid v1.3.1
+	github.com/kuangcp/gobase/pkg/ctool v1.1.1
 	github.com/kuangcp/logger v1.0.9
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/goleak v1.2.1

@@ -1,9 +1,12 @@
 package stream
 
-func Self[R any]() func(any) R {
-	return func(a any) R {
-		return a.(R)
-	}
+import (
+	"fmt"
+	"reflect"
+)
+
+func Self[R any](a any) R {
+	return a.(R)
 }
 
 func ToList[R any](s Stream) []R {
@@ -26,6 +29,23 @@ func ToListFunc[R any](s Stream, fn func(s any) R) []R {
 		} else {
 			result = append(result, fn(item))
 		}
+	}
+	return result
+}
+
+func ToJoin(s Stream) string {
+	result := ""
+	nonString := false
+	for item := range s.source {
+		iType := reflect.TypeOf(item)
+		if iType.Kind() == reflect.String {
+			result += item.(string)
+		} else {
+			nonString = true
+		}
+	}
+	if nonString {
+		fmt.Println("warn: has no string type item")
 	}
 	return result
 }

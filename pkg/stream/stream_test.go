@@ -3,6 +3,7 @@ package stream
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"go.uber.org/goleak"
 	"io"
 	"log"
@@ -132,9 +133,10 @@ func TestDistinct(t *testing.T) {
 func TestFilter(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
 		var result int
-		Just(1, 2, 3, 4).Filter(func(item any) bool {
-			return item.(int)%2 == 0
-		}).Reduce(func(pipe <-chan any) (any, error) {
+		Just(1, 2, 3, 4).
+			Filter(func(item any) bool {
+				return item.(int)%2 == 0
+			}).Reduce(func(pipe <-chan any) (any, error) {
 			for item := range pipe {
 				result += item.(int)
 			}
@@ -480,6 +482,11 @@ func TestStream_NoneMatch(t *testing.T) {
 	})
 }
 
+func TestFlat(t *testing.T) {
+	JustN(5).Map(func(item any) any {
+		return ctool.RandomAlpha(item.(int))
+	})
+}
 func TestConcat(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
 		a1 := []any{1, 2, 3}

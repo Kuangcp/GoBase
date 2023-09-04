@@ -2,6 +2,8 @@ module github.com/kuangcp/gobase/pkg/ctool
 
 go 1.18
 
+// v1.1.1
+
 require github.com/stretchr/testify v1.8.0
 
 require (
