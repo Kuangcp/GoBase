@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 )
@@ -17,87 +18,16 @@ type (
 		workers          int
 	}
 
-	// FilterFunc defines the method to filter a Stream.
-	FilterFunc func(item any) bool
-	// ForAllFunc defines the method to handle all elements in a Stream.
-	ForAllFunc func(pipe <-chan any)
-	// ForEachFunc defines the method to handle each element in a Stream.
-	ForEachFunc func(item any)
-	// GenerateFunc defines the method to send elements into a Stream.
-	GenerateFunc func(source chan<- any)
-	// KeyFunc defines the method to generate keys for the elements in a Stream.
-	KeyFunc func(item any) any
-	// LessFunc defines the method to compare the elements in a Stream.
-	LessFunc func(a, b any) bool
-	// MapFunc defines the method to map each element to another object in a Stream.
-	MapFunc func(item any) any
-	// Option defines the method to customize a Stream.
-	Option func(opts *rxOptions)
-	// ParallelFunc defines the method to handle elements parallel.
-	ParallelFunc func(item any)
-	// ReduceFunc defines the method to reduce all the elements in a Stream.
-	ReduceFunc func(pipe <-chan any) (any, error)
-	// WalkFunc defines the method to walk through all the elements in a Stream.
-	WalkFunc func(item any, pipe chan<- any)
-
 	// A Stream is a stream that can be used to do stream processing.
 	Stream struct {
 		source <-chan any
 	}
-)
 
-type (
 	GroupItem struct {
 		key any
 		val []any
 	}
 )
-
-// Concat returns a concatenated Stream.
-func Concat(s Stream, others ...Stream) Stream {
-	return s.Concat(others...)
-}
-
-// From constructs a Stream from the given GenerateFunc.
-func From(generate GenerateFunc) Stream {
-	source := make(chan any)
-
-	GoSafe(func() {
-		defer close(source)
-		generate(source)
-	})
-
-	return Range(source)
-}
-
-// JustN produce 1...n number serial
-func JustN(n int) Stream {
-	source := make(chan any, n)
-	for i := 1; i <= n; i++ {
-		source <- i
-	}
-	close(source)
-
-	return Range(source)
-}
-
-// Just converts the given arbitrary items to a Stream.
-func Just[T any](items ...T) Stream {
-	source := make(chan any, len(items))
-	for _, item := range items {
-		source <- item
-	}
-	close(source)
-
-	return Range(source)
-}
-
-// Range converts the given channel to a Stream.
-func Range(source <-chan any) Stream {
-	return Stream{
-		source: source,
-	}
-}
 
 // Buffer buffers the items into a queue with size n.
 // It can balance the producer and the consumer if their processing throughput don't match.
@@ -143,6 +73,51 @@ func (s Stream) Concat(others ...Stream) Stream {
 	}()
 
 	return Range(source)
+}
+
+func (s Stream) ForkAsync() (Stream, Stream) {
+	origin := make(chan any)
+	fork := make(chan any)
+
+	go func() {
+		for item := range s.source {
+			item := item
+			fmt.Println("get:", item)
+
+			origin <- item
+			// TODO block here
+			fork <- item
+		}
+		fmt.Println("close")
+		close(origin)
+		close(fork)
+	}()
+
+	return Range(origin), Range(fork)
+}
+
+func (s Stream) Fork() (Stream, Stream) {
+	origin := make(chan any)
+	fork := make(chan any)
+
+	go func() {
+		// TODO memory leak?
+		var cache []any
+		for item := range s.source {
+			cache = append(cache, item)
+		}
+		for _, i := range cache {
+			origin <- i
+		}
+		close(origin)
+
+		for _, i := range cache {
+			fork <- i
+		}
+		close(fork)
+	}()
+
+	return Range(origin), Range(fork)
 }
 
 // Distinct removes the duplicated items base on the given KeyFunc.
@@ -560,45 +535,4 @@ func (s Stream) NoneMatch(predicate func(item any) bool) bool {
 	}
 
 	return true
-}
-
-// UnlimitedWorkers lets the caller use as many workers as the tasks.
-func UnlimitedWorkers() Option {
-	return func(opts *rxOptions) {
-		opts.unlimitedWorkers = true
-	}
-}
-
-// WithWorkers lets the caller customize the concurrent workers.
-func WithWorkers(workers int) Option {
-	return func(opts *rxOptions) {
-		if workers < minWorkers {
-			opts.workers = minWorkers
-		} else {
-			opts.workers = workers
-		}
-	}
-}
-
-// buildOptions returns a rxOptions with given customizations.
-func buildOptions(opts ...Option) *rxOptions {
-	options := newOptions()
-	for _, opt := range opts {
-		opt(options)
-	}
-
-	return options
-}
-
-// drain drains the given channel.
-func drain(channel <-chan any) {
-	for range channel {
-	}
-}
-
-// newOptions returns a default rxOptions.
-func newOptions() *rxOptions {
-	return &rxOptions{
-		workers: defaultWorkers,
-	}
 }

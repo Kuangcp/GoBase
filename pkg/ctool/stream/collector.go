@@ -29,6 +29,28 @@ func ToListFunc[R any](s Stream, fn func(s any) R) []R {
 	return result
 }
 
+func ToJoins(s Stream, split string) string {
+	result := ""
+	nonString := false
+	first := true
+	for item := range s.source {
+		iType := reflect.TypeOf(item)
+		if iType.Kind() == reflect.String {
+			if !first {
+				result += split
+			}
+			first = false
+			result += item.(string)
+		} else {
+			nonString = true
+		}
+	}
+	if nonString {
+		fmt.Println("warn: has no string type item")
+	}
+	return result
+}
+
 func ToJoin(s Stream) string {
 	result := ""
 	nonString := false
