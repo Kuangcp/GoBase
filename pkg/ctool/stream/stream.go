@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 )
@@ -75,30 +74,17 @@ func (s Stream) Concat(others ...Stream) Stream {
 	return Range(source)
 }
 
-func (s Stream) ForkAsync() (Stream, Stream) {
-	origin := make(chan any)
-	fork := make(chan any)
-
-	go func() {
-		for item := range s.source {
-			item := item
-			fmt.Println("get:", item)
-
-			origin <- item
-			// TODO block here
-			fork <- item
-		}
-		fmt.Println("close")
-		close(origin)
-		close(fork)
-	}()
-
-	return Range(origin), Range(fork)
+// Fork maybe very slow, must wait receive all to copy stream
+func (s Stream) Fork() (Stream, Stream) {
+	list := s.ForkN(2)
+	return list[0], list[1]
 }
 
-func (s Stream) Fork() (Stream, Stream) {
-	origin := make(chan any)
-	fork := make(chan any)
+func (s Stream) ForkN(n int) []Stream {
+	var cs []chan any
+	for i := 0; i < n; i++ {
+		cs = append(cs, make(chan any))
+	}
 
 	go func() {
 		// TODO memory leak?
@@ -106,18 +92,20 @@ func (s Stream) Fork() (Stream, Stream) {
 		for item := range s.source {
 			cache = append(cache, item)
 		}
-		for _, i := range cache {
-			origin <- i
-		}
-		close(origin)
 
-		for _, i := range cache {
-			fork <- i
+		for _, c := range cs {
+			for _, i := range cache {
+				c <- i
+			}
+			close(c)
 		}
-		close(fork)
 	}()
 
-	return Range(origin), Range(fork)
+	var result []Stream
+	for _, c := range cs {
+		result = append(result, Range(c))
+	}
+	return result
 }
 
 // Distinct removes the duplicated items base on the given KeyFunc.
