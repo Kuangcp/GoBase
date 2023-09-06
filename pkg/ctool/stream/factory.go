@@ -1,5 +1,7 @@
 package stream
 
+import "fmt"
+
 type (
 
 	// FilterFunc defines the method to filter a Stream.
@@ -111,4 +113,14 @@ func newOptions() *rxOptions {
 	return &rxOptions{
 		workers: defaultWorkers,
 	}
+}
+
+// simplify function
+
+func ToString(item any) any {
+	return fmt.Sprint(item)
+}
+
+func Self[R any](a any) R {
+	return a.(R)
 }
