@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"github.com/tidwall/pretty"
 	"net/http"
@@ -52,9 +53,8 @@ type (
 		Id          string        `json:"id"`
 		Redis       *RedisConf    `json:"redis"`
 		Groups      []*ProxyGroup `json:"groups"`
-		ProxySelf   *ProxySelf    `json:"proxy"`  // 抓包地址
-		ProxyBlock  *ProxySelf    `json:"block"`  // 抓包地址黑名单
-		ProxyDirect *ProxySelf    `json:"direct"` // 不经过代理转发，直连
+		ProxySelf   *ProxySelf    `json:"proxy"`  // 抓包
+		ProxyDirect *ProxySelf    `json:"direct"` // 不抓包，不存储
 	}
 )
 
@@ -67,13 +67,13 @@ var (
 )
 
 var (
-	ProxyConfVar  ProxyConf
-	proxyValMap   = make(map[string]string)
-	proxySelfList []string // 代理抓包类型的地址
-	blockList     []string // 代理但是不抓包类型的地址
-	directList    []string // 直连类型的地址
-	lock          = &sync.RWMutex{}
-	ConfigReload  = make(chan bool, 1)
+	ProxyConfVar ProxyConf
+	// url map: src -> dst
+	replaceMap   = make(map[string]string)
+	trackList    []string // 代理类型的地址（抓包）
+	directList   []string // 直连类型的地址
+	lock         = &sync.RWMutex{}
+	ConfigReload = make(chan bool, 1)
 )
 
 func (p *ProxyGroup) GetName() string {
@@ -144,15 +144,12 @@ func matchConf(originConf, fullUrl string) bool {
 
 func MatchNeedStorage(proxyReq http.Request) bool {
 	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
-	for _, conf := range blockList {
-		if matchConf(conf, fullUrl) {
-			return false
-		}
-	}
-	return true
+	return stream.Just(directList...).NoneMatch(func(item any) bool {
+		return matchConf(item.(string), fullUrl)
+	})
 }
 
-func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
+func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, string) {
 	lock.RLock()
 	defer lock.RUnlock()
 
@@ -166,12 +163,13 @@ func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 		}
 	}
 
-	for k, v := range proxyValMap {
+	for k, v := range replaceMap {
 		tryResult := tryToReplacePath(k, v, fullUrl)
 		if tryResult == "" {
 			continue
 		}
 
+		// 多个匹配时，按最长正则匹配
 		//logger.Debug("match", k, tryResult)
 		if len(matchKey) < len(k) {
 			matchResult = tryResult
@@ -188,7 +186,7 @@ func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, int) {
 		return parse, Replace
 	}
 
-	for _, conf := range proxySelfList {
+	for _, conf := range trackList {
 		if matchConf(conf, fullUrl) {
 			parse, err := url.Parse(fullUrl)
 			if err != nil {
@@ -282,7 +280,7 @@ func initMainProxyJson() {
 		},
 		ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
 		ProxySelf:   &ProxySelf{Name: "proxy", ProxyType: Open, Paths: []string{"http://172.22.133.255:8990/(.*)"}},
-		ProxyBlock:  &ProxySelf{Name: "block", ProxyType: Open, Paths: []string{"http://172.22.133.255:8991/(.*)"}},
+		//ProxyBlock:  &ProxySelf{Name: "block", ProxyType: Open, Paths: []string{"http://172.22.133.255:8991/(.*)"}},
 	}
 	storeByMemory(conf)
 }
@@ -320,9 +318,10 @@ func cleanAndRegisterFromFile(configFile string) {
 }
 
 func ReloadConfByCacheObj() {
-	logger.Info("Start reload proxy rule")
+	logger.Info("Start reload proxy rule by file")
 
-	proxyValMap = make(map[string]string)
+	// 替换
+	replaceMap = make(map[string]string)
 	for _, conf := range ProxyConfVar.Groups {
 		if conf.ProxyType == Close {
 			continue
@@ -332,25 +331,19 @@ func ReloadConfByCacheObj() {
 			if router.ProxyType == Close {
 				continue
 			}
-			proxyValMap[router.Src] = router.Dst
+			replaceMap[router.Src] = router.Dst
 			logger.Debug("Register", ctool.White.Print(router.Src),
 				ctool.Yellow.Print("►"), ctool.Cyan.Print(router.Dst))
 		}
 	}
 
-	// 代理，存储
-	proxySelfList = []string{}
+	// 抓包，存储
+	trackList = []string{}
 	parsePath(ProxyConfVar.ProxySelf, "track", func(s string) {
-		proxySelfList = append(proxySelfList, s)
+		trackList = append(trackList, s)
 	})
 
-	// 代理，不存储日志
-	blockList = []string{}
-	parsePath(ProxyConfVar.ProxyBlock, "block", func(s string) {
-		blockList = append(blockList, s)
-	})
-
-	// 直连，不存储
+	// 不抓包，不存储
 	directList = []string{}
 	parsePath(ProxyConfVar.ProxyDirect, "direct", func(s string) {
 		directList = append(directList, s)

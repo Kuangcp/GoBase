@@ -78,9 +78,10 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	if err != nil {
 		return
 	}
-	resp.Header.Add("Ack", "dev-proxy")
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
 	reqLog := reqCtx.reqLog
+
+	resp.Header.Add("Ack", "dev-proxy: "+reqCtx.proxyType)
 
 	startMs := reqCtx.startMs
 
@@ -101,7 +102,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 
 	core.HandleCompressed(&resMes, resp)
 
-	if !reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
+	if reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
 		core.FillReqLogResponse(reqLog, resp)
 		// redis cache
 		core.Conn.ZAdd(core.RequestList, redis.Z{Member: reqLog.CacheId, Score: float64(reqLog.ReqTime.UnixNano())})
