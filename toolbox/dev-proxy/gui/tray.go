@@ -37,7 +37,7 @@ func OnReady() {
 	}
 	systray.AddSeparator()
 	addFileItem(core.ProxyConfVar.ProxySelf)
-	addFileItem(core.ProxyConfVar.ProxyBlock)
+	addFileItem(core.ProxyConfVar.ProxyDirect)
 
 	go refreshUIByConfigReload()
 }
