@@ -1,5 +1,7 @@
 package ctool
 
+import "fmt"
+
 type Set[T comparable] struct {
 	cache map[T]struct{}
 }
@@ -106,4 +108,17 @@ func (s *Set[T]) Loop(action func(T)) {
 	for k, _ := range s.cache {
 		action(k)
 	}
+}
+
+func (s *Set[T]) Join(str string) string {
+	first := true
+	result := ""
+	for k := range s.cache {
+		if !first {
+			result += str
+		}
+		first = false
+		result += fmt.Sprint(k)
+	}
+	return result
 }
