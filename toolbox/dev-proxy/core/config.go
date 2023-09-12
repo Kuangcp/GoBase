@@ -74,6 +74,7 @@ var (
 	directList   []string // 直连类型的地址
 	lock         = &sync.RWMutex{}
 	ConfigReload = make(chan bool, 1)
+	guiMode      = false
 )
 
 func (p *ProxyGroup) GetName() string {
@@ -256,12 +257,15 @@ func InitConfig() {
 		hostId = hostname + ":" + ProxyConfVar.Id
 	}
 
-	hostId = "zk-pc:pc"
 	RequestList = fmt.Sprintf(listFmt, Prefix, hostId)
 	RequestUrlList = fmt.Sprintf(urlListFmt, Prefix, hostId)
 	if ReloadConf {
 		go listenConfig()
 	}
+}
+
+func MarkGuiMode() {
+	guiMode = true
 }
 
 func initMainProxyJson() {
@@ -314,7 +318,9 @@ func cleanAndRegisterFromFile(configFile string) {
 	}
 
 	ReloadConfByCacheObj()
-	ConfigReload <- true
+	if guiMode {
+		ConfigReload <- true
+	}
 }
 
 func ReloadConfByCacheObj() {
@@ -348,6 +354,7 @@ func ReloadConfByCacheObj() {
 	parsePath(ProxyConfVar.ProxyDirect, "direct", func(s string) {
 		directList = append(directList, s)
 	})
+	logger.Info("Finish reload proxy rule by file")
 }
 
 func parsePath(proxy *ProxySelf, name string, listAppendFunc func(string)) {
@@ -375,7 +382,7 @@ func listenConfig() {
 
 		curModTime := stat.ModTime()
 		if curModTime.After(lastModTime) {
-			logger.Info(stat.ModTime())
+			//logger.Info(stat.ModTime())
 			execCommand("notify-send -i folder-new Dev-Proxy 'start reload config file'")
 			lastModTime = curModTime
 			cleanAndRegisterFromFile(configFilePath)

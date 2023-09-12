@@ -11,6 +11,7 @@ import (
 func main() {
 	core.HelpInfo.Parse()
 	core.InitConfig()
+	core.MarkGuiMode()
 
 	core.InitConnection()
 	defer core.CloseConnection()
