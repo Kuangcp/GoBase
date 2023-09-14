@@ -154,7 +154,7 @@
 
         return "<tr onclick='showDetail(\"" + l.id + "\")'>" +
             "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> <span style='color:rebeccapurple'> [ " + (parseInt(i) + 1) + " ] </span> " + l.id + "</td>" +
-            "<td style='font-size: small;width: 20px'> " + l.method+'<br/>'+l.statusCode + "</td>" +
+            "<td style='font-size: small;width: 20px'> " + l.method + '<br/>' + l.statusCode + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
@@ -195,7 +195,12 @@
 
             for (let i in result.data.data) {
                 let l = result.data.data[i]
-                table.innerHTML += buildLine(i, l)
+                if (l == null) {
+                    console.log('null value')
+                    table.innerHTML += '<tr>null</tr>'
+                } else {
+                    table.innerHTML += buildLine(i, l)
+                }
             }
         })
     }

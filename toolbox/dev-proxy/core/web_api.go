@@ -348,7 +348,7 @@ func deleteByPath(writer http.ResponseWriter, path string, size int) {
 		Conn.HDel(RequestUrlList, log.Id)
 		db.Delete([]byte(log.Id), nil)
 		if total >= size {
-			writeJsonRsp(writer, "out of count")
+			writeJsonRsp(writer, fmt.Sprintf("out of count %v", size))
 			return
 		}
 	}

@@ -156,7 +156,7 @@ func main() {
 	defer store.CloseConnection()
 
 	store.InitDb()
-	go web.ScheduleSyncAllDetails()
+	// go web.ScheduleSyncAllDetails()
 
 	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
 	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)

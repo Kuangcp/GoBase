@@ -9,7 +9,10 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243739
 ## Config 
 https://highlightjs.org/download/
 
-~/.dev-proxy/dev-proxy.json
+> ~/.dev-proxy/dev-proxy.json
+- groups: 抓包并修改请求： 按正则匹配
+- proxy： 抓包规则：通常是配置域名
+- direct： 域名被抓包的前提下，正则配置不抓包的子路径
 
 ```json
   {
