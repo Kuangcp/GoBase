@@ -66,6 +66,8 @@
 > `go tool pprof -inuse_space http://localhost:8891/debug/pprof/heap`
 > `go tool pprof -inuse_space -cum -svg http://localhost:8891/debug/pprof/heap > heap_inuse.svg`
 
+注意： root用户监听device 和 非root用户的逻辑 数据存储是不一样的
+
 ## TODO
 - [x] gtk 窗口有内存泄漏的问题，随着刷新次数的增多，内存也随之增长
     - 使用timeoutAdd 解决
