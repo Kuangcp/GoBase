@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"net/http"
 	"net/url"
@@ -142,7 +143,11 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 		detail = queryLogDetail(keyList)
 	}
 
-	pageResult.Data = convertList(detail, convertLog, nil)
+	logs := stream.Just(detail...).Map(func(item any) any {
+		return convertLog(item.(*ReqLog[Message]))
+	})
+
+	pageResult.Data = stream.ToList[*ReqLog[MessageVO]](logs)
 
 	i, err := Conn.ZCard(RequestList).Result()
 	if err == nil {
