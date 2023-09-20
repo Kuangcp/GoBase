@@ -155,9 +155,6 @@ func main() {
 	store.InitConnection(option, true)
 	defer store.CloseConnection()
 
-	store.InitDb()
-	// go web.ScheduleSyncAllDetails()
-
 	invokeThenExit(listenDevice, app.ListenDevice, store.CloseConnection)
 	invokeThenExit(cacheKeyMap, app.CacheKeyMap, store.CloseConnection)
 
@@ -172,6 +169,8 @@ func main() {
 	}
 
 	if webServer {
+		store.InitDb()
+		go web.ScheduleSyncAllDetails()
 		web.Server(fs, debug, notOpenPage, webPort)
 		return
 	}

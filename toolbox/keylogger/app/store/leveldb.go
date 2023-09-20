@@ -14,9 +14,11 @@ func GetDb() *leveldb.DB {
 	return newDB
 }
 
+// InitDb 目前Leveldb仅用于web查询和处理逻辑
 func InitDb() {
 	db, err := leveldb.OpenFile(conf.DbPath, nil)
 	if err != nil {
+		logger.Error(err)
 		panic("leveldb init failed")
 	}
 

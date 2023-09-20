@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/google/uuid"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"io"
 	"net/http"
@@ -134,7 +135,7 @@ func FillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
 	if reqLog == nil {
 		return
 	}
-	bodyBts, body := CopyStream(res.Body)
+	bodyBts, body := ctool.CopyStream(res.Body)
 	res.Body = body
 	resMes := Message{Header: res.Header, Body: bodyBts}
 	HandleCompressed(&resMes, res)
@@ -185,9 +186,9 @@ func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStor
 	now := time.Now()
 	id := uuid.New().String()
 
-	bodyBt, body := CopyStream(proxyReq.Body)
+	bodyBt, body := ctool.CopyStream(proxyReq.Body)
 	query, _ := url.QueryUnescape(proxyReq.URL.String())
-	reqMes := Message{Header: proxyReq.Header, Body: filterFormType(bodyBt)}
+	reqMes := Message{Header: proxyReq.Header, Body: FilterFormType(bodyBt)}
 
 	id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
 	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
@@ -216,7 +217,7 @@ func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStor
 }
 
 // request body : start with "------"
-func filterFormType(s []byte) []byte {
+func FilterFormType(s []byte) []byte {
 	if len(s) > 7 && s[0] == 45 && s[1] == 45 && s[2] == 45 &&
 		s[3] == 45 && s[4] == 45 && s[5] == 45 && s[6] == 45 {
 		var r []byte

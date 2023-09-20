@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"github.com/ouqiang/goproxy"
@@ -85,7 +86,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 
 	startMs := reqCtx.startMs
 
-	bodyBt, body := core.CopyStream(resp.Body)
+	bodyBt, body := ctool.CopyStream(resp.Body)
 	resp.Body = body
 
 	resMes := core.Message{Header: resp.Header, Body: bodyBt}

@@ -1,27 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/url"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 )
-
-func TestParseUrl(t *testing.T) {
-	parse, err := url.Parse("http://127.0.0.1:19011/$1")
-	fmt.Println(parse.Host, parse.Path, err)
-	fmt.Println(parse.String())
-
-	conf := ProxyGroup{Name: "sss", ProxyType: 1, Routers: []ProxyRouter{
-		{Src: "http://192.168.16.91:32149", Dst: "http://127.0.0.1:19011"},
-	}}
-	marshal, _ := json.Marshal(conf)
-	println(string(marshal))
-}
 
 func TestMatchPrefix(t *testing.T) {
 	compile := regexp.MustCompile("(.*)//192.168.16.90:32009/tg-easy-fetch/(.*)")
@@ -51,13 +38,6 @@ func TestTransGeneric(t *testing.T) {
 	//a := A[string]{id: 3, no: "sss"}
 	//b := (A[int])(a)
 }
-func TestLambda(t *testing.T) {
-	s := []string{"s"}
-	rs := convertList(s, func(t string) int {
-		return 1
-	}, nil)
-	fmt.Println(rs)
-}
 
 func TestPrefix(t *testing.T) {
 	var s []byte
@@ -66,7 +46,7 @@ func TestPrefix(t *testing.T) {
 
 	fmt.Println([]byte("\n"))
 	//result := filterFileType(s)
-	result := filterFormType(s)
+	result := core.FilterFormType(s)
 	fmt.Println(string(result))
 
 	start := time.Now().UnixMilli()
