@@ -213,6 +213,9 @@ func (s Stream) Map(fn MapFunc, opts ...Option) Stream {
 		pipe <- fn(item)
 	}, opts...)
 }
+func (s Stream) MapStr(opts ...Option) Stream {
+	return s.Map(ToString, opts...)
+}
 
 // Flat make item flat to items
 func (s Stream) Flat(flat func(any) Stream) Stream {

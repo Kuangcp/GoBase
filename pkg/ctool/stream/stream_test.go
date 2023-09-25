@@ -173,6 +173,33 @@ func TestForAll(t *testing.T) {
 	})
 }
 
+func TestStream_ForEach(t *testing.T) {
+	JustN(10).MapStr().ForEach(func(item any) {
+		fmt.Println(item)
+	})
+
+}
+
+func TestStream_ForEachNone(t *testing.T) {
+	JustN(2).Filter(func(item any) bool {
+		return item.(int) > 3
+	}).ForEach(func(item any) {
+		fmt.Println(item)
+	})
+
+	JustN(2).Filter(func(item any) bool {
+		return item.(int) > 3
+	}).Map(func(item any) any {
+		fmt.Println(item)
+		return 1
+	})
+
+	str := JustN(2).Filter(func(item any) bool {
+		return item.(int) > 3
+	}).MapStr()
+	fmt.Println("result:[" + ToJoins(str, "m") + "]")
+}
+
 func TestGroup(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
 		var groups [][]int
@@ -501,11 +528,30 @@ func TestStream_NoneMatch(t *testing.T) {
 	})
 }
 
-func TestFlat(t *testing.T) {
-	JustN(5).Map(func(item any) any {
+func TestStream_Flat(t *testing.T) {
+	flat := JustN(5).Map(func(item any) any {
 		return ctool.RandomAlpha(item.(int))
+	}).Flat(func(a any) Stream {
+		return Just(a, a, a)
 	})
+	result := ToList[string](flat)
+	fmt.Println(result)
 }
+
+func TestStream_FlatEmpty(t *testing.T) {
+	flat := JustN(5).Map(func(item any) any {
+		return ctool.RandomAlpha(item.(int))
+	}).Flat(func(a any) Stream {
+		if len(a.(string)) > 2 {
+			return Just(a, a, "#")
+		} else {
+			return Empty()
+		}
+	})
+	result := ToList[string](flat)
+	fmt.Println(result)
+}
+
 func TestConcat(t *testing.T) {
 	runCheckedTest(t, func(t *testing.T) {
 		a1 := []any{1, 2, 3}

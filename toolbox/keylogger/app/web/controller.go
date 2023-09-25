@@ -378,7 +378,6 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	}
 }
 
-// TODO 支持 leveldb
 func readDetailToMap(curDay string, mutex *sync.Mutex, totalMap map[int]map[int]int) {
 
 	list := store.QueryDetailByDay(curDay)

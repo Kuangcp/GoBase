@@ -15,7 +15,7 @@ func RandomAlpha(length int) string {
 	result := ""
 	for i := 0; i < length; i++ {
 		idx := rand.Intn(len(list))
-		result += list[idx] + " "
+		result += list[idx]
 	}
 
 	return result

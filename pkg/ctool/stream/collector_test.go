@@ -47,15 +47,15 @@ func TestCollectToMap(t *testing.T) {
 }
 
 func TestCollectToJoin(t *testing.T) {
-	join := ToJoin(Just(1, 2, 43).Map(ToString))
+	join := ToJoin(Just(1, 2, 43).MapStr())
 	fmt.Println("Join result:", join)
 
-	ss := Just(1, 2, 43).Map(ToString)
+	ss := Just(1, 2, 43).MapStr()
 	fmt.Println("Joins result:", ToJoins(ss, "|"))
 }
 
 func TestFork(t *testing.T) {
-	list := Just(1, 4, 2, 9, 1, 1, 6).Map(ToString)
+	list := Just(1, 4, 2, 9, 1, 1, 6).MapStr()
 	ss := list.ForkN(10)
 	fmt.Println("origin:", ToJoin(ss[0]))
 	fmt.Println("fork:", ToJoins(ss[1], ","))
@@ -66,7 +66,7 @@ func TestFork(t *testing.T) {
 // Join 场景简单，导致了并发协程多没有提效反而更多情况是降低效率，而且结果也是乱序
 func TestJoinPerformance(t *testing.T) {
 	start := time.Now().UnixMicro()
-	_ = ToJoin(JustN(10000).Map(ToString))
+	_ = ToJoin(JustN(10000).MapStr())
 	fmt.Println(time.Now().UnixMicro()-start, "us")
 
 	start = time.Now().UnixMicro()

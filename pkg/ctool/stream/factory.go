@@ -44,6 +44,11 @@ func From(generate GenerateFunc) Stream {
 
 	return Range(source)
 }
+func Empty() Stream {
+	source := make(chan any)
+	close(source)
+	return Range(source)
+}
 
 // JustN produce 1...n number serial
 func JustN(n int) Stream {
