@@ -12,9 +12,9 @@ const (
 )
 
 type (
-	rxOptions struct {
-		unlimitedWorkers bool
-		workers          int
+	RxOptions struct {
+		UnlimitedWorkers bool
+		Workers          int
 	}
 
 	// A Stream is a stream that can be used to do stream processing.
@@ -23,8 +23,8 @@ type (
 	}
 
 	GroupItem struct {
-		key any
-		val []any
+		Key any
+		Val []any
 	}
 )
 
@@ -162,43 +162,9 @@ func (s Stream) Group(fn KeyFunc, opts ...Option) Stream {
 	go func() {
 		option := buildOptions(opts...)
 		groups := make(map[any][]any)
-		if option.unlimitedWorkers {
-			lock := sync.Mutex{}
-			var wg sync.WaitGroup
-			for item := range s.source {
-				wg.Add(1)
-				val := item
-				GoSafe(func() {
-					key := fn(val)
-					lock.Lock()
-					groups[key] = append(groups[key], val)
-					lock.Unlock()
-					wg.Done()
-				})
-			}
-			wg.Wait()
-		} else if option.workers > 1 {
-			pool := make(chan PlaceholderType, option.workers)
-			lock := sync.Mutex{}
-			var wg sync.WaitGroup
-			for item := range s.source {
-				pool <- Placeholder
-				wg.Add(1)
 
-				val := item
-				GoSafe(func() {
-					defer func() {
-						wg.Done()
-						<-pool
-					}()
-
-					key := fn(val)
-					lock.Lock()
-					groups[key] = append(groups[key], val)
-					lock.Unlock()
-				})
-			}
-			wg.Wait()
+		if option.UnlimitedWorkers || option.Workers > 1 {
+			s.groupParallel(option, fn, groups)
 		} else {
 			for item := range s.source {
 				key := fn(item)
@@ -207,12 +173,53 @@ func (s Stream) Group(fn KeyFunc, opts ...Option) Stream {
 		}
 
 		for k, group := range groups {
-			source <- GroupItem{key: k, val: group}
+			source <- GroupItem{Key: k, Val: group}
 		}
 		close(source)
 	}()
 
 	return Range(source)
+}
+
+func (s Stream) groupParallel(option *RxOptions, fn KeyFunc, groups map[any][]any) {
+	if option.UnlimitedWorkers {
+		lock := sync.Mutex{}
+		var wg sync.WaitGroup
+		for item := range s.source {
+			wg.Add(1)
+			val := item
+			GoSafe(func() {
+				key := fn(val)
+				lock.Lock()
+				groups[key] = append(groups[key], val)
+				lock.Unlock()
+				wg.Done()
+			})
+		}
+		wg.Wait()
+	} else if option.Workers > 1 {
+		pool := make(chan PlaceholderType, option.Workers)
+		lock := sync.Mutex{}
+		var wg sync.WaitGroup
+		for item := range s.source {
+			pool <- Placeholder
+			wg.Add(1)
+
+			val := item
+			GoSafe(func() {
+				defer func() {
+					wg.Done()
+					<-pool
+				}()
+
+				key := fn(val)
+				lock.Lock()
+				groups[key] = append(groups[key], val)
+				lock.Unlock()
+			})
+		}
+		wg.Wait()
+	}
 }
 
 // Head returns the first n elements in p.
@@ -290,7 +297,7 @@ func (s Stream) Merge() Stream {
 	return Range(source)
 }
 
-// Parallel applies the given ParallelFunc to each item concurrently with given number of workers.
+// Parallel applies the given ParallelFunc to each item concurrently with given number of Workers.
 func (s Stream) Parallel(fn ParallelFunc, opts ...Option) {
 	s.Walk(func(item any, pipe chan<- any) {
 		fn(item)
@@ -407,19 +414,19 @@ func (s Stream) Tail(n int64) Stream {
 // Walk lets the callers handle each item, the caller may write zero, one or more items base on the given item.
 func (s Stream) Walk(fn WalkFunc, opts ...Option) Stream {
 	option := buildOptions(opts...)
-	if option.unlimitedWorkers {
+	if option.UnlimitedWorkers {
 		return s.walkUnlimited(fn, option)
 	}
 
 	return s.walkLimited(fn, option)
 }
 
-func (s Stream) walkLimited(fn WalkFunc, option *rxOptions) Stream {
-	pipe := make(chan any, option.workers)
+func (s Stream) walkLimited(fn WalkFunc, option *RxOptions) Stream {
+	pipe := make(chan any, option.Workers)
 
 	go func() {
 		var wg sync.WaitGroup
-		pool := make(chan PlaceholderType, option.workers)
+		pool := make(chan PlaceholderType, option.Workers)
 
 		for item := range s.source {
 			// important, used in another goroutine
@@ -445,8 +452,8 @@ func (s Stream) walkLimited(fn WalkFunc, option *rxOptions) Stream {
 	return Range(pipe)
 }
 
-func (s Stream) walkUnlimited(fn WalkFunc, option *rxOptions) Stream {
-	pipe := make(chan any, option.workers)
+func (s Stream) walkUnlimited(fn WalkFunc, option *RxOptions) Stream {
+	pipe := make(chan any, option.Workers)
 
 	go func() {
 		var wg sync.WaitGroup

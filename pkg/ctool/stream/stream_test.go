@@ -209,7 +209,7 @@ func TestGroup(t *testing.T) {
 		}).ForEach(func(item any) {
 			v := item.(GroupItem)
 			var group []int
-			for _, each := range v.val {
+			for _, each := range v.Val {
 				group = append(group, each.(int))
 			}
 			groups = append(groups, group)
@@ -225,31 +225,33 @@ func TestGroup(t *testing.T) {
 
 func TestStream_GroupParallel(t *testing.T) {
 	start := time.Now().UnixMicro()
-	total := 300000
+	total := 300
 	JustN(total).Group(func(item any) any {
 		v := item.(int)
-		time.Sleep(time.Microsecond * 4)
+		time.Sleep(time.Microsecond * 1)
 		return v / 3
 	}, func(opts *rxOptions) {
 		opts.workers = 10
-		//opts.unlimitedWorkers = true
+		//opts.UnlimitedWorkers = true
 	}).ForEach(func(item any) {
 		//v := item.(GroupItem)
 		//fmt.Println(v)
 	})
+	fmt.Println("parallel ----", time.Now().UnixMicro()-start, "us")
 
 	// 如果数据量小或代码执行成本很低，开并发后锁竞争远大于代码执行，反而会导致耗时的增加
-	fmt.Println("------", time.Now().UnixMicro()-start, "us")
+	// 按Group的使用场景来说，绝大多数场景不需要开并发,如果有io阻塞类代码则推荐使用
+
 	start = time.Now().UnixMicro()
 	JustN(total).Group(func(item any) any {
 		v := item.(int)
-		time.Sleep(time.Microsecond * 4)
+		time.Sleep(time.Microsecond * 1)
 		return v / 3
 	}).ForEach(func(item any) {
 		//v := item.(GroupItem)
 		//fmt.Println(v)
 	})
-	fmt.Println("------", time.Now().UnixMicro()-start, "us")
+	fmt.Println("serial ------", time.Now().UnixMicro()-start, "us")
 }
 
 type User struct {
@@ -271,9 +273,9 @@ func TestGroupConstruct(t *testing.T) {
 		return v.areaId
 	}).ForEach(func(item any) {
 		l := item.(GroupItem)
-		for _, i := range l.val {
+		for _, i := range l.Val {
 			u := i.(User)
-			fmt.Println("area:", l.key, " user:", u.id, u.name)
+			fmt.Println("area:", l.Key, " user:", u.id, u.name)
 		}
 	})
 }
