@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Api Top Perf</title>
+
+    <script src="main.js"></script>
 </head>
 <body>
 
@@ -11,15 +13,62 @@ localhost:1235/hostPerf\?url=http://tgysg-test.sinohealth.cn\&start=2023-09-26\&
 <form>
     <input name="host" id="host" placeholder="host"/>
     <input name="url" id="url" placeholder="url"/>
-    <input type="date" id="startDate">
-    <input type="date" id="endDate">
+    <input type="date" id="start">
+    <input type="date" id="end">
     <input type="number" id="min" min="1">
-    <button onclick="query()">查询</button>
+    <button type="button" onclick="query()">查询</button>
 </form>
 
-<script>
-    function query(){
+<table id="req-tp">
+    <thead id="req-tp-head"></thead>
+    <tbody id="req-tp-body" style="border: solid"></tbody>
+</table>
 
+<script>
+    function query() {
+        get("/hostPerf?" + appendParam("host", "url", "start", "end", "min"), function (data) {
+            console.log(data)
+
+            let result = JSON.parse(data);
+            let table = document.getElementById("req-tp-body");
+            let head = document.getElementById("req-tp-head");
+            head.innerHTML = ""
+            table.innerHTML = ""
+            if (!result) {
+                return
+            }
+
+            head.innerHTML = "<th>Url</th>" +
+                "            <th>Count</th>" +
+                "            <th>All</th>" +
+                "            <th>Avg</th>" +
+                "            <th>TP30</th>" +
+                "            <th>TP50</th>" +
+                "            <th>TP90</th>" +
+                "            <th>TP95</th>" +
+                "            <th>TP99</th>"
+
+
+            for (let i in result) {
+                let l = result[i]
+                if (l == null) {
+                    console.log('null value')
+                    table.innerHTML += '<tr>null</tr>'
+                } else {
+                    table.innerHTML += '<tr>' +
+                        '<td>' + l.Url + '</td>' +
+                        '<td>' + l.Tct + '</td>' +
+                        '<td>' + l.Tall + '</td>' +
+                        '<td>' + l.TAvg + '</td>' +
+                        '<td>' + l.TP30 + '</td>' +
+                        '<td>' + l.TP50 + '</td>' +
+                        '<td>' + l.TP90 + '</td>' +
+                        '<td>' + l.TP95 + '</td>' +
+                        '<td>' + l.TP99 + '</td>' +
+                        '</tr>'
+                }
+            }
+        })
     }
 </script>
 </body>

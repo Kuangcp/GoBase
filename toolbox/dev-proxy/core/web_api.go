@@ -1,6 +1,7 @@
 package core
 
 import (
+	"embed"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/ratelimiter"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
@@ -51,6 +53,9 @@ var icon string
 //go:embed static/proxy.pac
 var pacFile string
 
+//go:embed static
+var static embed.FS
+
 const (
 	jsT   = "text/javascript; charset=utf-8"
 	cssT  = "text/css; charset=utf-8"
@@ -66,14 +71,20 @@ func StartQueryServer() {
 	if Debug {
 		http.Handle("/", http.FileServer(http.Dir("./static")))
 	} else {
-		http.HandleFunc("/", bindStatic(indexHtml, htmlT))
-		http.HandleFunc("/favicon.ico", bindStatic(icon, iconT))
-		http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeCss, cssT))
-		http.HandleFunc("/main.css", bindStatic(mainCss, cssT))
+		//http.HandleFunc("/", bindStatic(indexHtml, htmlT))
+		//http.HandleFunc("/favicon.ico", bindStatic(icon, iconT))
+		//http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeCss, cssT))
+		//http.HandleFunc("/main.css", bindStatic(mainCss, cssT))
+		//
+		//http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
+		//http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
+		//http.HandleFunc("/json.min.js", bindStatic(jsonMinJs, jsT))
 
-		http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
-		http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
-		http.HandleFunc("/json.min.js", bindStatic(jsonMinJs, jsT))
+		sub, err := fs.Sub(static, "static")
+		if err != nil {
+			panic(err)
+		}
+		http.Handle("/", http.FileServer(http.FS(sub)))
 		http.HandleFunc(PacUrl, PacFileApi)
 	}
 

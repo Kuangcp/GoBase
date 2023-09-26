@@ -97,3 +97,17 @@ Date.prototype.format = function (format) {
             RegExp.$1.length === 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length));
     return format;
 }
+
+// input A,B
+// output A=1&B=2
+function appendParam(...varList) {
+    let list = []
+    for (let v of varList) {
+        list.push(v + "=" + val(v))
+    }
+    return list.join("&")
+}
+
+function val(idStr) {
+    return document.getElementById(idStr).value
+}
