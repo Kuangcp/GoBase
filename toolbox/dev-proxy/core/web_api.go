@@ -87,6 +87,7 @@ func StartQueryServer() {
 
 	http.HandleFunc("/urlFrequency", rtTimeInterceptor(urlFrequencyApi))
 	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(urlTimeAnalysis))
+	// /hostPerf?url=http://xxx&start=2023-08-01&end=2023-09-27&min=90
 	http.HandleFunc("/hostPerf", rtTimeInterceptor(hostPerformance))
 
 	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), nil)
