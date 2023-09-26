@@ -19,8 +19,8 @@ const (
 var (
 	Conn           *redis.Client
 	db             *leveldb.DB
-	RequestList    = "" // ZSet redis key (member: 03-16 18:27:45.653 80b85e3c653, score: nanoTime) leveldb key (80b85e3c653)
-	RequestUrlList = "" // Hash key: id value: url
+	RequestList    = "" // ZSet redis key (member: 03-16 18:27:45.653 80b85e3c653, score: nanoTime), leveldb key (80b85e3c653)
+	RequestUrlList = "" // Hash key: id, value: url
 	listFmt        = "%s:%s:request-list"
 	urlListFmt     = "%s:%s:request-url-list"
 )

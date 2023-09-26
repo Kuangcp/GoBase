@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ratelimiter"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -82,11 +80,14 @@ func StartQueryServer() {
 	http.HandleFunc("/list", rtTimeAndLimitInterceptor(JSONFunc(pageListReqHistory), limiter))
 	http.HandleFunc("/curl", rtTimeInterceptor(buildCurlCommandApi))
 	http.HandleFunc("/replay", replayRequest)
+
 	http.HandleFunc("/del", rtTimeInterceptor(delRequest))
-	http.HandleFunc("/urlFrequency", rtTimeInterceptor(urlFrequencyApi))
-	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(urlTimeAnalysis))
 	http.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
 	http.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
+
+	http.HandleFunc("/urlFrequency", rtTimeInterceptor(urlFrequencyApi))
+	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(urlTimeAnalysis))
+	http.HandleFunc("/hostPerf", rtTimeInterceptor(hostPerformance))
 
 	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), nil)
 }
@@ -171,133 +172,6 @@ func splitArray(l []string, batch int) [][]string {
 		result = append(result, s)
 	}
 	return result
-}
-
-func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
-	query := request.URL.Query()
-	timeType := query.Get("type")
-	zR, err := Conn.ZRangeWithScores(RequestList, 0, -1).Result()
-	if err != nil {
-		writeJsonRsp(writer, err.Error())
-		return
-	}
-
-	// 天 -> 域名 -> 次数
-	dayMap := make(map[string]map[string]int)
-
-	// 得到id
-	var ids []string
-	for _, val := range zR {
-		cols := strings.Split(val.Member.(string), " ")
-		id := cols[3]
-
-		ids = append(ids, id)
-	}
-
-	// 批量得到url
-	// id -> host
-	uMap := make(map[string]string)
-	array := splitArray(ids, 100)
-	for _, ba := range array {
-		result, err := Conn.HMGet(RequestUrlList, ba...).Result()
-		if err != nil {
-			continue
-		}
-		for i := range ba {
-			path := result[i].(string)
-			parse, err := url.Parse(path)
-			if err != nil {
-				continue
-			}
-
-			uMap[ba[i]] = parse.Host
-		}
-	}
-
-	timeS := ctool.YYYY_MM_DD
-	if timeType == "month" {
-		timeS = ctool.YYYY_MM
-	}
-	// 按天聚合结果
-	for _, val := range zR {
-		cols := strings.Split(val.Member.(string), " ")
-		id := cols[3]
-		hitTime := time.UnixMicro(int64(val.Score) / 1000)
-		hitDay := hitTime.Format(timeS)
-		m, ok := dayMap[hitDay]
-		if !ok {
-			m = make(map[string]int)
-			dayMap[hitDay] = m
-		}
-
-		u := uMap[id]
-		c, ok := m[u]
-		if !ok {
-			m[u] = 1
-		} else {
-			m[u] = c + 1
-		}
-	}
-
-	writeJsonRsp(writer, dayMap)
-}
-
-func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
-	minS := request.URL.Query().Get("min")
-	maxS := request.URL.Query().Get("max")
-	min, _ := strconv.Atoi(minS)
-	if min < 1 {
-		min = 50
-	}
-	max, _ := strconv.Atoi(maxS)
-	if max < 1 {
-		max = 100
-	}
-
-	result, err := Conn.HGetAll(RequestUrlList).Result()
-	if err != nil {
-		logger.Error(err)
-		writeJsonRsp(writer, err.Error())
-		return
-	}
-
-	type Val struct {
-		UrlMap  map[string]int
-		HostMap map[string]int
-	}
-
-	allUrlMap := make(map[string]int)
-	urlMap := make(map[string]int)
-	for _, v := range result {
-		val, ok := allUrlMap[v]
-		if !ok {
-			allUrlMap[v] = 1
-		} else {
-			allUrlMap[v] = val + 1
-		}
-	}
-
-	//logger.Info(len(allUrlMap))
-	for k, v := range allUrlMap {
-		if v >= min && v <= max {
-			urlMap[k] = v
-		}
-	}
-	allHostMap := make(map[string]int)
-	for k, v := range urlMap {
-		parse, err := url.Parse(k)
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
-		h, ok := allHostMap[parse.Host]
-		if !ok {
-			allHostMap[parse.Host] = v
-		} else {
-			allHostMap[parse.Host] = h + v
-		}
-	}
-	writeJsonRsp(writer, Val{UrlMap: urlMap, HostMap: allHostMap})
 }
 
 func delRequest(writer http.ResponseWriter, request *http.Request) {

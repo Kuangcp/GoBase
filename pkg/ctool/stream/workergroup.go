@@ -1,12 +1,12 @@
 package stream
 
-// A WorkerGroup is used to run given number of workers to process jobs.
+// A WorkerGroup is used to run given number of Workers to process jobs.
 type WorkerGroup struct {
 	job     func()
 	workers int
 }
 
-// NewWorkerGroup returns a WorkerGroup with given job and workers.
+// NewWorkerGroup returns a WorkerGroup with given job and Workers.
 func NewWorkerGroup(job func(), workers int) WorkerGroup {
 	return WorkerGroup{
 		job:     job,

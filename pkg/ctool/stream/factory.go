@@ -19,7 +19,7 @@ type (
 	// MapFunc defines the method to map each element to another object in a Stream.
 	MapFunc func(item any) any
 	// Option defines the method to customize a Stream.
-	Option func(opts *rxOptions)
+	Option func(opts *RxOptions)
 	// ParallelFunc defines the method to handle elements parallel.
 	ParallelFunc func(item any)
 	// ReduceFunc defines the method to reduce all the elements in a Stream.
@@ -79,26 +79,26 @@ func Range(source <-chan any) Stream {
 	}
 }
 
-// UnlimitedWorkers lets the caller use as many workers as the tasks.
+// UnlimitedWorkers lets the caller use as many Workers as the tasks.
 func UnlimitedWorkers() Option {
-	return func(opts *rxOptions) {
-		opts.unlimitedWorkers = true
+	return func(opts *RxOptions) {
+		opts.UnlimitedWorkers = true
 	}
 }
 
-// WithWorkers lets the caller customize the concurrent workers.
+// WithWorkers lets the caller customize the concurrent Workers.
 func WithWorkers(workers int) Option {
-	return func(opts *rxOptions) {
+	return func(opts *RxOptions) {
 		if workers < minWorkers {
-			opts.workers = minWorkers
+			opts.Workers = minWorkers
 		} else {
-			opts.workers = workers
+			opts.Workers = workers
 		}
 	}
 }
 
-// buildOptions returns a rxOptions with given customizations.
-func buildOptions(opts ...Option) *rxOptions {
+// buildOptions returns a RxOptions with given customizations.
+func buildOptions(opts ...Option) *RxOptions {
 	options := newOptions()
 	for _, opt := range opts {
 		opt(options)
@@ -113,10 +113,10 @@ func drain(channel <-chan any) {
 	}
 }
 
-// newOptions returns a default rxOptions.
-func newOptions() *rxOptions {
-	return &rxOptions{
-		workers: defaultWorkers,
+// newOptions returns a default RxOptions.
+func newOptions() *RxOptions {
+	return &RxOptions{
+		Workers: defaultWorkers,
 	}
 }
 
