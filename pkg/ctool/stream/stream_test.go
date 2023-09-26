@@ -223,6 +223,35 @@ func TestGroup(t *testing.T) {
 	})
 }
 
+func TestStream_GroupParallel(t *testing.T) {
+	start := time.Now().UnixMicro()
+	total := 300000
+	JustN(total).Group(func(item any) any {
+		v := item.(int)
+		time.Sleep(time.Microsecond * 4)
+		return v / 3
+	}, func(opts *rxOptions) {
+		opts.workers = 10
+		//opts.unlimitedWorkers = true
+	}).ForEach(func(item any) {
+		//v := item.(GroupItem)
+		//fmt.Println(v)
+	})
+
+	// 如果数据量小或代码执行成本很低，开并发后锁竞争远大于代码执行，反而会导致耗时的增加
+	fmt.Println("------", time.Now().UnixMicro()-start, "us")
+	start = time.Now().UnixMicro()
+	JustN(total).Group(func(item any) any {
+		v := item.(int)
+		time.Sleep(time.Microsecond * 4)
+		return v / 3
+	}).ForEach(func(item any) {
+		//v := item.(GroupItem)
+		//fmt.Println(v)
+	})
+	fmt.Println("------", time.Now().UnixMicro()-start, "us")
+}
+
 type User struct {
 	id     int
 	name   string
@@ -550,6 +579,20 @@ func TestStream_FlatEmpty(t *testing.T) {
 	})
 	result := ToList[string](flat)
 	fmt.Println(result)
+}
+
+func TestStream_Parallel(t *testing.T) {
+	JustN(10).MapStr().Parallel(func(item any) {
+		fmt.Println(item)
+	}, UnlimitedWorkers())
+
+	s := JustN(10).Map(func(item any) any {
+		time.Sleep(time.Second)
+		return item
+	}, UnlimitedWorkers()).Map(func(item any) any {
+		return ctool.RandomAlpha(item.(int))
+	}, UnlimitedWorkers())
+	fmt.Println(ToJoins(s, ","))
 }
 
 func TestConcat(t *testing.T) {
