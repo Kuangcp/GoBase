@@ -157,15 +157,55 @@ func (s Stream) ForEach(fn ForEachFunc) {
 }
 
 // Group groups the elements into different groups based on their keys.
-func (s Stream) Group(fn KeyFunc) Stream {
-	groups := make(map[any][]any)
-	for item := range s.source {
-		key := fn(item)
-		groups[key] = append(groups[key], item)
-	}
-
+func (s Stream) Group(fn KeyFunc, opts ...Option) Stream {
 	source := make(chan any)
 	go func() {
+		option := buildOptions(opts...)
+		groups := make(map[any][]any)
+		if option.unlimitedWorkers {
+			lock := sync.Mutex{}
+			var wg sync.WaitGroup
+			for item := range s.source {
+				wg.Add(1)
+				val := item
+				GoSafe(func() {
+					key := fn(val)
+					lock.Lock()
+					groups[key] = append(groups[key], val)
+					lock.Unlock()
+					wg.Done()
+				})
+			}
+			wg.Wait()
+		} else if option.workers > 1 {
+			pool := make(chan PlaceholderType, option.workers)
+			lock := sync.Mutex{}
+			var wg sync.WaitGroup
+			for item := range s.source {
+				pool <- Placeholder
+				wg.Add(1)
+
+				val := item
+				GoSafe(func() {
+					defer func() {
+						wg.Done()
+						<-pool
+					}()
+
+					key := fn(val)
+					lock.Lock()
+					groups[key] = append(groups[key], val)
+					lock.Unlock()
+				})
+			}
+			wg.Wait()
+		} else {
+			for item := range s.source {
+				key := fn(item)
+				groups[key] = append(groups[key], item)
+			}
+		}
+
 		for k, group := range groups {
 			source <- GroupItem{key: k, val: group}
 		}
