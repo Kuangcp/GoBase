@@ -70,10 +70,10 @@ func StartQueryServer() {
 	http.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
 	http.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
 
-	http.HandleFunc("/urlFrequency", rtTimeInterceptor(urlFrequencyApi))
-	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(urlTimeAnalysis))
-	// /hostPerf?url=http://xxx&start=2023-08-01&end=2023-09-27&min=90
-	http.HandleFunc("/hostPerf", rtTimeInterceptor(hostPerformance))
+	http.HandleFunc("/urlFrequency", rtTimeInterceptor(UrlFrequencyApi))
+	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(UrlTimeAnalysis))
+	http.HandleFunc("/detailById", rtTimeInterceptor(DetailById))
+	http.HandleFunc("/hostPerf", rtTimeInterceptor(HostPerformance))
 
 	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), nil)
 }

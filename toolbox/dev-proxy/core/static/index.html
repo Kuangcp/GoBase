@@ -150,6 +150,7 @@
             '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Re</button>' +
             '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
             '<button type="button" class="req-btn req-btn-delete" onclick="deleteReq(\'' + l.id + '\')">Del</button>' +
+            '<button type="button" class="req-btn req-btn-delete" onclick="perfPage(\'' + l.id + '\')">Perf</button>' +
             '</td>' +
             "</tr>";
     }
@@ -206,6 +207,10 @@
         get("/curl?selfProxy=Y&id=" + id, async function (data) {
             await navigator.clipboard.writeText(data);
         })
+    }
+
+    function perfPage(id) {
+        window.location = '/perf.html?id=' + id;
     }
 
     function deleteReq(id) {
