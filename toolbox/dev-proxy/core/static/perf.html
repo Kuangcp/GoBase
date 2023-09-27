@@ -29,6 +29,7 @@
     }
 </style>
 <form>
+    <input type="text" id="id" placeholder="id"/>
     <input name="host" id="host" placeholder="host" autocomplete="on"/>
     <input
             name="url"
@@ -71,6 +72,26 @@
     dateTime = new Date(dateTime);
     document.getElementById("end").value = formatYMD(dateTime);
 
+    let reqId = getQueryVariable("id");
+    document.getElementById("id").value = reqId;
+
+    if (reqId) {
+        query()
+        fillParamById(reqId)
+    }
+
+    function getQueryVariable(variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split("=");
+            if (pair[0] === variable) {
+                return pair[1];
+            }
+        }
+        return null;
+    }
+
     function formatYMD(now) {
         //格式化日，如果小于9，前面补0
         var day = ("0" + now.getDate()).slice(-2);
@@ -82,9 +103,18 @@
 
     var TableLastSortedColumn = -1;
 
+    function fillParamById(id) {
+        get("/detailById?id=" + id, function (data) {
+            console.log(data)
+            let rsp = JSON.parse(data);
+            document.getElementById("url").value = rsp.url;
+            document.getElementById("start").value = rsp.start;
+            document.getElementById("end").value = rsp.end;
+        });
+    }
+
     function query() {
-        get(
-            "/hostPerf?" + appendParam("host", "url", "start", "end", "min"),
+        get("/hostPerf?" + appendParam("id", "host", "url", "start", "end", "min"),
             function (data) {
                 // console.log(data);
                 var table = document.getElementById('req-tp');

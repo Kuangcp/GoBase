@@ -14,7 +14,27 @@ import (
 	"time"
 )
 
-func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
+type (
+	PerfPageVo struct {
+		Url  string
+		Tct  int
+		Tall int
+		TAvg int
+		TP30 int
+		TP50 int
+		TP90 int
+		TP95 int
+		TP99 int
+		Qps  int // 查询时间段内最大Qps
+	}
+	DetailVo struct {
+		Url   string `json:"url"`
+		Start string `json:"start"`
+		End   string `json:"end"`
+	}
+)
+
+func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 	minS := request.URL.Query().Get("min")
 	maxS := request.URL.Query().Get("max")
 	min, _ := strconv.Atoi(minS)
@@ -72,7 +92,7 @@ func urlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 	writeJsonRsp(writer, Val{UrlMap: urlMap, HostMap: allHostMap})
 }
 
-func urlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
+func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	timeType := query.Get("type")
 	zR, err := Conn.ZRangeWithScores(RequestList, 0, -1).Result()
@@ -146,31 +166,47 @@ func parseIdArray(zR []redis.Z) []string {
 	return ids
 }
 
-func hostPerformance(writer http.ResponseWriter, request *http.Request) {
+func DetailById(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+	idStr := query.Get("id")
+	if idStr == "" {
+		writeJsonParamError(writer, "id is required")
+		return
+	}
+	targetMsg := getDetailByKey(idStr)
+	writeJsonRsp(writer, DetailVo{
+		Url:   targetMsg.Url,
+		Start: targetMsg.ReqTime.Add(-time.Minute * 5).Format(ctool.YYYY_MM_DD_HH_MM),
+		End:   targetMsg.ReqTime.Add(time.Minute * 5).Format(ctool.YYYY_MM_DD_HH_MM),
+	})
+}
+
+func HostPerformance(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 
+	idStr := query.Get("id")
 	hostStr := query.Get("host")
 	urlStr := query.Get("url")
-	if hostStr == "" && urlStr == "" {
+	if hostStr == "" && urlStr == "" && idStr == "" {
 		writeJsonParamError(writer, "host or url is required")
 		return
 	}
 
-	type Val struct {
-		Url  string
-		Tct  int
-		Tall int
-		TAvg int
-		TP30 int
-		TP50 int
-		TP90 int
-		TP95 int
-		TP99 int
-		Qps  int // 查询时间段内最大Qps
-	}
-	var result []Val
+	if idStr != "" {
+		targetMsg := getDetailByKey(idStr)
+		parse, err := url.Parse(targetMsg.Url)
+		if err != nil {
+			writeJsonParamError(writer, err.Error())
+			return
+		}
 
-	rsp := ctool.ResultVO[[]Val]{}
+		path := parse.Scheme + "://" + parse.Host + parse.Path
+		rsp := queryData(targetMsg.ReqTime.Add(-time.Minute*5), targetMsg.ResTime.Add(time.Minute*5), "", path, 1)
+		writeJsonRsp(writer, rsp)
+		return
+	}
+
+	rsp := ctool.ResultVO[[]PerfPageVo]{}
 
 	startStr := query.Get("start")
 	endStr := query.Get("end")
@@ -195,95 +231,102 @@ func hostPerformance(writer http.ResponseWriter, request *http.Request) {
 			writeJsonParamError(writer, err.Error())
 			return
 		}
-
-		// 为什么会有时区问题
-		zr, err := Conn.ZRangeByScoreWithScores(RequestList, redis.ZRangeBy{
-			Min: fmt.Sprint(start.Add(-time.Hour * 8).UnixNano()),
-			Max: fmt.Sprint(end.Add(-time.Hour * 8).UnixNano()),
-		}).Result()
-		if err != nil {
-			writeJsonParamError(writer, err.Error())
-			return
-		}
-
-		ids := parseIdArray(zr)
-		array := splitArray(ids, 300)
-		var cache []*ReqLog[Message]
-		for _, batch := range array {
-			result, err := Conn.HMGet(RequestUrlList, batch...).Result()
-			if err != nil {
-				continue
-			}
-			for i := range batch {
-				path := result[i].(string)
-				if (hostStr != "" && (strings.HasPrefix(path, "http://"+hostStr) || strings.HasPrefix(path, "https://"+hostStr))) ||
-					(urlStr != "" && strings.HasPrefix(path, urlStr)) {
-					msg := getDetailByKey(batch[i])
-					cache = append(cache, msg)
-				}
-			}
-		}
-
-		stream.Just(cache...).Filter(func(item any) bool {
-			msg := item.(*ReqLog[Message])
-			if msg == nil {
-				return false
-			}
-			_, err := url.Parse(msg.Url)
-			if err != nil {
-				return false
-			}
-			return true
-		}).Group(func(item any) any {
-			msg := item.(*ReqLog[Message])
-			parseUrl, _ := url.Parse(msg.Url)
-			return parseUrl.Host + "" + parseUrl.Path
-		}).ForEach(func(item any) {
-			groupItem := item.(stream.GroupItem)
-			val := groupItem.Val
-			if len(val) < min {
-				return
-			}
-
-			ele := Val{Url: groupItem.Key.(string)}
-			var ts []int
-			var reqList []int64
-			for _, v := range val {
-				msg := v.(*ReqLog[Message])
-				ms := msg.ResTime.Sub(msg.ReqTime).Milliseconds()
-				ele.Tall += int(ms)
-				ts = append(ts, int(ms))
-				reqList = append(reqList, msg.ReqTime.Unix())
-			}
-			sort.Slice(ts, func(i, j int) bool {
-				return ts[i] < ts[j]
-			})
-			ele.TP30 = ts[int(float32(len(ts))*0.3)]
-			ele.TP50 = ts[int(float32(len(ts))*0.5)]
-			ele.TP90 = ts[int(float32(len(ts))*0.9)]
-			ele.TP95 = ts[int(float32(len(ts))*0.95)]
-			ele.TP99 = ts[int(float32(len(ts))*0.99)]
-
-			ele.TAvg = ele.Tall / len(val)
-			ele.Tct = len(val)
-
-			stream.Just(reqList...).Group(func(item any) any {
-				return item.(int64)
-			}).ForEach(func(item any) {
-				groupItem := item.(stream.GroupItem)
-				qps := len(groupItem.Val)
-				if ele.Qps < qps {
-					ele.Qps = qps
-				}
-			})
-			result = append(result, ele)
-		})
-
-		rsp.Data = result
-		rsp.Code = 0
+		rsp = queryData(start.Add(-time.Hour*8), end.Add(-time.Hour*8), hostStr, urlStr, min)
 	} else {
 		rsp.Msg = "invalid param"
 		rsp.Code = 400
 	}
 	writeJsonRsp(writer, rsp)
+}
+
+func queryData(start time.Time, end time.Time, hostStr string, urlStr string, min int) ctool.ResultVO[[]PerfPageVo] {
+	var result []PerfPageVo
+
+	rsp := ctool.ResultVO[[]PerfPageVo]{}
+
+	// 为什么会有时区问题
+	zr, err := Conn.ZRangeByScoreWithScores(RequestList, redis.ZRangeBy{
+		Min: fmt.Sprint(start.UnixNano()),
+		Max: fmt.Sprint(end.UnixNano()),
+	}).Result()
+	if err != nil {
+		return ctool.FailedWithMsg[[]PerfPageVo](err.Error())
+	}
+
+	ids := parseIdArray(zr)
+	array := splitArray(ids, 300)
+	var cache []*ReqLog[Message]
+	for _, batch := range array {
+		result, err := Conn.HMGet(RequestUrlList, batch...).Result()
+		if err != nil {
+			continue
+		}
+		for i := range batch {
+			path := result[i].(string)
+			if (hostStr != "" && (strings.HasPrefix(path, "http://"+hostStr) || strings.HasPrefix(path, "https://"+hostStr))) ||
+				(urlStr != "" && strings.HasPrefix(path, urlStr)) {
+				msg := getDetailByKey(batch[i])
+				cache = append(cache, msg)
+			}
+		}
+	}
+
+	stream.Just(cache...).Filter(func(item any) bool {
+		msg := item.(*ReqLog[Message])
+		if msg == nil {
+			return false
+		}
+		_, err := url.Parse(msg.Url)
+		if err != nil {
+			return false
+		}
+		return true
+	}).Group(func(item any) any {
+		msg := item.(*ReqLog[Message])
+		parseUrl, _ := url.Parse(msg.Url)
+		return parseUrl.Host + "" + parseUrl.Path
+	}).ForEach(func(item any) {
+		groupItem := item.(stream.GroupItem)
+		val := groupItem.Val
+		if len(val) < min {
+			return
+		}
+
+		ele := PerfPageVo{Url: groupItem.Key.(string)}
+		var ts []int
+		var reqList []int64
+		for _, v := range val {
+			msg := v.(*ReqLog[Message])
+			ms := msg.ResTime.Sub(msg.ReqTime).Milliseconds()
+			ele.Tall += int(ms)
+			ts = append(ts, int(ms))
+			reqList = append(reqList, msg.ReqTime.Unix())
+		}
+		sort.Slice(ts, func(i, j int) bool {
+			return ts[i] < ts[j]
+		})
+		ele.TP30 = ts[int(float32(len(ts))*0.3)]
+		ele.TP50 = ts[int(float32(len(ts))*0.5)]
+		ele.TP90 = ts[int(float32(len(ts))*0.9)]
+		ele.TP95 = ts[int(float32(len(ts))*0.95)]
+		ele.TP99 = ts[int(float32(len(ts))*0.99)]
+
+		ele.TAvg = ele.Tall / len(val)
+		ele.Tct = len(val)
+
+		stream.Just(reqList...).Group(func(item any) any {
+			return item.(int64)
+		}).ForEach(func(item any) {
+			groupItem := item.(stream.GroupItem)
+			qps := len(groupItem.Val)
+			if ele.Qps < qps {
+				ele.Qps = qps
+			}
+		})
+		result = append(result, ele)
+	})
+
+	rsp.Data = result
+	rsp.Code = 0
+	return rsp
 }
