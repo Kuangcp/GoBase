@@ -75,6 +75,8 @@ var (
 	lock         = &sync.RWMutex{}
 	ConfigReload = make(chan bool, 1)
 	guiMode      = false
+	// DirectType https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+	DirectType = []string{"html", "javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
 )
 
 func (p *ProxyGroup) GetName() string {
