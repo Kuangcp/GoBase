@@ -152,7 +152,7 @@ func hostPerformance(writer http.ResponseWriter, request *http.Request) {
 	hostStr := query.Get("host")
 	urlStr := query.Get("url")
 	if hostStr == "" && urlStr == "" {
-		writeJsonRsp(writer, "host or url is required")
+		writeJsonParamError(writer, "host or url is required")
 		return
 	}
 
@@ -166,8 +166,11 @@ func hostPerformance(writer http.ResponseWriter, request *http.Request) {
 		TP90 int
 		TP95 int
 		TP99 int
+		Qps  int // 查询时间段内最大Qps
 	}
 	var result []Val
+
+	rsp := ctool.ResultVO[[]Val]{}
 
 	startStr := query.Get("start")
 	endStr := query.Get("end")
@@ -180,20 +183,26 @@ func hostPerformance(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	if startStr != "" && endStr != "" {
-		start, err := time.Parse(ctool.YYYY_MM_DD, startStr)
+		startStr = strings.Replace(startStr, "T", " ", 1)
+		endStr = strings.Replace(endStr, "T", " ", 1)
+		start, err := time.Parse(ctool.YYYY_MM_DD_HH_MM, startStr)
 		if err != nil {
-			writeJsonRsp(writer, err.Error())
+			writeJsonParamError(writer, err.Error())
 			return
 		}
-		end, err := time.Parse(ctool.YYYY_MM_DD, endStr)
+		end, err := time.Parse(ctool.YYYY_MM_DD_HH_MM, endStr)
 		if err != nil {
-			writeJsonRsp(writer, err.Error())
+			writeJsonParamError(writer, err.Error())
 			return
 		}
 
-		zr, err := Conn.ZRangeByScoreWithScores(RequestList, redis.ZRangeBy{Min: fmt.Sprint(start.UnixNano()), Max: fmt.Sprint(end.UnixNano())}).Result()
+		// 为什么会有时区问题
+		zr, err := Conn.ZRangeByScoreWithScores(RequestList, redis.ZRangeBy{
+			Min: fmt.Sprint(start.Add(-time.Hour * 8).UnixNano()),
+			Max: fmt.Sprint(end.Add(-time.Hour * 8).UnixNano()),
+		}).Result()
 		if err != nil {
-			writeJsonRsp(writer, err.Error())
+			writeJsonParamError(writer, err.Error())
 			return
 		}
 
@@ -238,11 +247,13 @@ func hostPerformance(writer http.ResponseWriter, request *http.Request) {
 
 			ele := Val{Url: groupItem.Key.(string)}
 			var ts []int
+			var reqList []int64
 			for _, v := range val {
 				msg := v.(*ReqLog[Message])
 				ms := msg.ResTime.Sub(msg.ReqTime).Milliseconds()
 				ele.Tall += int(ms)
 				ts = append(ts, int(ms))
+				reqList = append(reqList, msg.ReqTime.Unix())
 			}
 			sort.Slice(ts, func(i, j int) bool {
 				return ts[i] < ts[j]
@@ -256,11 +267,23 @@ func hostPerformance(writer http.ResponseWriter, request *http.Request) {
 			ele.TAvg = ele.Tall / len(val)
 			ele.Tct = len(val)
 
+			stream.Just(reqList...).Group(func(item any) any {
+				return item.(int64)
+			}).ForEach(func(item any) {
+				groupItem := item.(stream.GroupItem)
+				qps := len(groupItem.Val)
+				if ele.Qps < qps {
+					ele.Qps = qps
+				}
+			})
 			result = append(result, ele)
 		})
 
-		writeJsonRsp(writer, result)
-		return
+		rsp.Data = result
+		rsp.Code = 0
+	} else {
+		rsp.Msg = "invalid param"
+		rsp.Code = 400
 	}
-
+	writeJsonRsp(writer, rsp)
 }

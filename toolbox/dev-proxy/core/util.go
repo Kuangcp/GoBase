@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"net/http"
 	"os/exec"
@@ -15,6 +16,20 @@ func toJSONBuffer(val any) *bytes.Buffer {
 	encoder.SetEscapeHTML(false)
 	encoder.Encode(val)
 	return buffer
+}
+
+func writeJsonParamError(writer http.ResponseWriter, msg string) {
+	resp := ctool.ResultVO[string]{}
+	resp.Code = 400
+	resp.Msg = msg
+	writeJsonRsp(writer, resp)
+}
+
+func writeJsonError(writer http.ResponseWriter, code int, msg string) {
+	resp := ctool.ResultVO[string]{}
+	resp.Code = code
+	resp.Msg = msg
+	writeJsonRsp(writer, resp)
 }
 
 func writeJsonRsp(writer http.ResponseWriter, val any) {
