@@ -29,18 +29,19 @@
     }
 </style>
 <form>
-    <input name="host" id="host" placeholder="host"/>
+    <input name="host" id="host" placeholder="host" autocomplete="on"/>
     <input
             name="url"
             id="url"
             placeholder="url"
             style="width: 300px"
-            value="http://tgysg-test.sinohealth.cn"
+            autocomplete="on"
     />
     <input type="datetime-local" id="start"/>
     <input type="datetime-local" id="end"/>
     <input type="number" id="min" min="1" value="1"/>
     <button type="button" onclick="query()">查询</button>
+    <a href="index.html">首页</a>
 </form>
 
 <table id="req-tp">
