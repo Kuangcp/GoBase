@@ -9,6 +9,8 @@ https://blog.csdn.net/FlayHigherGT/article/details/109243739
 ## Config 
 https://highlightjs.org/download/
 
+HTTPS 证书安装： https://github.com/ouqiang/goproxy
+
 > ~/.dev-proxy/dev-proxy.json
 - groups: 抓包并修改请求： 按正则匹配
 - proxy： 抓包规则：通常是配置域名

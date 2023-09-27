@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb"
 	"net/http"
@@ -130,8 +131,22 @@ func CloseConnection() {
 		}
 	}
 }
+
+// TrySaveLog 尝试保存，忽略静态资源及无类型标记的接口
 func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
-	if !TrackAllType && !IsJsonResponse(res.Header) {
+	contentType := res.Header.Get("Content-Type")
+	jsonType := strings.Contains(contentType, "application/json")
+
+	if contentType == "" {
+		return
+	}
+	matched := stream.Just(DirectType...).AnyMatch(func(item any) bool {
+		return strings.Contains(contentType, item.(string))
+	})
+	if matched {
+		return
+	}
+	if !TrackAllType && !jsonType {
 		return
 	}
 
