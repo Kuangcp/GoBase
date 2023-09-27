@@ -8,6 +8,7 @@ var (
 	Port         int
 	ApiPort      int
 	ReloadConf   bool
+	TrackAllType bool
 	Debug        bool
 	BuildVersion string
 	HttpMode     bool
@@ -23,6 +24,7 @@ var HelpInfo = ctool.HelpInfo{
 		{Short: "-r", BoolVar: &ReloadConf, Comment: "auto reload changed config"},
 		{Short: "-d", BoolVar: &Debug, Comment: "debug mode"},
 		{Short: "-x", BoolVar: &HttpMode, Comment: "track or modify http, capture https. (default https mode, need install cert)"},
+		{Short: "-A", BoolVar: &TrackAllType, Comment: "track all request: js,css,html,image"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-w", IntVar: &ApiPort, Int: 1235, Value: "port", Comment: "web api port"},

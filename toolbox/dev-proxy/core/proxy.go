@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
@@ -42,9 +41,6 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	needStorage := MatchNeedStorage(*proxyReq)
 	if findNewUrl != nil {
 		proxyLog, reqLog = RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
-		if needStorage {
-			defer SaveReqLog(reqLog)
-		}
 	}
 
 	// TODO websocket
@@ -84,7 +80,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	CopyResponseHeader(w, res)
 
 	if needStorage {
-		FillReqLogResponse(reqLog, res)
+		TrySaveLog(reqLog, res)
 	}
 
 	if res.Body != nil {
@@ -196,10 +192,6 @@ func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStor
 
 	var logStr string
 	if needStorage {
-		// redis cache
-		Conn.ZAdd(RequestList, redis.Z{Member: cacheId, Score: float64(reqLog.ReqTime.UnixNano())})
-		Conn.HSet(RequestUrlList, id, proxyReq.URL.String())
-
 		if newUrl.Path == proxyReq.URL.Path {
 			logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
 		} else {

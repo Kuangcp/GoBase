@@ -72,6 +72,9 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 			total++
 			if total > startIdx && len(list) < param.size {
 				log := getDetailByKey(key)
+				if log == nil {
+					Conn.HDel(RequestUrlList, key)
+				}
 				list = append(list, convertLog(log))
 			}
 			if total >= maxIdx {

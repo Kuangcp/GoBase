@@ -73,6 +73,9 @@ func Success[T any](data T) ResultVO[T] {
 func InitConnection() {
 	newDB, err := leveldb.OpenFile(dbDirPath, nil)
 	if err != nil {
+		if strings.Contains(err.Error(), "resource temporarily unavailable") {
+			panic("其他进程正在占用LevelDB数据库")
+		}
 		logger.Painc(err)
 	}
 	db = newDB
@@ -127,11 +130,28 @@ func CloseConnection() {
 		}
 	}
 }
+func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
+	if !TrackAllType && !IsJsonResponse(res.Header) {
+		return
+	}
+
+	FillReqLogResponse(reqLog, res)
+	SaveReqLog(reqLog)
+}
+
+func IsJsonResponse(header http.Header) bool {
+	contentType := header.Get("Content-Type")
+	return strings.Contains(contentType, "application/json")
+}
 
 func SaveReqLog(log *ReqLog[Message]) {
 	if log == nil {
 		return
 	}
+
+	// redis cache
+	Conn.ZAdd(RequestList, redis.Z{Member: log.CacheId, Score: float64(log.ReqTime.UnixNano())})
+	Conn.HSet(RequestUrlList, log.Id, log.Url)
 
 	db.Put([]byte(log.Id), toJSONBuffer(log).Bytes(), nil)
 }
@@ -183,11 +203,14 @@ func queryLogDetail(keyList []string) []*ReqLog[Message] {
 	var list []*ReqLog[Message]
 	for i := range keyList {
 		key := keyList[i]
-		l := getDetailByKey(convertToDbKey(key))
+		dbKey := convertToDbKey(key)
+		l := getDetailByKey(dbKey)
 		if l != nil {
 			list = append(list, l)
 		} else {
-			logger.Warn(key)
+			logger.Warn("Delete not in leveldb key: ", key)
+			Conn.ZRem(RequestList, key)
+			Conn.HDel(RequestUrlList, dbKey)
 		}
 	}
 	return list
