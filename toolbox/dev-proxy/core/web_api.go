@@ -27,27 +27,6 @@ type (
 	}
 )
 
-//go:embed static/index.html
-var indexHtml string
-
-//go:embed static/monokai-sublime.min.css
-var sublimeCss string
-
-//go:embed static/highlight.min.js
-var highlightJs string
-
-//go:embed static/json.min.js
-var jsonMinJs string
-
-//go:embed static/main.js
-var mainJs string
-
-//go:embed static/main.css
-var mainCss string
-
-//go:embed static/favicon.ico
-var icon string
-
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file
 //
 //go:embed static/proxy.pac
@@ -69,17 +48,12 @@ func StartQueryServer() {
 	logger.Info("Start query server on 127.0.0.1:%d", ApiPort)
 
 	if Debug {
-		http.Handle("/", http.FileServer(http.Dir("./static")))
-	} else {
-		//http.HandleFunc("/", bindStatic(indexHtml, htmlT))
-		//http.HandleFunc("/favicon.ico", bindStatic(icon, iconT))
-		//http.HandleFunc("/monokai-sublime.min.css", bindStatic(sublimeCss, cssT))
-		//http.HandleFunc("/main.css", bindStatic(mainCss, cssT))
-		//
-		//http.HandleFunc("/main.js", bindStatic(mainJs, jsT))
-		//http.HandleFunc("/highlight.min.js", bindStatic(highlightJs, jsT))
-		//http.HandleFunc("/json.min.js", bindStatic(jsonMinJs, jsT))
+		logger.Warn("debug mode")
+		//fs := http.FileServer(http.Dir("./core/static"))
+		//http.Handle("/", http.StripPrefix("/", fs))
 
+		http.Handle("/", http.FileServer(http.Dir("./core/static")))
+	} else {
 		sub, err := fs.Sub(static, "static")
 		if err != nil {
 			panic(err)

@@ -1,75 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8"/>
     <title>Api Top Perf</title>
 
     <script src="main.js"></script>
 </head>
 <body>
+<style>
+    table tr:nth-child(even) {
+        background: #efefef;
+    }
 
-localhost:1235/hostPerf\?url=http://tgysg-test.sinohealth.cn\&start=2023-09-26\&end=2023-09-27
+    table {
+        border-collapse: collapse;
+    }
 
+    #req-log-body tr {
+        text-align: right;
+    }
+
+    .string-col-fmt {
+        text-align: left;
+    }
+
+    .number-col-fmt {
+        text-align: right;
+    }
+</style>
 <form>
     <input name="host" id="host" placeholder="host"/>
-    <input name="url" id="url" placeholder="url"/>
-    <input type="date" id="start">
-    <input type="date" id="end">
-    <input type="number" id="min" min="1">
+    <input
+            name="url"
+            id="url"
+            placeholder="url"
+            style="width: 300px"
+            value="http://tgysg-test.sinohealth.cn"
+    />
+    <input type="datetime-local" id="start"/>
+    <input type="datetime-local" id="end"/>
+    <input type="number" id="min" min="1" value="1"/>
     <button type="button" onclick="query()">查询</button>
 </form>
 
 <table id="req-tp">
-    <thead id="req-tp-head"></thead>
-    <tbody id="req-tp-body" style="border: solid"></tbody>
+    <thead id="req-tp-head">
+    <tr style="text-align: center">
+        <th style="width: 900px;text-align: center"><a href="javascript:SortTable('req-tp',0,'T');">Url</a></th>
+        <th style="width: 50px;text-align: right"><a href="javascript:SortTable('req-tp',1,'N');">Count</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',2,'N');">All</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',3,'N');">Avg</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',4,'N');">TP30</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',5,'N');">TP50</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',6,'N');">TP90</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',7,'N');">TP95</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',8,'N');">TP99</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',9,'N');">Max QPS</a></th>
+    </tr>
+    </thead>
+    <tbody></tbody>
 </table>
 
 <script>
-    function query() {
-        get("/hostPerf?" + appendParam("host", "url", "start", "end", "min"), function (data) {
-            console.log(data)
+    // 初始化
+    let now = new Date();
+    document.getElementById("start").value = formatYMD(now);
+    dateTime = new Date()
+    dateTime.setDate(now.getDate() + 1);
+    dateTime = new Date(dateTime);
+    document.getElementById("end").value = formatYMD(dateTime);
 
-            let result = JSON.parse(data);
-            let table = document.getElementById("req-tp-body");
-            let head = document.getElementById("req-tp-head");
-            head.innerHTML = ""
-            table.innerHTML = ""
-            if (!result) {
-                return
-            }
-
-            head.innerHTML = "<th>Url</th>" +
-                "            <th>Count</th>" +
-                "            <th>All</th>" +
-                "            <th>Avg</th>" +
-                "            <th>TP30</th>" +
-                "            <th>TP50</th>" +
-                "            <th>TP90</th>" +
-                "            <th>TP95</th>" +
-                "            <th>TP99</th>"
-
-
-            for (let i in result) {
-                let l = result[i]
-                if (l == null) {
-                    console.log('null value')
-                    table.innerHTML += '<tr>null</tr>'
-                } else {
-                    table.innerHTML += '<tr>' +
-                        '<td>' + l.Url + '</td>' +
-                        '<td>' + l.Tct + '</td>' +
-                        '<td>' + l.Tall + '</td>' +
-                        '<td>' + l.TAvg + '</td>' +
-                        '<td>' + l.TP30 + '</td>' +
-                        '<td>' + l.TP50 + '</td>' +
-                        '<td>' + l.TP90 + '</td>' +
-                        '<td>' + l.TP95 + '</td>' +
-                        '<td>' + l.TP99 + '</td>' +
-                        '</tr>'
-                }
-            }
-        })
+    function formatYMD(now) {
+        //格式化日，如果小于9，前面补0
+        var day = ("0" + now.getDate()).slice(-2);
+        //格式化月，如果小于9，前面补0
+        var month = ("0" + (now.getMonth() + 1)).slice(-2);
+        //拼装完整日期格式
+        return now.getFullYear() + "-" + (month) + "-" + (day) + "T00:00";
     }
+
+    var TableLastSortedColumn = -1;
+
+    function query() {
+        get(
+            "/hostPerf?" + appendParam("host", "url", "start", "end", "min"),
+            function (data) {
+                // console.log(data);
+                var table = document.getElementById('req-tp');
+                var tbody = table.getElementsByTagName("tbody")[0];
+                tbody.innerHTML = "";
+                if (!data || data.length < 1) {
+                    return;
+                }
+
+                let result = JSON.parse(data);
+                if (!result || result.code !== 0) {
+                    alert("error: " + result.msg)
+                    return;
+                }
+
+                for (let i in result.data) {
+                    let l = result.data[i];
+                    if (l == null) {
+                        console.log("null value");
+                        tbody.innerHTML += "<tr>null</tr>";
+                    } else {
+                        tbody.innerHTML += `<tr class="number-col-fmt"><td class="string-col-fmt">${l.Url}</td><td>${l.Tct}</td><td>${l.Tall}</td><td>${l.TAvg}</td>
+                    <td>${l.TP30}</td><td>${l.TP50}</td><td>${l.TP90}</td><td>${l.TP95}</td><td>${l.TP99}</td><td>${l.Qps}</td></tr>`;
+                    }
+                }
+                TableLastSortedColumn = -1;
+                SortTable("req-tp", 1, "N", "");
+                SortTable("req-tp", 1, "N", "");
+            }
+        );
+    }
+
+    function SortTable(tableId, sortColumn, type, dateformat) {
+        if (!dateformat) {
+            dateformat = "";
+        }
+
+        var table = document.getElementById(tableId);
+        var tbody = table.getElementsByTagName("tbody")[0];
+        var rows = tbody.getElementsByTagName("tr");
+        var arrayOfRows = new Array();
+        type = type.toUpperCase();
+        dateformat = dateformat.toLowerCase();
+        for (var i = 0, len = rows.length; i < len; i++) {
+            arrayOfRows[i] = new Object();
+            arrayOfRows[i].oldIndex = i;
+            var celltext = rows[i]
+                .getElementsByTagName("td")
+                [sortColumn].innerHTML.replace(/<[^>]*>/g, "");
+            if (type === "D") {
+                arrayOfRows[i].value = GetDateSortingKey(dateformat, celltext);
+            } else {
+                var re = type === "N" ? /[^\.\-\+\d]/g : /[^a-zA-Z0-9]/g;
+                arrayOfRows[i].value = celltext
+                    .replace(re, "")
+                    .substr(0, 25)
+                    .toLowerCase();
+            }
+        }
+
+        if (sortColumn === TableLastSortedColumn) {
+            arrayOfRows.reverse();
+        } else {
+            TableLastSortedColumn = sortColumn;
+            switch (type) {
+                case "N":
+                    arrayOfRows.sort(CompareRowOfNumbers);
+                    break;
+                case "D":
+                    arrayOfRows.sort(CompareRowOfNumbers);
+                    break;
+                default:
+                    arrayOfRows.sort(CompareRowOfText);
+            }
+        }
+        var newTableBody = document.createElement("tbody");
+        for (var i = 0, len = arrayOfRows.length; i < len; i++) {
+            newTableBody.appendChild(
+                rows[arrayOfRows[i].oldIndex].cloneNode(true)
+            );
+        }
+        table.replaceChild(newTableBody, tbody);
+    } // function SortTable()
+
+    function CompareRowOfText(a, b) {
+        var aval = a.value;
+        var bval = b.value;
+        return aval === bval ? 0 : aval > bval ? 1 : -1;
+    } // function CompareRowOfText()
+
+    function CompareRowOfNumbers(a, b) {
+        var aval = /\d/.test(a.value) ? parseFloat(a.value) : 0;
+        var bval = /\d/.test(b.value) ? parseFloat(b.value) : 0;
+        return aval === bval ? 0 : aval > bval ? 1 : -1;
+    } // function CompareRowOfNumbers()
+
+    function GetDateSortingKey(format, text) {
+        if (format.length < 1) {
+            return "";
+        }
+        format = format.toLowerCase();
+        text = text.toLowerCase();
+        text = text.replace(/^[^a-z0-9]*/, "");
+        text = text.replace(/[^a-z0-9]*$/, "");
+        if (text.length < 1) {
+            return "";
+        }
+        text = text.replace(/[^a-z0-9]+/g, ",");
+        var date = text.split(",");
+        if (date.length < 3) {
+            return "";
+        }
+        var d = 0,
+            m = 0,
+            y = 0;
+        for (var i = 0; i < 3; i++) {
+            var ts = format.substr(i, 1);
+            if (ts === "d") {
+                d = date[i];
+            } else if (ts === "m") {
+                m = date[i];
+            } else if (ts === "y") {
+                y = date[i];
+            }
+        }
+        d = d.replace(/^0/, "");
+        if (d < 10) {
+            d = "0" + d;
+        }
+        if (/[a-z]/.test(m)) {
+            m = m.substr(0, 3);
+            switch (m) {
+                case "jan":
+                    m = String(1);
+                    break;
+                case "feb":
+                    m = String(2);
+                    break;
+                case "mar":
+                    m = String(3);
+                    break;
+                case "apr":
+                    m = String(4);
+                    break;
+                case "may":
+                    m = String(5);
+                    break;
+                case "jun":
+                    m = String(6);
+                    break;
+                case "jul":
+                    m = String(7);
+                    break;
+                case "aug":
+                    m = String(8);
+                    break;
+                case "sep":
+                    m = String(9);
+                    break;
+                case "oct":
+                    m = String(10);
+                    break;
+                case "nov":
+                    m = String(11);
+                    break;
+                case "dec":
+                    m = String(12);
+                    break;
+                default:
+                    m = String(0);
+            }
+        }
+        m = m.replace(/^0/, "");
+        if (m < 10) {
+            m = "0" + m;
+        }
+        y = parseInt(y);
+        if (y < 100) {
+            y = parseInt(y) + 2000;
+        }
+        return "" + String(y) + "" + String(m) + "" + String(d) + "";
+    } // function GetDateSortingKey()
 </script>
 </body>
 </html>
