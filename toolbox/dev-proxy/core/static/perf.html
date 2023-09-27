@@ -42,6 +42,7 @@
     <input type="datetime-local" id="end"/>
     <input type="number" id="min" min="1" value="1"/>
     <button type="button" onclick="query()">查询</button>
+    <a href="perf.html">重置</a>
     <a href="index.html">首页</a>
 </form>
 
@@ -64,6 +65,8 @@
 </table>
 
 <script>
+    var TableLastSortedColumn = -1;
+
     // 初始化
     let now = new Date();
     document.getElementById("start").value = formatYMD(now);
@@ -101,7 +104,10 @@
         return now.getFullYear() + "-" + (month) + "-" + (day) + "T00:00";
     }
 
-    var TableLastSortedColumn = -1;
+    function reset(){
+        // window.location = 'perf.html';
+        window.location.herf = 'perf.html';
+    }
 
     function fillParamById(id) {
         get("/detailById?id=" + id, function (data) {

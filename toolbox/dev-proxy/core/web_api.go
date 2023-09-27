@@ -224,6 +224,7 @@ func deleteById(writer http.ResponseWriter, id string) {
 	}
 
 	Conn.ZRem(RequestList, detail.CacheId)
+	Conn.HDel(RequestUrlList, convertToDbKey(detail.CacheId))
 	db.Delete([]byte(id), nil)
 	writeJsonRsp(writer, Success("OK"))
 }

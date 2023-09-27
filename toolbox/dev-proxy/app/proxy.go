@@ -3,7 +3,6 @@ package app
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
@@ -104,12 +103,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	core.HandleCompressed(&resMes, resp)
 
 	if reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
-		core.FillReqLogResponse(reqLog, resp)
-		// redis cache
-		core.Conn.ZAdd(core.RequestList, redis.Z{Member: reqLog.CacheId, Score: float64(reqLog.ReqTime.UnixNano())})
-		core.Conn.HSet(core.RequestUrlList, reqLog.Id, reqLog.Url)
-
-		core.SaveReqLog(reqLog)
+		core.TrySaveLog(reqLog, resp)
 	}
 }
 
