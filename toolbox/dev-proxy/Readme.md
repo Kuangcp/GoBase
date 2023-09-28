@@ -1,10 +1,23 @@
 # dev-proxy
 后端视角 代理
 
-https://blog.csdn.net/FlayHigherGT/article/details/109243249  
-https://blog.csdn.net/FlayHigherGT/article/details/109243739  
+## 设计
+![](./img/design.drawio.svg)
 
-- [ ] websocket 代理
+![](./img/ws.drawio.svg)
+
+实现功能:
+1. 转发请求
+2. 抓包
+3. 动态修改 请求和响应
+4. 监控完整请求响应过程中指标
+
+
+参考:
+- https://blog.csdn.net/FlayHigherGT/article/details/109243249  
+- https://blog.csdn.net/FlayHigherGT/article/details/109243739
+
+技术栈: Golang Redis LevelDB
 
 ## Config 
 https://highlightjs.org/download/
@@ -61,8 +74,11 @@ routers 每两个组成一对，前后元素构成源头和目标路径的映射
 > 当前代理有两套实现：一个需要安装证书支持HTTPS解密和修改，另一个仅支持HTTPS密文转发，但是都支持HTTP代理和修改。
 
 # TODO 
-1. 按URL域名统计请求频率和时间分布
-
+1. [x] 按URL域名统计请求频率和时间分布
+1. [ ] websocket 代理
+1. 移除Redis依赖, 缓存层使用 文件+内存 存储
+   - 优点: 减少组件依赖
+   - 缺点: 数据的一致性保证, 数据完整性保证 
 
 
 

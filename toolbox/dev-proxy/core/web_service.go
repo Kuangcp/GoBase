@@ -164,6 +164,8 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 	return &pageResult
 }
 
+// buildCommandById 目前仅支持常见的后端服务 GET POST请求
+// TODO 待扩展,或者寻找成熟的方案
 func buildCommandById(id, selfProxy string) string {
 	detail := getDetailByKey(id)
 	if detail == nil {
