@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
+)
 
 type (
 	Tree[T any] struct {
@@ -25,19 +28,25 @@ func ArrayToTree[T any](data []T) *Tree[T] {
 		parent := cache[i]
 		leftIdx := 2*i + 1
 		if leftIdx < length {
-			node := &Tree[T]{Data: data[leftIdx]}
-			node.Parent = parent
-			cache[leftIdx] = node
-			parent.Left = node
+			val := data[leftIdx]
+			if !ctool.IsNil(val) {
+				node := &Tree[T]{Data: val}
+				node.Parent = parent
+				cache[leftIdx] = node
+				parent.Left = node
+			}
 		}
 
 		// right
 		rightIdx := 2*i + 2
 		if rightIdx < length {
-			node := &Tree[T]{Data: data[rightIdx]}
-			node.Parent = parent
-			cache[rightIdx] = node
-			parent.Right = node
+			val := data[rightIdx]
+			if !ctool.IsNil(val) {
+				node := &Tree[T]{Data: val}
+				node.Parent = parent
+				cache[rightIdx] = node
+				parent.Right = node
+			}
 		}
 
 	}
@@ -46,7 +55,7 @@ func ArrayToTree[T any](data []T) *Tree[T] {
 
 // DfsPre 前序遍历
 func DfsPre[T any](t *Tree[T], handler func(node *Tree[T])) {
-	if t == nil {
+	if t == nil || handler == nil {
 		return
 	}
 	handler(t)
@@ -56,7 +65,7 @@ func DfsPre[T any](t *Tree[T], handler func(node *Tree[T])) {
 
 // DfsIn 中序遍历
 func DfsIn[T any](t *Tree[T], handler func(node *Tree[T])) {
-	if t == nil {
+	if t == nil || handler == nil {
 		return
 	}
 	DfsIn(t.Left, handler)
@@ -66,7 +75,7 @@ func DfsIn[T any](t *Tree[T], handler func(node *Tree[T])) {
 
 // DfsPost 后序遍历
 func DfsPost[T any](t *Tree[T], handler func(node *Tree[T])) {
-	if t == nil {
+	if t == nil || handler == nil {
 		return
 	}
 	DfsPost(t.Left, handler)
@@ -76,12 +85,13 @@ func DfsPost[T any](t *Tree[T], handler func(node *Tree[T])) {
 
 // Bfs 广度优先遍历
 func Bfs[T any](t *Tree[T], handler func(node *Tree[T])) {
-	var cur []*Tree[T]
-	if t == nil {
+	if t == nil || handler == nil {
 		return
 	}
+
 	handler(t)
 
+	var cur []*Tree[T]
 	cur = appendIfAbsent(cur, t.Left)
 	cur = appendIfAbsent(cur, t.Right)
 	for {
@@ -107,6 +117,6 @@ func appendIfAbsent[T any](layer []*Tree[T], node *Tree[T]) []*Tree[T] {
 	return append(layer, node)
 }
 
-func PrintNode(node *Tree[int]) {
+func PrintNode[T any](node *Tree[T]) {
 	fmt.Println(node.Data)
 }
