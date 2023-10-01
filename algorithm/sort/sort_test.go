@@ -2,28 +2,37 @@ package sort
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/stopwatch"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"math/rand"
 	"testing"
 )
 
 const (
-	length = 20
-	max    = 20000
+	length = 200000
+	maxVal = 2000000
 )
 
 func TestSort(t *testing.T) {
 	var data []int
-	rand.Seed(777)
+
+	watch := ctool.NewStopWatchWithName("sort")
+	watch.Start("init")
+	rand.NewSource(7799)
 	for i := 0; i < length; i++ {
-		data = append(data, rand.Intn(max))
+		data = append(data, rand.Intn(maxVal))
 	}
-	fmt.Println(data)
-	watch := stopwatch.NewWithName("sort")
+	watch.Stop()
+	//fmt.Println(data)
+
 	watch.Start("merge")
 	result := Merge(data)
 	watch.Stop()
 
-	fmt.Println(result)
+	for i := 1; i < len(result); i++ {
+		if result[i-1] > result[i] {
+			t.Failed()
+		}
+	}
+	//fmt.Println(result)
 	fmt.Println(watch.PrettyPrint())
 }

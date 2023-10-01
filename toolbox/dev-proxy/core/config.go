@@ -286,7 +286,6 @@ func initMainProxyJson() {
 		},
 		ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
 		ProxySelf:   &ProxySelf{Name: "proxy", ProxyType: Open, Paths: []string{"http://172.22.133.255:8990/(.*)"}},
-		//ProxyBlock:  &ProxySelf{Name: "block", ProxyType: Open, Paths: []string{"http://172.22.133.255:8991/(.*)"}},
 	}
 	storeByMemory(conf)
 }
