@@ -247,7 +247,7 @@ func CalendarMap(c *gin.Context) {
 
 func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 	var result [][2]string
-	max := 0
+	maxScore := 0
 	var lastTime *time.Time = nil
 	for _, day := range data {
 		var dayTime, err = time.Parse(store.DateFormat, day)
@@ -264,13 +264,13 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 			lastTime = &dayTime
 		}
 		score := scoreMap[day]
-		if score > max {
-			max = score
+		if score > maxScore {
+			maxScore = score
 		}
 
 		result = append(result, [2]string{dayTime.Format(ctk.YYYY_MM_DD), strconv.Itoa(score)})
 	}
-	return result, max
+	return result, maxScore
 }
 
 func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
