@@ -70,28 +70,7 @@ func TestBfs(t *testing.T) {
 func TestSameTree(t *testing.T) {
 	a := ArrayToTree[int]([]int{1, 3, 5, 2, 0, 5})
 	b := ArrayToTree[int]([]int{1, 3, 5, 2, 0, 5})
-	println(isDiff(a, b))
-}
-
-func isDiff[T comparable](a, b *Tree[T]) bool {
-	if a == nil && b == nil {
-		return false
-	}
-	if a == nil || b == nil {
-		return true
-	}
-
-	if isDiffVal(a, b) || isDiffVal(a.Left, b.Left) || isDiffVal(a.Right, b.Right) {
-		return true
-	}
-
-	if isDiff(a.Left, b.Left) {
-		return true
-	}
-	if isDiff(a.Right, b.Right) {
-		return true
-	}
-	return false
+	println(isDiffVal(a, b))
 }
 
 func isDiffVal[T comparable](a, b *Tree[T]) bool {
@@ -102,10 +81,33 @@ func isDiffVal[T comparable](a, b *Tree[T]) bool {
 		return true
 	}
 
-	return a.Data != b.Data
+	if a.Data != b.Data {
+		return true
+	} else {
+		return isDiffVal(a.Left, b.Left) || isDiffVal(a.Right, b.Right)
+	}
+}
+
+func DfsPreInvert[T any](t *Tree[T]) {
+	if t == nil {
+		return
+	}
+
+	tmp := t.Left
+	t.Left = t.Right
+	t.Right = tmp
+
+	DfsPreInvert(t.Left)
+	DfsPreInvert(t.Right)
 }
 
 // 镜像二叉树
 func TestInvertTree(t *testing.T) {
+	// 前序遍历, 交换子节点
+	tree := buildSimpleTree(7)
 
+	DfsPre(tree, PrintNode[int])
+	fmt.Println()
+	DfsPreInvert(tree)
+	DfsPre(tree, PrintNode[int])
 }

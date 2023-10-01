@@ -118,5 +118,5 @@ func appendIfAbsent[T any](layer []*Tree[T], node *Tree[T]) []*Tree[T] {
 }
 
 func PrintNode[T any](node *Tree[T]) {
-	fmt.Println(node.Data)
+	fmt.Print(node.Data, " ")
 }
