@@ -65,3 +65,47 @@ func TestBfs(t *testing.T) {
 	slotTree := buildSlotTree()
 	Bfs(slotTree, PrintNode[*User])
 }
+
+// 比较两个树是否相同
+func TestSameTree(t *testing.T) {
+	a := ArrayToTree[int]([]int{1, 3, 5, 2, 0, 5})
+	b := ArrayToTree[int]([]int{1, 3, 5, 2, 0, 5})
+	println(isDiff(a, b))
+}
+
+func isDiff[T comparable](a, b *Tree[T]) bool {
+	if a == nil && b == nil {
+		return false
+	}
+	if a == nil || b == nil {
+		return true
+	}
+
+	if isDiffVal(a, b) || isDiffVal(a.Left, b.Left) || isDiffVal(a.Right, b.Right) {
+		return true
+	}
+
+	if isDiff(a.Left, b.Left) {
+		return true
+	}
+	if isDiff(a.Right, b.Right) {
+		return true
+	}
+	return false
+}
+
+func isDiffVal[T comparable](a, b *Tree[T]) bool {
+	if a == nil && b == nil {
+		return false
+	}
+	if a == nil || b == nil {
+		return true
+	}
+
+	return a.Data != b.Data
+}
+
+// 镜像二叉树
+func TestInvertTree(t *testing.T) {
+
+}
