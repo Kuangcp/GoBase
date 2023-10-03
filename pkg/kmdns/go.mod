@@ -4,5 +4,5 @@ go 1.16
 
 require (
 	github.com/pion/mdns v0.0.5
-	golang.org/x/net v0.0.0-20220630215102-69896b714898
+	golang.org/x/net v0.7.0
 )
