@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +13,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/kuangcp/gobase/pkg/ctk"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/logger"
 )
 
 type filterFun = func(string) bool
@@ -38,10 +37,10 @@ var (
 )
 
 var (
-	startTag       = "**目录 start**"
-	endTag         = "**目录 end**"
-	headerTemplate = `---
-title: %s
+	splitTag       = "💠"
+	headerFirst    = "---\n"
+	headerLast     = "****************************************\n"
+	headerTemplate = headerFirst + `title: %s
 date: %s
 tags: 
 categories: 
@@ -49,8 +48,8 @@ categories:
 
 %s
 %s
-****************************************
-`
+` + headerLast
+	headerFmt = splitTag + "\n\n%s\n" + splitTag + " %s\n"
 )
 
 var (
@@ -59,13 +58,15 @@ var (
 	mindMapFile      string
 	refreshChangeDir string
 	appendFile       string
+	rmFile           string
+	rmAppendFile     string
 
 	titleReplace *strings.Replacer
 )
 
 var info = ctk.HelpInfo{
 	Description:   "Format markdown file, generate catalog",
-	Version:       "1.0.3",
+	Version:       "1.0.4",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -3,
 	DoubleFlagLen: -3,
@@ -77,8 +78,10 @@ var info = ctk.HelpInfo{
 		{Short: "", Value: "file", Comment: "Refresh file catalog"},
 		{Short: "-d", Value: "dir", Comment: "Refresh file catalog that recursive dir, default current dir"},
 		{Short: "-mm", Value: "file", Comment: "Print mind map"},
-		{Short: "-rc", Value: "dir", Comment: "Refresh git repo dir changed file"},
+		{Short: "-r", Value: "file", Comment: "Remove catalog"},
+		{Short: "-c", Value: "dir", Comment: "Refresh git repo dir changed file"},
 		{Short: "-a", Value: "file", Comment: "Append catalog and title for file"},
+		{Short: "-ra", Value: "file", Comment: "Remove then Append catalog and title for file"},
 	},
 }
 
@@ -86,10 +89,12 @@ func init() {
 	flag.BoolVar(&help, "h", false, "")
 	flag.StringVar(&refreshDir, "d", "", "")
 	flag.StringVar(&mindMapFile, "mm", "", "")
-	flag.StringVar(&refreshChangeDir, "rc", "", "")
+	flag.StringVar(&refreshChangeDir, "c", "", "")
 	flag.StringVar(&appendFile, "a", "", "")
+	flag.StringVar(&rmFile, "r", "", "")
+	flag.StringVar(&rmAppendFile, "ra", "", "")
 
-	logger.SetLogPathTrim("md-formatter/")
+	//logger.SetLogPathTrim("md-formatter/")
 	flag.Usage = info.PrintHelp
 
 	var replacePairList []string
@@ -114,7 +119,12 @@ func main() {
 	invokeWhen(refreshDir, refreshDirAllFiles)
 	invokeWhen(mindMapFile, printMindMap)
 	invokeWhen(refreshChangeDir, refreshChangeFile)
-	invokeWhen(appendFile, appendCatalogAndTitle)
+	invokeWhen(appendFile, appendCatalog)
+	invokeWhen(rmFile, removeCatalog)
+	invokeWhen(rmAppendFile, func(f string) {
+		removeCatalog(f)
+		appendCatalog(f)
+	})
 
 	refreshCatalog(os.Args[1])
 }
@@ -267,7 +277,7 @@ func refreshCatalog(filename string) {
 
 	startIdx := -1
 	endIdx := -1
-	var result = ""
+	var content = ""
 
 	// replace title block
 	lines := readFileLines(filename)
@@ -275,17 +285,18 @@ func refreshCatalog(filename string) {
 		return
 	}
 	for i, line := range lines {
-		if strings.Contains(line, startTag) {
-			startIdx = i
-		}
-		if strings.Contains(line, endTag) {
+		if startIdx != -1 && strings.Contains(line, splitTag) {
 			endIdx = i
-			timeStr := time.Now().Format("2006-01-02 15:04")
-			result += startTag + "\n\n" + tocBlock + "\n" + endTag + "|_" + timeStr + "_|\n"
+			content += fmt.Sprintf(headerFmt, tocBlock, time.Now().Format("2006-01-02 15:04"))
 			continue
 		}
+
+		if startIdx == -1 && strings.Contains(line, splitTag) {
+			startIdx = i
+		}
+
 		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
-			result += line
+			content += line
 		}
 	}
 
@@ -293,8 +304,8 @@ func refreshCatalog(filename string) {
 		logger.Warn("Invalid catalog: ", filename, startIdx, endIdx)
 		return
 	}
-	//logger.Info("index", startIdx, endIdx, result)
-	if ioutil.WriteFile(filename, []byte(result), 0644) != nil {
+	//logger.Info("index", startIdx, endIdx, content)
+	if os.WriteFile(filename, []byte(content), 0644) != nil {
 		logger.Error("Write error", filename)
 	}
 }
@@ -347,15 +358,56 @@ func refreshChangeFile(dir string) {
 	}
 }
 
-func appendCatalogAndTitle(filename string) {
-	lines := readLinesWithFunc(filename, nil, nil)
-	var headerText = fmt.Sprintf(headerTemplate, filename, time.Now().Format("2006-01-02 15:04:05"), startTag, endTag)
-	for i := range lines {
-		headerText += lines[i]
+func buildTitle(filename string) string {
+	if strings.HasSuffix(filename, ".md") {
+		filename = filename[:len(filename)-3]
+	}
+	index := strings.LastIndex(filename, "/")
+	if index != -1 && index < len(filename)-1 {
+		filename = filename[index+1:]
 	}
 
-	if ioutil.WriteFile(filename, []byte(headerText), 0644) != nil {
-		logger.Error("write error", filename)
+	return filename
+}
+
+func appendCatalog(filename string) {
+	lines := readLinesWithFunc(filename, nil, nil)
+	if len(lines) > 0 && lines[0] != headerFirst {
+		var content = fmt.Sprintf(headerTemplate, buildTitle(filename),
+			time.Now().Format("2006-01-02 15:04:05"), splitTag, splitTag)
+		for _, line := range lines {
+			content += line
+		}
+
+		if os.WriteFile(filename, []byte(content), 0644) != nil {
+			logger.Error("write error", filename)
+		}
 	}
 	refreshCatalog(filename)
+}
+
+func removeCatalog(filename string) {
+	lines := readLinesWithFunc(filename, nil, nil)
+	content := ""
+	header := false
+	for _, line := range lines {
+		line = strings.Replace(line, "\r\n", "\n", 1)
+		if line == headerLast {
+			header = false
+			continue
+		}
+		if line == headerFirst {
+			header = true
+			continue
+		}
+		if header {
+			continue
+		}
+
+		content += line
+	}
+
+	if os.WriteFile(filename, []byte(content), 0644) != nil {
+		logger.Error("write error", filename)
+	}
 }

@@ -17,7 +17,7 @@ func (u User) String() string {
 }
 
 func buildSimpleTree(l int) *Tree[int] {
-	var data []int
+	data := make([]int, l)
 	for i := 0; i < l; i++ {
 		data = append(data, i)
 	}
@@ -35,6 +35,38 @@ func buildSlotTree() *Tree[*User] {
 func TestBuildTree(t *testing.T) {
 	tree := buildSimpleTree(121)
 	fmt.Println(tree)
+}
+
+func BenchmarkDfsPre(b *testing.B) {
+	tree := buildSimpleTree(10000)
+	for i := 0; i < b.N; i++ {
+		sum := 0
+		DfsPre(tree, func(node *Tree[int]) {
+			sum += node.Data
+		})
+		fmt.Print(sum, " ")
+	}
+	fmt.Println()
+}
+
+func BenchmarkBfs(b *testing.B) {
+	tree := buildSimpleTree(10000)
+	for i := 0; i < b.N; i++ {
+		sum := 0
+		Bfs(tree, func(node *Tree[int]) {
+			sum += node.Data
+		})
+		fmt.Print(sum, " ")
+	}
+	fmt.Println()
+}
+
+func TestDfsPreBench(t *testing.T) {
+	tree := buildSimpleTree(14)
+	DfsPre(tree, PrintNode[int])
+
+	slotTree := buildSlotTree()
+	DfsPre(slotTree, PrintNode[*User])
 }
 
 func TestDfsPre(t *testing.T) {
