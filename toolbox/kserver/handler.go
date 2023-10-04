@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/logger"
 )
 
 var imgSuffixSet = ctool.NewSet(".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".gif", ".ico")
@@ -29,73 +29,42 @@ func isFileExist(filename string) bool {
 	return err == nil
 }
 
-func receiveFile(header *multipart.FileHeader) error {
-	filename := header.Filename
-	log.Printf("upload: %s", filename)
-
-	exist := isFileExist(filename)
-	if exist {
-		filename = fmt.Sprint(time.Now().Nanosecond()) + "-" + filename
-	}
-
-	dst, err := os.Create(filename)
+func uploadReadHandler(w http.ResponseWriter, r *http.Request) {
+	reader, err := r.MultipartReader()
 	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	open, err := header.Open()
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	defer func() {
-		err := dst.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}()
-
-	defer func() {
-		err := open.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}()
-
-	_, err = io.Copy(dst, open)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return nil
-}
-
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	if r.MultipartForm == nil {
-		log.Println("not exist any file")
-		w.Write([]byte("Error: not exist any file\n"))
+		logger.Error(err)
+		w.Write([]byte("error"))
 		return
 	}
 
-	var maxMib int64 = 10
-	// 非文件时采用这个限制，如果是文件类型的上传，会创建临时文件不会直接放在内存里
-	err := r.ParseMultipartForm(maxMib << 20)
-	if err != nil {
-		log.Println("read form error:", err)
-		w.Write([]byte("Error: read form failed\n"))
-		return
-	}
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
 
-	for _, headers := range r.MultipartForm.File {
-		for _, header := range headers {
-			if err := receiveFile(header); err != nil {
+		filename := part.FileName()
+		fmt.Printf("FileName: %s, FormType: %s\n", filename, part.FormName())
+		if filename == "" { // this is FormData
+			data, _ := io.ReadAll(part)
+			fmt.Printf("FormData=[%s]\n", string(data))
+		} else {
+			// This is FileData
+			exist := isFileExist(filename)
+			if exist {
+				filename = time.Now().Format(ctool.HH_MM_SS_MS) + "-" + filename
+			}
+
+			dst, _ := os.Create("./" + filename)
+			defer dst.Close()
+			_, err := io.Copy(dst, part)
+			if err != nil {
+				logger.Error(err)
+				w.Write([]byte("copy file error"))
 				return
 			}
 		}
 	}
-
 	http.Redirect(w, r, "/up", http.StatusMovedPermanently)
 }
 
