@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"github.com/kuangcp/logger"
 	"log"
 	"net/http"
 	"sort"
@@ -114,14 +115,14 @@ func printFileAndImgGroup(host, path, filePath string) {
 	lineBuf := fmt.Sprintf("%v%-27v", ctool.Green, local)
 	lineBuf += fmt.Sprintf("%-29v", fmt.Sprintf("%v", internal+imgFilePath))
 
-	log.Printf("%v %v %v", lineBuf, ctool.End, filePath)
+	logger.Info("%v %v %v", lineBuf, ctool.End, filePath)
 }
 
 func bindPathAndStatic(pattern, binContent string) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte(binContent))
 		if err != nil {
-			log.Println(err)
+			logger.Error(err)
 		}
 	})
 }
@@ -136,14 +137,14 @@ func registerAllFolder() {
 	// new pair dir from param
 	for _, s := range folderPair {
 		if !strings.Contains(s, "=") {
-			log.Printf("%vWARN %v is invalid format. must like a=b %v", ctool.Red, s, ctool.End)
+			logger.Info("%v is invalid format. must like a=b", s)
 			continue
 		}
 
 		pair := strings.Split(s, "=")
 		path := pair[0]
 		if usedPath.Contains(path) {
-			log.Printf("%vWARN path /%v already bind. %v", ctool.Red, path, ctool.End)
+			logger.Info("path /%v already bind.", path)
 			continue
 		}
 		pathDirMap[path] = pair[1]

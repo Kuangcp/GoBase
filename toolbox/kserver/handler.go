@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -93,7 +92,7 @@ func echoHandler(_ http.ResponseWriter, request *http.Request) {
 		decode = decode[8:]
 	}
 	decode = "💠Content: \n" + decode
-	log.Print(decode)
+	logger.Info(decode)
 }
 
 func buildVideoFunc(parentPath string) func(w http.ResponseWriter, r *http.Request) {
