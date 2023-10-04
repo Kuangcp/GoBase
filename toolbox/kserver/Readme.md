@@ -1,8 +1,10 @@
 # kserver
+
 1. 静态文件服务器
 1. 文件上传服务器
 
 ## build favicon.ico
+
 magick convert -background none favicon.svg -define icon:auto-resize favicon.ico
 
 ## build docker image
@@ -13,7 +15,8 @@ go build; docker build -f kserver.dockerfile -t ksever:$(./kserver -h | grep Ver
 
 > Alpine
 
-CGO_ENABLED=0 go build; docker build -f kserver-alpine.dockerfile -t ksever:$(./kserver -h | grep Version | awk '{print $2}')-alpine .
+CGO_ENABLED=0 go build; docker build -f kserver-alpine.dockerfile -t ksever:$(./kserver -h | grep Version | awk '{print
+$2}')-alpine .
 
 ### use
 
@@ -30,6 +33,8 @@ CGO_ENABLED=0 go build; docker build -f kserver-alpine.dockerfile -t ksever:$(./
     ```
 
 ## change log
-- 1.0.4 add upload function
-- 1.0.5 index.html
+
+- 1.1.0 fix multi file upload and big file upload
 - 1.0.6 img page
+- 1.0.5 index.html
+- 1.0.4 add upload function
