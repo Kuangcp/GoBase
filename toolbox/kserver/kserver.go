@@ -30,11 +30,48 @@ var (
 	internalIP    string
 	imgFilePath   = "/g"
 	videoFilePath = "/v"
+	fileSys       = http.FileServer(http.Dir("./"))
 )
 
 var folderPair ctool.ArrayFlags
 var pathDirMap = make(map[string]string)
 var usedPath = ctool.NewSet[string]("f", "g", "h", "up", "e", "d")
+
+func init() {
+	flag.IntVar(&port, "p", 8989, "web server port")
+	flag.Var(&folderPair, "d", "x=/path/to")
+}
+
+func main() {
+	info.Parse()
+	if help {
+		info.PrintHelp()
+		return
+	}
+
+	if port > 65535 || port == 0 {
+		log.Fatalf("Please input correct port [1, 65535]. now: %v", port)
+	}
+	if port < 1024 {
+		log.Printf("%vWARN: [1-1024] need run by root user.%v", ctool.Red, ctool.End)
+	}
+	internalIP = ctool.GetInternalIP()
+
+	registerAllFolder()
+	printStartUpLog()
+
+	http.Handle("/", appendLink("/", http.StripPrefix("/", fileSys)))
+	bindPathAndStatic("/h", homeHtml)
+
+	bindPathAndStatic("/favicon.ico", faviconIco)
+
+	bindPathAndStatic("/up", uploadHtml)
+
+	http.HandleFunc("/f", uploadHandler)
+	http.HandleFunc("/e", echoHandler)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+}
 
 func printStartUpLog() {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
@@ -113,51 +150,11 @@ func registerAllFolder() {
 		pathDirMap[path] = pair[1]
 
 		// 动态生成静态文件页面
-		http.Handle("/"+path+"/", http.StripPrefix("/"+path, http.FileServer(http.Dir(pair[1]))))
+		http.Handle("/"+path+"/", appendLink("/"+path+"/",
+			http.StripPrefix("/"+path, http.FileServer(http.Dir(pair[1])))))
 
 		// 动态生成图片和视频 页面
 		http.HandleFunc("/"+path+imgFilePath, buildImgFunc(path))
 		http.HandleFunc("/"+path+videoFilePath, buildVideoFunc(path))
 	}
-}
-
-func init() {
-	flag.IntVar(&port, "p", 8989, "")
-	flag.Var(&folderPair, "d", "")
-}
-
-func main() {
-	info.Parse()
-	if help {
-		info.PrintHelp()
-		return
-	}
-
-	if port > 65535 || port == 0 {
-		log.Fatalf("Please input correct port [1, 65535]. now: %v", port)
-	}
-	if port < 1024 {
-		log.Printf("%vWARN: [1-1024] need run by root user.%v", ctool.Red, ctool.End)
-	}
-	internalIP = ctool.GetInternalIP()
-
-	registerAllFolder()
-	printStartUpLog()
-
-	if defaultHome {
-		bindPathAndStatic("/", homeHtml)
-	} else {
-		fs := http.FileServer(http.Dir("./"))
-		http.Handle("/", http.StripPrefix("/", fs))
-		bindPathAndStatic("/h", homeHtml)
-	}
-
-	bindPathAndStatic("/favicon.ico", faviconIco)
-
-	bindPathAndStatic("/up", uploadHtml)
-
-	http.HandleFunc("/f", uploadHandler)
-	http.HandleFunc("/e", echoHandler)
-
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
