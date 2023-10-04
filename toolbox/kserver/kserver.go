@@ -12,34 +12,48 @@ import (
 	"github.com/kuangcp/gobase/pkg/ctool"
 )
 
-//go:embed up.html
-var uploadHtml string
-
-//go:embed home.html
-var homeHtml string
-
-//go:embed favicon.ico
-var faviconIco string
+var (
+	//go:embed up.html
+	uploadHtml string
+	//go:embed home.html
+	homeHtml string
+	//go:embed favicon.ico
+	faviconIco string
+)
 
 var (
-	help        bool
-	defaultHome bool
+	help         bool
+	defaultHome  bool
+	port         int
+	buildVersion string
+	internalIP   string
+	folderPair   ctool.ArrayFlags
 
-	port          int
-	buildVersion  string
-	internalIP    string
 	imgFilePath   = "/g"
 	videoFilePath = "/v"
 	fileSys       = http.FileServer(http.Dir("./"))
+	pathDirMap    = make(map[string]string)
+	usedPath      = ctool.NewSet[string]("f", "g", "h", "up", "e", "d")
 )
 
-var folderPair ctool.ArrayFlags
-var pathDirMap = make(map[string]string)
-var usedPath = ctool.NewSet[string]("f", "g", "h", "up", "e", "d")
+var info = ctool.HelpInfo{
+	Description:   "Start static file web server on current path",
+	Version:       "1.1.0",
+	BuildVersion:  buildVersion,
+	SingleFlagLen: -2,
+	ValueLen:      -6,
+	Flags: []ctool.ParamVO{
+		{Short: "-h", BoolVar: &help, Comment: "help"},
+		{Short: "-g", BoolVar: &defaultHome, Comment: "default home page"},
+	},
+	Options: []ctool.ParamVO{
+		{Short: "-p", Value: "port", Comment: "web server port"},
+		{Short: "-d", Value: "folder", Comment: "folder pair. like -d x=y "},
+	}}
 
 func init() {
-	flag.IntVar(&port, "p", 8989, "web server port")
-	flag.Var(&folderPair, "d", "x=/path/to")
+	flag.IntVar(&port, "p", 8989, "")
+	flag.Var(&folderPair, "d", "")
 }
 
 func main() {
@@ -67,7 +81,7 @@ func main() {
 
 	bindPathAndStatic("/up", uploadHtml)
 
-	http.HandleFunc("/f", uploadHandler)
+	http.HandleFunc("/f", uploadReadHandler)
 	http.HandleFunc("/e", echoHandler)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
@@ -111,21 +125,6 @@ func bindPathAndStatic(pattern, binContent string) {
 		}
 	})
 }
-
-var info = ctool.HelpInfo{
-	Description:   "Start static file web server on current path",
-	Version:       "1.0.10",
-	BuildVersion:  buildVersion,
-	SingleFlagLen: -2,
-	ValueLen:      -6,
-	Flags: []ctool.ParamVO{
-		{Short: "-h", BoolVar: &help, Comment: "help"},
-		{Short: "-g", BoolVar: &defaultHome, Comment: "default home page"},
-	},
-	Options: []ctool.ParamVO{
-		{Short: "-p", Value: "port", Comment: "web server port"},
-		{Short: "-d", Value: "folder", Comment: "folder pair. like -d x=y "},
-	}}
 
 func registerAllFolder() {
 	pathDirMap["/"] = "./"
