@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -100,15 +99,31 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/up", http.StatusMovedPermanently)
 }
 
+func appendLink(rootPath string, origin http.Handler) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path == rootPath {
+			writer.Write([]byte(`<html>
+<button onclick='location.href=("/h")'>首页</button>
+<button onclick='location.href=("/up")'>上传</button>
+<br/>
+`))
+			origin.ServeHTTP(writer, request)
+			writer.Write([]byte("</html>"))
+		} else {
+			origin.ServeHTTP(writer, request)
+		}
+	}
+}
+
 func echoHandler(_ http.ResponseWriter, request *http.Request) {
-	body, _ := ioutil.ReadAll(request.Body)
+	body, _ := io.ReadAll(request.Body)
 	content := string(body)
 
 	decode, _ := url.QueryUnescape(content)
 	if strings.HasPrefix(decode, "content") {
 		decode = decode[8:]
 	}
-	decode = "Content: \n" + decode
+	decode = "💠Content: \n" + decode
 	log.Print(decode)
 }
 
