@@ -6,10 +6,13 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
-	formTag = "form"
+	formTag        = "form"
+	fmtTag         = "fmt"
+	defaultTimeFmt = "2006-01-02"
 )
 
 // source: https://github.com/adonovan/gopl.io/blob/master/ch12/params/params.go
@@ -21,34 +24,43 @@ func Unpack(req *http.Request, ptr interface{}) error {
 		return err
 	}
 
+	type Tags struct {
+		val reflect.Value
+		fmt string
+	}
 	// Build map of fields keyed by effective name.
-	fields := make(map[string]reflect.Value)
+	fieldMap := make(map[string]Tags)
 	v := reflect.ValueOf(ptr).Elem() // the struct variable
 	for i := 0; i < v.NumField(); i++ {
 		fieldInfo := v.Type().Field(i) // a reflect.StructField
 		tag := fieldInfo.Tag           // a reflect.StructTag
 		name := tag.Get(formTag)
+		// default use filed name with lower
 		if name == "" {
 			name = strings.ToLower(fieldInfo.Name)
 		}
-		fields[name] = v.Field(i)
+		_, ok := fieldMap[name]
+		if ok {
+			return fmt.Errorf("exist repeat field name: %s", name)
+		}
+		fieldMap[name] = Tags{val: v.Field(i), fmt: tag.Get(fmtTag)}
 	}
 
 	// Update struct field for each parameter in the request.
 	for name, values := range req.Form {
-		f := fields[name]
-		if !f.IsValid() {
+		f := fieldMap[name]
+		if !f.val.IsValid() {
 			continue // ignore unrecognized HTTP parameters
 		}
 		for _, value := range values {
-			if f.Kind() == reflect.Slice {
-				elem := reflect.New(f.Type().Elem()).Elem()
-				if err := populate(elem, value); err != nil {
+			if f.val.Kind() == reflect.Slice {
+				elem := reflect.New(f.val.Type().Elem()).Elem()
+				if err := populate(elem, f.fmt, value); err != nil {
 					return fmt.Errorf("%s: %v", name, err)
 				}
-				f.Set(reflect.Append(f, elem))
+				f.val.Set(reflect.Append(f.val, elem))
 			} else {
-				if err := populate(f, value); err != nil {
+				if err := populate(f.val, f.fmt, value); err != nil {
 					return fmt.Errorf("%s: %v", name, err)
 				}
 			}
@@ -57,7 +69,7 @@ func Unpack(req *http.Request, ptr interface{}) error {
 	return nil
 }
 
-func populate(v reflect.Value, value string) error {
+func populate(v reflect.Value, fmtStr, value string) error {
 	switch v.Kind() {
 	case reflect.String:
 		v.SetString(value)
@@ -75,7 +87,21 @@ func populate(v reflect.Value, value string) error {
 			return err
 		}
 		v.SetBool(b)
-
+	case reflect.Struct:
+		switch v.Type().String() {
+		case "time.Time":
+			if fmtStr == "" {
+				fmtStr = defaultTimeFmt
+			}
+			parse, err := time.Parse(fmtStr, value)
+			if err != nil {
+				return err
+			}
+			v.Set(reflect.ValueOf(parse))
+		default:
+			return fmt.Errorf("unsupported struct %s", v.Type())
+		}
+		return nil
 	default:
 		return fmt.Errorf("unsupported kind %s", v.Type())
 	}
