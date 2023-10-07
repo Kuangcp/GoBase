@@ -6,7 +6,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/kuangcp/gobase/pkg/ctool v1.1.6
+	github.com/kuangcp/gobase/pkg/ctool v1.1.7
 	github.com/kuangcp/gobase/pkg/ratelimiter v1.0.1
 	github.com/kuangcp/logger v1.0.9
 	github.com/ouqiang/goproxy v1.3.2
@@ -22,4 +22,4 @@ require (
 	github.com/viki-org/dnscache v0.0.0-20130720023526-c70c1f23c5d8 // indirect
 )
 
-//replace github.com/kuangcp/gobase/pkg/ctool => ../../pkg/ctool
+replace github.com/kuangcp/gobase/pkg/ctool => ../../pkg/ctool
