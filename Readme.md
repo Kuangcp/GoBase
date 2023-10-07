@@ -5,5 +5,8 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/312ec5060a69facf0078/maintainability)](https://codeclimate.com/github/Kuangcp/GoBase/maintainability)
 
 - [toolbox](/toolbox)
+    - [dev-proxy](/toolbox/dev-proxy) : proxy for http or https, replace backend server host or url
+    - keylogger : log key press
+    - hosts-group : switch host
+    - recycle-bin : recycle bin by cli
 - [wework robot api](/pkg/wxrobot)`wework group robot`
-- [dev-proxy](/toolbox/dev-proxy)`proxy: replace backend server on local enviroment`
