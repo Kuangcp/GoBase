@@ -90,20 +90,41 @@ func populate(v reflect.Value, fmtStr, value string) error {
 	case reflect.Struct:
 		switch v.Type().String() {
 		case "time.Time":
-			if fmtStr == "" {
-				fmtStr = defaultTimeFmt
+			if err2 := handleTime(v, fmtStr, value, false); err2 != nil {
+				return err2
 			}
-			parse, err := time.Parse(fmtStr, value)
-			if err != nil {
-				return err
-			}
-			v.Set(reflect.ValueOf(parse))
 		default:
 			return fmt.Errorf("unsupported struct %s", v.Type())
 		}
 		return nil
+	case reflect.Pointer:
+		switch v.Type().String() {
+		case "*time.Time":
+			if err2 := handleTime(v, fmtStr, value, true); err2 != nil {
+				return err2
+			}
+		default:
+			return fmt.Errorf("unsupported point %s", v.Type())
+		}
+		return nil
 	default:
 		return fmt.Errorf("unsupported kind %s", v.Type())
+	}
+	return nil
+}
+
+func handleTime(v reflect.Value, fmtStr, value string, point bool) error {
+	if fmtStr == "" {
+		fmtStr = defaultTimeFmt
+	}
+	parse, err := time.Parse(fmtStr, value)
+	if err != nil {
+		return err
+	}
+	if point {
+		v.Set(reflect.ValueOf(&parse))
+	} else {
+		v.Set(reflect.ValueOf(parse))
 	}
 	return nil
 }

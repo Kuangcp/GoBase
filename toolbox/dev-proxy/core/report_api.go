@@ -182,18 +182,27 @@ func DetailById(writer http.ResponseWriter, request *http.Request) {
 }
 
 func HostPerformance(writer http.ResponseWriter, request *http.Request) {
-	query := request.URL.Query()
+	var param struct {
+		Id    string     `form:"id"`
+		Host  string     `form:"host"`
+		Url   string     `form:"url"`
+		Start *time.Time `form:"start" fmt:"2006-01-02T15:04"`
+		End   *time.Time `form:"end" fmt:"2006-01-02T15:04"`
+		Min   int
+	}
 
-	idStr := query.Get("id")
-	hostStr := query.Get("host")
-	urlStr := query.Get("url")
-	if hostStr == "" && urlStr == "" && idStr == "" {
+	if err := ctool.Unpack(request, &param); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest) // 400
+		return
+	}
+
+	if param.Host == "" && param.Url == "" && param.Id == "" {
 		writeJsonParamError(writer, "host or url is required")
 		return
 	}
 
-	if idStr != "" {
-		targetMsg := getDetailByKey(idStr)
+	if param.Id != "" {
+		targetMsg := getDetailByKey(param.Id)
 		parse, err := url.Parse(targetMsg.Url)
 		if err != nil {
 			writeJsonParamError(writer, err.Error())
@@ -208,30 +217,8 @@ func HostPerformance(writer http.ResponseWriter, request *http.Request) {
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
 
-	startStr := query.Get("start")
-	endStr := query.Get("end")
-	minStr := query.Get("min")
-	min := 1
-	if minStr != "" {
-		atoi, err := strconv.Atoi(minStr)
-		if err == nil {
-			min = atoi
-		}
-	}
-	if startStr != "" && endStr != "" {
-		startStr = strings.Replace(startStr, "T", " ", 1)
-		endStr = strings.Replace(endStr, "T", " ", 1)
-		start, err := time.Parse(ctool.YYYY_MM_DD_HH_MM, startStr)
-		if err != nil {
-			writeJsonParamError(writer, err.Error())
-			return
-		}
-		end, err := time.Parse(ctool.YYYY_MM_DD_HH_MM, endStr)
-		if err != nil {
-			writeJsonParamError(writer, err.Error())
-			return
-		}
-		rsp = queryData(start.Add(-time.Hour*8), end.Add(-time.Hour*8), hostStr, urlStr, min)
+	if param.Start != nil && param.End != nil {
+		rsp = queryData(param.Start.Add(-time.Hour*8), param.End.Add(-time.Hour*8), param.Host, param.Url, param.Min)
 	} else {
 		rsp.Msg = "invalid param"
 		rsp.Code = 400
