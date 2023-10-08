@@ -25,7 +25,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/kuangcp/gobase/pkg/ctool v1.1.6 // indirect
+	github.com/kuangcp/gobase/pkg/ctool v1.1.7 // indirect
 	github.com/kuangcp/gobase/pkg/ratelimiter v1.0.1 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/ouqiang/goproxy v1.3.2 // indirect

@@ -56,7 +56,7 @@ func TestCollectToJoin(t *testing.T) {
 
 func TestFork(t *testing.T) {
 	list := Just(1, 4, 2, 9, 1, 1, 6).MapStr()
-	ss := list.ForkN(10)
+	ss := list.ForkN(3)
 	fmt.Println("origin:", ToJoin(ss[0]))
 	fmt.Println("fork:", ToJoins(ss[1], ","))
 	fmt.Println("fork:", ToJoins(ss[2], "|"))
