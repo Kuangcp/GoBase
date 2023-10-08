@@ -41,6 +41,13 @@ func ToJoins(s Stream, split string) string {
 			}
 			first = false
 			result += item.(string)
+		} else if iType.Kind() == reflect.Int || iType.Kind() == reflect.Int8 || iType.Kind() == reflect.Int16 ||
+			iType.Kind() == reflect.Int32 || iType.Kind() == reflect.Int64 {
+			if !first {
+				result += split
+			}
+			first = false
+			result += fmt.Sprint(item)
 		} else {
 			nonString = true
 		}

@@ -3,7 +3,7 @@ module github.com/kuangcp/gobase/pkg/weblevel
 go 1.18
 
 require (
-	github.com/kuangcp/gobase/pkg/ctool v1.1.0
+	github.com/kuangcp/gobase/pkg/ctool v1.1.7
 	github.com/kuangcp/logger v1.0.9
 	github.com/syndtr/goleveldb v1.0.0
 )

@@ -129,3 +129,7 @@ func ToString(item any) any {
 func Self[R any](a any) R {
 	return a.(R)
 }
+
+func Println(item any) {
+	fmt.Println(item)
+}

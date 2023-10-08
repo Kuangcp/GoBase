@@ -80,7 +80,15 @@ func (s Stream) Fork() (Stream, Stream) {
 	return list[0], list[1]
 }
 
+func (s Stream) ForkTri() (Stream, Stream, Stream) {
+	list := s.ForkN(3)
+	return list[0], list[1], list[2]
+}
+
 func (s Stream) ForkN(n int) []Stream {
+	if n <= 1 {
+		return []Stream{s}
+	}
 	var cs []chan any
 	for i := 0; i < n; i++ {
 		cs = append(cs, make(chan any))
@@ -94,10 +102,13 @@ func (s Stream) ForkN(n int) []Stream {
 		}
 
 		for _, c := range cs {
-			for _, i := range cache {
-				c <- i
-			}
-			close(c)
+			c := c
+			go func() {
+				for _, i := range cache {
+					c <- i
+				}
+				close(c)
+			}()
 		}
 	}()
 
@@ -106,6 +117,45 @@ func (s Stream) ForkN(n int) []Stream {
 		result = append(result, Range(c))
 	}
 	return result
+}
+
+func (s Stream) ForkAn(consumers ...func(stream Stream)) {
+	if len(consumers) <= 1 {
+		return
+	}
+
+	var cs []chan any
+	for i := 0; i < len(consumers); i++ {
+		cs = append(cs, make(chan any))
+	}
+
+	go func() {
+		// TODO memory leak?
+		for item := range s.source {
+			for _, c := range cs {
+				//fmt.Println("fork to ", i, item, " size:", len(c))
+				c <- item
+			}
+		}
+
+		for _, c := range cs {
+			close(c)
+		}
+	}()
+
+	var wait sync.WaitGroup
+	for i, c := range cs {
+		wait.Add(1)
+
+		iff := i
+		cff := c
+		go func() {
+			consumers[iff](Range(cff))
+			defer wait.Done()
+		}()
+	}
+
+	wait.Wait()
 }
 
 // Distinct removes the duplicated items base on the given KeyFunc.

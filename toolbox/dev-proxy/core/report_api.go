@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -35,15 +34,20 @@ type (
 )
 
 func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
-	minS := request.URL.Query().Get("min")
-	maxS := request.URL.Query().Get("max")
-	min, _ := strconv.Atoi(minS)
-	if min < 1 {
-		min = 50
+	var param struct {
+		Min int
+		Max int
 	}
-	max, _ := strconv.Atoi(maxS)
-	if max < 1 {
-		max = 100
+	if err := ctool.Unpack(request, &param); err != nil {
+		writeJsonParamError(writer, err.Error())
+		return
+	}
+
+	if param.Min < 1 {
+		param.Min = 50
+	}
+	if param.Max < 1 {
+		param.Max = 100
 	}
 
 	result, err := Conn.HGetAll(RequestUrlList).Result()
@@ -71,7 +75,7 @@ func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 
 	//logger.Info(len(allUrlMap))
 	for k, v := range allUrlMap {
-		if v >= min && v <= max {
+		if v >= param.Min && v <= param.Max {
 			urlMap[k] = v
 		}
 	}

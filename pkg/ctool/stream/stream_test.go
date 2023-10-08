@@ -230,8 +230,8 @@ func TestStream_GroupParallel(t *testing.T) {
 		v := item.(int)
 		time.Sleep(time.Microsecond * 1)
 		return v / 3
-	}, func(opts *rxOptions) {
-		opts.workers = 10
+	}, func(opts *RxOptions) {
+		opts.Workers = 10
 		//opts.UnlimitedWorkers = true
 	}).ForEach(func(item any) {
 		//v := item.(GroupItem)
@@ -722,6 +722,95 @@ func TestStream_Min(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestStream_Fork(t *testing.T) {
+	watch := ctool.NewStopWatch()
+
+	watch.Start("fork")
+	a, b, c := JustN(30).Map(func(item any) any {
+		log.Println("xxx", item)
+		time.Sleep(time.Millisecond * 40)
+		return item
+	}).ForkTri()
+	watch.Stop()
+
+	// fork 异步执行, 但是会阻塞后序Stream操作,如果此处没有sleep 第一个操作会最耗时,因为需要消费完全部的上游Stream才能进行下一步操作
+	time.Sleep(time.Millisecond * 400)
+
+	watch.Run("fork3", func() {
+		maxI := c.Max(func(a, b any) bool {
+			return a.(int) < b.(int)
+		})
+		fmt.Println("max val is", maxI)
+	})
+
+	watch.Run("fork1", func() {
+		a.Filter(func(item any) bool {
+			time.Sleep(time.Millisecond * 3)
+			return item.(int) > 7
+		}).ForEach(Println)
+	})
+
+	watch.Run("for2", func() {
+		b.Filter(func(item any) bool {
+			time.Sleep(time.Millisecond * 3)
+			return item.(int) < 5
+		}).ForEach(Println)
+	})
+
+	fmt.Println(watch.PrettyPrint())
+}
+
+func TestStream_ForkAn(t *testing.T) {
+	watch := ctool.NewStopWatch()
+
+	watch.Start("A")
+	stream := JustN(10).Map(func(item any) any {
+		log.Println("xxx", item)
+		time.Sleep(time.Millisecond * 40)
+		return item
+	})
+
+	var re struct {
+		odd  []int
+		lit  []int
+		max  int
+		join string
+	}
+	stream.ForkAn(func(a Stream) {
+		a.Filter(func(item any) bool {
+			time.Sleep(time.Millisecond * 200)
+			fmt.Println("fork1", item)
+			return item.(int) > 7
+		}).ForEach(Println)
+	}, func(b Stream) {
+		x := b.Filter(func(item any) bool {
+			time.Sleep(time.Millisecond * 200)
+			fmt.Println("fork2", item)
+			return item.(int) < 5
+		})
+		re.lit = ToList[int](x)
+	}, func(stream Stream) {
+		re.odd = ToList[int](stream.Filter(func(item any) bool {
+			return item.(int)%2 == 0
+		}))
+	}, func(c Stream) {
+		maxI := c.Max(func(a, b any) bool {
+			fmt.Println("max", a, b)
+			return a.(int) < b.(int)
+		})
+		re.max = maxI.(int)
+		fmt.Println("max val is", maxI)
+	}, func(stream Stream) {
+		joins := ToJoins(stream, ".")
+		re.join = joins
+	})
+
+	watch.Stop()
+	fmt.Println(watch.PrettyPrint())
+	fmt.Println(re)
+
 }
 
 func BenchmarkParallelMapReduce(b *testing.B) {

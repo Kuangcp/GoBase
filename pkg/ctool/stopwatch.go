@@ -92,6 +92,12 @@ func (s *StopWatch) Start(name string) {
 	s.tasks = append(s.tasks, TaskInfo{name: name})
 }
 
+func (s *StopWatch) Run(name string, action func()) {
+	s.Start(name)
+	action()
+	s.Stop()
+}
+
 func (s *StopWatch) Stop() {
 	if !s.hasStart {
 		return
