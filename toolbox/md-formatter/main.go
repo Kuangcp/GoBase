@@ -49,6 +49,10 @@ categories:
 %s
 %s
 ` + headerLast
+	catalogTemplate = `
+%s
+%s
+` + headerLast
 	headerFmt = splitTag + "\n\n%s\n" + splitTag + " %s\n"
 )
 
@@ -58,6 +62,7 @@ var (
 	mindMapFile      string
 	refreshChangeDir string
 	appendFile       string
+	printCatalog     string
 	rmFile           string
 	rmAppendFile     string
 
@@ -93,6 +98,7 @@ func init() {
 	flag.StringVar(&appendFile, "a", "", "")
 	flag.StringVar(&rmFile, "r", "", "")
 	flag.StringVar(&rmAppendFile, "ra", "", "")
+	flag.StringVar(&printCatalog, "p", "", "")
 
 	//logger.SetLogPathTrim("md-formatter/")
 	flag.Usage = info.PrintHelp
@@ -119,14 +125,19 @@ func main() {
 	invokeWhen(refreshDir, refreshDirAllFiles)
 	invokeWhen(mindMapFile, printMindMap)
 	invokeWhen(refreshChangeDir, refreshChangeFile)
-	invokeWhen(appendFile, appendCatalog)
-	invokeWhen(rmFile, removeCatalog)
-	invokeWhen(rmAppendFile, func(f string) {
+	invokeWhen(appendFile, createCatalog)
+	invokeWhen(rmFile, func(f string) {
 		removeCatalog(f)
-		appendCatalog(f)
+	})
+	invokeWhen(rmAppendFile, ReplaceThenRefreshCatalog)
+	invokeWhen(printCatalog, func(s string) {
+		rows := generateCatalog(s)
+		for _, r := range rows {
+			fmt.Print(r)
+		}
 	})
 
-	refreshCatalog(os.Args[1])
+	ReplaceThenRefreshCatalog(os.Args[1])
 }
 
 func invokeWhen(param string, action func(string)) {
@@ -237,17 +248,42 @@ func normalizeForTitle(title string) string {
 }
 
 func generateCatalog(filename string) []string {
-	return readLinesWithFunc(filename,
+
+	var pPath []int
+
+	rows := readLinesWithFunc(filename,
 		func(s string) bool {
 			return strings.HasPrefix(s, "#")
 		},
 		func(s string) string {
+			if len(pPath) == 0 {
+				pPath = []int{0}
+			}
+			level := strings.Count(s, "#")
+			for len(pPath) < level {
+				pPath = append(pPath, 0)
+			}
+			pPath[level-1] += 1
+			if level < len(pPath) {
+				for i := level; i < len(pPath); i++ {
+					pPath[i] = 0
+				}
+			}
+
 			title := strings.TrimSpace(strings.Replace(s, "#", "", -1))
 			strings.Count(s, "#")
 			temps := strings.Split(s, "# ")
-			level := strings.Replace(temps[0], "#", "    ", -1)
-			return fmt.Sprintf("%s1. [%s](#%s)\n", level, title, normalizeForTitle(title))
+			levelStr := strings.Replace(temps[0], "#", "    ", -1)
+			return fmt.Sprintf("%s- %s. [%s](#%s)\n", levelStr, pathToString(pPath[:level]), title, normalizeForTitle(title))
 		})
+	return rows
+}
+func pathToString(path []int) string {
+	var result []string
+	for _, i := range path {
+		result = append(result, fmt.Sprint(i))
+	}
+	return strings.Join(result, ".")
 }
 
 func refreshCatalogWithCondition(filename string, condition func(filename string) bool) {
@@ -255,7 +291,13 @@ func refreshCatalogWithCondition(filename string, condition func(filename string
 		return
 	}
 
-	refreshCatalog(filename)
+	//refreshCatalog(filename)
+	ReplaceThenRefreshCatalog(filename)
+}
+
+// 删除原有目录数据，保留标签，更新索引目录
+func ReplaceThenRefreshCatalog(filename string) {
+	replaceCatalog(filename, removeCatalog(filename))
 }
 
 // 更新指定文件的目录
@@ -348,11 +390,13 @@ func refreshChangeFile(dir string) {
 	showChange := false
 	for filePath := range status {
 		fileStatus := status.File(filePath)
-		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
-			if !showChange {
-				logger.Info("Repository:", refreshChangeDir)
-				showChange = true
-			}
+
+		careStatus := fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified
+		if careStatus && !showChange {
+			logger.Info("Repository:", refreshChangeDir)
+			showChange = true
+		}
+		if careStatus {
 			refreshCatalogWithCondition(dir+filePath, isNeedHandleFile)
 		}
 	}
@@ -370,7 +414,24 @@ func buildTitle(filename string) string {
 	return filename
 }
 
-func appendCatalog(filename string) {
+func replaceCatalog(filename, tag string) {
+	lines := readLinesWithFunc(filename, nil, nil)
+	if len(lines) > 0 && lines[0] != headerFirst {
+		var content = fmt.Sprintf(catalogTemplate, splitTag, splitTag)
+		content = tag + content
+		for _, line := range lines {
+			content += line
+		}
+
+		if os.WriteFile(filename, []byte(content), 0644) != nil {
+			logger.Error("write error", filename)
+		}
+	}
+
+	refreshCatalog(filename)
+}
+
+func createCatalog(filename string) {
 	lines := readLinesWithFunc(filename, nil, nil)
 	if len(lines) > 0 && lines[0] != headerFirst {
 		var content = fmt.Sprintf(headerTemplate, buildTitle(filename),
@@ -386,21 +447,30 @@ func appendCatalog(filename string) {
 	refreshCatalog(filename)
 }
 
-func removeCatalog(filename string) {
+func removeCatalog(filename string) string {
+	tagBlock := ""
 	lines := readLinesWithFunc(filename, nil, nil)
 	content := ""
 	header := false
+	tagEnd := false
 	for _, line := range lines {
 		line = strings.Replace(line, "\r\n", "\n", 1)
 		if line == headerLast {
 			header = false
 			continue
 		}
-		if line == headerFirst {
-			header = true
+		if line == headerFirst && header {
+			tagEnd = true
+			tagBlock += line
 			continue
 		}
+		if line == headerFirst {
+			header = true
+		}
 		if header {
+			if !tagEnd {
+				tagBlock += line
+			}
 			continue
 		}
 
@@ -410,4 +480,5 @@ func removeCatalog(filename string) {
 	if os.WriteFile(filename, []byte(content), 0644) != nil {
 		logger.Error("write error", filename)
 	}
+	return tagBlock
 }
