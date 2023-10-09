@@ -174,9 +174,13 @@ func TestForAll(t *testing.T) {
 }
 
 func TestStream_ForEach(t *testing.T) {
-	JustN(10).MapStr().ForEach(func(item any) {
+	stream := JustN(10).MapStr()
+	stream.ForEach(func(item any) {
 		fmt.Println(item)
 	})
+	stream.Map(func(item any) any {
+		return item.(string) + "x"
+	}).ForEach(Println)
 
 }
 
