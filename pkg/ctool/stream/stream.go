@@ -550,26 +550,26 @@ func (s Stream) Last() (item any) {
 
 // Min returns the minimum item from the underlying source.
 func (s Stream) Min(less LessFunc) any {
-	var min any
+	var minResult any
 	for item := range s.source {
-		if min == nil || less(item, min) {
-			min = item
+		if minResult == nil || less(item, minResult) {
+			minResult = item
 		}
 	}
 
-	return min
+	return minResult
 }
 
 // Max returns the maximum item from the underlying source.
 func (s Stream) Max(less LessFunc) any {
-	var max any
+	var maxResult any
 	for item := range s.source {
-		if max == nil || less(max, item) {
-			max = item
+		if maxResult == nil || less(maxResult, item) {
+			maxResult = item
 		}
 	}
 
-	return max
+	return maxResult
 }
 
 // Count counts the number of elements in the result.

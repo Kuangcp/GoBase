@@ -54,13 +54,14 @@ func TestCollectToJoin(t *testing.T) {
 	fmt.Println("Joins result:", ToJoins(ss, "|"))
 }
 
-func TestFork(t *testing.T) {
-	list := Just(1, 4, 2, 9, 1, 1, 6).MapStr()
-	ss := list.ForkN(3)
-	fmt.Println("origin:", ToJoin(ss[0]))
-	fmt.Println("fork:", ToJoins(ss[1], ","))
-	fmt.Println("fork:", ToJoins(ss[2], "|"))
-	fmt.Println("fork:", ToJoins(ss[3], "-"))
+func TestToSet(t *testing.T) {
+	set := ToSet[int](Just(1, 4, 2, 2, 1))
+	fmt.Println(set)
+
+	set = ToSetFunc[int](Just(1, 4, 2, 2, 1), func(s any) int {
+		return s.(int) + 10
+	})
+	fmt.Println(set)
 }
 
 // Join 场景简单，导致了并发协程多没有提效反而更多情况是降低效率，而且结果也是乱序
