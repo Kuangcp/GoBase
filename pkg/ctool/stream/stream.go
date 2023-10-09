@@ -119,7 +119,7 @@ func (s Stream) ForkN(n int) []Stream {
 	return result
 }
 
-func (s Stream) ForkAn(consumers ...func(stream Stream)) {
+func (s Stream) ForkParallel(consumers ...func(stream Stream)) {
 	if len(consumers) <= 1 {
 		return
 	}
@@ -147,10 +147,10 @@ func (s Stream) ForkAn(consumers ...func(stream Stream)) {
 	for i, c := range cs {
 		wait.Add(1)
 
-		iff := i
-		cff := c
+		index := i
+		channel := c
 		go func() {
-			consumers[iff](Range(cff))
+			consumers[index](Range(channel))
 			defer wait.Done()
 		}()
 	}
