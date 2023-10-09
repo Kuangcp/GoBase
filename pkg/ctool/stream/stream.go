@@ -130,10 +130,8 @@ func (s Stream) ForkParallel(consumers ...func(stream Stream)) {
 	}
 
 	go func() {
-		// TODO memory leak?
 		for item := range s.source {
 			for _, c := range cs {
-				//fmt.Println("fork to ", i, item, " size:", len(c))
 				c <- item
 			}
 		}
@@ -204,6 +202,7 @@ func (s Stream) ForEach(fn ForEachFunc) {
 	for item := range s.source {
 		fn(item)
 	}
+	go drain(s.source)
 }
 
 // Group groups the elements into different groups based on their keys.
