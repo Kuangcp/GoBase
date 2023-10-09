@@ -762,55 +762,52 @@ func TestStream_Fork(t *testing.T) {
 	fmt.Println(watch.PrettyPrint())
 }
 
-func TestStream_ForkAn(t *testing.T) {
+func TestStream_ForkParallel(t *testing.T) {
 	watch := ctool.NewStopWatch()
 
-	watch.Start("A")
+	watch.Start("build stream")
 	stream := JustN(10).Map(func(item any) any {
-		log.Println("xxx", item)
-		time.Sleep(time.Millisecond * 40)
-		return item
+		time.Sleep(time.Millisecond * 50)
+		re := rand.Intn(item.(int))
+		log.Println("provider", re)
+		return re
 	})
+	watch.Stop()
 
-	var re struct {
+	var result struct {
 		odd  []int
 		lit  []int
 		max  int
 		join string
 	}
-	stream.ForkAn(func(a Stream) {
-		a.Filter(func(item any) bool {
-			time.Sleep(time.Millisecond * 200)
-			fmt.Println("fork1", item)
-			return item.(int) > 7
-		}).ForEach(Println)
-	}, func(b Stream) {
+
+	watch.Start("parallel")
+	stream.ForkParallel(func(b Stream) {
 		x := b.Filter(func(item any) bool {
 			time.Sleep(time.Millisecond * 200)
-			fmt.Println("fork2", item)
+			//fmt.Println("fork2", item)
 			return item.(int) < 5
 		})
-		re.lit = ToList[int](x)
+		result.lit = ToList[int](x)
 	}, func(stream Stream) {
-		re.odd = ToList[int](stream.Filter(func(item any) bool {
+		result.odd = ToList[int](stream.Filter(func(item any) bool {
 			return item.(int)%2 == 0
 		}))
 	}, func(c Stream) {
 		maxI := c.Max(func(a, b any) bool {
-			fmt.Println("max", a, b)
+			//fmt.Println("max", a, b)
 			return a.(int) < b.(int)
 		})
-		re.max = maxI.(int)
-		fmt.Println("max val is", maxI)
+		result.max = maxI.(int)
+		//fmt.Println("max val is", maxI)
 	}, func(stream Stream) {
 		joins := ToJoins(stream, ".")
-		re.join = joins
+		result.join = joins
 	})
 
 	watch.Stop()
 	fmt.Println(watch.PrettyPrint())
-	fmt.Println(re)
-
+	fmt.Println("RESULT ", result)
 }
 
 func BenchmarkParallelMapReduce(b *testing.B) {
