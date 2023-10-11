@@ -132,14 +132,21 @@ func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	// 批量得到url
 	// id -> host
 	uMap := make(map[string]string)
-	array := splitArray(ids, 100)
-	for _, ba := range array {
+	batch := 100
+	array := splitArray(ids, batch)
+	for bi, ba := range array {
 		result, err := Conn.HMGet(RequestUrlList, ba...).Result()
 		if err != nil {
 			continue
 		}
 		for i := range ba {
-			path := result[i].(string)
+			tmp := result[i]
+			if tmp == nil {
+				logger.Warn("NOT MATCH", zR[bi*batch+i], ba[i])
+				RemoveReqMember(zR[bi*batch+i].Member)
+				continue
+			}
+			path := tmp.(string)
 			parse, err := url.Parse(path)
 			if err != nil {
 				continue
@@ -204,7 +211,7 @@ func DetailById(writer http.ResponseWriter, request *http.Request) {
 	})
 }
 
-func HostPerformance(writer http.ResponseWriter, request *http.Request) {
+func HostPerformance(request *http.Request) ctool.ResultVO[[]PerfPageVo] {
 	var param struct {
 		Id    string     `form:"id"`
 		Host  string     `form:"host"`
@@ -215,38 +222,33 @@ func HostPerformance(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	if err := ctool.Unpack(request, &param); err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest) // 400
-		return
+		return ctool.FailedWithMsg[[]PerfPageVo](err.Error())
 	}
 
 	if param.Host == "" && param.Url == "" && param.Id == "" {
-		writeJsonParamError(writer, "host or url is required")
-		return
+		return ctool.FailedWithMsg[[]PerfPageVo]("host or url is required")
 	}
 
 	if param.Id != "" {
 		targetMsg := getDetailByKey(param.Id)
 		parse, err := url.Parse(targetMsg.Url)
 		if err != nil {
-			writeJsonParamError(writer, err.Error())
-			return
+			return ctool.FailedWithMsg[[]PerfPageVo](err.Error())
 		}
 
 		path := parse.Scheme + "://" + parse.Host + parse.Path
 		rsp := queryData(targetMsg.ReqTime.Add(-time.Minute*5), targetMsg.ResTime.Add(time.Minute*5), "", path, 1)
-		writeJsonRsp(writer, rsp)
-		return
+		return rsp
 	}
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
-
 	if param.Start != nil && param.End != nil {
 		rsp = queryData(param.Start.Add(-time.Hour*8), param.End.Add(-time.Hour*8), param.Host, param.Url, param.Min)
 	} else {
 		rsp.Msg = "invalid param"
 		rsp.Code = 400
 	}
-	writeJsonRsp(writer, rsp)
+	return rsp
 }
 
 func queryData(start time.Time, end time.Time, hostStr string, urlStr string, min int) ctool.ResultVO[[]PerfPageVo] {
@@ -264,15 +266,22 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 	}
 
 	ids := parseIdArray(zr)
-	array := splitArray(ids, 300)
+	batchSize := 300
+	array := splitArray(ids, batchSize)
 	var cache []*ReqLog[Message]
-	for _, batch := range array {
+	for bi, batch := range array {
 		result, err := Conn.HMGet(RequestUrlList, batch...).Result()
 		if err != nil {
 			continue
 		}
 		for i := range batch {
-			path := result[i].(string)
+			tmp := result[i]
+			if tmp == nil {
+				logger.Warn("NOT MATCH", zr[bi*batchSize+i])
+				RemoveReqMember(zr[bi*batchSize+i].Member)
+				continue
+			}
+			path := tmp.(string)
 			if (hostStr != "" && (strings.HasPrefix(path, "http://"+hostStr) || strings.HasPrefix(path, "https://"+hostStr))) ||
 				(urlStr != "" && strings.HasPrefix(path, urlStr)) {
 				msg := getDetailByKey(batch[i])

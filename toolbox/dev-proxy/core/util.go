@@ -38,7 +38,7 @@ func writeJsonRsp(writer http.ResponseWriter, val any) {
 	writer.Write(buffer.Bytes())
 }
 
-func JSONFunc[T any](serviceFunc func(request *http.Request) T) http.HandlerFunc {
+func Json[T any](serviceFunc func(request *http.Request) T) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
 		buffer := toJSONBuffer(serviceFunc(request))

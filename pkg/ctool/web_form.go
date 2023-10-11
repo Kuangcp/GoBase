@@ -114,6 +114,9 @@ func populate(v reflect.Value, fmtStr, value string) error {
 }
 
 func handleTime(v reflect.Value, fmtStr, value string, point bool) error {
+	if value == "" {
+		return nil
+	}
 	if fmtStr == "" {
 		fmtStr = defaultTimeFmt
 	}
