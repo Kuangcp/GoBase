@@ -69,7 +69,7 @@ func uploadReadHandler(w http.ResponseWriter, r *http.Request) {
 
 func appendLink(rootPath string, origin http.Handler) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		if request.URL.Path == rootPath {
+		if syncMode && request.URL.Path == rootPath {
 			writer.Write([]byte(`<html>
 <button onclick='location.href=("/h")'>首页</button>
 <button onclick='location.href=("/up")'>上传</button>
