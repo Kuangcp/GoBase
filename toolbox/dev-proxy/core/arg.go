@@ -27,8 +27,8 @@ var HelpInfo = ctool.HelpInfo{
 		{Short: "-A", BoolVar: &TrackAllType, Comment: "track all request default track json response"},
 	},
 	Options: []ctool.ParamVO{
-		{Short: "-w", IntVar: &ApiPort, Int: 1235, Value: "port", Comment: "web api port"},
 		{Short: "-p", IntVar: &Port, Int: 1234, Value: "port", Comment: "proxy port"},
+		{Short: "-w", IntVar: &ApiPort, Int: 1235, Value: "port", Comment: "web api port"},
 		{Short: "-j", StringVar: &JsonPath, String: "", Value: "path", Comment: "json config file abs path"},
 		{Short: "-a", StringVar: &PacPath, String: "", Value: "path", Comment: "pac file abs path"},
 	},

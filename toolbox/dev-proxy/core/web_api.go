@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/arl/statsviz"
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ratelimiter"
 	"github.com/kuangcp/logger"
@@ -36,14 +37,12 @@ var pacFile string
 var static embed.FS
 
 const (
-	jsT   = "text/javascript; charset=utf-8"
-	cssT  = "text/css; charset=utf-8"
-	htmlT = "text/html; charset=utf-8"
-	iconT = "image/vnd.microsoft.icon"
-	pacT  = "application/x-ns-proxy-autoconfig"
+	pacT = "application/x-ns-proxy-autoconfig"
 )
 
 func StartQueryServer() {
+	mux := http.NewServeMux()
+
 	limiter := ratelimiter.CreateLeakyLimiter(2)
 	logger.Info("Start query server on 127.0.0.1:%d", ApiPort)
 
@@ -52,30 +51,35 @@ func StartQueryServer() {
 		//fs := http.FileServer(http.Dir("./core/static"))
 		//http.Handle("/", http.StripPrefix("/", fs))
 
-		http.Handle("/", http.FileServer(http.Dir("./core/static")))
+		mux.Handle("/", http.FileServer(http.Dir("./core/static")))
 	} else {
 		sub, err := fs.Sub(static, "static")
 		if err != nil {
 			panic(err)
 		}
-		http.Handle("/", http.FileServer(http.FS(sub)))
-		http.HandleFunc(PacUrl, PacFileApi)
+		mux.Handle("/", http.FileServer(http.FS(sub)))
+		mux.HandleFunc(PacUrl, PacFileApi)
 	}
 
-	http.HandleFunc("/list", rtTimeAndLimitInterceptor(JSONFunc(pageListReqHistory), limiter))
-	http.HandleFunc("/curl", rtTimeInterceptor(buildCurlCommandApi))
-	http.HandleFunc("/replay", replayRequest)
+	err := statsviz.Register(mux)
+	if err != nil {
+		logger.Error(err)
+	}
 
-	http.HandleFunc("/del", rtTimeInterceptor(delRequest))
-	http.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
-	http.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
+	mux.HandleFunc("/list", rtTimeAndLimitInterceptor(JSONFunc(pageListReqHistory), limiter))
+	mux.HandleFunc("/curl", rtTimeInterceptor(buildCurlCommandApi))
+	mux.HandleFunc("/replay", replayRequest)
 
-	http.HandleFunc("/urlFrequency", rtTimeInterceptor(UrlFrequencyApi))
-	http.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(UrlTimeAnalysis))
-	http.HandleFunc("/detailById", rtTimeInterceptor(DetailById))
-	http.HandleFunc("/hostPerf", rtTimeInterceptor(HostPerformance))
+	mux.HandleFunc("/del", rtTimeInterceptor(delRequest))
+	mux.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
+	mux.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
 
-	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), nil)
+	mux.HandleFunc("/urlFrequency", rtTimeInterceptor(UrlFrequencyApi))
+	mux.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(UrlTimeAnalysis))
+	mux.HandleFunc("/detailById", rtTimeInterceptor(DetailById))
+	mux.HandleFunc("/hostPerf", rtTimeInterceptor(HostPerformance))
+
+	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), mux)
 }
 
 func (p PageQueryParam) buildStartEnd() (int64, int64) {
