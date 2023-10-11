@@ -35,8 +35,9 @@ type (
 
 func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 	var param struct {
-		Min int
-		Max int
+		Min   int
+		Max   int
+		Depth int
 	}
 	if err := ctool.Unpack(request, &param); err != nil {
 		writeJsonParamError(writer, err.Error())
@@ -65,6 +66,24 @@ func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 	allUrlMap := make(map[string]int)
 	urlMap := make(map[string]int)
 	for _, v := range result {
+		if param.Depth != 0 {
+
+			parse, err := url.Parse(v)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			path := parse.Path
+			parts := strings.Split(path, "/")
+			depth := param.Depth
+			depth += 1
+			if len(parts) < depth {
+				depth = len(parts)
+			}
+			newPath := strings.Join(parts[:depth], "/")
+			v = parse.Scheme + "://" + parse.Host + newPath
+		}
+
 		val, ok := allUrlMap[v]
 		if !ok {
 			allUrlMap[v] = 1
@@ -79,21 +98,21 @@ func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 			urlMap[k] = v
 		}
 	}
-	allHostMap := make(map[string]int)
+	hostMap := make(map[string]int)
 	for k, v := range urlMap {
 		parse, err := url.Parse(k)
 		if err != nil {
 			logger.Error(err)
 			continue
 		}
-		h, ok := allHostMap[parse.Host]
+		h, ok := hostMap[parse.Host]
 		if !ok {
-			allHostMap[parse.Host] = v
+			hostMap[parse.Host] = v
 		} else {
-			allHostMap[parse.Host] = h + v
+			hostMap[parse.Host] = h + v
 		}
 	}
-	writeJsonRsp(writer, Val{UrlMap: urlMap, HostMap: allHostMap})
+	writeJsonRsp(writer, Val{UrlMap: urlMap, HostMap: hostMap})
 }
 
 func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {

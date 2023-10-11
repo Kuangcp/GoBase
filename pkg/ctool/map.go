@@ -1,5 +1,8 @@
 package ctool
 
+import "sort"
+import "golang.org/x/exp/constraints"
+
 type (
 	MapEntry[K, V comparable] struct {
 		Key K
@@ -72,4 +75,16 @@ func (m *Maps[K, V]) Put(k K, v ...V) bool {
 	vs = append(vs, v...)
 	m.cache[k] = vs
 	return true
+}
+
+func NewSortMap[K comparable, V constraints.Ordered](origin map[K]V) []MapEntry[K, V] {
+	var result []MapEntry[K, V]
+	for k, v := range origin {
+		result = append(result, MapEntry[K, V]{Key: k, Val: v})
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Val < result[j].Val
+	})
+	return result
 }
