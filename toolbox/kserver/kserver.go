@@ -23,13 +23,16 @@ var (
 )
 
 var (
+	port       int
+	folderPair ctool.ArrayFlags
+	syncMode   bool
+
 	help         bool
 	defaultHome  bool
-	port         int
 	buildVersion string
 	internalIP   string
-	folderPair   ctool.ArrayFlags
 
+	homePath      = "/h"
 	imgFilePath   = "/g"
 	videoFilePath = "/v"
 	fileSys       = http.FileServer(http.Dir("./"))
@@ -46,6 +49,7 @@ var info = ctool.HelpInfo{
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-g", BoolVar: &defaultHome, Comment: "default home page"},
+		{Short: "-s", BoolVar: &syncMode, Comment: "sync file or msg mode"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-p", Value: "port", Comment: "web server port"},
@@ -94,6 +98,7 @@ func printStartUpLog() {
 	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
 		ctool.Purple, ctool.End, innerURL)
 	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", ctool.Purple, ctool.End, innerURL)
+	log.Printf("%v/h%v   home: %v\n", ctool.Purple, ctool.End, fmt.Sprintf("http://%v:%v%v", internalIP, port, homePath))
 
 	// sort and print
 	var keys []string
