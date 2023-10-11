@@ -2,40 +2,60 @@ package core
 
 import (
 	"fmt"
+	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 )
 
-func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageVO]]] {
+func PageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageVO]]] {
 	result := ResultVO[*PageVO[*ReqLog[MessageVO]]]{}
-	param := parseParam(request)
-	if param == nil {
+	param := &PageQueryParam{}
+	if err := ctool.Unpack(request, param); err != nil {
+		logger.Error(err)
 		result.Code = 101
 		result.Msg = "invalid param"
 		return result
 	}
+
+	if param.Size <= 0 {
+		param.Size = 1
+	}
+	if param.Page <= 1 {
+		param.Page = 1
+	}
+	if param.Kwd != "" {
+		param.Kwd = strings.TrimSpace(param.Kwd)
+	}
+
 	var pageResult *PageVO[*ReqLog[MessageVO]]
-	if param.kwd != "" || param.date != "" {
-		list, total := pageQueryReqLogByUrlKwd(param)
+	if param.Kwd != "" {
+		result.Msg = "kwd"
+		list, total := pageQueryReqByUrlKwd(param)
 		pageResult = &PageVO[*ReqLog[MessageVO]]{}
 		pageResult.Data = list
 		pageResult.Total = total
-		page := total / param.size
-		if page*param.size < total {
+		page := total / param.Size
+		if page*param.Size < total {
 			page++
 		}
 		pageResult.Page = page
+	} else if param.Date != nil && param.Id == "" {
+		result.Msg = "time"
+		pageResult = pageQueryLogByTime(param)
 	} else {
-		pageResult = pageQueryReqLogByIndex(param)
+		result.Msg = "index"
+		pageResult = pageQueryLogByIdOrIndex(param)
 	}
 
 	if pageResult == nil {
 		result.Code = 101
-		result.Msg = "no data"
+		result.Msg += " no data"
 	} else {
 		result.Code = 0
 		result.Data = pageResult
@@ -45,10 +65,10 @@ func pageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 }
 
 // search url
-func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
+func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 	var cursor uint64 = 0
 	const fetchSize int64 = 100
-	const maxPage = 6
+	const maxPage = 5
 
 	keys, cursor, err := Conn.HScan(RequestUrlList, cursor, "", fetchSize).Result()
 	if err != nil {
@@ -56,31 +76,39 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 		return nil, 0
 	}
 
-	startIdx := (param.page - 1) * param.size
-	maxIdx := (param.page + maxPage) * param.size
+	startIdx := (param.Page - 1) * param.Size
+	maxIdx := (param.Page + maxPage) * param.Size
 	total := 0
 	var list []*ReqLog[MessageVO]
+	overflow := false
 	for len(keys) > 0 {
 		for i := 0; i < len(keys); i += 2 {
 			key := keys[i]
 			val := keys[i+1]
 
-			if !strings.Contains(url.QueryEscape(val), url.QueryEscape(param.kwd)) {
+			if !strings.Contains(url.QueryEscape(val), url.QueryEscape(param.Kwd)) {
 				continue
 			}
 
 			total++
-			if total > startIdx && len(list) < param.size {
+			if total > startIdx && len(list) < param.Size {
 				log := getDetailByKey(key)
 				if log == nil {
-					Conn.HDel(RequestUrlList, key)
+					RemoveReqUrlKey(key)
+				} else {
+					list = append(list, convertLog(log))
 				}
-				list = append(list, convertLog(log))
 			}
 			if total >= maxIdx {
+				logger.Warn("reach max scan row", total, param.Size, len(list))
+				overflow = true
 				break
 			}
 		}
+		if overflow {
+			break
+		}
+
 		// logger.Info("new loop", cursor)
 		keys, cursor, err = Conn.HScan(RequestUrlList, cursor, "", fetchSize).Result()
 		if err != nil {
@@ -95,43 +123,37 @@ func pageQueryReqLogByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) 
 	return list, total
 }
 
-// search url and header body
-func pageQueryReqLogByKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
-	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
+func pageQueryLogByTime(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
+	zr, err := Conn.ZRevRangeByScoreWithScores(RequestList, redis.ZRangeBy{
+		Min: fmt.Sprint(param.Date.UnixNano()),
+		Max: fmt.Sprint(param.Date.Add(time.Hour * 24).UnixNano()),
+	}).Result()
 	if err != nil {
 		logger.Error(err)
-		return nil, 0
+		return nil
 	}
 
-	startIdx := (param.page - 1) * param.size
-	maxIdx := (param.page + 4) * param.size
-	total := 0
-	var list []*ReqLog[MessageVO]
-	for _, key := range result {
-		if !strings.HasPrefix(key, param.date) {
+	start, end := param.buildStartEnd()
+	var keyList []string
+	for i, val := range zr {
+		if i < int(start) {
 			continue
 		}
-		log := matchDetailByKeyAndKwd(convertToDbKey(key), param.kwd)
-		if log == nil {
-			continue
-		}
-		total++
-		if total > startIdx && len(list) < param.size {
-			list = append(list, convertLog(log))
-		}
-		if total >= maxIdx {
+		if i > int(end) {
 			break
 		}
+		keyList = append(keyList, val.Member.(string))
 	}
-	return list, total
+
+	detail := queryLogDetail(keyList)
+	return detailToPage(param, detail, len(zr))
 }
 
 // page start with 1
-func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
-	pageResult := PageVO[*ReqLog[MessageVO]]{}
+func pageQueryLogByIdOrIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 	var detail []*ReqLog[Message]
-	if param.id != "" {
-		val := getDetailByKey(param.id)
+	if param.Id != "" {
+		val := getDetailByKey(param.Id)
 		if val == nil {
 			return nil
 		}
@@ -146,19 +168,21 @@ func pageQueryReqLogByIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 		detail = queryLogDetail(keyList)
 	}
 
+	total, _ := Conn.ZCard(RequestList).Result()
+	return detailToPage(param, detail, int(total))
+}
+
+func detailToPage(param *PageQueryParam, detail []*ReqLog[Message], total int) *PageVO[*ReqLog[MessageVO]] {
 	logs := stream.Just(detail...).Map(func(item any) any {
 		return convertLog(item.(*ReqLog[Message]))
 	})
-
+	pageResult := PageVO[*ReqLog[MessageVO]]{}
 	pageResult.Data = stream.ToList[*ReqLog[MessageVO]](logs)
 
-	i, err := Conn.ZCard(RequestList).Result()
-	if err == nil {
-		pageResult.Total = int(i)
-		pageResult.Page = int(i) / param.size
-		if pageResult.Page*param.size < pageResult.Total {
-			pageResult.Page += 1
-		}
+	pageResult.Total = total
+	pageResult.Page = total / param.Size
+	if pageResult.Page*param.Size < pageResult.Total {
+		pageResult.Page += 1
 	}
 
 	return &pageResult
@@ -210,16 +234,14 @@ func hiddenHeaderEachLog(pageResult *PageVO[*ReqLog[MessageVO]]) {
 		if v == nil {
 			continue
 		}
-		hiddenHeader(v.Request.Header)
-		hiddenHeader(v.Response.Header)
+		hiddenHeader(v.Request.Header, v.Response.Header)
 	}
 }
 
-func hiddenHeader(header http.Header) {
-	delete(header, "User-Agent")
-	delete(header, "Accept-Encoding")
-	delete(header, "Referer")
-	delete(header, "Cache-Control")
-	delete(header, "Accept-Language")
-	delete(header, "Pragma")
+func hiddenHeader(header ...http.Header) {
+	for _, head := range header {
+		for _, h := range HiddenHeader {
+			delete(head, h)
+		}
+	}
 }

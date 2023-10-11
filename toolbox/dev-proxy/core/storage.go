@@ -171,6 +171,13 @@ func SaveReqLog(log *ReqLog[Message]) {
 	db.Put([]byte(log.Id), toJSONBuffer(log).Bytes(), nil)
 }
 
+func RemoveReqMember(member any) {
+	Conn.ZRem(RequestList, member)
+}
+func RemoveReqUrlKey(key string) {
+	Conn.HDel(RequestUrlList, key)
+}
+
 func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
 	if v == nil {
 		return nil
@@ -224,8 +231,8 @@ func queryLogDetail(keyList []string) []*ReqLog[Message] {
 			list = append(list, l)
 		} else {
 			logger.Warn("Delete not in leveldb key: ", key)
-			Conn.ZRem(RequestList, key)
-			Conn.HDel(RequestUrlList, dbKey)
+			RemoveReqMember(key)
+			RemoveReqUrlKey(dbKey)
 		}
 	}
 	return list

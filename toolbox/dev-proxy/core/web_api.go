@@ -20,11 +20,11 @@ import (
 
 type (
 	PageQueryParam struct {
-		page int
-		size int
-		id   string
-		kwd  string
-		date string
+		Page int `form:"idx"`
+		Size int
+		Id   string
+		Kwd  string
+		Date *time.Time `fmt:"2006-01-02"`
 	}
 )
 
@@ -43,7 +43,7 @@ const (
 func StartQueryServer() {
 	mux := http.NewServeMux()
 
-	limiter := ratelimiter.CreateLeakyLimiter(2)
+	limiter := ratelimiter.CreateLeakyLimiter(3)
 	logger.Info("Start query server on 127.0.0.1:%d", ApiPort)
 
 	if Debug {
@@ -66,27 +66,28 @@ func StartQueryServer() {
 		logger.Error(err)
 	}
 
-	mux.HandleFunc("/list", rtTimeAndLimitInterceptor(JSONFunc(pageListReqHistory), limiter))
-	mux.HandleFunc("/curl", rtTimeInterceptor(buildCurlCommandApi))
-	mux.HandleFunc("/replay", replayRequest)
+	//mux.HandleFunc("/list", rtRateInt(Json(PageListReqHistory), limiter))
+	mux.HandleFunc("/list", Json(PageListReqHistory))
+	mux.HandleFunc("/curl", rtInt(buildCurlCommandApi))
+	mux.HandleFunc("/replay", rtRateInt(replayRequest, limiter))
 
-	mux.HandleFunc("/del", rtTimeInterceptor(delRequest))
-	mux.HandleFunc("/uploadCache", rtTimeInterceptor(uploadCacheApi))
-	mux.HandleFunc("/flushAll", rtTimeInterceptor(flushAllData))
+	mux.HandleFunc("/del", rtInt(delRequest))
+	mux.HandleFunc("/uploadCache", rtInt(uploadCacheApi))
+	mux.HandleFunc("/flushAll", rtInt(flushAllData))
 
-	mux.HandleFunc("/urlFrequency", rtTimeInterceptor(UrlFrequencyApi))
-	mux.HandleFunc("/urlTimeAnalysis", rtTimeInterceptor(UrlTimeAnalysis))
-	mux.HandleFunc("/detailById", rtTimeInterceptor(DetailById))
-	mux.HandleFunc("/hostPerf", rtTimeInterceptor(HostPerformance))
+	mux.HandleFunc("/urlFrequency", rtInt(UrlFrequencyApi))
+	mux.HandleFunc("/urlTimeAnalysis", rtInt(UrlTimeAnalysis))
+	mux.HandleFunc("/detailById", rtInt(DetailById))
+	mux.HandleFunc("/hostPerf", rtInt(Json(HostPerformance)))
 
 	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), mux)
 }
 
 func (p PageQueryParam) buildStartEnd() (int64, int64) {
-	return int64((p.page - 1) * p.size), int64(p.page*p.size) - 1
+	return int64((p.Page - 1) * p.Size), int64(p.Page*p.Size) - 1
 }
 
-func rtTimeInterceptor(h http.HandlerFunc) http.HandlerFunc {
+func rtInt(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now().UnixMilli()
 		h(w, r)
@@ -95,7 +96,7 @@ func rtTimeInterceptor(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func rtTimeAndLimitInterceptor(h http.HandlerFunc, limiter ratelimiter.RateLimiter) http.HandlerFunc {
+func rtRateInt(h http.HandlerFunc, limiter ratelimiter.RateLimiter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !limiter.TryAcquire() {
 			buffer := toJSONBuffer(ResultVO[string]{Code: 101, Msg: "频繁请求"})
@@ -150,7 +151,7 @@ func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
 
 func splitArray(l []string, batch int) [][]string {
 	var result [][]string
-	var s = []string{}
+	var s []string
 	for _, l := range l {
 		if len(s) == batch {
 			result = append(result, s)
@@ -208,8 +209,8 @@ func deleteByPath(writer http.ResponseWriter, path string, size int) {
 		total++
 
 		logger.Info(log.Url, log.CacheId, log.Id)
-		Conn.ZRem(RequestList, log.CacheId)
-		Conn.HDel(RequestUrlList, log.Id)
+		RemoveReqMember(log.CacheId)
+		RemoveReqUrlKey(log.Id)
 		db.Delete([]byte(log.Id), nil)
 		if total >= size {
 			writeJsonRsp(writer, fmt.Sprintf("out of count %v", size))
@@ -227,8 +228,8 @@ func deleteById(writer http.ResponseWriter, id string) {
 		return
 	}
 
-	Conn.ZRem(RequestList, detail.CacheId)
-	Conn.HDel(RequestUrlList, convertToDbKey(detail.CacheId))
+	RemoveReqMember(detail.CacheId)
+	RemoveReqUrlKey(convertToDbKey(detail.CacheId))
 	db.Delete([]byte(id), nil)
 	writeJsonRsp(writer, Success("OK"))
 }
@@ -286,33 +287,6 @@ func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	RspStr(writer, res)
-}
-
-func parseParam(request *http.Request) *PageQueryParam {
-	values := request.URL.Query()
-	page := values.Get("idx")
-	id := values.Get("id")
-	size := values.Get("size")
-	kwd := values.Get("kwd")
-	date := values.Get("date")
-
-	pageI, _ := strconv.Atoi(page)
-	sizeI, _ := strconv.Atoi(size)
-	if sizeI <= 0 {
-		sizeI = 1
-	}
-	if pageI <= 1 {
-		pageI = 1
-	}
-	if kwd != "" {
-		kwd = strings.TrimSpace(kwd)
-	}
-
-	if date != "" {
-		vals := strings.Split(date, "-")
-		date = strings.Join(vals[1:], "-")
-	}
-	return &PageQueryParam{page: pageI, size: sizeI, id: id, kwd: kwd, date: date}
 }
 
 func bindStatic(s, contentType string) func(writer http.ResponseWriter, request *http.Request) {
