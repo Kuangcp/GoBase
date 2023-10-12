@@ -1,4 +1,4 @@
 BIN=hosts-group.bin
 
-buildExe:
-	bash make_exe.sh
+config:
+	bash package-exe.sh
