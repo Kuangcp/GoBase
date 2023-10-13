@@ -196,6 +196,14 @@ func parseIdArray(zR []redis.Z) []string {
 	return ids
 }
 
+func ConnNum(writer http.ResponseWriter, _ *http.Request) {
+	//var num int32 = 0
+	//if app.ProxyHandler != nil {
+	//	num = app.ProxyHandler.ClientConnNum()
+	//}
+	//writer.Write([]byte(fmt.Sprint(num)))
+}
+
 func DetailById(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	idStr := query.Get("id")

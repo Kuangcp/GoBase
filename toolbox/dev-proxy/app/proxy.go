@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
+	"github.com/kuangcp/goproxy"
 	"github.com/kuangcp/logger"
-	"github.com/ouqiang/goproxy"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 )
+
+var ProxyHandler *goproxy.Proxy
 
 type EventHandler struct{}
 
@@ -152,10 +154,10 @@ func HttpsProxy() {
 	logger.Info("Start HTTPS proxy server on 127.0.0.1:%d", core.Port)
 	logger.Warn("Pac: http://127.0.0.1:%d%v", core.ApiPort, core.PacUrl)
 
-	proxy := goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
+	ProxyHandler = goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", core.Port),
-		Handler:      proxy,
+		Handler:      ProxyHandler,
 		ReadTimeout:  10 * time.Minute,
 		WriteTimeout: 10 * time.Minute,
 	}
