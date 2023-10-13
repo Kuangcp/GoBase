@@ -1,4 +1,4 @@
-package core
+package web
 
 import (
 	"embed"
@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"github.com/arl/statsviz"
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ratelimiter"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
 	"io/fs"
@@ -44,9 +46,9 @@ func StartQueryServer() {
 	mux := http.NewServeMux()
 
 	limiter := ratelimiter.CreateLeakyLimiter(3)
-	logger.Info("Start query server on 127.0.0.1:%d", ApiPort)
+	logger.Info("Start query server on 127.0.0.1:%d", core.ApiPort)
 
-	if Debug {
+	if core.Debug {
 		logger.Warn("debug mode")
 		//fs := http.FileServer(http.Dir("./core/static"))
 		//http.Handle("/", http.StripPrefix("/", fs))
@@ -58,7 +60,7 @@ func StartQueryServer() {
 			panic(err)
 		}
 		mux.Handle("/", http.FileServer(http.FS(sub)))
-		mux.HandleFunc(PacUrl, PacFileApi)
+		mux.HandleFunc(core.PacUrl, PacFileApi)
 	}
 
 	err := statsviz.Register(mux)
@@ -67,7 +69,7 @@ func StartQueryServer() {
 	}
 
 	//mux.HandleFunc("/list", rtRateInt(Json(PageListReqHistory), limiter))
-	mux.HandleFunc("/list", Json(PageListReqHistory))
+	mux.HandleFunc("/list", core.Json(PageListReqHistory))
 	mux.HandleFunc("/curl", rtInt(buildCurlCommandApi))
 	mux.HandleFunc("/replay", rtRateInt(replayRequest, limiter))
 
@@ -78,10 +80,10 @@ func StartQueryServer() {
 	mux.HandleFunc("/urlFrequency", rtInt(UrlFrequencyApi))
 	mux.HandleFunc("/urlTimeAnalysis", rtInt(UrlTimeAnalysis))
 	mux.HandleFunc("/detailById", rtInt(DetailById))
-	mux.HandleFunc("/hostPerf", rtInt(Json(HostPerformance)))
+	mux.HandleFunc("/hostPerf", rtInt(core.Json(HostPerformance)))
 	mux.HandleFunc("/connNum", rtInt(ConnNum))
 
-	http.ListenAndServe(fmt.Sprintf(":%v", ApiPort), mux)
+	http.ListenAndServe(fmt.Sprintf(":%v", core.ApiPort), mux)
 }
 
 func (p PageQueryParam) buildStartEnd() (int64, int64) {
@@ -100,7 +102,7 @@ func rtInt(h http.HandlerFunc) http.HandlerFunc {
 func rtRateInt(h http.HandlerFunc, limiter ratelimiter.RateLimiter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !limiter.TryAcquire() {
-			buffer := toJSONBuffer(ResultVO[string]{Code: 101, Msg: "频繁请求"})
+			buffer := ctool.ToJSONBuffer(ctool.ResultVO[string]{Code: 101, Msg: "频繁请求"})
 			w.Write(buffer.Bytes())
 			return
 		}
@@ -118,36 +120,36 @@ func convertToDbKey(key string) string {
 }
 
 func flushAllData(writer http.ResponseWriter, _ *http.Request) {
-	result, err := Conn.ZRange(RequestList, 0, -1).Result()
+	result, err := core.Conn.ZRange(core.RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
 		return
 	}
 
 	for _, key := range result {
-		db.Delete([]byte(convertToDbKey(key)), nil)
+		core.Leveldb.Delete([]byte(core.ConvertToDbKey(key)), nil)
 	}
 
-	Conn.Del(RequestList)
+	core.Conn.Del(core.RequestList)
 	logger.Info("delete: ", len(result))
-	RspStr(writer, "OK")
+	core.RspStr(writer, "OK")
 }
 
 // upload leveldb data to redis
 func uploadCacheApi(writer http.ResponseWriter, request *http.Request) {
-	iterator := db.NewIterator(nil, nil)
+	iterator := core.Leveldb.NewIterator(nil, nil)
 	for iterator.Next() {
 		bts := iterator.Value()
-		var l ReqLog[Message]
+		var l core.ReqLog[core.Message]
 		err := json.Unmarshal(bts, &l)
 		if err != nil {
 			logger.Error("key:["+string(iterator.Key())+"] GET ERROR:", err)
 			continue
 		}
-		Conn.ZAdd(RequestList, redis.Z{Member: l.CacheId, Score: float64(l.ReqTime.UnixNano())})
-		Conn.HSet(RequestUrlList, l.Id, l.Url)
+		core.Conn.ZAdd(core.RequestList, redis.Z{Member: l.CacheId, Score: float64(l.ReqTime.UnixNano())})
+		core.Conn.HSet(core.RequestUrlList, l.Id, l.Url)
 	}
-	writeJsonRsp(writer, "OK")
+	core.WriteJsonRsp(writer, "OK")
 }
 
 func splitArray(l []string, batch int) [][]string {
@@ -185,54 +187,54 @@ func delRequest(writer http.ResponseWriter, request *http.Request) {
 	if path != "" {
 		deleteByPath(writer, path, sizeI)
 		logger.Info("start compact leveldb")
-		db.CompactRange(util.Range{})
+		core.Leveldb.CompactRange(util.Range{})
 		logger.Info("finish compact")
 		return
 	}
 
-	writeJsonRsp(writer, "invalid param")
+	core.WriteJsonRsp(writer, "invalid param")
 }
 
 func deleteByPath(writer http.ResponseWriter, path string, size int) {
-	result, err := Conn.ZRevRange(RequestList, 0, -1).Result()
+	result, err := core.Conn.ZRevRange(core.RequestList, 0, -1).Result()
 	if err != nil {
 		logger.Error(err)
-		writeJsonRsp(writer, err.Error())
+		core.WriteJsonRsp(writer, err.Error())
 		return
 	}
 
 	total := 0
 	for _, key := range result {
-		log := matchDetailByKeyAndKwd(convertToDbKey(key), path)
+		log := core.MatchDetailByKeyAndKwd(core.ConvertToDbKey(key), path)
 		if log == nil {
 			continue
 		}
 		total++
 
 		logger.Info(log.Url, log.CacheId, log.Id)
-		RemoveReqMember(log.CacheId)
-		RemoveReqUrlKey(log.Id)
-		db.Delete([]byte(log.Id), nil)
+		core.RemoveReqMember(log.CacheId)
+		core.RemoveReqUrlKey(log.Id)
+		core.Leveldb.Delete([]byte(log.Id), nil)
 		if total >= size {
-			writeJsonRsp(writer, fmt.Sprintf("out of count %v", size))
+			core.WriteJsonRsp(writer, fmt.Sprintf("out of count %v", size))
 			return
 		}
 	}
 
-	writeJsonRsp(writer, Success(fmt.Sprintf("Finish delete: %v", total)))
+	core.WriteJsonRsp(writer, ctool.SuccessWith(fmt.Sprintf("Finish delete: %v", total)))
 }
 
 func deleteById(writer http.ResponseWriter, id string) {
-	detail := getDetailByKey(id)
+	detail := core.GetDetailByKey(id)
 	if detail == nil {
-		writeJsonRsp(writer, id+" not exist")
+		core.WriteJsonRsp(writer, id+" not exist")
 		return
 	}
 
-	RemoveReqMember(detail.CacheId)
-	RemoveReqUrlKey(convertToDbKey(detail.CacheId))
-	db.Delete([]byte(id), nil)
-	writeJsonRsp(writer, Success("OK"))
+	core.RemoveReqMember(detail.CacheId)
+	core.RemoveReqUrlKey(core.ConvertToDbKey(detail.CacheId))
+	core.Leveldb.Delete([]byte(id), nil)
+	core.WriteJsonRsp(writer, ctool.SuccessWith("OK"))
 }
 
 func replayRequest(writer http.ResponseWriter, request *http.Request) {
@@ -242,7 +244,7 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 	selfProxy := query.Get("selfProxy")
 	if idx != "" && id == "" {
 		sortIdx, _ := strconv.Atoi(idx)
-		result, err := Conn.ZRange(RequestList, int64(sortIdx-1), int64(sortIdx-1)).Result()
+		result, err := core.Conn.ZRange(core.RequestList, int64(sortIdx-1), int64(sortIdx-1)).Result()
 		if err != nil {
 			logger.Error(err)
 			return
@@ -250,31 +252,31 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 		if len(result) == 0 {
 			return
 		}
-		id = convertToDbKey(result[0])
+		id = core.ConvertToDbKey(result[0])
 	}
 
 	command := buildCommandById(id, selfProxy)
 	if command == "" {
-		RspStr(writer, id+" not found")
+		core.RspStr(writer, id+" not found")
 		return
 	}
 	logger.Info("Replay ", id)
-	result, success := execCommand(command)
+	result, success := core.ExecCommand(command)
 	if !success {
-		RspStr(writer, "ERROR: \n"+command+"\n"+result+"\n")
+		core.RspStr(writer, "ERROR: \n"+command+"\n"+result+"\n")
 	} else {
-		RspStr(writer, result)
+		core.RspStr(writer, result)
 	}
 }
 
 // PacFileApi 默认使用缺省文件，优先使用独立配置文件
 func PacFileApi(writer http.ResponseWriter, request *http.Request) {
-	fileBt, err := os.ReadFile(pacFilePath)
+	fileBt, err := os.ReadFile(core.PacFilePath)
 	if err != nil || fileBt == nil || len(fileBt) == 0 {
 		logger.Error(err)
 		bindStatic(pacFile, pacT)(writer, request)
 	} else {
-		RspStr(writer, string(fileBt))
+		core.RspStr(writer, string(fileBt))
 	}
 }
 
@@ -287,12 +289,12 @@ func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
 	if res == "" {
 		return
 	}
-	RspStr(writer, res)
+	core.RspStr(writer, res)
 }
 
 func bindStatic(s, contentType string) func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Add("Content-Type", contentType)
-		RspStr(writer, s)
+		core.RspStr(writer, s)
 	}
 }

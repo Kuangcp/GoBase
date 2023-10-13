@@ -45,7 +45,7 @@ type (
 	RedisConf struct {
 		Addr     string `json:"addr"`
 		Password string `json:"password"`
-		DB       int    `json:"db"`
+		DB       int    `json:"Leveldb"`
 		PoolSize int    `json:"pool_size"`
 	}
 
@@ -62,7 +62,7 @@ var (
 	// 文件相对路径
 	configFilePath = "/.dev-proxy/dev-proxy.json"
 	logFilePath    = "/.dev-proxy/dev-proxy.log"
-	pacFilePath    = "/.dev-proxy/dev-proxy.pac"
+	PacFilePath    = "/.dev-proxy/dev-proxy.pac"
 	dbDirPath      = "/.dev-proxy/leveldb-request-log"
 )
 
@@ -77,8 +77,7 @@ var (
 	guiMode      = false
 	// DirectType https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
 	// https://tool.oschina.net/commons/_contenttype.dea
-	DirectType   = []string{"html", "javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
-	HiddenHeader = []string{"User-Agent", "Accept-Encoding", "Referer", "Cache-Control", "Accept-Language", "Pragma"}
+	DirectType = []string{"html", "javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
 )
 
 func (p *ProxyGroup) GetName() string {
@@ -241,9 +240,9 @@ func InitConfig() {
 		configFilePath = home + configFilePath
 	}
 	if PacPath != "" {
-		pacFilePath = PacPath
+		PacFilePath = PacPath
 	} else {
-		pacFilePath = home + pacFilePath
+		PacFilePath = home + PacFilePath
 	}
 
 	dbDirPath = home + dbDirPath
@@ -386,7 +385,7 @@ func listenConfig() {
 		curModTime := stat.ModTime()
 		if curModTime.After(lastModTime) {
 			//logger.Info(stat.ModTime())
-			execCommand("notify-send -i folder-new Dev-Proxy 'start reload config file'")
+			ExecCommand("notify-send -i folder-new Dev-Proxy 'start reload config file'")
 			lastModTime = curModTime
 			cleanAndRegisterFromFile(configFilePath)
 		}
