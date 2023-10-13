@@ -1,10 +1,12 @@
-package core
+package web
 
 import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"net/http"
 	"net/url"
@@ -40,7 +42,7 @@ func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 		Depth int
 	}
 	if err := ctool.Unpack(request, &param); err != nil {
-		writeJsonParamError(writer, err.Error())
+		core.WriteJsonParamError(writer, err.Error())
 		return
 	}
 
@@ -51,10 +53,10 @@ func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 		param.Max = 100
 	}
 
-	result, err := Conn.HGetAll(RequestUrlList).Result()
+	result, err := core.Conn.HGetAll(core.RequestUrlList).Result()
 	if err != nil {
 		logger.Error(err)
-		writeJsonRsp(writer, err.Error())
+		core.WriteJsonRsp(writer, err.Error())
 		return
 	}
 
@@ -112,15 +114,15 @@ func UrlFrequencyApi(writer http.ResponseWriter, request *http.Request) {
 			hostMap[parse.Host] = h + v
 		}
 	}
-	writeJsonRsp(writer, Val{UrlMap: urlMap, HostMap: hostMap})
+	core.WriteJsonRsp(writer, Val{UrlMap: urlMap, HostMap: hostMap})
 }
 
 func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	timeType := query.Get("type")
-	zR, err := Conn.ZRangeWithScores(RequestList, 0, -1).Result()
+	zR, err := core.Conn.ZRangeWithScores(core.RequestList, 0, -1).Result()
 	if err != nil {
-		writeJsonRsp(writer, err.Error())
+		core.WriteJsonRsp(writer, err.Error())
 		return
 	}
 
@@ -135,7 +137,7 @@ func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 	batch := 100
 	array := splitArray(ids, batch)
 	for bi, ba := range array {
-		result, err := Conn.HMGet(RequestUrlList, ba...).Result()
+		result, err := core.Conn.HMGet(core.RequestUrlList, ba...).Result()
 		if err != nil {
 			continue
 		}
@@ -143,7 +145,7 @@ func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 			tmp := result[i]
 			if tmp == nil {
 				logger.Warn("NOT MATCH", zR[bi*batch+i], ba[i])
-				RemoveReqMember(zR[bi*batch+i].Member)
+				core.RemoveReqMember(zR[bi*batch+i].Member)
 				continue
 			}
 			path := tmp.(string)
@@ -181,7 +183,7 @@ func UrlTimeAnalysis(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	writeJsonRsp(writer, dayMap)
+	core.WriteJsonRsp(writer, dayMap)
 }
 
 func parseIdArray(zR []redis.Z) []string {
@@ -197,22 +199,22 @@ func parseIdArray(zR []redis.Z) []string {
 }
 
 func ConnNum(writer http.ResponseWriter, _ *http.Request) {
-	//var num int32 = 0
-	//if app.ProxyHandler != nil {
-	//	num = app.ProxyHandler.ClientConnNum()
-	//}
-	//writer.Write([]byte(fmt.Sprint(num)))
+	var num int32 = 0
+	if app.ProxyHandler != nil {
+		num = app.ProxyHandler.ClientConnNum()
+	}
+	writer.Write([]byte(fmt.Sprint(num)))
 }
 
 func DetailById(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	idStr := query.Get("id")
 	if idStr == "" {
-		writeJsonParamError(writer, "id is required")
+		core.WriteJsonParamError(writer, "id is required")
 		return
 	}
-	targetMsg := getDetailByKey(idStr)
-	writeJsonRsp(writer, DetailVo{
+	targetMsg := core.GetDetailByKey(idStr)
+	core.WriteJsonRsp(writer, DetailVo{
 		Url:   targetMsg.Url,
 		Start: targetMsg.ReqTime.Add(-time.Minute * 5).Format(ctool.YYYY_MM_DD_HH_MM),
 		End:   targetMsg.ReqTime.Add(time.Minute * 5).Format(ctool.YYYY_MM_DD_HH_MM),
@@ -238,7 +240,7 @@ func HostPerformance(request *http.Request) ctool.ResultVO[[]PerfPageVo] {
 	}
 
 	if param.Id != "" {
-		targetMsg := getDetailByKey(param.Id)
+		targetMsg := core.GetDetailByKey(param.Id)
 		parse, err := url.Parse(targetMsg.Url)
 		if err != nil {
 			return ctool.FailedWithMsg[[]PerfPageVo](err.Error())
@@ -265,7 +267,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
 
 	// 为什么会有时区问题
-	zr, err := Conn.ZRangeByScoreWithScores(RequestList, redis.ZRangeBy{
+	zr, err := core.Conn.ZRangeByScoreWithScores(core.RequestList, redis.ZRangeBy{
 		Min: fmt.Sprint(start.UnixNano()),
 		Max: fmt.Sprint(end.UnixNano()),
 	}).Result()
@@ -276,9 +278,9 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 	ids := parseIdArray(zr)
 	batchSize := 300
 	array := splitArray(ids, batchSize)
-	var cache []*ReqLog[Message]
+	var cache []*core.ReqLog[core.Message]
 	for bi, batch := range array {
-		result, err := Conn.HMGet(RequestUrlList, batch...).Result()
+		result, err := core.Conn.HMGet(core.RequestUrlList, batch...).Result()
 		if err != nil {
 			continue
 		}
@@ -286,20 +288,20 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 			tmp := result[i]
 			if tmp == nil {
 				logger.Warn("NOT MATCH", zr[bi*batchSize+i])
-				RemoveReqMember(zr[bi*batchSize+i].Member)
+				core.RemoveReqMember(zr[bi*batchSize+i].Member)
 				continue
 			}
 			path := tmp.(string)
 			if (hostStr != "" && (strings.HasPrefix(path, "http://"+hostStr) || strings.HasPrefix(path, "https://"+hostStr))) ||
 				(urlStr != "" && strings.HasPrefix(path, urlStr)) {
-				msg := getDetailByKey(batch[i])
+				msg := core.GetDetailByKey(batch[i])
 				cache = append(cache, msg)
 			}
 		}
 	}
 
 	stream.Just(cache...).Filter(func(item any) bool {
-		msg := item.(*ReqLog[Message])
+		msg := item.(*core.ReqLog[core.Message])
 		if msg == nil {
 			return false
 		}
@@ -309,7 +311,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 		}
 		return true
 	}).Group(func(item any) any {
-		msg := item.(*ReqLog[Message])
+		msg := item.(*core.ReqLog[core.Message])
 		parseUrl, _ := url.Parse(msg.Url)
 		return parseUrl.Host + "" + parseUrl.Path
 	}).ForEach(func(item any) {
@@ -323,7 +325,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 		var ts []int
 		var reqList []int64
 		for _, v := range val {
-			msg := v.(*ReqLog[Message])
+			msg := v.(*core.ReqLog[core.Message])
 			ms := msg.ResTime.Sub(msg.ReqTime).Milliseconds()
 			ele.Tall += int(ms)
 			ts = append(ts, int(ms))

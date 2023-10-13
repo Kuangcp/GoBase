@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"github.com/go-redis/redis"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -19,7 +20,7 @@ const (
 
 var (
 	Conn           *redis.Client
-	db             *leveldb.DB
+	Leveldb        *leveldb.DB
 	RequestList    = "" // ZSet redis key (member: 03-16 18:27:45.653 80b85e3c653, score: request nanoTime), leveldb key (80b85e3c653)
 	RequestUrlList = "" // Hash: id <-> url
 	listFmt        = "%s:%s:request-list"
@@ -27,12 +28,12 @@ var (
 )
 
 type (
-	// storage in leveldb
+	// Message storage in leveldb
 	Message struct {
 		Header http.Header `json:"header"`
 		Body   []byte      `json:"body"`
 	}
-	// use in rest api
+	// MessageVO use in rest api
 	MessageVO struct {
 		Header  http.Header `json:"header"`
 		Body    any         `json:"body"`
@@ -52,25 +53,8 @@ type (
 		Request     T         `json:"request"`
 		Response    T         `json:"response"`
 	}
-
-	ResultVO[T any] struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-		Data T      `json:"data"`
-	}
-	PageVO[T any] struct {
-		Total int `json:"total"`
-		Page  int `json:"page"`
-		Data  []T `json:"data"`
-	}
 )
 
-func Success[T any](data T) ResultVO[T] {
-	return ResultVO[T]{
-		Code: 0,
-		Data: data,
-	}
-}
 func InitConnection() {
 	newDB, err := leveldb.OpenFile(dbDirPath, nil)
 	if err != nil {
@@ -79,7 +63,7 @@ func InitConnection() {
 		}
 		logger.Painc(err)
 	}
-	db = newDB
+	Leveldb = newDB
 
 	var opt redis.Options
 	redisConf := ProxyConfVar.Redis
@@ -124,8 +108,8 @@ func CloseConnection() {
 	if err != nil {
 		logger.Error("close redis Conn error: ", err)
 	}
-	if db != nil {
-		err := db.Close()
+	if Leveldb != nil {
+		err := Leveldb.Close()
 		if err != nil {
 			logger.Error("close leveldb error", err)
 		}
@@ -168,7 +152,7 @@ func SaveReqLog(log *ReqLog[Message]) {
 	Conn.ZAdd(RequestList, redis.Z{Member: log.CacheId, Score: float64(log.ReqTime.UnixNano())})
 	Conn.HSet(RequestUrlList, log.Id, log.Url)
 
-	db.Put([]byte(log.Id), toJSONBuffer(log).Bytes(), nil)
+	Leveldb.Put([]byte(log.Id), ctool.ToJSONBuffer(log).Bytes(), nil)
 }
 
 func RemoveReqMember(member any) {
@@ -178,11 +162,11 @@ func RemoveReqUrlKey(key string) {
 	Conn.HDel(RequestUrlList, key)
 }
 
-func convertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
+func ConvertLog(v *ReqLog[Message]) *ReqLog[MessageVO] {
 	if v == nil {
 		return nil
 	}
-	reqLog := copyObj[*ReqLog[Message], ReqLog[MessageVO]](v)
+	reqLog := ctool.CopyObj[*ReqLog[Message], ReqLog[MessageVO]](v)
 
 	reqLog.Request = MessageVO{Header: v.Request.Header, Body: strToAny(v.Request.Body)}
 	reqLog.Response = MessageVO{Header: v.Response.Header, Body: strToAny(v.Response.Body)}
@@ -221,12 +205,16 @@ func strToAny(body []byte) any {
 	return d
 }
 
-func queryLogDetail(keyList []string) []*ReqLog[Message] {
+func ConvertToDbKey(key string) string {
+	return strings.Split(key, "  ")[1]
+}
+
+func QueryLogDetail(keyList []string) []*ReqLog[Message] {
 	var list []*ReqLog[Message]
 	for i := range keyList {
 		key := keyList[i]
-		dbKey := convertToDbKey(key)
-		l := getDetailByKey(dbKey)
+		dbKey := ConvertToDbKey(key)
+		l := GetDetailByKey(dbKey)
 		if l != nil {
 			list = append(list, l)
 		} else {
@@ -238,11 +226,11 @@ func queryLogDetail(keyList []string) []*ReqLog[Message] {
 	return list
 }
 
+// MatchDetailByKeyAndKwd
 // key: redis key
-// kwd 关键字
-// url 以及header等所有字符串
-func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
-	value, err := db.Get([]byte(key), nil)
+// kwd: 搜索关键字 (url 以及header等所有字符串)
+func MatchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
+	value, err := Leveldb.Get([]byte(key), nil)
 	if err != nil {
 		//logger.Error("key:["+key+"] GET ERROR:", err)
 		return nil
@@ -266,8 +254,8 @@ func matchDetailByKeyAndKwd(key, kwd string) *ReqLog[Message] {
 	return &l
 }
 
-func getDetailByKey(key string) *ReqLog[Message] {
-	value, err := db.Get([]byte(key), nil)
+func GetDetailByKey(key string) *ReqLog[Message] {
+	value, err := Leveldb.Get([]byte(key), nil)
 	if err != nil {
 		logger.Error("key:["+key+"] GET ERROR:", err, len(value))
 		return nil

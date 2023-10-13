@@ -1,10 +1,11 @@
-package core
+package web
 
 import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"net/http"
 	"net/url"
@@ -13,8 +14,10 @@ import (
 	"time"
 )
 
-func PageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageVO]]] {
-	result := ResultVO[*PageVO[*ReqLog[MessageVO]]]{}
+var HiddenHeader = []string{"User-Agent", "Accept-Encoding", "Referer", "Cache-Control", "Accept-Language", "Pragma"}
+
+func PageListReqHistory(request *http.Request) ctool.ResultVO[*ctool.PageVO[*core.ReqLog[core.MessageVO]]] {
+	result := ctool.ResultVO[*ctool.PageVO[*core.ReqLog[core.MessageVO]]]{}
 	param := &PageQueryParam{}
 	if err := ctool.Unpack(request, param); err != nil {
 		logger.Error(err)
@@ -33,11 +36,11 @@ func PageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 		param.Kwd = strings.TrimSpace(param.Kwd)
 	}
 
-	var pageResult *PageVO[*ReqLog[MessageVO]]
+	var pageResult *ctool.PageVO[*core.ReqLog[core.MessageVO]]
 	if param.Kwd != "" {
 		result.Msg = "kwd"
 		list, total := pageQueryReqByUrlKwd(param)
-		pageResult = &PageVO[*ReqLog[MessageVO]]{}
+		pageResult = &ctool.PageVO[*core.ReqLog[core.MessageVO]]{}
 		pageResult.Data = list
 		pageResult.Total = total
 		page := total / param.Size
@@ -65,12 +68,12 @@ func PageListReqHistory(request *http.Request) ResultVO[*PageVO[*ReqLog[MessageV
 }
 
 // search url
-func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
+func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*core.ReqLog[core.MessageVO], int) {
 	var cursor uint64 = 0
 	const fetchSize int64 = 100
 	const maxPage = 5
 
-	keys, cursor, err := Conn.HScan(RequestUrlList, cursor, "", fetchSize).Result()
+	keys, cursor, err := core.Conn.HScan(core.RequestUrlList, cursor, "", fetchSize).Result()
 	if err != nil {
 		logger.Error(err)
 		return nil, 0
@@ -79,7 +82,7 @@ func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 	startIdx := (param.Page - 1) * param.Size
 	maxIdx := (param.Page + maxPage) * param.Size
 	total := 0
-	var list []*ReqLog[MessageVO]
+	var list []*core.ReqLog[core.MessageVO]
 	overflow := false
 	for len(keys) > 0 {
 		for i := 0; i < len(keys); i += 2 {
@@ -92,11 +95,11 @@ func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 
 			total++
 			if total > startIdx && len(list) < param.Size {
-				log := getDetailByKey(key)
+				log := core.GetDetailByKey(key)
 				if log == nil {
-					RemoveReqUrlKey(key)
+					core.RemoveReqUrlKey(key)
 				} else {
-					list = append(list, convertLog(log))
+					list = append(list, core.ConvertLog(log))
 				}
 			}
 			if total >= maxIdx {
@@ -110,7 +113,7 @@ func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 		}
 
 		// logger.Info("new loop", cursor)
-		keys, cursor, err = Conn.HScan(RequestUrlList, cursor, "", fetchSize).Result()
+		keys, cursor, err = core.Conn.HScan(core.RequestUrlList, cursor, "", fetchSize).Result()
 		if err != nil {
 			logger.Error(err)
 			break
@@ -123,8 +126,8 @@ func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*ReqLog[MessageVO], int) {
 	return list, total
 }
 
-func pageQueryLogByTime(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
-	zr, err := Conn.ZRevRangeByScoreWithScores(RequestList, redis.ZRangeBy{
+func pageQueryLogByTime(param *PageQueryParam) *ctool.PageVO[*core.ReqLog[core.MessageVO]] {
+	zr, err := core.Conn.ZRevRangeByScoreWithScores(core.RequestList, redis.ZRangeBy{
 		Min: fmt.Sprint(param.Date.UnixNano()),
 		Max: fmt.Sprint(param.Date.Add(time.Hour * 24).UnixNano()),
 	}).Result()
@@ -145,39 +148,39 @@ func pageQueryLogByTime(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
 		keyList = append(keyList, val.Member.(string))
 	}
 
-	detail := queryLogDetail(keyList)
+	detail := core.QueryLogDetail(keyList)
 	return detailToPage(param, detail, len(zr))
 }
 
 // page start with 1
-func pageQueryLogByIdOrIndex(param *PageQueryParam) *PageVO[*ReqLog[MessageVO]] {
-	var detail []*ReqLog[Message]
+func pageQueryLogByIdOrIndex(param *PageQueryParam) *ctool.PageVO[*core.ReqLog[core.MessageVO]] {
+	var detail []*core.ReqLog[core.Message]
 	if param.Id != "" {
-		val := getDetailByKey(param.Id)
+		val := core.GetDetailByKey(param.Id)
 		if val == nil {
 			return nil
 		}
 		detail = append(detail, val)
 	} else {
 		start, end := param.buildStartEnd()
-		keyList, err := Conn.ZRevRange(RequestList, start, end).Result()
+		keyList, err := core.Conn.ZRevRange(core.RequestList, start, end).Result()
 		if err != nil {
 			logger.Error(err)
 			return nil
 		}
-		detail = queryLogDetail(keyList)
+		detail = core.QueryLogDetail(keyList)
 	}
 
-	total, _ := Conn.ZCard(RequestList).Result()
+	total, _ := core.Conn.ZCard(core.RequestList).Result()
 	return detailToPage(param, detail, int(total))
 }
 
-func detailToPage(param *PageQueryParam, detail []*ReqLog[Message], total int) *PageVO[*ReqLog[MessageVO]] {
+func detailToPage(param *PageQueryParam, detail []*core.ReqLog[core.Message], total int) *ctool.PageVO[*core.ReqLog[core.MessageVO]] {
 	logs := stream.Just(detail...).Map(func(item any) any {
-		return convertLog(item.(*ReqLog[Message]))
+		return core.ConvertLog(item.(*core.ReqLog[core.Message]))
 	})
-	pageResult := PageVO[*ReqLog[MessageVO]]{}
-	pageResult.Data = stream.ToList[*ReqLog[MessageVO]](logs)
+	pageResult := ctool.PageVO[*core.ReqLog[core.MessageVO]]{}
+	pageResult.Data = stream.ToList[*core.ReqLog[core.MessageVO]](logs)
 
 	pageResult.Total = total
 	pageResult.Page = total / param.Size
@@ -191,13 +194,13 @@ func detailToPage(param *PageQueryParam, detail []*ReqLog[Message], total int) *
 // buildCommandById 目前仅支持常见的后端服务 GET POST请求
 // TODO 待扩展,或者寻找成熟的方案
 func buildCommandById(id, selfProxy string) string {
-	detail := getDetailByKey(id)
+	detail := core.GetDetailByKey(id)
 	if detail == nil {
 		return ""
 	}
 	cmd := "curl "
 	if selfProxy == "Y" {
-		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", Port)
+		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", core.Port)
 	}
 	parseUrl, _ := url.Parse(detail.Url)
 	cmd += parseUrl.Scheme + "://" + parseUrl.Host + parseUrl.Path
@@ -226,7 +229,7 @@ func buildCommandById(id, selfProxy string) string {
 	return cmd
 }
 
-func hiddenHeaderEachLog(pageResult *PageVO[*ReqLog[MessageVO]]) {
+func hiddenHeaderEachLog(pageResult *ctool.PageVO[*core.ReqLog[core.MessageVO]]) {
 	if pageResult.Data == nil {
 		return
 	}

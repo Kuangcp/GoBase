@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/web"
 
 	//"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
@@ -22,7 +23,7 @@ func main() {
 		go app.HttpsProxy()
 	}
 
-	go core.StartQueryServer()
+	go web.StartQueryServer()
 
 	systray.Run(OnReady, OnExit)
 }
