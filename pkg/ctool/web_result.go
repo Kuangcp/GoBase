@@ -11,6 +11,12 @@ const (
 )
 
 type (
+	PageVO[T any] struct {
+		Total int `json:"total"`
+		Page  int `json:"page"`
+		Data  []T `json:"data"`
+	}
+
 	ResultVO[T any] struct {
 		Data T      `json:"data"`
 		Code int    `json:"code"`
