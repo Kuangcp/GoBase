@@ -11,12 +11,12 @@ import (
 
 type (
 	KmDNS struct {
-		serviceName string
+		serviceName []string
 		findTimeout time.Duration
 	}
 )
 
-func New(serviceName string, findTimeout time.Duration) *KmDNS {
+func New(findTimeout time.Duration, serviceName ...string) *KmDNS {
 	return &KmDNS{serviceName: serviceName, findTimeout: findTimeout}
 }
 
@@ -32,7 +32,7 @@ func (k *KmDNS) Server() {
 	}
 
 	_, err = mdns.Server(ipv4.NewPacketConn(l), &mdns.Config{
-		LocalNames: []string{k.serviceName},
+		LocalNames: k.serviceName,
 	})
 	if err != nil {
 		panic(err)
@@ -41,7 +41,7 @@ func (k *KmDNS) Server() {
 }
 
 // ClientRequest 客户端解析寻找服务端地址
-func (k *KmDNS) ClientRequest() string {
+func (k *KmDNS) ClientRequest() []string {
 	addr, err := net.ResolveUDPAddr("udp", mdns.DefaultAddress)
 	if err != nil {
 		panic(err)
@@ -65,11 +65,16 @@ func (k *KmDNS) ClientRequest() string {
 		//logger.Info("cancel")
 	}()
 
-	answer, src, err := server.Query(timeout, k.serviceName)
-	log.Println(answer, src, err)
-	if err != nil {
-		return err.Error()
+	var res []string
+	for _, name := range k.serviceName {
+		answer, src, err := server.Query(timeout, name)
+		if err != nil {
+			log.Println(answer, src, err)
+			continue
+		}
+		mdnsServer := src.String()
+		res = append(res, mdnsServer[:len(mdnsServer)-4])
 	}
-	mdnsServer := src.String()
-	return mdnsServer[:len(mdnsServer)-4]
+
+	return res
 }

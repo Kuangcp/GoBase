@@ -7,12 +7,12 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	obj := New("test.server", time.Second*7)
+	obj := New(time.Second*7, "test.server", "abc.server")
 	obj.Server()
 }
 
 func TestClient(t *testing.T) {
-	obj := New("test.server", time.Second*7)
+	obj := New(time.Second*7, "test.server", "abc.server")
 	server := obj.ClientRequest()
 	fmt.Println(server)
 }

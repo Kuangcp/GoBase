@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/ctool"
@@ -87,7 +88,8 @@ func (r *WeWorkRobot) ShowRequestLogVar(flag bool) {
 }
 
 // sendJSONPost 发送body为JSON的 Post 请求
-//  return response,timeWasted,error
+//
+//	return response,timeWasted,error
 func (r *WeWorkRobot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 	start := time.Now()
 	jsonBytes, err := json.Marshal(value)
@@ -115,7 +117,7 @@ func (r *WeWorkRobot) sendJSONPost(value interface{}) ([]byte, int64, error) {
 		return nil, 0, err
 	}
 
-	rspBody, err := ioutil.ReadAll(resp.Body)
+	rspBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -174,7 +176,8 @@ func (r *WeWorkRobot) SendText(content Content) error {
 }
 
 // SendNews 发送图文消息
-//  注意：单个图文时能看到 title 和 description, 多个时只能看到 title
+//
+//	注意：单个图文时能看到 title 和 description, 多个时只能看到 title
 func (r *WeWorkRobot) SendNews(articles ...Article) error {
 	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
@@ -201,7 +204,7 @@ func (r *WeWorkRobot) SendImageByFile(filePath string) error {
 		return errors.New("out of limiter")
 	}
 
-	open, err := ioutil.ReadFile(filePath)
+	open, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -225,7 +228,8 @@ func buildImgFileMd5(img []byte) string {
 }
 
 // SendImageByBytes 发送图片
-//  图片（base64编码前）最大不能超过2M，支持JPG,PNG格式
+//
+//	图片（base64编码前）最大不能超过2M，支持JPG,PNG格式
 func (r *WeWorkRobot) SendImageByBytes(img []byte) error {
 	if !r.limiter.Acquire() {
 		return errors.New("out of limiter")
