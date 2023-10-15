@@ -53,7 +53,7 @@ func StartQueryServer() {
 		//fs := http.FileServer(http.Dir("./core/static"))
 		//http.Handle("/", http.StripPrefix("/", fs))
 
-		mux.Handle("/", http.FileServer(http.Dir("./core/static")))
+		mux.Handle("/", http.FileServer(http.Dir("./web/static")))
 	} else {
 		sub, err := fs.Sub(static, "static")
 		if err != nil {
