@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Config</title>
+</head>
+<body>
+
+<main>
+    Redis:
+    <div class="redis" id="redis">
+        Addr:
+        <input name="addr" type="text"/>
+        Db:
+        <input name="db" type="number"/>
+        PoolSize:
+        <input name="pool_size" type="number"/>
+    </div>
+
+    <hr>
+    Proxy: <button onclick="addProxyPath('proxy')">Add</button>
+    <div id="proxy" class="pathCnf">
+        <input name="proxy_type" type="checkbox">
+        <input name="paths" type="url">
+        <input name="paths" type="url">
+    </div>
+
+    <hr>
+    Block: <button onclick="addProxyPath('block')">Add</button>
+    <div id="block" class="pathCnf">
+        <input name="proxy_type" type="checkbox">
+        <input name="paths" type="url">
+        <input name="paths" type="url">
+    </div>
+
+    <button type="button" onclick="save()">保存</button>
+</main>
+
+
+<script>
+    function addProxyPath(block){
+        let tmp = document.createElement('input');
+        tmp.name ='paths'
+        document.getElementById(block).appendChild(tmp)
+    }
+    function save() {
+        let config = {}
+        config['redis'] = divToObj('redis')
+        config['proxy'] = divToObj('proxy')
+        config['block'] = divToObj('block')
+
+        console.log(JSON.stringify(config))
+    }
+
+    function divToObj(id) {
+        let fields = document.getElementById(id).getElementsByTagName('input');
+        let result = {}
+        for (let i = 0; i < fields.length; i++) {
+            let name = fields[i].name;
+            if (!(name in result)) {
+                if (name === 'proxy_type') {
+                    result[name] = fields[i].checked?1:0
+                }else{
+                    result[name] = fields[i].value;
+                }
+            } else {
+                let last = result[name]
+                if (last instanceof Array) {
+                    last.push(fields[i].value)
+                } else {
+                    let tmp = []
+                    tmp.push(last, fields[i].value)
+                    result[name] = tmp
+                }
+            }
+        }
+        return result
+    }
+</script>
+</body>
+</html>
