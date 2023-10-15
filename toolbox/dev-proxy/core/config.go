@@ -45,7 +45,7 @@ type (
 	RedisConf struct {
 		Addr     string `json:"addr"`
 		Password string `json:"password"`
-		DB       int    `json:"Leveldb"`
+		DB       int    `json:"db"`
 		PoolSize int    `json:"pool_size"`
 	}
 
