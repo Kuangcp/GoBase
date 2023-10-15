@@ -224,11 +224,15 @@ func FilterFormType(s []byte) []byte {
 	return s
 }
 
+func StartLog(mode string) {
+	logger.Info("Redis key: ", RequestList, RequestUrlList)
+	logger.Info("Start %v proxy server on 127.0.0.1:%d", mode, Port)
+	logger.Warn("Pac: http://127.0.0.1:%d%v", ApiPort, PacUrl)
+}
+
 // HttpProxy HTTP代理和修改 HTTPS转发
 func HttpProxy() {
-	logger.Info("list key: ", RequestList)
-	logger.Info("Start HTTP proxy server on 127.0.0.1:%d", Port)
-	logger.Warn("Pac: http://127.0.0.1:%d%v", ApiPort, PacUrl)
+	StartLog("HTTP")
 	cert, err := GenCertificate()
 	if err != nil {
 		logger.Fatal(err)

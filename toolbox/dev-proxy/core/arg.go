@@ -24,7 +24,7 @@ var HelpInfo = ctool.HelpInfo{
 		{Short: "-r", BoolVar: &ReloadConf, Comment: "auto reload changed config"},
 		{Short: "-d", BoolVar: &Debug, Comment: "debug mode"},
 		{Short: "-x", BoolVar: &HttpMode, Comment: "track or modify http, capture https. (default https mode, need install cert)"},
-		{Short: "-A", BoolVar: &TrackAllType, Comment: "track all request default track json response"},
+		{Short: "-A", BoolVar: &TrackAllType, Comment: "track all request default track json type request"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-p", IntVar: &Port, Int: 1234, Value: "port", Comment: "proxy port"},
