@@ -119,23 +119,22 @@ func CloseConnection() {
 // TrySaveLog 尝试保存，忽略静态资源及无类型标记的接口
 func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
 	contentType := res.Header.Get("Content-Type")
-	jsonType := strings.Contains(contentType, "application/json")
-
 	if contentType == "" {
 		return
 	}
-	matched := stream.Just(DirectType...).AnyMatch(func(item any) bool {
+
+	staticType := stream.Just(DirectType...).AnyMatch(func(item any) bool {
 		return strings.Contains(contentType, item.(string))
 	})
-	if matched {
-		return
-	}
-	if !TrackAllType && !jsonType {
+	if staticType {
 		return
 	}
 
-	FillReqLogResponse(reqLog, res)
-	SaveReqLog(reqLog)
+	jsonType := strings.Contains(contentType, "application/json")
+	if TrackAllType || jsonType {
+		FillReqLogResponse(reqLog, res)
+		SaveReqLog(reqLog)
+	}
 }
 
 func IsJsonResponse(header http.Header) bool {

@@ -3,10 +3,8 @@ package main
 import (
 	"github.com/getlantern/systray"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
-	"github.com/kuangcp/gobase/toolbox/dev-proxy/web"
-
-	//"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
+	"github.com/kuangcp/gobase/toolbox/dev-proxy/web"
 )
 
 func main() {

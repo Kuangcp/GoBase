@@ -77,7 +77,7 @@ var (
 	guiMode      = false
 	// DirectType https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
 	// https://tool.oschina.net/commons/_contenttype.dea
-	DirectType = []string{"html", "javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
+	DirectType = []string{"javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
 )
 
 func (p *ProxyGroup) GetName() string {
