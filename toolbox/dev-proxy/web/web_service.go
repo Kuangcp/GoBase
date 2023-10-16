@@ -1,12 +1,14 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
+	"io"
 	"net/http"
 	"net/url"
 	"sort"
@@ -65,6 +67,27 @@ func PageListReqHistory(request *http.Request) ctool.ResultVO[*ctool.PageVO[*cor
 		hiddenHeaderEachLog(pageResult)
 	}
 	return result
+}
+
+func SaveConfig(writer http.ResponseWriter, request *http.Request) {
+	bodyT, err := io.ReadAll(request.Body)
+	if err != nil {
+		core.WriteJsonError(writer, 400, err.Error())
+		return
+	}
+	var tmp core.ProxyConf
+	err = json.Unmarshal(bodyT, &tmp)
+	if err != nil {
+		core.WriteJsonError(writer, 400, err.Error())
+		return
+	}
+	core.ProxyConfVar = &tmp
+	core.ReloadConfByCacheObj()
+	core.WriteJsonRsp(writer, ctool.Success[string]())
+}
+
+func QueryConfig(_ *http.Request) ctool.ResultVO[*core.ProxyConf] {
+	return ctool.SuccessWith(core.ProxyConfVar)
 }
 
 // search url

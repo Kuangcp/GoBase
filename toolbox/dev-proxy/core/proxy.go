@@ -3,15 +3,21 @@ package core
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -246,5 +252,45 @@ func HttpProxy() {
 		}),
 	}
 
-	logger.Fatal(server.ListenAndServe())
+	StartAndCloseHook(server, func() error {
+		StoreByMemory(ProxyConfVar)
+		return nil
+	})
+
+	logger.Info("exit")
+}
+
+func StartAndCloseHook(server *http.Server, fns ...func() error) {
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error(err)
+			os.Exit(0)
+		}
+	}()
+	if fns == nil {
+		fns = []func() error{}
+	}
+	fns = append(fns, func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return server.Shutdown(ctx)
+	})
+	Watch(fns...)
+}
+
+// 监听信号
+func Watch(fns ...func() error) {
+	// 程序无法捕获信号 SIGKILL 和 SIGSTOP （终止和暂停进程），因此 os/signal 包对这两个信号无效。
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGUSR1, syscall.SIGUSR2)
+
+	// 阻塞
+	s := <-ch
+	close(ch)
+	logger.Warn("catch signal", s.String())
+	for i := range fns {
+		if err := fns[i](); err != nil {
+			log.Println(err)
+		}
+	}
 }

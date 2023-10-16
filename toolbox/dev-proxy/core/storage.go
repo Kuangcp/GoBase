@@ -74,7 +74,7 @@ func InitConnection() {
 		}
 		opt = redis.Options{Addr: redisConf.Addr, Password: redisConf.Password, DB: redisConf.DB, PoolSize: poolSize}
 	} else {
-		opt = redis.Options{Addr: "192.168.9.155" + ":6667", Password: "", DB: 1, PoolSize: PoolSize}
+		opt = redis.Options{Addr: "192.168.9.155:6667", Password: "", DB: 1, PoolSize: PoolSize}
 	}
 
 	Conn = redis.NewClient(&opt)

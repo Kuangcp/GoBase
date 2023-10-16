@@ -11,7 +11,6 @@ func main() {
 	core.InitConfig()
 
 	core.InitConnection()
-	defer core.CloseConnection()
 
 	go web.StartQueryServer()
 

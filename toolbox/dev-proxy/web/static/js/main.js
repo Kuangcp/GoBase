@@ -24,7 +24,8 @@ function get(url, successFuc, failFunc) {
     };
 }
 
-function postJSON(url, body) {
+function postJSON(url, body, handler) {
+    loading()
     //   1、创建xhr对象
     const xhr = new XMLHttpRequest();
     // 2、调用open函数 创建请求
@@ -37,11 +38,16 @@ function postJSON(url, body) {
     );
     // 4、调用send函数   发起请求
     xhr.send(body);
-    // 5、监听事件
+    // 4、监听onreadystatechange事件
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {
-            console.log(xhr.responseText);
+            if (handler) {
+                handler(xhr.responseText)
+            } else {
+                console.log(xhr.responseText);
+            }
         }
+        loaded()
     };
 }
 

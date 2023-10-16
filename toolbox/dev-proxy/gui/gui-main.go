@@ -13,7 +13,6 @@ func main() {
 	core.MarkGuiMode()
 
 	core.InitConnection()
-	defer core.CloseConnection()
 
 	if core.HttpMode {
 		go core.HttpProxy()

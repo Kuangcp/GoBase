@@ -159,8 +159,11 @@ func HttpsProxy() {
 		ReadTimeout:  10 * time.Minute,
 		WriteTimeout: 10 * time.Minute,
 	}
-	err := server.ListenAndServe()
-	if err != nil {
-		panic(err)
-	}
+
+	core.StartAndCloseHook(server, func() error {
+		core.StoreByMemory(core.ProxyConfVar)
+		return nil
+	})
+
+	logger.Info("exit")
 }
