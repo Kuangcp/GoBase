@@ -81,6 +81,16 @@ func SaveConfig(writer http.ResponseWriter, request *http.Request) {
 		core.WriteJsonError(writer, 400, err.Error())
 		return
 	}
+
+	tmp.ProxyDirect.Paths = stream.ToList[string](stream.Just(tmp.ProxyDirect.Paths...).
+		Filter(func(item any) bool {
+			return len(item.(string)) > 0
+		}))
+	tmp.ProxySelf.Paths = stream.ToList[string](stream.Just(tmp.ProxySelf.Paths...).
+		Filter(func(item any) bool {
+			return len(item.(string)) > 0
+		}))
+
 	core.ProxyConfVar = &tmp
 	core.ReloadConfByCacheObj()
 	core.WriteJsonRsp(writer, ctool.Success[string]())

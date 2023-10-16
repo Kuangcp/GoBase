@@ -1,8 +1,13 @@
+function deleteRoute(here) {
+    let route = here.parentNode
+    here.parentNode.parentNode.removeChild(route)
+}
+
 function addRoute(here) {
     let tmp = document.createElement('div');
     tmp.className = 'routers'
     tmp.innerHTML = document.getElementById('router-temp').innerHTML
-    here.parentNode.parentElement.appendChild(tmp)
+    here.parentNode.parentNode.appendChild(tmp)
 }
 
 function addGroup(val) {
