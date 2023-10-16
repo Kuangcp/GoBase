@@ -3,78 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <title>Config</title>
+    <script src="js/main.js"></script>
+    <script src="js/config-parse.js"></script>
+    <script src="js/config-load.js"></script>
+    <style>
+        * {
+            font-size: 16px;
+        }
+
+        #groups {
+            margin-left: 20px;
+        }
+
+        .group {
+            margin-bottom: 30px;
+            float: left;
+        }
+
+        .group-nav {
+            margin-left: -10px;
+            margin-bottom: 5px;
+        }
+
+        .routers {
+            margin-left: 15px;
+        }
+
+        .router-input {
+            width: 800px;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .router-input:nth-child(even) {
+            background: #243048;
+        }
+
+        .pathCnf {
+            margin-bottom: 30px;
+        }
+
+        .pathCnf input {
+            margin-left: 20px;
+            width: 530px;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .pathCnf input:nth-child(even) {
+            background: #E8E8E9;
+        }
+
+        main {
+            margin-left: 15px;
+        }
+
+        nav {
+            margin-left: 10px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            border-radius: 5px;
+        }
+
+
+        .redis {
+            float: left;
+            margin-bottom: 100px;
+        }
+
+    </style>
 </head>
 <body>
 
-<main>
-    Redis:
-    <div class="redis" id="redis">
-        Addr:
-        <input name="addr" type="text"/>
-        Db:
-        <input name="db" type="number"/>
-        PoolSize:
-        <input name="pool_size" type="number"/>
-    </div>
-
-    <hr>
-    Proxy: <button onclick="addProxyPath('proxy')">Add</button>
-    <div id="proxy" class="pathCnf">
-        <input name="proxy_type" type="checkbox">
-        <input name="paths" type="url">
-        <input name="paths" type="url">
-    </div>
-
-    <hr>
-    Block: <button onclick="addProxyPath('block')">Add</button>
-    <div id="block" class="pathCnf">
-        <input name="proxy_type" type="checkbox">
-        <input name="paths" type="url">
-        <input name="paths" type="url">
-    </div>
-
+<nav>
+    Profile ID: <input id="id">
     <button type="button" onclick="save()">保存</button>
+</nav>
+<main>
+    Groups:
+    <button onclick="addGroup()">Add Group</button>
+    <div id="groups"></div>
+
+    <br/>
+    <div style="float: left">
+        <input id="proxy-switch-type" name="proxy_type" type="checkbox"/>
+        Proxy:
+        <button onclick="addProxyPath('proxy')">Add</button>
+        <div id="proxy" class="pathCnf"></div>
+        <input id="direct-switch-type" name="proxy_type" type="checkbox"/>
+        Direct:
+        <button onclick="addProxyPath('direct')">Add</button>
+        <div id="direct" class="pathCnf"></div>
+    </div>
+
+    <div class="redis" id="redis">
+        Redis Addr:
+        <input name="addr" type="text" placeholder="host:ip"/>
+        Db:
+        <input name="db" type="number" style="width: 40px" min="0"/>
+        PoolSize:
+        <input name="pool_size" type="number" style="width: 40px" min="1"/>
+    </div>
+
+    <div style="display: none">
+        <div id="group-temp" class="group">
+            <div class="group-nav">
+                <input name="proxy_type" type="checkbox" checked>
+                <input name="name">
+                <button onclick="addRoute(this)">Add Route</button>
+            </div>
+            <!--            <div class="routers" id="router-temp">-->
+            <!--            </div>-->
+        </div>
+
+        <div class="routers" id="router-temp">
+            <input name="proxy_type" type="checkbox" checked>
+            <input name="src" class="router-input">
+            <input name="dst" class="router-input">
+        </div>
+    </div>
 </main>
 
-
 <script>
-    function addProxyPath(block){
-        let tmp = document.createElement('input');
-        tmp.name ='paths'
-        document.getElementById(block).appendChild(tmp)
-    }
-    function save() {
-        let config = {}
-        config['redis'] = divToObj('redis')
-        config['proxy'] = divToObj('proxy')
-        config['block'] = divToObj('block')
+    bindKeyDown()
+    loadExistConf()
 
-        console.log(JSON.stringify(config))
-    }
+    function bindKeyDown() {
+        document.onkeydown = function (event) {
+            // Ctrl S
+            if (event.ctrlKey === true && event.key === 's') {
+                event.preventDefault();
+                save()
+            }
 
-    function divToObj(id) {
-        let fields = document.getElementById(id).getElementsByTagName('input');
-        let result = {}
-        for (let i = 0; i < fields.length; i++) {
-            let name = fields[i].name;
-            if (!(name in result)) {
-                if (name === 'proxy_type') {
-                    result[name] = fields[i].checked?1:0
-                }else{
-                    result[name] = fields[i].value;
-                }
-            } else {
-                let last = result[name]
-                if (last instanceof Array) {
-                    last.push(fields[i].value)
-                } else {
-                    let tmp = []
-                    tmp.push(last, fields[i].value)
-                    result[name] = tmp
-                }
+            // Ctrl D
+            if (event.ctrlKey === true && event.key === 'r') {
+                event.preventDefault();
+                loadExistConf()
             }
         }
-        return result
     }
 </script>
 </body>

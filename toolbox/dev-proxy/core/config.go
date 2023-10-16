@@ -8,6 +8,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"github.com/tidwall/pretty"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -67,7 +68,7 @@ var (
 )
 
 var (
-	ProxyConfVar ProxyConf
+	ProxyConfVar *ProxyConf
 	// url map: src -> dst
 	replaceMap   = make(map[string]string)
 	trackList    []string // 代理类型的地址（抓包）
@@ -205,6 +206,9 @@ func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, string) {
 }
 
 func InitConfig() {
+	if ProxyConfVar == nil {
+		ProxyConfVar = &ProxyConf{}
+	}
 	home, err := ctool.Home()
 	if err != nil {
 		fmt.Println(err)
@@ -288,10 +292,11 @@ func initMainProxyJson() {
 		ProxyDirect: &ProxySelf{Name: "direct", ProxyType: Open, Paths: []string{"http://172.22.133.255:8989/(.*)"}},
 		ProxySelf:   &ProxySelf{Name: "proxy", ProxyType: Open, Paths: []string{"http://172.22.133.255:8990/(.*)"}},
 	}
-	storeByMemory(conf)
+	StoreByMemory(&conf)
 }
 
-func storeByMemory(conf ProxyConf) {
+func StoreByMemory(conf *ProxyConf) {
+	logger.Info("store to json file")
 	bts, err := json.Marshal(conf)
 	if err != nil {
 		logger.Error(err)
@@ -300,7 +305,33 @@ func storeByMemory(conf ProxyConf) {
 	var Options = &pretty.Options{Width: 80, Prefix: "", Indent: "  ", SortKeys: false}
 	fmtBts := pretty.PrettyOptions(bts, Options)
 
+	dst := configFilePath[:len(configFilePath)-5] + time.Now().Format("2006-01-02T15:04:05") + ".json"
+	i, err := copy(configFilePath, dst)
+	logger.Info(i, dst, err)
+
 	os.WriteFile(configFilePath, fmtBts, 0644)
+}
+
+func copy(src, dst string) (int64, error) {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return 0, err
+	}
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", src)
+	}
+	source, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer source.Close()
+	destination, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer destination.Close()
+	nBytes, err := io.Copy(destination, source)
+	return nBytes, err
 }
 
 func cleanAndRegisterFromFile(configFile string) {
@@ -313,7 +344,7 @@ func cleanAndRegisterFromFile(configFile string) {
 	lock.Lock()
 	defer lock.Unlock()
 
-	err = json.Unmarshal(file, &ProxyConfVar)
+	err = json.Unmarshal(file, ProxyConfVar)
 	if err != nil {
 		logger.Error(err)
 		return

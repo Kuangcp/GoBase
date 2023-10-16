@@ -77,6 +77,9 @@ func StartQueryServer() {
 	mux.HandleFunc("/uploadCache", rtInt(uploadCacheApi))
 	mux.HandleFunc("/flushAll", rtInt(flushAllData))
 
+	mux.HandleFunc("/queryConfig", rtInt(core.Json(QueryConfig)))
+	mux.HandleFunc("/saveConfig", rtInt(SaveConfig))
+
 	mux.HandleFunc("/urlFrequency", rtInt(UrlFrequencyApi))
 	mux.HandleFunc("/urlTimeAnalysis", rtInt(UrlTimeAnalysis))
 	mux.HandleFunc("/detailById", rtInt(DetailById))
