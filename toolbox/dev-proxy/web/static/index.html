@@ -6,9 +6,9 @@
     <title>Dev Proxy</title>
 
     <!--  Download Resource https://highlightjs.org/download/ -->
-    <link rel="stylesheet" href="monokai-sublime.min.css">
-    <link rel="stylesheet" href="main.css">
-    <script src="highlight.min.js"></script>
+    <link rel="stylesheet" href="css/monokai-sublime.min.css">
+    <link rel="stylesheet" href="css/main.css">
+    <script src="js/highlight.min.js"></script>
     <script src="js/main.js"></script>
 </head>
 <body>
@@ -33,6 +33,7 @@
     <a href="config.html">Config</a>
     <a href="perf.html">性能分析</a>
     <a href="/debug/statsviz" target="_blank">Statsviz</a>
+    <button type="button" onclick="exit()" class="req-btn req-btn-page">Exit</button>
 </form>
 <table id="req-log">
     <thead id="req-log-head"></thead>
@@ -235,6 +236,9 @@
         })
     }
 
+    function exit() {
+        get('/exit')
+    }
 
     function replay() {
         let id = val("id");
