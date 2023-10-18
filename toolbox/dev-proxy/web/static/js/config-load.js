@@ -11,22 +11,30 @@ function loadExistConf() {
 
         // proxy and direct
         document.getElementById('proxy').innerHTML = ''
-        for (u of data.proxy.paths) {
-            let tmp = document.createElement('input');
-            tmp.name = 'paths'
-            tmp.value = u
-            document.getElementById('proxy').appendChild(tmp)
+        if (data.proxy !== null) {
+            document.getElementById('proxy-switch-type').checked = data.proxy.proxy_type === 1
+            if (data.proxy.paths !== null) {
+                for (u of data.proxy.paths) {
+                    let tmp = document.createElement('input');
+                    tmp.name = 'paths';
+                    tmp.value = u;
+                    document.getElementById('proxy').appendChild(tmp);
+                }
+            }
         }
-        document.getElementById('proxy-switch-type').checked = data.proxy.proxy_type === 1
 
         document.getElementById('direct').innerHTML = ''
-        for (u of data.direct.paths) {
-            let tmp = document.createElement('input');
-            tmp.name = 'paths'
-            tmp.value = u
-            document.getElementById('direct').appendChild(tmp)
+        if (data.direct !== null) {
+            document.getElementById('direct-switch-type').checked = data.direct.proxy_type === 1
+            if (data.direct.paths !== null) {
+                for (u of data.direct.paths) {
+                    let tmp = document.createElement('input');
+                    tmp.name = 'paths';
+                    tmp.value = u;
+                    document.getElementById('direct').appendChild(tmp);
+                }
+            }
         }
-        document.getElementById('direct-switch-type').checked = data.direct.proxy_type === 1
 
         // redis
         if (data.redis !== null) {
@@ -39,8 +47,10 @@ function loadExistConf() {
 
         // groups
         document.getElementById('groups').innerHTML = ''
-        for (let group of data.groups) {
-            addGroup(group)
+        if (data.groups !== null) {
+            for (let group of data.groups) {
+                addGroup(group);
+            }
         }
     })
 }

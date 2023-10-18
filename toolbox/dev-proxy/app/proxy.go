@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -166,4 +167,5 @@ func HttpsProxy() {
 	})
 
 	logger.Info("exit")
+	os.Exit(0)
 }

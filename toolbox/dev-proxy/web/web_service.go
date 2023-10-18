@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -98,6 +99,12 @@ func SaveConfig(writer http.ResponseWriter, request *http.Request) {
 
 func QueryConfig(_ *http.Request) ctool.ResultVO[*core.ProxyConf] {
 	return ctool.SuccessWith(core.ProxyConfVar)
+}
+
+func Exit(_ http.ResponseWriter, _ *http.Request) {
+	core.StoreByMemory(core.ProxyConfVar)
+	logger.Warn("exit by request")
+	os.Exit(0)
 }
 
 // search url
