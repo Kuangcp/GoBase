@@ -30,17 +30,8 @@ type (
 	}
 )
 
-// https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file
-//
-//go:embed static/proxy.pac
-var pacFile string
-
 //go:embed static
 var static embed.FS
-
-const (
-	pacT = "application/x-ns-proxy-autoconfig"
-)
 
 func StartQueryServer() {
 	mux := http.NewServeMux()
@@ -60,13 +51,15 @@ func StartQueryServer() {
 			panic(err)
 		}
 		mux.Handle("/", http.FileServer(http.FS(sub)))
-		mux.HandleFunc(core.PacUrl, PacFileApi)
 	}
 
 	err := statsviz.Register(mux)
 	if err != nil {
 		logger.Error(err)
 	}
+
+	mux.HandleFunc(core.PacUrl, PacFileApi)
+	mux.HandleFunc("/writePac", rtInt(WritePacFile))
 
 	//mux.HandleFunc("/list", rtRateInt(Json(PageListReqHistory), limiter))
 	mux.HandleFunc("/list", core.Json(PageListReqHistory))
@@ -274,14 +267,24 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 }
 
 // PacFileApi 默认使用缺省文件，优先使用独立配置文件
-func PacFileApi(writer http.ResponseWriter, request *http.Request) {
-	fileBt, err := os.ReadFile(core.PacFilePath)
-	if err != nil || fileBt == nil || len(fileBt) == 0 {
-		logger.Error("pac file not found", core.PacFilePath, err)
-		bindStatic(pacFile, pacT)(writer, request)
-	} else {
-		core.RspStr(writer, string(fileBt))
+func PacFileApi(writer http.ResponseWriter, _ *http.Request) {
+	direct := "function FindProxyForURL(url, host) { return \"DIRECT\";}"
+	if !ctool.IsFileExist(core.PacFilePath) {
+		core.RspStr(writer, direct)
+		return
 	}
+
+	fileBt, err := os.ReadFile(core.PacFilePath)
+	if err != nil {
+		core.RspStr(writer, direct)
+		return
+	}
+
+	core.RspStr(writer, string(fileBt))
+}
+
+func WritePacFile(writer http.ResponseWriter, request *http.Request) {
+
 }
 
 func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
