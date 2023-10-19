@@ -84,6 +84,7 @@ routers 每两个组成一对，前后元素构成源头和目标路径的映射
 - docker build -t dev-proxy:1.1 .
 - 准备好 host-path 目录, 目录下配置好 proxy.json proxy.pac
 - docker run --init -d --name dev-proxy --network host -v host-path:/root/.dev-proxy/ dev-proxy:1.1
+    - 低版本Docker还会遇到[issues](https://github.com/docker-library/golang/issues/467) 需要run添加参数：--privileged=true
 
 # TODO
 
