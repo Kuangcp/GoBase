@@ -95,7 +95,7 @@ func main() {
 func printStartUpLog() {
 	innerURL := fmt.Sprintf("http://%v:%v", internalIP, port)
 	log.Printf("%v/up%v  %v/up\n", ctool.Purple, ctool.End, innerURL)
-	log.Printf("%v/f%v   curl -X POST -H 'Content-Type: multipart/form-data' %v/f -F file=@index.html\n",
+	log.Printf("%v/f%v   curl %v/f -F file=@index.html\n",
 		ctool.Purple, ctool.End, innerURL)
 	log.Printf("%v/e%v   curl %v/e -d 'echo hi'\n", ctool.Purple, ctool.End, innerURL)
 	log.Printf("%v/h%v   home: %v\n", ctool.Purple, ctool.End, fmt.Sprintf("http://%v:%v%v", internalIP, port, homePath))
