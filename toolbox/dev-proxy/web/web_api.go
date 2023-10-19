@@ -277,7 +277,7 @@ func replayRequest(writer http.ResponseWriter, request *http.Request) {
 func PacFileApi(writer http.ResponseWriter, request *http.Request) {
 	fileBt, err := os.ReadFile(core.PacFilePath)
 	if err != nil || fileBt == nil || len(fileBt) == 0 {
-		logger.Error(err)
+		logger.Error("pac file not found", core.PacFilePath, err)
 		bindStatic(pacFile, pacT)(writer, request)
 	} else {
 		core.RspStr(writer, string(fileBt))

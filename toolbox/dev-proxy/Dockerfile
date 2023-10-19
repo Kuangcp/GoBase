@@ -6,4 +6,4 @@ EXPOSE 1235
 RUN mkdir -p /app
 ADD dev-proxy.bin /app
 
-ENTRYPOINT ["/app/dev-proxy.bin", "-a", "/root/.dev-proxy/proxy.pac"]
+ENTRYPOINT ["/app/dev-proxy.bin"]
