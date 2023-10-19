@@ -1,0 +1,8 @@
+app/
+core/
+web/
+gui/
+img/
+*.go
+go.mod
+go.sum 

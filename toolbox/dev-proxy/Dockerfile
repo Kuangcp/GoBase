@@ -7,7 +7,8 @@ EXPOSE 1235
 RUN apt update && apt install tzdata && \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
-    dpkg-reconfigure -f noninteractive tzdata
+    dpkg-reconfigure -f noninteractive tzdata && \
+    apt autoclean && rm -rf /var/lib/apt/lists/
 
 RUN mkdir -p /app
 
