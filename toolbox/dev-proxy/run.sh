@@ -19,12 +19,14 @@ last_commit=$(git log --oneline | head -n 1 | awk '{print $1}')
 dt=$(date +%m%d%H%M)
 
 log_info 'Delete exist container'
-docker rm -f dev-proxy
+docker stop dev-proxy
+docker rm dev-proxy
 
 log_info 'Build image'
-docker build -t dev-proxy:1.0-$dt-$last_commit .
+# yay docker-buildx
+docker buildx build -t dev-proxy:1.0-$dt-$last_commit .
 
 log_info 'Start new container'
-docker run --init -d --name dev-proxy --network host  -v $HOME/Apps/dev-proxy-cd:/root/.dev-proxy/ dev-proxy:1.0-$dt-$last_commit
+docker run --init -d --name dev-proxy --network host -v $HOME/Apps/dev-proxy-cd:/root/.dev-proxy/ dev-proxy:1.0-$dt-$last_commit
 
 log_info 'Finish rebuild'
