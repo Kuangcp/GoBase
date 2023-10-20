@@ -9,6 +9,6 @@ const (
 	Proxy   = "proxy"   // 抓包代理
 
 	// PacUrl https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Proxy_servers_and_tunneling/Proxy_Auto-Configuration_PAC_file
-	PacUrl      = "/proxy.pac" // pac url
+	PacUrl      = "/pac" // pac url
 	pacFileType = "application/x-ns-proxy-autoconfig"
 )

@@ -54,3 +54,10 @@ function loadExistConf() {
         }
     })
 }
+
+function loadPac() {
+    get('/pac', function (data) {
+        console.log(data)
+        document.getElementById('pac-file-input').value = data
+    })
+}

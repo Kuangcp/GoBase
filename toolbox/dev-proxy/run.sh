@@ -20,6 +20,10 @@ build_image(){
     last_commit=$(git log --oneline | head -n 1 | awk '{print $1}')
     dt=$(date +%m%d%H%M)
 
+    log_info 'Compile'
+    go build -o dev-proxy.bin
+    upx dev-proxy.bin
+
     log_info 'Stop exist container'
     docker stop dev-proxy
 

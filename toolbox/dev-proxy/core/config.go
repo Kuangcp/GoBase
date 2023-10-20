@@ -306,13 +306,13 @@ func StoreByMemory(conf *ProxyConf) {
 	fmtBts := pretty.PrettyOptions(bts, Options)
 
 	dst := configFilePath[:len(configFilePath)-5] + time.Now().Format("2006-01-02T15:04:05") + ".json"
-	i, err := copy(configFilePath, dst)
+	i, err := CopyFile(configFilePath, dst)
 	logger.Info(i, dst, err)
 
 	os.WriteFile(configFilePath, fmtBts, 0644)
 }
 
-func copy(src, dst string) (int64, error) {
+func CopyFile(src, dst string) (int64, error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
 		return 0, err

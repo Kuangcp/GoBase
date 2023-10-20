@@ -72,9 +72,18 @@
 
         .redis {
             float: left;
-            margin-bottom: 100px;
+            margin-bottom: 20px;
         }
 
+        .pac-file {
+            width: 500px;
+            height: 400px;
+        }
+
+        .pac-file textarea {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
@@ -116,8 +125,8 @@
                 <input name="name">
                 <button onclick="addRoute(this)">Add Route</button>
             </div>
-            <!--            <div class="routers" id="router-temp">-->
-            <!--            </div>-->
+            <!-- <div class="routers" id="router-temp"> -->
+            <!-- </div> -->
         </div>
 
         <div class="routers" id="router-temp">
@@ -127,11 +136,20 @@
             <button onclick="deleteRoute(this)">X</button>
         </div>
     </div>
+
+    <div class="pac-file">
+        <textarea id="pac-file-input">
+
+        </textarea>
+        <button onclick="savePac()">保存 PAC</button>
+    </div>
+
 </main>
 
 <script>
     bindKeyDown()
     loadExistConf()
+    loadPac()
 
     function bindKeyDown() {
         document.onkeydown = function (event) {
@@ -148,6 +166,8 @@
             }
         }
     }
+
+
 </script>
 </body>
 </html>
