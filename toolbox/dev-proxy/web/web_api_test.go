@@ -30,3 +30,10 @@ func TestUrl(t *testing.T) {
 	newPath := strings.Join(parts[:depth], "/")
 	fmt.Println(parse.Scheme + "://" + parse.Host + newPath)
 }
+
+func TestFindDir(t *testing.T) {
+	s := "/home/zk/Apps/dev-proxy-cd/dev-proxy.json"
+	dirs := strings.Split(s, "/")
+	d := strings.Join(dirs[:len(dirs)-1], "/") + "/bak"
+	fmt.Println(d)
+}
