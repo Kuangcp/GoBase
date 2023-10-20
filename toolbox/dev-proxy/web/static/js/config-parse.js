@@ -147,3 +147,10 @@ function inputToObj(fields) {
     }
     return result
 }
+
+function savePac() {
+    let text = document.getElementById('pac-file-input').value;
+    console.log(text)
+
+    postJSON('/savePac', text)
+}

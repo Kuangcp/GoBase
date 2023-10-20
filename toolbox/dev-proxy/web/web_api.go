@@ -12,6 +12,7 @@ import (
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -59,7 +60,8 @@ func StartQueryServer() {
 	}
 
 	mux.HandleFunc(core.PacUrl, PacFileApi)
-	mux.HandleFunc("/writePac", rtInt(WritePacFile))
+	mux.HandleFunc("/proxy.pac", PacFileApi)
+	mux.HandleFunc("/savePac", rtInt(WritePacFile))
 
 	//mux.HandleFunc("/list", rtRateInt(Json(PageListReqHistory), limiter))
 	mux.HandleFunc("/list", core.Json(PageListReqHistory))
@@ -284,7 +286,19 @@ func PacFileApi(writer http.ResponseWriter, _ *http.Request) {
 }
 
 func WritePacFile(writer http.ResponseWriter, request *http.Request) {
+	all, err := io.ReadAll(request.Body)
+	if err != nil {
+		core.WriteJsonRsp(writer, ctool.FailedWithMsg[any]("read body error: "+err.Error()))
+		return
+	}
+	fmt.Println(string(all))
 
+	dst := core.PacFilePath[:len(core.PacFilePath)-4] + time.Now().Format("2006-01-02T15:04:05") + ".pac.js"
+	i, err := core.CopyFile(core.PacFilePath, dst)
+	logger.Info(i, dst, err)
+	os.WriteFile(core.PacFilePath, all, 0644)
+
+	core.WriteJsonRsp(writer, ctool.SuccessWith("ok"))
 }
 
 func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
