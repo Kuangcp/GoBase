@@ -15,7 +15,7 @@ log_info(){
 }
 
 build_image(){
-    total=4
+    total=6
     i=0
     last_commit=$(git log --oneline | head -n 1 | awk '{print $1}')
     dt=$(date +%m%d%H%M)

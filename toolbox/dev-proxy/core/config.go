@@ -305,11 +305,31 @@ func StoreByMemory(conf *ProxyConf) {
 	var Options = &pretty.Options{Width: 80, Prefix: "", Indent: "  ", SortKeys: false}
 	fmtBts := pretty.PrettyOptions(bts, Options)
 
-	dst := configFilePath[:len(configFilePath)-5] + time.Now().Format("2006-01-02T15:04:05") + ".json"
-	i, err := CopyFile(configFilePath, dst)
-	logger.Info(i, dst, err)
+	err = SaveAs(configFilePath, ".proxy.json", fmtBts)
+	if err != nil {
+		logger.Error(err)
+	}
+}
 
-	os.WriteFile(configFilePath, fmtBts, 0644)
+func SaveAs(src, suffix string, newContent []byte) error {
+	dirs := strings.Split(src, "/")
+	d := strings.Join(dirs[:len(dirs)-1], "/") + "/bak"
+	exist := ctool.IsFileExist(d)
+	if !exist {
+		err := os.Mkdir(d, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	bakFile := time.Now().Format("2006-01-02T15:04:05") + suffix
+	dst := d + "/" + bakFile
+	i, err := CopyFile(src, dst)
+	if err != nil {
+		return err
+	}
+	logger.Info(i, dst)
+	return os.WriteFile(src, newContent, 0644)
 }
 
 func CopyFile(src, dst string) (int64, error) {

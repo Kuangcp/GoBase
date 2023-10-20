@@ -291,12 +291,12 @@ func WritePacFile(writer http.ResponseWriter, request *http.Request) {
 		core.WriteJsonRsp(writer, ctool.FailedWithMsg[any]("read body error: "+err.Error()))
 		return
 	}
-	fmt.Println(string(all))
 
-	dst := core.PacFilePath[:len(core.PacFilePath)-4] + time.Now().Format("2006-01-02T15:04:05") + ".pac.js"
-	i, err := core.CopyFile(core.PacFilePath, dst)
-	logger.Info(i, dst, err)
-	os.WriteFile(core.PacFilePath, all, 0644)
+	err = core.SaveAs(core.PacFilePath, ".pac.js", all)
+	if err != nil {
+		core.WriteJsonRsp(writer, ctool.FailedWithMsg[any]("backup error: "+err.Error()))
+		return
+	}
 
 	core.WriteJsonRsp(writer, ctool.SuccessWith("ok"))
 }
