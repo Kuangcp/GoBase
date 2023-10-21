@@ -15,6 +15,8 @@ log_info(){
 }
 
 build_image(){
+    CName=dev-proxy
+
     total=6
     i=0
     last_commit=$(git log --oneline | head -n 1 | awk '{print $1}')
@@ -24,20 +26,21 @@ build_image(){
     go build -o dev-proxy.bin
     upx dev-proxy.bin
 
-    log_info 'Stop exist container'
-    docker stop dev-proxy
+    log_info 'Stop exist container '$CName
+    docker stop $CName
 
-    log_info 'Delete container'
-    docker rm dev-proxy
+    log_info 'Delete container '$CName
+    docker rm $CName
 
     log_info 'Build image'
     # yay docker-buildx
     docker buildx build -t dev-proxy:1.0-$dt-$last_commit .
 
-    log_info 'Start new container'
-    docker run --init -d --name dev-proxy --network host -v $HOME/Apps/dev-proxy-cd:/root/.dev-proxy/ dev-proxy:1.0-$dt-$last_commit
+    log_info 'Start new container '$CName
+    docker run --init -d --name $CName --network host -v $HOME/.dev-proxy/container:/root/.dev-proxy/ dev-proxy:1.0-$dt-$last_commit
+#    docker run --init -d --name $CName --network host dev-proxy:1.0-$dt-$last_commit
 
-    log_info 'Finish rebuild'
+    log_info 'Finish rebuild '$CName
 }
 
 case $1 in 
