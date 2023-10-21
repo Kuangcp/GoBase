@@ -8,7 +8,6 @@ import (
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -65,33 +64,38 @@ func InitConnection() {
 	}
 	Leveldb = newDB
 
+	InitRedisConn(ProxyConfVar.Redis)
+	//if !IsValidConnection(Conn) {
+	//	os.Exit(1)
+	//}
+	//go func() {
+	//	for {
+	//		time.Sleep(time.Second * 17)
+	//		if !IsValidConnection(Conn) {
+	//			os.Exit(1)
+	//		}
+	//	}
+	//}()
+}
+
+func InitRedisConn(redisConf *RedisConf) {
 	var opt redis.Options
-	redisConf := ProxyConfVar.Redis
 	if redisConf != nil {
 		if redisConf.PoolSize < 1 {
 			redisConf.PoolSize = PoolSize
 		}
-	} else {
-		redisConf = &RedisConf{Addr: "192.168.9.155:6667", Password: "", DB: 1, PoolSize: PoolSize}
-		ProxyConfVar.Redis = redisConf
-	}
-	opt = redis.Options{Addr: redisConf.Addr, Password: redisConf.Password, DB: redisConf.DB, PoolSize: redisConf.PoolSize}
+		opt = redis.Options{Addr: redisConf.Addr, Password: redisConf.Password, DB: redisConf.DB, PoolSize: redisConf.PoolSize}
 
-	Conn = redis.NewClient(&opt)
-	if !isValidConnection(Conn) {
-		os.Exit(1)
-	}
-	go func() {
-		for {
-			time.Sleep(time.Second * 17)
-			if !isValidConnection(Conn) {
-				os.Exit(1)
-			}
+		Conn = redis.NewClient(&opt)
+		if !IsValidConnection(Conn) {
+			Conn = nil
+		} else {
+			logger.Info("Resume connect redis")
 		}
-	}()
+	}
 }
 
-func isValidConnection(client *redis.Client) bool {
+func IsValidConnection(client *redis.Client) bool {
 	_, err := client.Ping().Result()
 	if err != nil {
 		logger.Error("ping redis failed:", client.Options(), err)
