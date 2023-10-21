@@ -93,6 +93,9 @@ func SaveConfig(writer http.ResponseWriter, request *http.Request) {
 		}))
 
 	core.ProxyConfVar = &tmp
+	if core.Conn == nil {
+		core.InitRedisConn(core.ProxyConfVar.Redis)
+	}
 	core.ReloadConfByCacheObj()
 	core.WriteJsonRsp(writer, ctool.Success[string]())
 }
