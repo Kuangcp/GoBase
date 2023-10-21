@@ -110,6 +110,10 @@ func Exit(_ http.ResponseWriter, _ *http.Request) {
 	os.Exit(0)
 }
 
+func Heartbeat(writer http.ResponseWriter, _ *http.Request) {
+	writer.Write([]byte("pong"))
+}
+
 // search url
 func pageQueryReqByUrlKwd(param *PageQueryParam) ([]*core.ReqLog[core.MessageVO], int) {
 	var cursor uint64 = 0
