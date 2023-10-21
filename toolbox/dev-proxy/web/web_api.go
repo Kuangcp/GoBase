@@ -81,6 +81,7 @@ func StartQueryServer() {
 	mux.HandleFunc("/hostPerf", rtInt(core.Json(HostPerformance)))
 	mux.HandleFunc("/connNum", rtInt(ConnNum))
 	mux.HandleFunc("/exit", rtInt(Exit))
+	mux.HandleFunc("/ping", Heartbeat)
 
 	http.ListenAndServe(fmt.Sprintf(":%v", core.ApiPort), mux)
 }
