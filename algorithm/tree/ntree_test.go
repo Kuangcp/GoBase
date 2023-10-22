@@ -82,12 +82,12 @@ func TestTableToATree(t *testing.T) {
 	for _, t := range tree {
 		fmt.Println("start search")
 		t.PrintJson()
-		s := t.Search("A", true)
+		s := t.Search("fW", true)
 		if s {
-			fmt.Println(">>>>", t)
+			fmt.Println("MATCHED >>>>>>>>>>>")
 			t.PrintJson()
 		} else {
-			fmt.Println("NOT FOUND<<<<<<<<<<<<<<<")
+			fmt.Println("NOT FOUND >>>>>>>>>>>")
 		}
 		fmt.Print("\n\n\n\n")
 	}
