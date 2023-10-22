@@ -113,7 +113,7 @@ func fillNextLayer(layerCache map[string][]ATable[string], idx map[string]*ATree
 	return nextLayer
 }
 
-func TestXXXXXXX(t *testing.T) {
+func TestDeleteSlice(t *testing.T) {
 	x := []int{1, 2, 3, 4}
 	x = append(x[:3], x[4:]...)
 	fmt.Println(x)
