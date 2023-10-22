@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/tidwall/pretty"
 	"strings"
 )
@@ -44,34 +43,6 @@ func (a ATree[T]) PrintJson() {
 
 // dirAll 如果关键字命中中间层节点带出所有子节点
 func (t *ATree[T]) Search(kwd string, dirAll bool) bool {
-	if ctool.IsNil(t.Data) && len(t.Childes) == 0 {
-		return false
-	}
-	// 按需扩展类型和匹配规则
-	if strings.Contains(fmt.Sprint(t.Data), kwd) && dirAll {
-		return true
-	}
-
-	anyMatched := false
-	var rm []int
-	for i, t := range t.Childes {
-		matched := match(t, kwd, dirAll)
-		if !matched {
-			rm = append(rm, i)
-		} else {
-			anyMatched = true
-		}
-	}
-	fmt.Println("1 delete: ", t.Id, rm)
-	for i := len(rm) - 1; i >= 0; i-- {
-		idx := rm[i]
-		t.Childes = append(t.Childes[:idx], t.Childes[idx+1:]...)
-	}
-
-	return anyMatched
-}
-
-func match[T any](t *ATree[T], kwd string, dirAll bool) bool {
 	if strings.Contains(fmt.Sprint(t.Data), kwd) && dirAll {
 		return true
 	}
@@ -81,14 +52,14 @@ func match[T any](t *ATree[T], kwd string, dirAll bool) bool {
 	var rm []int
 	anyMatched := false
 	for i, s := range t.Childes {
-		matched := match(s, kwd, dirAll)
+		matched := s.Search(kwd, dirAll)
 		if !matched {
 			rm = append(rm, i)
 		} else {
 			anyMatched = true
 		}
 	}
-	fmt.Println("2 delete: ", t.Id, rm)
+	//fmt.Println("delete: ", t.Id, rm)
 	for i := len(rm) - 1; i >= 0; i-- {
 		idx := rm[i]
 		t.Childes = append(t.Childes[:idx], t.Childes[idx+1:]...)
