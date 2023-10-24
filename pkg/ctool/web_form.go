@@ -120,7 +120,7 @@ func handleTime(v reflect.Value, fmtStr, value string, point bool) error {
 	if fmtStr == "" {
 		fmtStr = defaultTimeFmt
 	}
-	parse, err := time.Parse(fmtStr, value)
+	parse, err := time.ParseInLocation(fmtStr, value, time.Now().Location())
 	if err != nil {
 		return err
 	}
