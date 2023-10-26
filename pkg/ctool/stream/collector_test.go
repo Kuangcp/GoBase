@@ -84,3 +84,8 @@ func TestMultiGet(t *testing.T) {
 	fmt.Println(time.Now().UnixMicro()-start, "us")
 
 }
+
+func TestToSum(t *testing.T) {
+	sum := ToSum[int](JustN(4))
+	fmt.Println(sum)
+}

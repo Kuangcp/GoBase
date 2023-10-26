@@ -11,6 +11,18 @@ var (
 		reflect.Uint32, reflect.Int32, reflect.Uint64, reflect.Int64)
 )
 
+type Integer interface {
+	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64
+}
+
+func ToSum[R Integer](s Stream) R {
+	var r R
+	for item := range s.source {
+		r += item.(R)
+	}
+	return r
+}
+
 func ToSet[R comparable](s Stream) *ctool.Set[R] {
 	return ToSetFunc[R](s, nil)
 }
