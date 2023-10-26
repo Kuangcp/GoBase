@@ -16,7 +16,7 @@ func TestSplit(t *testing.T) {
 }
 
 func TestUrl(t *testing.T) {
-	parse, err := url.Parse("https://yunshu.sinohealth.com/xxl-job-admin/joblog/getJobsByGroup?jobGroup=-1")
+	parse, err := url.Parse("https://xxxxx.com/job/joblog/getJobsByGroup?jobGroup=-1")
 	if err != nil {
 		logger.Error(err)
 	}

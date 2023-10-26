@@ -94,10 +94,6 @@ func main() {
 	}
 
 	go func() {
-		for i := 0; i < 24; i++ {
-			xs = append(xs, fmt.Sprint(i+1))
-		}
-
 		logger.Info("start web server on localhost:%v", webPort)
 		mux := http.NewServeMux()
 		mux.HandleFunc("/history", history)
@@ -111,6 +107,7 @@ func main() {
 
 func history(writer http.ResponseWriter, request *http.Request) {
 	var param struct {
+		Frame int
 		Start *time.Time `form:"start" fmt:"2006-01-02"`
 		End   *time.Time `form:"end" fmt:"2006-01-02"`
 	}
@@ -121,16 +118,24 @@ func history(writer http.ResponseWriter, request *http.Request) {
 		now := time.Now()
 		param.End = &now
 	}
+	if param.Frame == 0 {
+		param.Frame = 1
+	}
+	xs = []string{}
+	for i := 0; i < 24/param.Frame; i++ {
+		xs = append(xs, fmt.Sprint(i+1))
+	}
+
 	if param.Start == nil {
 		today := time.Now().Format(ctool.YYYY_MM_DD)
-		RenderChart(writer, dayLine{day: today, data: buildDayData(today)})
+		RenderChart(writer, dayLine{day: today, data: buildDayData(today, param.Frame)})
 	} else {
 		t := time.Now()
 		todayZero := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 		var days []dayLine
 		for !param.Start.After(todayZero) {
 			day := param.Start.Format(ctool.YYYY_MM_DD)
-			days = append(days, dayLine{day: day, data: buildDayData(day)})
+			days = append(days, dayLine{day: day, data: buildDayData(day, param.Frame)})
 			date := param.Start.AddDate(0, 0, 1)
 			param.Start = &date
 		}
@@ -138,7 +143,7 @@ func history(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func buildDayData(day string) []opts.LineData {
+func buildDayData(day string, frame int) []opts.LineData {
 	cache := make([]int, 24)
 	var items []opts.LineData
 
@@ -155,7 +160,7 @@ func buildDayData(day string) []opts.LineData {
 			continue
 		}
 		msTime := time.UnixMilli(ms)
-		cache[msTime.Hour()-1] += int(m.Score)
+		cache[(msTime.Hour()-1)/frame] += int(m.Score)
 	}
 	for i := 0; i < len(cache); i++ {
 		items = append(items, opts.LineData{Value: cache[i]})
