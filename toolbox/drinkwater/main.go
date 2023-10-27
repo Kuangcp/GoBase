@@ -122,8 +122,13 @@ func history(writer http.ResponseWriter, request *http.Request) {
 		param.Frame = 1
 	}
 	xs = []string{}
+	hour := param.Frame == 1
 	for i := 0; i < 24/param.Frame; i++ {
-		xs = append(xs, fmt.Sprint(i+1))
+		if hour {
+			xs = append(xs, fmt.Sprint(i+1))
+		} else {
+			xs = append(xs, fmt.Sprintf("%v - %v", param.Frame*i+1, param.Frame*(i+1)))
+		}
 	}
 
 	if param.Start == nil {
@@ -173,9 +178,8 @@ func RenderChart(writer http.ResponseWriter, days ...dayLine) {
 	line := charts.NewLine()
 	line.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title:    "Daily Report",
-			Subtitle: "drinking water data at different time periods.",
-			Link:     "https://github.com/go-echarts/go-echarts",
+			Title: "每日饮水",
+			Link:  "https://github.com/go-echarts/go-echarts",
 		}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: true, Trigger: "axis"}),
 	)
@@ -193,7 +197,7 @@ func RenderChart(writer http.ResponseWriter, days ...dayLine) {
 
 	page := components.NewPage()
 	page.AddCharts(line)
-	page.PageTitle = "Drinking water"
+	page.PageTitle = "每日饮水"
 	page.Render(writer)
 }
 
