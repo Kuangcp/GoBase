@@ -1,4 +1,4 @@
-package prime
+package soluation
 
 import (
 	"fmt"
@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-func findTwoPrimeFactor(target int) int {
+func findTwoPrimeFactor(target uint64) int {
 	pairCount := 0
 	for i := 2; i < int(math.Sqrt(float64(target)))+1; i++ {
-		temp := target % i
+		temp := target % uint64(i)
 		if temp == 0 {
-			fmt.Printf("%11d * %11d = %11d \n", i, target/i, target)
+			fmt.Printf("%11d * %-11d = %11d \n", i, target/uint64(i), target)
 			pairCount++
 		}
 	}
@@ -23,7 +23,7 @@ func findTwoPrimeFactor(target int) int {
 }
 
 func TestOne(t *testing.T) {
-	findTwoPrimeFactor(7140229933)
+	findTwoPrimeFactor(7140229931221823322)
 }
 
 func TestWithChannel(t *testing.T) {
@@ -33,7 +33,7 @@ func TestWithChannel(t *testing.T) {
 		j := i
 		go func() {
 			target := 6541367000 + j
-			findTwoPrimeFactor(target)
+			findTwoPrimeFactor(uint64(target))
 			latch.Done()
 		}()
 	}
@@ -44,7 +44,7 @@ func TestInterval(t *testing.T) {
 	total := 0
 	for i := 0; i < 1000; i++ {
 		target := 6541367000 + i
-		count := findTwoPrimeFactor(target)
+		count := findTwoPrimeFactor(uint64(target))
 		total += count
 	}
 	fmt.Println(total)
