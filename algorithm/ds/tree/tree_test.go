@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool/algo"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func (u User) String() string {
 }
 
 func buildSimpleTree(l int) *Tree[int] {
-	data := make([]int, l)
+	var data []int
 	for i := 0; i < l; i++ {
 		data = append(data, i)
 	}
@@ -30,6 +31,11 @@ func buildSlotTree() *Tree[*User] {
 	return ArrayToTree([]*User{{Id: 0, Name: "a"}, nil, {Id: 2, Name: "b"},
 		nil, nil, {Id: 3, Name: "c"}, nil,
 		nil, nil, nil, nil, {Id: 4, Name: "d"}, {Id: 5, Name: "e"}})
+}
+
+func TestMindMap(t *testing.T) {
+	tree := buildSimpleTree(20)
+	algo.WriteBiMindMap(tree, "user.pu")
 }
 
 func TestBuildTree(t *testing.T) {

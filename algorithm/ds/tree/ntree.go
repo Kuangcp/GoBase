@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool/algo"
 	"github.com/tidwall/pretty"
 	"strings"
 )
@@ -66,4 +67,28 @@ func (t *ATree[T]) Search(kwd string, dirAll bool) bool {
 	}
 
 	return anyMatched
+}
+
+func (N *NTree[T]) ToString() string {
+	return fmt.Sprint(N.Data)
+}
+
+func (N *NTree[T]) GetChild() []algo.INTree {
+	var cs []algo.INTree
+	for _, c := range N.Childes {
+		cs = append(cs, c)
+	}
+	return cs
+}
+
+func (a *ATree[T]) ToString() string {
+	return fmt.Sprint(a.Data)
+}
+
+func (a *ATree[T]) GetChild() []algo.INTree {
+	var cs []algo.INTree
+	for _, c := range a.Childes {
+		cs = append(cs, c)
+	}
+	return cs
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/ctool/algo"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"golang.org/x/exp/rand"
 	"testing"
@@ -79,9 +80,10 @@ func TestTableToATree(t *testing.T) {
 		layers = fillNextLayer(layerCache, idx, layers)
 	}
 
-	for _, t := range tree {
+	for i, t := range tree {
 		fmt.Println("start search")
 		t.PrintJson()
+		algo.WriteNMindMap(t, fmt.Sprint(i)+"atree.pu")
 		s := t.Search("fW", true)
 		if s {
 			fmt.Println("MATCHED >>>>>>>>>>>")
@@ -91,6 +93,7 @@ func TestTableToATree(t *testing.T) {
 		}
 		fmt.Print("\n\n\n\n")
 	}
+
 }
 
 func fillNextLayer(layerCache map[string][]ATable[string], idx map[string]*ATree[string], layers []string) []string {
