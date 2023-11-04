@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/ctool/algo"
 )
 
 type (
@@ -13,6 +14,18 @@ type (
 		Data   T
 	}
 )
+
+func (t *Tree[T]) GetLeft() algo.IBinTree {
+	return t.Left
+}
+
+func (t *Tree[T]) GetRight() algo.IBinTree {
+	return t.Right
+}
+
+func (t *Tree[T]) ToString() string {
+	return fmt.Sprint(t.Data)
+}
 
 func ArrayToTree[T any](data []T) *Tree[T] {
 	length := len(data)

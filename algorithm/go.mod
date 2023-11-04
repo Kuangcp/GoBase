@@ -8,3 +8,7 @@ require (
 )
 
 require golang.org/x/exp v0.0.0-20231006140011-7918f672742d
+
+replace (
+	github.com/kuangcp/gobase/pkg/ctool => ../pkg/ctool
+)

@@ -23,8 +23,8 @@ statik.go
 *.dylib
 *.run
 *.bin
+*.pu
 
-mybook/
 */kserver/kserver
 */recycle-bin/recycle-bin
 */keylogger/keylogger
