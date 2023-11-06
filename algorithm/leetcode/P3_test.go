@@ -32,13 +32,6 @@ func lengthOfLongestSubstring(s string) int {
 	return ans
 }
 
-func max(x, y int) int {
-	if x < y {
-		return y
-	}
-	return x
-}
-
 // 左右指针
 func lengthOfLongestSubstring2(s string) int {
 	length, left, right := 0, 0, 0

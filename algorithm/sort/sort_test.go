@@ -8,20 +8,42 @@ import (
 )
 
 const (
-	length = 200000
+	length = 20000
 	maxVal = 2000000
 )
 
-func TestSort(t *testing.T) {
-	var data []int
+var data []int
+var sorts = []Algo{
+	{name: "Merge", fun: Merge},
+	{name: "Patience", fun: Patience},
+}
 
-	watch := ctool.NewStopWatchWithName("sort")
-	watch.Start("init")
-	rand.NewSource(7799)
+// https://github.com/Kuangcp/JavaBase/tree/master/algorithms/src/test/java/com/github/kuangcp/sort
+func init() {
 	for i := 0; i < length; i++ {
 		data = append(data, rand.Intn(maxVal))
 	}
-	watch.Stop()
+}
+func TestCorrect(t *testing.T) {
+	watch := ctool.NewStopWatchWithName("sort")
+	for _, s := range sorts {
+		watch.Start(s.name)
+		validate(s.name, s.fun(data))
+		watch.Stop()
+	}
+	fmt.Println(watch.PrettyPrint())
+}
+
+func validate(name string, result []int) {
+	for i := 1; i < len(result); i++ {
+		if result[i-1] > result[i] {
+			panic(fmt.Sprintf("%v: index %v, %v>%v", name, i, result[i-1], result[i]))
+		}
+	}
+}
+
+func TestSort(t *testing.T) {
+	watch := ctool.NewStopWatchWithName("sort")
 	//fmt.Println(data)
 
 	watch.Start("merge")
