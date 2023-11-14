@@ -17,6 +17,9 @@ import (
 
 const (
 	redisPrefix = "drink-water:"
+	periodDay   = "day"
+	periodWeek  = "week"
+	periodMonth = "month"
 )
 
 var (
@@ -107,9 +110,10 @@ func main() {
 
 func history(writer http.ResponseWriter, request *http.Request) {
 	var param struct {
-		Frame int
-		Start *time.Time `form:"start" fmt:"2006-01-02"`
-		End   *time.Time `form:"end" fmt:"2006-01-02"`
+		Frame  int
+		Period string
+		Start  *time.Time `form:"start" fmt:"2006-01-02"`
+		End    *time.Time `form:"end" fmt:"2006-01-02"`
 	}
 	if err := ctool.Unpack(request, &param); err != nil {
 		return
@@ -120,6 +124,9 @@ func history(writer http.ResponseWriter, request *http.Request) {
 	}
 	if param.Frame == 0 {
 		param.Frame = 1
+	}
+	if param.Period == "" {
+		param.Period = periodDay
 	}
 	xs = []string{}
 	hour := param.Frame == 1
@@ -138,14 +145,48 @@ func history(writer http.ResponseWriter, request *http.Request) {
 		t := time.Now()
 		todayZero := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 		var days []dayLine
-		for !param.Start.After(todayZero) {
-			day := param.Start.Format(ctool.YYYY_MM_DD)
-			days = append(days, dayLine{day: day, data: buildDayData(day, param.Frame)})
-			date := param.Start.AddDate(0, 0, 1)
-			param.Start = &date
+		if param.Period == periodDay {
+			for !param.Start.After(todayZero) {
+				day := param.Start.Format(ctool.YYYY_MM_DD)
+				days = append(days, dayLine{day: day, data: buildDayData(day, param.Frame)})
+				date := param.Start.AddDate(0, 0, 1)
+				param.Start = &date
+			}
+		} else if param.Period == periodWeek {
+			//start := time.Now().AddDate(0, 0, -20)
+			start := param.Start
+			w := int(start.Weekday())
+
+			now := time.Now()
+			for i := 0; i < 1000; i++ {
+				off := -(w+6)%7 + 7*i
+				tmp := start.AddDate(0, 0, off)
+				if tmp.After(now) {
+					break
+				}
+
+				days = append(days, dayLine{day: tmp.Format(ctool.YYYY_MM_DD), data: buildWeekData(tmp, param.Frame)})
+			}
 		}
 		RenderChart(writer, days...)
 	}
+}
+
+func buildWeekData(startDay time.Time, frame int) []opts.LineData {
+	cache := make([]int, 24)
+	var items []opts.LineData
+
+	for i := 0; i < 6; i++ {
+		day := startDay.AddDate(0, 0, 1).Format(ctool.YYYY_MM_DD)
+		dayData := buildDayData(day, frame)
+		for j := 0; j < len(cache); j++ {
+			cache[j] = cache[j] + dayData[j].Value.(int)
+		}
+	}
+	for i := 0; i < len(cache); i++ {
+		items = append(items, opts.LineData{Value: cache[i]})
+	}
+	return items
 }
 
 func buildDayData(day string, frame int) []opts.LineData {
@@ -178,7 +219,7 @@ func RenderChart(writer http.ResponseWriter, days ...dayLine) {
 	line := charts.NewLine()
 	line.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
-			Title: "每日饮水",
+			Title: "🧋",
 			Link:  "https://github.com/go-echarts/go-echarts",
 		}),
 		charts.WithTooltipOpts(opts.Tooltip{Show: true, Trigger: "axis"}),
@@ -188,7 +229,11 @@ func RenderChart(writer http.ResponseWriter, days ...dayLine) {
 	for _, d := range days {
 		line.AddSeries(d.day, d.data).SetSeriesOptions(
 			charts.WithLineChartOpts(opts.LineChart{
-				Smooth: false, ShowSymbol: true, SymbolSize: 15, Symbol: "diamond",
+				Stack:      "all",
+				Smooth:     false,
+				ShowSymbol: true,
+				SymbolSize: 15,
+				Symbol:     "none",
 			}),
 			charts.WithLabelOpts(opts.Label{
 				Show: true,
