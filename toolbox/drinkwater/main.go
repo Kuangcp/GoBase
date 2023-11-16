@@ -51,6 +51,7 @@ type (
 var HelpInfo = ctool.HelpInfo{
 	Description: "Drinking water per day",
 	Version:     "1.0.1",
+	ValueLen:    8,
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help info"},
 		{Short: "-s", BoolVar: &stat, Comment: "stat"},
@@ -112,6 +113,7 @@ func history(writer http.ResponseWriter, request *http.Request) {
 	var param struct {
 		Frame  int
 		Period string
+		Calc   string     // 计算方式 sum(默认) avg
 		Start  *time.Time `form:"start" fmt:"2006-01-02"`
 		End    *time.Time `form:"end" fmt:"2006-01-02"`
 	}
@@ -153,7 +155,6 @@ func history(writer http.ResponseWriter, request *http.Request) {
 				param.Start = &date
 			}
 		} else if param.Period == periodWeek {
-			//start := time.Now().AddDate(0, 0, -20)
 			start := param.Start
 			w := int(start.Weekday())
 
@@ -165,32 +166,53 @@ func history(writer http.ResponseWriter, request *http.Request) {
 					break
 				}
 
-				days = append(days, dayLine{day: tmp.Format(ctool.YYYY_MM_DD), data: buildWeekData(tmp, param.Frame)})
+				days = append(days, dayLine{
+					day:  tmp.Format(ctool.YYYY_MM_DD),
+					data: buildWeekData(tmp, param.Frame, param.Calc),
+				})
 			}
+		} else if param.Period == periodMonth {
+
 		}
 		RenderChart(writer, days...)
 	}
 }
 
-func buildWeekData(startDay time.Time, frame int) []opts.LineData {
-	cache := make([]int, 24)
+func buildWeekData(startDay time.Time, frame int, calc string) []opts.LineData {
+	cache := make([]int, 24/frame)
 	var items []opts.LineData
 
+	actualDay := 0
 	for i := 0; i < 6; i++ {
 		day := startDay.AddDate(0, 0, 1).Format(ctool.YYYY_MM_DD)
 		dayData := buildDayData(day, frame)
+		emptyDay := true
 		for j := 0; j < len(cache); j++ {
-			cache[j] = cache[j] + dayData[j].Value.(int)
+			dayVal := dayData[j].Value.(int)
+			if dayVal != 0 {
+				emptyDay = false
+			}
+			cache[j] = cache[j] + dayVal
+		}
+		if !emptyDay {
+			actualDay++
 		}
 	}
+	if actualDay == 0 {
+		actualDay = 1
+	}
 	for i := 0; i < len(cache); i++ {
-		items = append(items, opts.LineData{Value: cache[i]})
+		if calc == "avg" {
+			items = append(items, opts.LineData{Value: cache[i] / actualDay})
+		} else {
+			items = append(items, opts.LineData{Value: cache[i]})
+		}
 	}
 	return items
 }
 
 func buildDayData(day string, frame int) []opts.LineData {
-	cache := make([]int, 24)
+	cache := make([]int, 24/frame)
 	var items []opts.LineData
 
 	todayKey := redisPrefix + day
