@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 var (

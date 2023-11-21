@@ -1,6 +1,8 @@
 package ctool
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestNewMap(t *testing.T) {
 	newMap := NewMap(MapEntry[int, string]{3, "object"})
