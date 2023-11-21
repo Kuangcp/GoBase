@@ -16,7 +16,7 @@ type INTree interface {
 	GetChild() []INTree
 }
 
-// PrintMindMap https://plantuml.com/mindmap-diagram
+// PrintBiMindMap https://plantuml.com/mindmap-diagram
 func PrintBiMindMap(tree IBinTree) string {
 	return printBiMindMap(tree, 1, "")
 }

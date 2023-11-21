@@ -1,9 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/kuangcp/logger"
+	"github.com/redis/go-redis/v9"
 	"sort"
 )
 
@@ -19,7 +20,7 @@ func (k *Key) String() string {
 func queryKeyDetail(originOpt *redis.Options) {
 	origin := redis.NewClient(originOpt)
 
-	size, err := origin.MemoryUsage(queryKey, 0).Result()
+	size, err := origin.MemoryUsage(context.Background(), queryKey, 0).Result()
 	if err != nil {
 		logger.Error(err)
 		return
@@ -37,7 +38,7 @@ func scanBigKey(originOpt *redis.Options) {
 	counter := 0
 	total := 5000
 	for {
-		keys, cursors, err := origin.Scan(cursor, "*", batch).Result()
+		keys, cursors, err := origin.Scan(context.Background(), cursor, "*", batch).Result()
 		if err != nil {
 			logger.Error(err)
 			break
@@ -48,7 +49,7 @@ func scanBigKey(originOpt *redis.Options) {
 		}
 		logger.Info("scan progress:", counter, "cursor:", cursor)
 		for _, key := range keys {
-			btSize, err := origin.MemoryUsage(key, 0).Result()
+			btSize, err := origin.MemoryUsage(context.Background(), key, 0).Result()
 			if err != nil {
 				logger.Error(err)
 				continue

@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"log"
 	"strconv"
 	"strings"
 
-	"github.com/go-redis/redis"
 	"github.com/kuangcp/sizedwaitgroup"
+	"github.com/redis/go-redis/v9"
 )
 
 func logDebug(msg string, v ...interface{}) {
@@ -24,8 +25,8 @@ func logWarn(msg string, v ...interface{}) {
 	log.Println(ctool.Yellow, msg, v, ctool.End)
 }
 
-func scanAllKey(origin *redis.Client) []string {
-	cursor := origin.Scan(0, "*", 1000)
+func scanAllKey(origin redis.Cmdable) []string {
+	cursor := origin.Scan(context.Background(), 0, "*", 1000)
 
 	result, c, err := cursor.Result()
 	if err != nil {
@@ -33,7 +34,7 @@ func scanAllKey(origin *redis.Client) []string {
 	}
 	var totalKey = result
 	for c != 0 {
-		cursor := origin.Scan(c, "*", 1000)
+		cursor := origin.Scan(context.Background(), c, "*", 1000)
 		result, c, err = cursor.Result()
 		if err != nil {
 			return totalKey
@@ -52,7 +53,7 @@ func convert(data map[string]string) map[string]interface{} {
 	return result
 }
 
-func Action(action func(client *redis.Client, client2 *redis.Client),
+func Action(action func(client redis.Cmdable, client2 redis.Cmdable),
 	originO *redis.Options,
 	targetO *redis.Options,
 	debug bool) {
@@ -65,19 +66,19 @@ func Action(action func(client *redis.Client, client2 *redis.Client),
 	origin := redis.NewClient(originO)
 	target := redis.NewClient(targetO)
 
-	_, err := origin.Ping().Result()
+	_, err := origin.Ping(context.Background()).Result()
 	if err != nil {
 		log.Fatal("origin can not connection ", err)
 	}
 
-	_, err = target.Ping().Result()
+	_, err = target.Ping(context.Background()).Result()
 	if err != nil {
 		log.Fatal("target can not connection ", err)
 	}
 	action(origin, target)
 }
 
-func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
+func SyncKeyRecord(origin redis.Cmdable, target redis.Cmdable) {
 	logInfo("start sync keylogger data")
 
 	//result, _ := origin.Keys("*").Result()
@@ -89,24 +90,24 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 	for i := range result {
 		swg.Add()
 		key := result[i]
-		keyType, _ := origin.Type(key).Result()
+		keyType, _ := origin.Type(context.Background(), key).Result()
 		go func() {
 
 			logWarn(key, keyType)
 			switch keyType {
 			case STRING:
-				val, _ := origin.Get(key).Result()
+				val, _ := origin.Get(context.Background(), key).Result()
 				logDebug("value: ", val)
 
 				if strings.HasPrefix(key, "all-") {
 					atoi, _ := strconv.Atoi(val)
 					finalKey := strings.ReplaceAll(strings.TrimPrefix(key, "all-"), "-", ":")
-					target.ZAdd("keyboard:total", redis.Z{Member: finalKey, Score: float64(atoi)})
+					target.ZAdd(context.Background(), "keyboard:total", redis.Z{Member: finalKey, Score: float64(atoi)})
 				} else {
-					target.Set(key, val, -1)
+					target.Set(context.Background(), key, val, -1)
 				}
 			case ZSET:
-				val, _ := origin.ZRangeWithScores(key, 0, -1).Result()
+				val, _ := origin.ZRangeWithScores(context.Background(), key, 0, -1).Result()
 				logDebug("value", val)
 
 				newKey := key
@@ -120,13 +121,13 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 						result = append(result, redis.Z{Member: int64(float * 1000000), Score: ele.Score})
 					}
 					// []string -> ...string
-					target.ZAdd(newKey, result...)
+					target.ZAdd(context.Background(), newKey, result...)
 				}
 
 				if strings.HasPrefix(key, "2019") || strings.HasPrefix(key, "2020") {
 					newKey = "keyboard:" + strings.ReplaceAll(key, "-", ":") + ":rank"
 					// []string -> ...string
-					target.ZAdd(newKey, val...)
+					target.ZAdd(context.Background(), newKey, val...)
 				}
 			}
 		}()
@@ -134,7 +135,7 @@ func SyncKeyRecord(origin *redis.Client, target *redis.Client) {
 	swg.Wait()
 }
 
-func SyncAllKey(origin *redis.Client, target *redis.Client) {
+func SyncAllKey(origin redis.Cmdable, target redis.Cmdable) {
 	logInfo("start sync all key")
 	//result, _ := origin.Keys("*").Result()
 	result := scanAllKey(origin)
@@ -144,7 +145,7 @@ func SyncAllKey(origin *redis.Client, target *redis.Client) {
 	for i := range result {
 		swg.Add()
 		key := result[i]
-		keyType, _ := origin.Type(key).Result()
+		keyType, _ := origin.Type(context.Background(), key).Result()
 
 		go func() {
 			defer swg.Done()
@@ -152,26 +153,27 @@ func SyncAllKey(origin *redis.Client, target *redis.Client) {
 			logWarn(key, keyType)
 			switch keyType {
 			case STRING:
-				val, _ := origin.Get(key).Result()
+
+				val, _ := origin.Get(context.Background(), key).Result()
 				logDebug("value: ", val)
-				target.Set(key, val, -1)
+				target.Set(context.Background(), key, val, -1)
 			case LIST:
-				val := origin.LRange(key, 0, -1)
+				val := origin.LRange(context.Background(), key, 0, -1)
 				logDebug("value", val.Val())
-				target.LPush(key, val.Val())
+				target.LPush(context.Background(), key, val.Val())
 			case SET:
-				val, _ := origin.SMembers(key).Result()
+				val, _ := origin.SMembers(context.Background(), key).Result()
 				logDebug("value", val)
-				target.SAdd(key, val)
+				target.SAdd(context.Background(), key, val)
 			case ZSET:
-				val, _ := origin.ZRangeWithScores(key, 0, -1).Result()
+				val, _ := origin.ZRangeWithScores(context.Background(), key, 0, -1).Result()
 				logDebug("value", val)
 				// []string -> ...string
-				target.ZAdd(key, val...)
+				target.ZAdd(context.Background(), key, val...)
 			case HASH:
-				val, _ := origin.HGetAll(key).Result()
+				val, _ := origin.HGetAll(context.Background(), key).Result()
 				logDebug("value", val)
-				target.HMSet(key, convert(val))
+				target.HMSet(context.Background(), key, convert(val))
 			}
 		}()
 	}

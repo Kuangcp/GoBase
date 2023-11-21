@@ -858,6 +858,19 @@ func BenchmarkMapReduce(b *testing.B) {
 	}).Map(mapper).Reduce(reducer)
 }
 
+func TestBackpressure(t *testing.T) {
+	From(func(source chan<- any) {
+		for i := 0; i < 100; i++ {
+			time.Sleep(time.Millisecond * 500)
+			fmt.Println("...")
+			source <- i
+		}
+	}).Buffer(6).ForEach(func(item any) {
+		time.Sleep(time.Second * 2)
+		log.Println("for ", item)
+	})
+}
+
 func assetEqual(t *testing.T, except, data any) {
 	if !reflect.DeepEqual(except, data) {
 		t.Errorf(" %v, want %v", data, except)
