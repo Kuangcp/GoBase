@@ -55,6 +55,7 @@ type (
 )
 
 func InitConnection() {
+	logger.Info("loading leveldb", dbDirPath)
 	newDB, err := leveldb.OpenFile(dbDirPath, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "resource temporarily unavailable") {
