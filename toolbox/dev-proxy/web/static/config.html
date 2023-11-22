@@ -30,7 +30,7 @@
         }
 
         .router-input {
-            width: 800px;
+            width: 750px;
             border-top: none;
             border-left: none;
             border-right: none;
@@ -91,6 +91,7 @@
 <nav>
     Profile ID: <input id="id">
     <button type="button" onclick="save()">保存</button>
+    <button type="button" onclick="refresh()">刷新</button>
 </nav>
 <main>
     Groups:
@@ -150,6 +151,10 @@
     bindKeyDown()
     loadExistConf()
     loadPac()
+
+    function refresh() {
+        window.location.reload();
+    }
 
     function bindKeyDown() {
         document.onkeydown = function (event) {

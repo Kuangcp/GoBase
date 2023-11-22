@@ -30,10 +30,39 @@
     Page: <span id="pageDiv" onclick="setLastPage()" style="width: 40px"></span>
     Total: <span id="totalDiv" style="width: 40px"></span>
 
-    <a href="config.html">Config</a>
-    <a href="perf.html">性能分析</a>
-    <a href="/debug/statsviz" target="_blank">Statsviz</a>
+    <button type="button" onclick="OpenPage('ConfigPage')" class="req-btn req-btn-curl">Config</button>
+    <button type="button" onclick="OpenPage('VizPage')" class="req-btn req-btn-curl">Stats</button>
+    <button type="button" onclick="OpenPage('PerfPage')" class="req-btn req-btn-curl">Perf</button>
+    <!--    <a href="perf.html">性能分析</a>-->
+    <!--    <a href="/debug/statsviz" target="_blank">Statsviz</a>-->
     <button type="button" onclick="exit()" class="req-btn req-btn-page">Exit</button>
+
+    <div id="ConfigPage"
+         style="position: absolute; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.2); z-index: 998; display: none">
+        <div
+                style="position: absolute; width: 90%; height: 80%; background-color: white;
+             top: 40%; margin-left: -45%; margin-top: -20%;">
+            <iframe id="myFrame" src="config.html"
+                    style="position: absolute; width: 100%; height: 100%; border-radius: 3px; background-color: white;"></iframe>
+        </div>
+    </div>
+
+    <div id="VizPage"
+         style="position: absolute; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.2); z-index: 998; display: none">
+        <div style="position: absolute; width: 90%; height: 80%; background-color: white;
+             top: 40%; margin-left: -45%; margin-top: -20%;">
+            <iframe src="/debug/statsviz"
+                    style="position: absolute; width: 100%; height: 100%; border-radius: 3px; background-color: white;"></iframe>
+        </div>
+    </div>
+    <div id="PerfPage"
+         style="position: absolute; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.2); z-index: 998; display: none">
+        <div style="position: absolute; width: 90%; height: 80%; background-color: white;
+             top: 40%; margin-left: -45%; margin-top: -20%;">
+            <iframe src="/perf.html"
+                    style="position: absolute; width: 100%; height: 100%; border-radius: 3px; background-color: white;"></iframe>
+        </div>
+    </div>
 </form>
 <table id="req-log">
     <thead id="req-log-head"></thead>
@@ -51,6 +80,24 @@
     <div id="detail-response"></div>
 </div>
 <script>
+
+    let floatPages = ['ConfigPage', 'VizPage', 'PerfPage']
+
+    function OpenPage(id) {
+        let obj = document.getElementById(id);
+        if (obj.style.display === 'none') {
+            obj.style.display = "block";
+        } else {
+            obj.style.display = "none";
+        }
+
+        for (let page of floatPages) {
+            if (page === id) {
+                continue
+            }
+            document.getElementById(page).style.display = "none";
+        }
+    }
 
     let reqDict = {}
     // 初始化
