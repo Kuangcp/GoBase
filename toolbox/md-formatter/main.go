@@ -31,16 +31,20 @@ var (
 	handleSuffix = [...]string{
 		".md", ".markdown", ".txt",
 	}
+	// 制作标题跳转时需要去除的符号
 	titleRemoveChar = []string{
 		".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "（", "）", "《", "》", "*", "＊", "。", "?", "？",
 	}
 )
 
 var (
-	splitTag       = "💠"
-	headerFirst    = "---\n"
-	headerLast     = "****************************************\n"
-	headerTemplate = headerFirst + `title: %s
+	splitTag    = "💠"
+	headerFirst = "---\n"
+	headerLast  = "****************************************\n"
+	headerFmt   = splitTag + "\n\n%s\n" + splitTag + " %s\n"
+)
+
+var headerTemplate = headerFirst + `title: %s
 date: %s
 tags: 
 categories: 
@@ -49,12 +53,11 @@ categories:
 %s
 %s
 ` + headerLast
-	catalogTemplate = `
+
+var catalogTemplate = `
 %s
 %s
 ` + headerLast
-	headerFmt = splitTag + "\n\n%s\n" + splitTag + " %s\n"
-)
 
 var (
 	help             bool
@@ -69,52 +72,6 @@ var (
 	titleReplace *strings.Replacer
 )
 
-var info = ctk.HelpInfo{
-	Description:   "Format markdown file, generate catalog",
-	Version:       "1.0.4",
-	BuildVersion:  buildVersion,
-	SingleFlagLen: -3,
-	DoubleFlagLen: -3,
-	ValueLen:      -5,
-	Flags: []ctk.ParamVO{
-		{Short: "-h", Comment: "Help info"},
-	},
-	Options: []ctk.ParamVO{
-		{Short: "", Value: "file", Comment: "Refresh file catalog"},
-		{Short: "-d", Value: "dir", Comment: "Refresh file catalog that recursive dir, default current dir"},
-		{Short: "-mm", Value: "file", Comment: "Print mind map"},
-		{Short: "-r", Value: "file", Comment: "Remove catalog"},
-		{Short: "-c", Value: "dir", Comment: "Refresh git repo dir changed file"},
-		{Short: "-a", Value: "file", Comment: "Append catalog and title for file"},
-		{Short: "-ra", Value: "file", Comment: "Remove then Append catalog and title for file"},
-	},
-}
-
-func init() {
-	flag.BoolVar(&help, "h", false, "")
-	flag.StringVar(&refreshDir, "d", "", "")
-	flag.StringVar(&mindMapFile, "mm", "", "")
-	flag.StringVar(&refreshChangeDir, "c", "", "")
-	flag.StringVar(&appendFile, "a", "", "")
-	flag.StringVar(&rmFile, "r", "", "")
-	flag.StringVar(&rmAppendFile, "ra", "", "")
-	flag.StringVar(&printCatalog, "p", "", "")
-
-	//logger.SetLogPathTrim("md-formatter/")
-	flag.Usage = info.PrintHelp
-
-	var replacePairList []string
-	for i := range titleRemoveChar {
-		replacePairList = append(replacePairList, titleRemoveChar[i], "")
-	}
-	replacePairList = append(replacePairList, " ", "-")
-	titleReplace = strings.NewReplacer(replacePairList...)
-
-	for _, dir := range ignoreDirs {
-		ignoreDirMap[dir] = 1
-	}
-}
-
 func main() {
 	flag.Parse()
 	if help {
@@ -122,29 +79,23 @@ func main() {
 		return
 	}
 
-	invokeWhen(refreshDir, refreshDirAllFiles)
-	invokeWhen(mindMapFile, printMindMap)
-	invokeWhen(refreshChangeDir, refreshChangeFile)
-	invokeWhen(appendFile, createCatalog)
-	invokeWhen(rmFile, func(f string) {
-		removeCatalog(f)
-	})
-	invokeWhen(rmAppendFile, ReplaceThenRefreshCatalog)
-	invokeWhen(printCatalog, func(s string) {
-		rows := generateCatalog(s)
-		for _, r := range rows {
-			fmt.Print(r)
-		}
-	})
-
-	ReplaceThenRefreshCatalog(os.Args[1])
-}
-
-func invokeWhen(param string, action func(string)) {
-	if param != "" {
-		action(param)
-		os.Exit(0)
+	var replacePairList []string
+	for i := range titleRemoveChar {
+		replacePairList = append(replacePairList, titleRemoveChar[i], "")
 	}
+	replacePairList = append(replacePairList, " ", "-")
+	titleReplace = strings.NewReplacer(replacePairList...)
+	for _, dir := range ignoreDirs {
+		ignoreDirMap[dir] = 1
+	}
+
+	// action
+	for _, a := range acts {
+		a.tryInvoke()
+	}
+
+	filename := os.Args[1]
+	ReplaceThenRefreshCatalog(filename)
 }
 
 func readFileLines(filename string) []string {
@@ -247,8 +198,14 @@ func normalizeForTitle(title string) string {
 	return titleReplace.Replace(title)
 }
 
-func generateCatalog(filename string) []string {
+func PrintCatalog(filename string) {
+	rows := generateCatalog(filename)
+	for _, r := range rows {
+		fmt.Print(r)
+	}
+}
 
+func generateCatalog(filename string) []string {
 	var pPath []int
 
 	rows := readLinesWithFunc(filename,
