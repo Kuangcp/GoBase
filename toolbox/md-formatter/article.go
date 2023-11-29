@@ -28,13 +28,21 @@ func BuildArticle(filename string) *Article {
 	catalogIdx := 0
 	contentIdx := 0
 	for i, line := range lines {
+		line = strings.Replace(line, "**目录 ", splitTag, 1)
 		line = strings.Replace(line, "\r\n", "\n", 1)
 		if line == headerLast {
 			header = false
 			contentIdx = i + 1
 			break
 		}
-		if line == splitTag+"\n" && !catalogMatch {
+		// 兼容脏数据
+		if strings.Contains(line, splitTag) && catalogMatch {
+			header = false
+			contentIdx = i + 3
+			break
+		}
+		// 找到第一个 catalog 定位行
+		if strings.Contains(line, splitTag) && !catalogMatch {
 			catalogIdx = i
 			catalogMatch = true
 		}
@@ -53,6 +61,9 @@ func BuildArticle(filename string) *Article {
 			}
 			continue
 		}
+	}
+	if catalogIdx > contentIdx {
+		return nil
 	}
 	return &Article{filename: filename, tag: tag, catalog: lines[catalogIdx:contentIdx], content: lines[contentIdx:]}
 }
@@ -108,12 +119,6 @@ func (a *Article) generateCatalog() {
 
 // 创建/保留 tag 删除/创建 catalog 保留content
 func (a *Article) Refresh() {
-	if refreshChangeDir != "" {
-		logger.Info("refresh:", strings.TrimLeft(a.filename, refreshChangeDir))
-	} else {
-		logger.Info("refresh:", a.filename)
-	}
-
 	// 处理 tag
 	if len(a.tag) == 0 {
 		var tag = fmt.Sprintf(tagTemplate, buildTitle(a.filename), time.Now().Format("2006-01-02 15:04:05"))
@@ -122,6 +127,7 @@ func (a *Article) Refresh() {
 			a.tag = append(a.tag, r+"\n")
 		}
 	}
+
 	// 处理 catalog
 	a.generateCatalog()
 }

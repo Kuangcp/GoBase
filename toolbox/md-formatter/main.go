@@ -241,8 +241,15 @@ func refreshCatalogWithCondition(filename string, condition func(filename string
 }
 
 func RefreshTagAndCatalog(filename string) {
+	if refreshChangeDir != "" {
+		logger.Info("refresh:", strings.TrimLeft(filename, refreshChangeDir))
+	} else {
+		logger.Info("refresh:", filename)
+	}
+
 	article := BuildArticle(filename)
 	if article == nil {
+		logger.Error(filename + " 格式有误，未包含定位行： " + headerLast)
 		return
 	}
 	article.Refresh()
