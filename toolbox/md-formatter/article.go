@@ -38,7 +38,7 @@ func BuildArticle(filename string) *Article {
 		// 兼容脏数据
 		if strings.Contains(line, splitTag) && catalogMatch {
 			header = false
-			contentIdx = i + 3
+			contentIdx = i + 2
 			break
 		}
 		// 找到第一个 catalog 定位行
