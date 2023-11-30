@@ -5,15 +5,13 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/go-git/go-git/v5"
-	"github.com/kuangcp/gobase/pkg/ctk"
-	"github.com/kuangcp/logger"
 )
 
 type filterFun = func(string) bool
@@ -31,30 +29,24 @@ var (
 	handleSuffix = [...]string{
 		".md", ".markdown", ".txt",
 	}
+	// 制作标题跳转时需要去除的符号
 	titleRemoveChar = []string{
 		".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "（", "）", "《", "》", "*", "＊", "。", "?", "？",
 	}
 )
 
 var (
-	splitTag       = "💠"
-	headerFirst    = "---\n"
-	headerLast     = "****************************************\n"
-	headerTemplate = headerFirst + `title: %s
+	splitTag    = "💠"
+	headerFirst = "---\n"
+	headerLast  = "****************************************\n"
+)
+
+var tagTemplate = headerFirst + `title: %s
 date: %s
 tags: 
 categories: 
 ---
-
-%s
-%s
-` + headerLast
-	catalogTemplate = `
-%s
-%s
-` + headerLast
-	headerFmt = splitTag + "\n\n%s\n" + splitTag + " %s\n"
-)
+`
 
 var (
 	help             bool
@@ -69,52 +61,6 @@ var (
 	titleReplace *strings.Replacer
 )
 
-var info = ctk.HelpInfo{
-	Description:   "Format markdown file, generate catalog",
-	Version:       "1.0.4",
-	BuildVersion:  buildVersion,
-	SingleFlagLen: -3,
-	DoubleFlagLen: -3,
-	ValueLen:      -5,
-	Flags: []ctk.ParamVO{
-		{Short: "-h", Comment: "Help info"},
-	},
-	Options: []ctk.ParamVO{
-		{Short: "", Value: "file", Comment: "Refresh file catalog"},
-		{Short: "-d", Value: "dir", Comment: "Refresh file catalog that recursive dir, default current dir"},
-		{Short: "-mm", Value: "file", Comment: "Print mind map"},
-		{Short: "-r", Value: "file", Comment: "Remove catalog"},
-		{Short: "-c", Value: "dir", Comment: "Refresh git repo dir changed file"},
-		{Short: "-a", Value: "file", Comment: "Append catalog and title for file"},
-		{Short: "-ra", Value: "file", Comment: "Remove then Append catalog and title for file"},
-	},
-}
-
-func init() {
-	flag.BoolVar(&help, "h", false, "")
-	flag.StringVar(&refreshDir, "d", "", "")
-	flag.StringVar(&mindMapFile, "mm", "", "")
-	flag.StringVar(&refreshChangeDir, "c", "", "")
-	flag.StringVar(&appendFile, "a", "", "")
-	flag.StringVar(&rmFile, "r", "", "")
-	flag.StringVar(&rmAppendFile, "ra", "", "")
-	flag.StringVar(&printCatalog, "p", "", "")
-
-	//logger.SetLogPathTrim("md-formatter/")
-	flag.Usage = info.PrintHelp
-
-	var replacePairList []string
-	for i := range titleRemoveChar {
-		replacePairList = append(replacePairList, titleRemoveChar[i], "")
-	}
-	replacePairList = append(replacePairList, " ", "-")
-	titleReplace = strings.NewReplacer(replacePairList...)
-
-	for _, dir := range ignoreDirs {
-		ignoreDirMap[dir] = 1
-	}
-}
-
 func main() {
 	flag.Parse()
 	if help {
@@ -122,29 +68,23 @@ func main() {
 		return
 	}
 
-	invokeWhen(refreshDir, refreshDirAllFiles)
-	invokeWhen(mindMapFile, printMindMap)
-	invokeWhen(refreshChangeDir, refreshChangeFile)
-	invokeWhen(appendFile, createCatalog)
-	invokeWhen(rmFile, func(f string) {
-		removeCatalog(f)
-	})
-	invokeWhen(rmAppendFile, ReplaceThenRefreshCatalog)
-	invokeWhen(printCatalog, func(s string) {
-		rows := generateCatalog(s)
-		for _, r := range rows {
-			fmt.Print(r)
-		}
-	})
-
-	ReplaceThenRefreshCatalog(os.Args[1])
-}
-
-func invokeWhen(param string, action func(string)) {
-	if param != "" {
-		action(param)
-		os.Exit(0)
+	var replacePairList []string
+	for i := range titleRemoveChar {
+		replacePairList = append(replacePairList, titleRemoveChar[i], "")
 	}
+	replacePairList = append(replacePairList, " ", "-")
+	titleReplace = strings.NewReplacer(replacePairList...)
+	for _, dir := range ignoreDirs {
+		ignoreDirMap[dir] = 1
+	}
+
+	// action
+	for _, a := range acts {
+		a.tryInvoke()
+	}
+
+	filename := os.Args[1]
+	RefreshTagAndCatalog(filename)
 }
 
 func readFileLines(filename string) []string {
@@ -214,7 +154,7 @@ func isNeedHandleFile(filename string) bool {
 }
 
 // 递归更新当前目录下所有文件的目录
-func refreshDirAllFiles(path string) {
+func RefreshDirAllFiles(path string) {
 	var fileList = list.New()
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -247,8 +187,14 @@ func normalizeForTitle(title string) string {
 	return titleReplace.Replace(title)
 }
 
-func generateCatalog(filename string) []string {
+func PrintCatalog(filename string) {
+	rows := generateCatalog(filename)
+	for _, r := range rows {
+		fmt.Print(r)
+	}
+}
 
+func generateCatalog(filename string) []string {
 	var pPath []int
 
 	rows := readLinesWithFunc(filename,
@@ -291,69 +237,29 @@ func refreshCatalogWithCondition(filename string, condition func(filename string
 		return
 	}
 
-	//refreshCatalog(filename)
-	ReplaceThenRefreshCatalog(filename)
+	RefreshTagAndCatalog(filename)
 }
 
-// 删除原有目录数据，保留标签，更新索引目录
-func ReplaceThenRefreshCatalog(filename string) {
-	replaceCatalog(filename, removeCatalog(filename))
-}
-
-// 更新指定文件的目录
-func refreshCatalog(filename string) {
+func RefreshTagAndCatalog(filename string) {
 	if refreshChangeDir != "" {
 		logger.Info("refresh:", strings.TrimLeft(filename, refreshChangeDir))
 	} else {
 		logger.Info("refresh:", filename)
 	}
 
-	tocBlock := ""
-	tocList := generateCatalog(filename)
-	if tocList == nil {
+	article := BuildArticle(filename)
+	if article == nil {
+		logger.Error(filename + " 格式有误，未包含定位行： " + headerLast)
 		return
 	}
-	for t := range tocList {
-		tocBlock += tocList[t]
-	}
-
-	startIdx := -1
-	endIdx := -1
-	var content = ""
-
-	// replace title block
-	lines := readFileLines(filename)
-	if lines == nil {
-		return
-	}
-	for i, line := range lines {
-		if startIdx != -1 && strings.Contains(line, splitTag) {
-			endIdx = i
-			content += fmt.Sprintf(headerFmt, tocBlock, time.Now().Format("2006-01-02 15:04"))
-			continue
-		}
-
-		if startIdx == -1 && strings.Contains(line, splitTag) {
-			startIdx = i
-		}
-
-		if startIdx == -1 || (startIdx != -1 && endIdx != -1) {
-			content += line
-		}
-	}
-
-	if startIdx == -1 || endIdx == -1 {
-		logger.Warn("Invalid catalog: ", filename, startIdx, endIdx)
-		return
-	}
-	//logger.Info("index", startIdx, endIdx, content)
-	if os.WriteFile(filename, []byte(content), 0644) != nil {
-		logger.Error("Write error", filename)
-	}
+	article.Refresh()
+	article.writeToDisk(false)
+	//logger.Info("\n" + strings.Join(article.tag, ""))
+	//logger.Info("\n" + strings.Join(article.catalog, ""))
 }
 
-// 打印 百度脑图支持的 MindMap 格式
-func printMindMap(filename string) {
+// PrintMindMap 输出百度脑图支持的 MindMap 格式
+func PrintMindMap(filename string) {
 	if filename == "" {
 		return
 	}
@@ -376,7 +282,7 @@ func printMindMap(filename string) {
 }
 
 // 更新指定目录的Git仓库中 发生变更 的文件
-func refreshChangeFile(dir string) {
+func RefreshChangeFile(dir string) {
 	r, err := git.PlainOpen(dir)
 	ctk.CheckIfError(err)
 	worktree, err := r.Worktree()
@@ -414,71 +320,9 @@ func buildTitle(filename string) string {
 	return filename
 }
 
-func replaceCatalog(filename, tag string) {
-	lines := readLinesWithFunc(filename, nil, nil)
-	if len(lines) > 0 && lines[0] != headerFirst {
-		var content = fmt.Sprintf(catalogTemplate, splitTag, splitTag)
-		content = tag + content
-		for _, line := range lines {
-			content += line
-		}
-
-		if os.WriteFile(filename, []byte(content), 0644) != nil {
-			logger.Error("write error", filename)
-		}
+func RemoveCatalog(filename string) {
+	article := BuildArticle(filename)
+	if article != nil {
+		article.writeToDisk(true)
 	}
-
-	refreshCatalog(filename)
-}
-
-func createCatalog(filename string) {
-	lines := readLinesWithFunc(filename, nil, nil)
-	if len(lines) > 0 && lines[0] != headerFirst {
-		var content = fmt.Sprintf(headerTemplate, buildTitle(filename),
-			time.Now().Format("2006-01-02 15:04:05"), splitTag, splitTag)
-		for _, line := range lines {
-			content += line
-		}
-
-		if os.WriteFile(filename, []byte(content), 0644) != nil {
-			logger.Error("write error", filename)
-		}
-	}
-	refreshCatalog(filename)
-}
-
-func removeCatalog(filename string) string {
-	tagBlock := ""
-	lines := readLinesWithFunc(filename, nil, nil)
-	content := ""
-	header := false
-	tagEnd := false
-	for _, line := range lines {
-		line = strings.Replace(line, "\r\n", "\n", 1)
-		if line == headerLast {
-			header = false
-			continue
-		}
-		if line == headerFirst && header {
-			tagEnd = true
-			tagBlock += line
-			continue
-		}
-		if line == headerFirst {
-			header = true
-		}
-		if header {
-			if !tagEnd {
-				tagBlock += line
-			}
-			continue
-		}
-
-		content += line
-	}
-
-	if os.WriteFile(filename, []byte(content), 0644) != nil {
-		logger.Error("write error", filename)
-	}
-	return tagBlock
 }
