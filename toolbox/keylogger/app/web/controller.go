@@ -149,6 +149,7 @@ func SyncAllDetails() {
 			// 当天数据不全，不转移
 			if today == k {
 				logger.Info("ignore today", k)
+				continue
 			}
 			if strings.HasSuffix(k, "detail") {
 				logger.Info("Sync: ", k)
