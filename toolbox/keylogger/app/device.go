@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/guptarohit/asciigraph"
 	"log"
 	"sort"
 	"strconv"
@@ -220,9 +221,26 @@ func OpenDevice() *InputDevice {
 func PrintDay() {
 	now := time.Now()
 	indexDay, durationDay := parseTime(timeSegment)
+	var kpms []float64
+	var days []float64
+	var start = now.AddDate(0, 0, -indexDay).Format(ctk.YYYY_MM_DD)
 	for i := 0; i < durationDay; i++ {
-		handleTotalByDate(now.AddDate(0, 0, -indexDay+i), store.GetConnection())
+		idx := now.AddDate(0, 0, -indexDay+i)
+		kpm, day := handleTotalByDate(idx, store.GetConnection())
+		kpms = append(kpms, float64(kpm))
+		days = append(days, float64(day))
 	}
+
+	fmt.Println(asciigraph.Plot(kpms,
+		asciigraph.Width(len(days)),
+		asciigraph.Height(20),
+		asciigraph.Caption("KPM "+start+" => "+now.Format(ctk.YYYY_MM_DD))),
+	)
+	fmt.Println(asciigraph.Plot(days,
+		asciigraph.Width(len(days)),
+		asciigraph.Height(20),
+		asciigraph.Caption("Daily "+start+" => "+now.Format(ctk.YYYY_MM_DD))),
+	)
 }
 
 func PrintDayRank() {
@@ -370,7 +388,7 @@ func parseTime(timeSegment string) (int, int) {
 	return indexDay, durationDay
 }
 
-func handleTotalByDate(time time.Time, conn *redis.Client) {
+func handleTotalByDate(time time.Time, conn *redis.Client) (int, int) {
 	today := time.Format(store.DateFormat)
 	score := conn.ZScore(store.TotalCount, today)
 	maxKPM := store.MaxKPMVal(time)
@@ -378,6 +396,8 @@ func handleTotalByDate(time time.Time, conn *redis.Client) {
 		ctk.Green.Printf("%-9s", time.Weekday()),
 		ctk.Yellow.Printf("%4s", maxKPM),
 		int64(score.Val()))
+	kpm, _ := strconv.Atoi(maxKPM)
+	return kpm, int(score.Val())
 }
 
 // CacheKeyMap to redis
