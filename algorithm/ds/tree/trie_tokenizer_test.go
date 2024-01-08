@@ -29,11 +29,7 @@ func TestSelfDict(t *testing.T) {
 
 func TestInit(t *testing.T) {
 	tokenizer := InitTrieTokenizer("zh.log")
-	//result := tokenizer.Tokenize("我们的世界和平，编程的速度才会得到发展")
-	//fmt.Println(result)
-	//fmt.Println(FmtTokens(result))
-
-	fmt.Println("生生世世"[0:0])
+	fmt.Println(FmtTokens(tokenizer.Tokenize("我们的世界和平，编程的速度才会得到发展")))
 	fmt.Println(FmtTokens(tokenizer.Tokenize("AI和AIDS是不一样的东西,AID是瞄准")))
 }
 

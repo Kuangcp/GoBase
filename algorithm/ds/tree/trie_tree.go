@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // https://en.wikipedia.org/wiki/Trie
 // https://oi-wiki.org/string/trie/
 // https://blog.csdn.net/qq_32445015/article/details/82711249
@@ -41,6 +43,13 @@ func (t *TrieTree) Insert(str string) {
 	}
 	p.End = true
 }
+func (t *TrieTree) SearchKey(key string) string {
+	node := t.Search(key)
+	if node == nil {
+		return "NIL"
+	}
+	return fmt.Sprint(string(node.Data), " ", node.End)
+}
 
 func (t *TrieTree) Search(key string) *TrieTree {
 	runes := []rune(key)
@@ -55,7 +64,7 @@ func (t *TrieTree) Search(key string) *TrieTree {
 	return p
 }
 
-func (t *TrieTree) Match(r rune) bool {
+func (t *TrieTree) IsChild(r rune) bool {
 	if len(t.Childes) == 0 {
 		return false
 	}
@@ -63,4 +72,22 @@ func (t *TrieTree) Match(r rune) bool {
 	return ok
 }
 
-// TODO Merge https://oi-wiki.org/string/trie/
+func (t *TrieTree) Merge(tree *TrieTree) {
+	if tree == nil {
+		return
+	}
+
+	for _, v := range tree.Childes {
+		merge(t, v)
+	}
+}
+
+// https://oi-wiki.org/string/trie/
+func merge(target, origin *TrieTree) {
+	if !target.IsChild(origin.Data) {
+		target.Childes[origin.Data] = &TrieTree{Data: origin.Data, End: origin.End, Childes: make(map[rune]*TrieTree)}
+	}
+	for _, v1 := range origin.Childes {
+		merge(target.Childes[origin.Data], v1)
+	}
+}
