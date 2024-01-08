@@ -42,17 +42,17 @@ func (t *TrieTree) Insert(str string) {
 	p.End = true
 }
 
-func (t *TrieTree) Search(key string) (bool, rune) {
+func (t *TrieTree) Search(key string) *TrieTree {
 	runes := []rune(key)
 	var p = t
 	for _, r := range runes {
 		next, ok := p.Childes[r]
 		if !ok {
-			return false, 0
+			return nil
 		}
 		p = next
 	}
-	return true, p.Data
+	return p
 }
 
 func (t *TrieTree) Match(r rune) bool {

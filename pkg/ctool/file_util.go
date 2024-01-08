@@ -33,11 +33,12 @@ func ReadLines[T any](filename string, filterFunc func(string) bool, mapFunc fun
 	var result []T
 
 	buf := bufio.NewReader(file)
-	for {
+	end := false
+	for !end {
 		line, err := buf.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				break
+				end = true
 			} else {
 				log.Println("Read file error!", err)
 				return nil
