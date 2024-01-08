@@ -34,7 +34,7 @@ func (t *TrieTokenizer) mine(trie *TrieTree, sentence []rune, cursor int) int {
 	result := cursor
 	if cursor <= len(sentence)-1 {
 		cur := sentence[cursor]
-		if trie.Match(cur) {
+		if trie.IsChild(cur) {
 			result = t.mine(trie.Childes[cur], sentence, cursor+1)
 		}
 	}

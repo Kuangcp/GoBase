@@ -1,6 +1,6 @@
 package main
 
-// 二叉搜索树 binary search tree
+// 二叉搜索树 binary search tree https://oi-wiki.org/ds/bst/
 
 // BsTreeInsert 入参t为nil时则创建树
 func BsTreeInsert[T any](t *Tree[T], val T) *Tree[T] {
