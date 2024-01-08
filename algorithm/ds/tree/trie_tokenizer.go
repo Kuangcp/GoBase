@@ -16,21 +16,38 @@ func InitTrieTokenizer(path string) *TrieTokenizer {
 
 	lines := ctool.ReadStrLinesNoFilter(path)
 	for _, r := range lines {
-		trie.Insert(r)
+		trie.Insert(strings.TrimSpace(r))
 	}
 
 	return &TrieTokenizer{
 		trie: trie,
 	}
 }
+func (t *TrieTokenizer) Append(path string) {
+	lines := ctool.ReadStrLinesNoFilter(path)
+	for _, r := range lines {
+		t.trie.Insert(strings.TrimSpace(r))
+	}
+}
+
 func (t *TrieTokenizer) mine(trie *TrieTree, sentence []rune, cursor int) int {
+	result := cursor
 	if cursor <= len(sentence)-1 {
 		cur := sentence[cursor]
 		if trie.Match(cur) {
-			cursor = t.mine(trie.Childes[cur], sentence, cursor+1)
+			result = t.mine(trie.Childes[cur], sentence, cursor+1)
 		}
 	}
-	return cursor
+	return result
+}
+
+func (t *TrieTokenizer) TokenizeFile(file string) []string {
+	lines := ctool.ReadStrLinesNoFilter(file)
+	all := ""
+	for _, r := range lines {
+		all += strings.TrimSpace(r)
+	}
+	return t.Tokenize(all)
 }
 
 func (t *TrieTokenizer) Tokenize(sentence string) []string {
@@ -42,6 +59,21 @@ func (t *TrieTokenizer) Tokenize(sentence string) []string {
 	chars := len(runes)
 	for chars != 0 {
 		idx := t.mine(t.trie, runes, 0)
+		if idx != 0 {
+			// 贪心匹配到了非结束字符，需要回退
+			token := string(runes[0:idx])
+			node := t.trie.Search(token)
+			//fmt.Println(token, node)
+			for !node.End {
+				if idx == 0 {
+					break
+				}
+				idx--
+				token := string(runes[0:idx])
+				node = t.trie.Search(token)
+			}
+		}
+
 		if idx == 0 {
 			//fmt.Println(idx, string(runes[idx]))
 			tokens = append(tokens, string(runes[0]))
