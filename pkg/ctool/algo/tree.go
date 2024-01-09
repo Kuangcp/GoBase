@@ -21,6 +21,7 @@ func PrintBiMindMap(tree IBinTree) string {
 	return printBiMindMap(tree, 1, "")
 }
 
+// Plugin: PlantUML Integration. file suffix: .pu .puml
 func WriteBiMindMap(tree IBinTree, file string) {
 	mindMap := printBiMindMap(tree, 1, "")
 	writer, err := ctool.NewWriter(file, true)
