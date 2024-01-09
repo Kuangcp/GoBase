@@ -17,7 +17,7 @@ func (u User) String() string {
 	return fmt.Sprint(u.Id, u.Name)
 }
 
-func buildSimpleTree(l int) *Tree[int] {
+func buildSimpleTree(l int) *BinTree[int] {
 	var data []int
 	for i := 0; i < l; i++ {
 		data = append(data, i)
@@ -26,7 +26,7 @@ func buildSimpleTree(l int) *Tree[int] {
 	return ArrayToTree[int](data)
 }
 
-func buildSlotTree() *Tree[*User] {
+func buildSlotTree() *BinTree[*User] {
 	// 注意构造树时不要出现无父节点
 	return ArrayToTree([]*User{{Id: 0, Name: "a"}, nil, {Id: 2, Name: "b"},
 		nil, nil, {Id: 3, Name: "c"}, nil,
@@ -47,7 +47,7 @@ func BenchmarkDfsPre(b *testing.B) {
 	tree := buildSimpleTree(10000)
 	for i := 0; i < b.N; i++ {
 		sum := 0
-		DfsPre(tree, func(node *Tree[int]) {
+		DfsPre(tree, func(node *BinTree[int]) {
 			sum += node.Data
 		})
 		fmt.Print(sum, " ")
@@ -59,7 +59,7 @@ func BenchmarkBfs(b *testing.B) {
 	tree := buildSimpleTree(10000)
 	for i := 0; i < b.N; i++ {
 		sum := 0
-		Bfs(tree, func(node *Tree[int]) {
+		Bfs(tree, func(node *BinTree[int]) {
 			sum += node.Data
 		})
 		fmt.Print(sum, " ")
@@ -111,7 +111,7 @@ func TestSameTree(t *testing.T) {
 	println(isDiffVal(a, b))
 }
 
-func isDiffVal[T comparable](a, b *Tree[T]) bool {
+func isDiffVal[T comparable](a, b *BinTree[T]) bool {
 	if a == nil && b == nil {
 		return false
 	}
@@ -126,7 +126,7 @@ func isDiffVal[T comparable](a, b *Tree[T]) bool {
 	}
 }
 
-func DfsPreInvert[T any](t *Tree[T]) {
+func DfsPreInvert[T any](t *BinTree[T]) {
 	if t == nil {
 		return
 	}

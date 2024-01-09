@@ -7,34 +7,35 @@ import (
 )
 
 type (
-	Tree[T any] struct {
-		Parent *Tree[T]
-		Left   *Tree[T]
-		Right  *Tree[T]
+	// BinTree 二叉树
+	BinTree[T any] struct {
+		Parent *BinTree[T]
+		Left   *BinTree[T]
+		Right  *BinTree[T]
 		Data   T
 	}
 )
 
-func (t *Tree[T]) GetLeft() algo.IBinTree {
+func (t *BinTree[T]) GetLeft() algo.IBinTree {
 	return t.Left
 }
 
-func (t *Tree[T]) GetRight() algo.IBinTree {
+func (t *BinTree[T]) GetRight() algo.IBinTree {
 	return t.Right
 }
 
-func (t *Tree[T]) ToString() string {
+func (t *BinTree[T]) ToString() string {
 	return fmt.Sprint(t.Data)
 }
 
-func ArrayToTree[T any](data []T) *Tree[T] {
+func ArrayToTree[T any](data []T) *BinTree[T] {
 	length := len(data)
 	if length == 0 {
 		return nil
 	}
 
-	cache := make(map[int]*Tree[T])
-	var tree = &Tree[T]{Data: data[0]}
+	cache := make(map[int]*BinTree[T])
+	var tree = &BinTree[T]{Data: data[0]}
 	cache[0] = tree
 	for i := 0; i < length/2; i++ {
 		// left
@@ -43,7 +44,7 @@ func ArrayToTree[T any](data []T) *Tree[T] {
 		if leftIdx < length {
 			val := data[leftIdx]
 			if !ctool.IsNil(val) {
-				node := &Tree[T]{Data: val}
+				node := &BinTree[T]{Data: val}
 				node.Parent = parent
 				cache[leftIdx] = node
 				parent.Left = node
@@ -55,7 +56,7 @@ func ArrayToTree[T any](data []T) *Tree[T] {
 		if rightIdx < length {
 			val := data[rightIdx]
 			if !ctool.IsNil(val) {
-				node := &Tree[T]{Data: val}
+				node := &BinTree[T]{Data: val}
 				node.Parent = parent
 				cache[rightIdx] = node
 				parent.Right = node
@@ -67,7 +68,7 @@ func ArrayToTree[T any](data []T) *Tree[T] {
 }
 
 // DfsPre 前序遍历
-func DfsPre[T any](t *Tree[T], handler func(node *Tree[T])) {
+func DfsPre[T any](t *BinTree[T], handler func(node *BinTree[T])) {
 	if t == nil || handler == nil {
 		return
 	}
@@ -77,7 +78,7 @@ func DfsPre[T any](t *Tree[T], handler func(node *Tree[T])) {
 }
 
 // DfsIn 中序遍历
-func DfsIn[T any](t *Tree[T], handler func(node *Tree[T])) {
+func DfsIn[T any](t *BinTree[T], handler func(node *BinTree[T])) {
 	if t == nil || handler == nil {
 		return
 	}
@@ -87,7 +88,7 @@ func DfsIn[T any](t *Tree[T], handler func(node *Tree[T])) {
 }
 
 // DfsPost 后序遍历
-func DfsPost[T any](t *Tree[T], handler func(node *Tree[T])) {
+func DfsPost[T any](t *BinTree[T], handler func(node *BinTree[T])) {
 	if t == nil || handler == nil {
 		return
 	}
@@ -97,18 +98,18 @@ func DfsPost[T any](t *Tree[T], handler func(node *Tree[T])) {
 }
 
 // Bfs 广度优先遍历
-func Bfs[T any](t *Tree[T], handler func(node *Tree[T])) {
+func Bfs[T any](t *BinTree[T], handler func(node *BinTree[T])) {
 	if t == nil || handler == nil {
 		return
 	}
 
 	handler(t)
 
-	var cur []*Tree[T]
+	var cur []*BinTree[T]
 	cur = appendIfAbsent(cur, t.Left)
 	cur = appendIfAbsent(cur, t.Right)
 	for {
-		var nextLayer []*Tree[T]
+		var nextLayer []*BinTree[T]
 		for _, node := range cur {
 			handler(node)
 			nextLayer = appendIfAbsent(nextLayer, node.Left)
@@ -123,13 +124,13 @@ func Bfs[T any](t *Tree[T], handler func(node *Tree[T])) {
 	}
 }
 
-func appendIfAbsent[T any](layer []*Tree[T], node *Tree[T]) []*Tree[T] {
+func appendIfAbsent[T any](layer []*BinTree[T], node *BinTree[T]) []*BinTree[T] {
 	if node == nil {
 		return layer
 	}
 	return append(layer, node)
 }
 
-func PrintNode[T any](node *Tree[T]) {
+func PrintNode[T any](node *BinTree[T]) {
 	fmt.Print(node.Data, " ")
 }
