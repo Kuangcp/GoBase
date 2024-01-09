@@ -38,4 +38,10 @@ func TestRank(t *testing.T) {
 	assert.Equal(t, 7, tree.Rank(5))
 	assert.Equal(t, 8, tree.Rank(6))
 	assert.Equal(t, 11, tree.Rank(7))
+
+	assert.Equal(t, 5, height(tree.Root))
+	assert.Equal(t, 4, height(tree.Root.Right))
+	assert.Equal(t, 3, height(tree.Root.Right.Right))
+	assert.Equal(t, 2, height(tree.Root.Right.Right.Left))
+	assert.Equal(t, 3, height(tree.Root.Left))
 }

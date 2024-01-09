@@ -1,6 +1,9 @@
 package main
 
-import "github.com/kuangcp/gobase/pkg/ctool"
+import (
+	"github.com/kuangcp/gobase/pkg/ctool"
+	"math"
+)
 
 type (
 	// BsTree 二叉搜索树 binary search tree https://oi-wiki.org/ds/bst/
@@ -148,6 +151,14 @@ func search[T ctool.Numberic](b *BsNode[T], val T) *BsNode[T] {
 	} else {
 		return search(b.Right, val)
 	}
+}
+
+func height[T ctool.Numberic](root *BsNode[T]) int {
+	if root == nil {
+		return 0
+	}
+	maxVal := math.Max(float64(height(root.Left)), float64(height(root.Right)))
+	return int(maxVal) + 1
 }
 
 func insert[T ctool.Numberic](b *BsNode[T], val T) {
