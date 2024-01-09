@@ -4,6 +4,7 @@ import "github.com/kuangcp/gobase/pkg/ctool"
 
 type (
 	// BsTree 二叉搜索树 binary search tree https://oi-wiki.org/ds/bst/
+	// 实现了有序的搜索树，但是还有一个问题是容易出现数据倾斜，因此有了 BsBalanceTree
 	BsTree[T ctool.Numberic] struct {
 		Root *BsNode[T]
 	}

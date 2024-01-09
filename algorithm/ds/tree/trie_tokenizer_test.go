@@ -55,7 +55,7 @@ func TestDir(t *testing.T) {
 	tokenizer.Append("code.dict")
 
 	var result = make(map[string]int)
-	err := filepath.WalkDir("/home/zk/Note/Note/", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir("/home/zk/Note/WorkLog/", func(path string, d fs.DirEntry, err error) error {
 		if strings.HasSuffix(path, "md") {
 			tokens := tokenizer.TokenizeFile(path)
 			statistics(tokens, result)
