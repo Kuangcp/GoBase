@@ -56,9 +56,17 @@ func (b *BsBalanceTree[T]) Insert(val T) {
 // 依据左右子树的差异，可分为四种情况：LL LR RR RL。
 // 又因为不平衡的情况仅由插入删除导致，每次不平衡后都处理为平衡，所以只会出现这四种不平衡情况（局部）
 func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
+	if root == nil {
+		return nil
+	}
+	// 递归完成对每个节点的整理
+	root.Left = reBalance(root.Left)
+	root.Right = reBalance(root.Right)
+
 	lm := height(root.Left)
 	rm := height(root.Right)
-	if math.Abs(float64(lm-rm)) <= 1 {
+	diff := math.Abs(float64(lm - rm))
+	if diff <= 1 {
 		return root
 	}
 
