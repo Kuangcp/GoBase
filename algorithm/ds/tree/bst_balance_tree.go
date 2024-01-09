@@ -10,8 +10,8 @@ import (
 type (
 	// BsBalanceTree 平衡二叉搜索树  https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree
 	// 平衡性的定义是指：以 T 为根节点的树，每一个节点的左子树和右子树高度差最多为 1。
-	// 显然地，增加了树维护成本，但是使得查询的成本比较均匀
-	// https://www.javatpoint.com/binary-search-tree-vs-avl-tree
+	// 显然地，增加了树维护成本，但是使得查询的成本变得均匀， 但是此时仍不是高度最低的树
+	// 此时可以考虑 AVL树，进一步压扁： https://www.javatpoint.com/binary-search-tree-vs-avl-tree
 	BsBalanceTree[T ctool.Numberic] struct {
 		Root *BsNode[T]
 	}
@@ -67,28 +67,23 @@ func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
 		llm := height(root.Left.Left)
 		lrm := height(root.Left.Right)
 
-		if llm > lrm {
-			// LL
-			root = rotateRight(root)
-		} else {
-			// LR
-			// 先左旋左节点使其转换为LL
+		if llm < lrm {
+			// LR 先左旋左节点使其转换为LL
 			root.Left = rotateLeft(root.Left)
-			root = rotateRight(root)
 		}
+
+		// LL
+		root = rotateRight(root)
 	} else {
 		rlm := height(root.Right.Left)
 		rrm := height(root.Right.Right)
 
-		if rrm > rlm {
-			// RR
-			root = rotateLeft(root)
-		} else {
-			// RL
-			// 先右旋右节点 使其转换为RR
+		if rrm < rlm {
+			// RL 先右旋右节点 使其转换为RR
 			root.Right = rotateRight(root.Right)
-			root = rotateLeft(root)
 		}
+		// RR
+		root = rotateLeft(root)
 	}
 	return root
 }
