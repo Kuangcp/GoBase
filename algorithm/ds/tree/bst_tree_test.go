@@ -45,3 +45,7 @@ func TestRank(t *testing.T) {
 	assert.Equal(t, 2, height(tree.Root.Right.Right.Left))
 	assert.Equal(t, 3, height(tree.Root.Left))
 }
+
+func TestBstDfsPre(t *testing.T) {
+
+}
