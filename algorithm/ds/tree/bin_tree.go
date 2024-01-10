@@ -97,7 +97,7 @@ func DfsPost[T any](t *BinTree[T], handler func(node *BinTree[T])) {
 	handler(t)
 }
 
-// Bfs 广度优先遍历
+// Bfs 广度优先遍历 层次遍历
 func Bfs[T any](t *BinTree[T], handler func(node *BinTree[T])) {
 	if t == nil || handler == nil {
 		return

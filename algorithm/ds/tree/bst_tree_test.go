@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/algo"
 	"github.com/stretchr/testify/assert"
 	"log"
+	"math"
 	"testing"
 )
 
@@ -40,11 +42,11 @@ func TestRank(t *testing.T) {
 	assert.Equal(t, 8, tree.Rank(6))
 	assert.Equal(t, 11, tree.Rank(7))
 
-	assert.Equal(t, 5, height(tree.Root))
-	assert.Equal(t, 4, height(tree.Root.Right))
-	assert.Equal(t, 3, height(tree.Root.Right.Right))
-	assert.Equal(t, 2, height(tree.Root.Right.Right.Left))
-	assert.Equal(t, 3, height(tree.Root.Left))
+	assert.Equal(t, 5, algo.Height(tree.Root))
+	assert.Equal(t, 4, algo.Height(tree.Root.Right))
+	assert.Equal(t, 3, algo.Height(tree.Root.Right.Right))
+	assert.Equal(t, 2, algo.Height(tree.Root.Right.Right.Left))
+	assert.Equal(t, 3, algo.Height(tree.Root.Left))
 }
 
 func TestBstUml(t *testing.T) {
@@ -56,4 +58,18 @@ func TestBstUml(t *testing.T) {
 func TestBstDfsIn(t *testing.T) {
 	tree := InitBsTree[int](1, 7, 6, 1, 2, 8, 10, 12, 99, 3, 4, 30, 20, 23)
 	fmt.Println(tree.Lists())
+}
+
+func TestSvg(t *testing.T) {
+	writer, _ := ctool.NewWriter("bst.svg", true)
+	defer writer.Close()
+
+	tree := InitBsTree[int](1, 7, 6, 1, 2, 8, 10, 12, 99, 3, 4, 30, 20, 23)
+	svg := algo.BuildSvg(tree.Root)
+	writer.WriteString(svg)
+}
+
+func TestLog2(t *testing.T) {
+	println(math.Log2(3))
+	println(int(math.Pow(2, 4)))
 }

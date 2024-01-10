@@ -74,8 +74,8 @@ func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
 	root.Left = reBalance(root.Left)
 	root.Right = reBalance(root.Right)
 
-	lm := height(root.Left)
-	rm := height(root.Right)
+	lm := algo.Height(root.Left)
+	rm := algo.Height(root.Right)
 	diff := math.Abs(float64(lm - rm))
 	if diff <= 1 {
 		return root
@@ -83,8 +83,8 @@ func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
 
 	// 注意此时高度差只会是2，不会大于2
 	if lm > rm {
-		llm := height(root.Left.Left)
-		lrm := height(root.Left.Right)
+		llm := algo.Height(root.Left.Left)
+		lrm := algo.Height(root.Left.Right)
 
 		if llm < lrm {
 			// LR 先左旋左节点使其转换为LL
@@ -94,8 +94,8 @@ func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
 		// LL
 		root = rotateRight(root)
 	} else {
-		rlm := height(root.Right.Left)
-		rrm := height(root.Right.Right)
+		rlm := algo.Height(root.Right.Left)
+		rrm := algo.Height(root.Right.Right)
 
 		if rrm < rlm {
 			// RL 先右旋右节点 使其转换为RR
