@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool/algo"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
@@ -46,6 +47,13 @@ func TestRank(t *testing.T) {
 	assert.Equal(t, 3, height(tree.Root.Left))
 }
 
-func TestBstDfsPre(t *testing.T) {
+func TestBstUml(t *testing.T) {
+	tree := InitBsTree[int](7, 6, 1, 2, 8, 10, 12, 99, 3, 4, 30, 20, 23)
+	fmt.Println(algo.PrintBiMindMap(tree.Root))
+	algo.WriteBiMindMap(tree.Root, "init-bst.puml")
+}
 
+func TestBstDfsIn(t *testing.T) {
+	tree := InitBsTree[int](1, 7, 6, 1, 2, 8, 10, 12, 99, 3, 4, 30, 20, 23)
+	fmt.Println(tree.Lists())
 }
