@@ -3,17 +3,29 @@ package algo
 import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"math"
 	"strings"
 )
 
+// IBinTree 二叉树接口
 type IBinTree interface {
 	GetLeft() IBinTree
 	GetRight() IBinTree
 	ToString() string
 }
+
+// INTree 多叉树接口
 type INTree interface {
 	ToString() string
 	GetChild() []INTree
+}
+
+func Height(tree IBinTree) int {
+	if ctool.IsNil(tree) {
+		return 0
+	}
+	maxVal := math.Max(float64(Height(tree.GetLeft())), float64(Height(tree.GetRight())))
+	return int(maxVal) + 1
 }
 
 // PrintBiMindMap https://plantuml.com/mindmap-diagram
