@@ -17,8 +17,12 @@ type (
 	}
 )
 
-func InitBsBalanceTree[T ctool.Numberic]() *BsBalanceTree[T] {
-	return &BsBalanceTree[T]{}
+func InitBsBalanceTree[T ctool.Numberic](val ...T) *BsBalanceTree[T] {
+	tree := &BsBalanceTree[T]{}
+	if len(val) > 0 {
+		tree.Inserts(val...)
+	}
+	return tree
 }
 
 func (t *BsNode[T]) GetLeft() algo.IBinTree {
@@ -31,6 +35,11 @@ func (t *BsNode[T]) GetRight() algo.IBinTree {
 
 func (t *BsNode[T]) ToString() string {
 	return fmt.Sprint(t.Data)
+}
+
+func (b *BsBalanceTree[T]) Lists() []T {
+	var data []T
+	return dfsIn(b.Root, data)
 }
 
 func (b *BsBalanceTree[T]) Inserts(val ...T) {
@@ -48,7 +57,9 @@ func (b *BsBalanceTree[T]) Insert(val T) {
 		return
 	}
 
+	// bst 插入
 	insert(b.Root, val)
+	// 旋转调整
 	b.Root = reBalance(b.Root)
 }
 

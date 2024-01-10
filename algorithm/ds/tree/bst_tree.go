@@ -20,9 +20,19 @@ type (
 	}
 )
 
-func InitBsTree[T ctool.Numberic]() *BsTree[T] {
-	return &BsTree[T]{}
+func InitBsTree[T ctool.Numberic](vals ...T) *BsTree[T] {
+	tree := &BsTree[T]{}
+	if len(vals) > 0 {
+		tree.Inserts(vals...)
+	}
+	return tree
 }
+
+func (b *BsTree[T]) Lists() []T {
+	var data []T
+	return dfsIn(b.Root, data)
+}
+
 func (b *BsTree[T]) Inserts(val ...T) {
 	if len(val) == 0 {
 		return
@@ -180,4 +190,17 @@ func insert[T ctool.Numberic](b *BsNode[T], val T) {
 			insert(b.Right, val)
 		}
 	}
+}
+
+// 中序遍历
+func dfsIn[T ctool.Numberic](root *BsNode[T], result []T) []T {
+	if root == nil {
+		return result
+	}
+	result = dfsIn(root.Left, result)
+	for i := 0; i < root.Count; i++ {
+		result = append(result, root.Data)
+	}
+	result = dfsIn(root.Right, result)
+	return result
 }
