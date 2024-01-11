@@ -1,7 +1,0 @@
-<svg width="400" height="180">
-  <rect x="50" y="40" rx="20" ry="40" width="50" height="50" style="fill:red;stroke:black;opacity:0.5" />
-  Sorry, your browser does not support inline SVG.
-  <line x1="110" y1="0" x2="60" y2="40" style="stroke:rgb(0,0,0);stroke-width:2" />
-  <line x1="110" y1="0" x2="160" y2="40" style="stroke:rgb(0,0,0);stroke-width:2" />
-    <rect x="120" y="40" rx="20" ry="40" width="50" height="50" style="fill:red;stroke:black;opacity:0.5" />
-</svg>
