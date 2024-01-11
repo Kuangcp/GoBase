@@ -1,12 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+)
+
+const (
+	cycle_r = 25
 )
 
 // https://blog.csdn.net/boysoft2002/article/details/126908846
@@ -90,11 +96,7 @@ func AinArray(sub int, array []int) int {
 }
 
 func Pow2(x int) int { //x>=0
-	res := 1
-	for i := 0; i < x; i++ {
-		res *= 2
-	}
-	return res
+	return int(math.Pow(2, float64(x)))
 }
 
 func Max(L, R int) int {
@@ -109,9 +111,7 @@ func (bt *btNode) MaxDepth() int {
 	if bt == nil {
 		return 0
 	}
-	Lmax := bt.Lchild.MaxDepth()
-	Rmax := bt.Rchild.MaxDepth()
-	return 1 + Max(Lmax, Rmax)
+	return 1 + Max(bt.Lchild.MaxDepth(), bt.Rchild.MaxDepth())
 }
 
 func (bt *btNode) Coordinate(x, y, w int) []any {
@@ -184,7 +184,7 @@ func (bt *biTree) info2SVG(Margin ...int) string {
 	var res, Line, Color string
 	info := bt.Info
 	MarginX, MarginY := 10, 10
-	SpaceX, SpaceY := 20, 100
+	SpaceX, SpaceY := 28, 90
 	switch len(Margin) {
 	case 0:
 		break
@@ -219,8 +219,8 @@ func (bt *biTree) info2SVG(Margin ...int) string {
 		Node = strings.Replace(Node, "M", strconv.Itoa(info.X[i]), 1)
 		Node = strings.Replace(Node, "N", strconv.Itoa(info.Y[i]), 1)
 		x0, y0 := (info.X[i]+info.Width)*SpaceX+MarginX, 50+info.Y[i]*SpaceY+MarginY
-		x1, y1 := x0-info.W[i]*SpaceX, y0+SpaceY-30
-		x2, y2 := x0+info.W[i]*SpaceX, y0+SpaceY-30
+		x1, y1 := x0-info.W[i]*SpaceX, y0+SpaceY-cycle_r
+		x2, y2 := x0+info.W[i]*SpaceX, y0+SpaceY-cycle_r
 		Color = "lightgreen"
 		if info.L[i] && info.R[i] {
 			Line = XmlLine(x0-21, y0+21, x1, y1) + "\n\t" + XmlLine(x0+21, y0+21, x2, y2)
@@ -243,15 +243,14 @@ func (bt *biTree) info2SVG(Margin ...int) string {
 }
 
 func XmlCircle(X, Y int, Color string) string {
-	Radius := 30
 	Circle := "<circle cx=\"" + strconv.Itoa(X) + "\" cy=\"" + strconv.Itoa(Y) +
-		"\" r=\"" + strconv.Itoa(Radius) + "\" stroke=\"black\" stroke-width=" +
+		"\" r=\"" + fmt.Sprint(cycle_r) + "\" stroke=\"black\" stroke-width=" +
 		"\"2\" style=\"fill:" + Color + ";stroke:black;opacity:0.5\"/>"
 	return Circle
 }
 
 func XmlText(X, Y int, DATA string) string {
-	iFontSize, tColor := 20, "black"
+	iFontSize, tColor := 25, "black"
 	Text := "<text x=\"" + strconv.Itoa(X) + "\" y=\"" + strconv.Itoa(Y) +
 		"\" fill=\"" + tColor + "\" font-size=\"" + strconv.Itoa(iFontSize) +
 		"\" text-anchor=\"middle\" dominant-baseline=\"middle\">" + DATA + "</text>"
