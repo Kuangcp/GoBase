@@ -28,8 +28,7 @@ func BuildSvg(tree IBinTree) string {
 	//	"<rect x=\"120\" y=\"40\" rx=\"20\" ry=\"40\" width=\"50\" height=\"50\" style=\"fill:red;stroke:black;opacity:0.5\" />\n" +
 	//	"</svg>")
 
-	//maxH := Height(tree)
-	//pow2(maxH-1)* wpad
+	maxH := Height(tree)
 
 	var cur []IBinTree
 	cur = appendIfAbsent(cur, tree.GetLeft())
@@ -43,8 +42,9 @@ func BuildSvg(tree IBinTree) string {
 
 		var nextLayer []IBinTree
 		for _, node := range cur {
-			//wp := pow2(layer-1) * wpad
-			
+			wp := pow2(max(maxH-layer-1, 0)) * wpad
+			fmt.Println(wp)
+
 			nextLayer = appendIfAbsent(nextLayer, node.GetLeft())
 			nextLayer = appendIfAbsent(nextLayer, node.GetRight())
 		}
@@ -73,4 +73,11 @@ func buildRect(x, y, rx, ry int) string {
 }
 func pow2(pow int) int {
 	return int(math.Pow(2, float64(pow)))
+}
+func max(a, b int) int {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
 }
