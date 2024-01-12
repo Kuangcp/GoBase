@@ -222,12 +222,13 @@ func (bt *biTree) info2SVG(Margin ...int) string {
 		x1, y1 := x0-info.W[i]*SpaceX, y0+SpaceY-cycle_r
 		x2, y2 := x0+info.W[i]*SpaceX, y0+SpaceY-cycle_r
 		Color = "lightgreen"
+		offset := 18
 		if info.L[i] && info.R[i] {
-			Line = XmlLine(x0-21, y0+21, x1, y1) + "\n\t" + XmlLine(x0+21, y0+21, x2, y2)
+			Line = XmlLine(x0-offset, y0+offset, x1, y1) + "\n\t" + XmlLine(x0+offset, y0+offset, x2, y2)
 		} else if info.L[i] && !info.R[i] {
-			Line = XmlLine(x0-21, y0+21, x1, y1)
+			Line = XmlLine(x0-offset, y0+offset, x1, y1)
 		} else if !info.L[i] && info.R[i] {
-			Line = XmlLine(x0+21, y0+21, x2, y2)
+			Line = XmlLine(x0+offset, y0+offset, x2, y2)
 		} else {
 			Color = "lightgreen"
 		}
