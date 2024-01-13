@@ -7,10 +7,10 @@ import (
 type (
 	// BsTree 二叉搜索树 binary search tree https://oi-wiki.org/ds/bst/
 	// 实现了有序的搜索树，但是还有一个问题是容易出现数据倾斜，因此有了 AvlTree
-	BsTree[T ctool.Numberic] struct {
+	BsTree[T ctool.Ordered] struct {
 		Root *BsNode[T]
 	}
-	BsNode[T ctool.Numberic] struct {
+	BsNode[T ctool.Ordered] struct {
 		Left  *BsNode[T]
 		Right *BsNode[T]
 		Data  T
@@ -19,7 +19,7 @@ type (
 	}
 )
 
-func InitBsTree[T ctool.Numberic](vals ...T) *BsTree[T] {
+func InitBsTree[T ctool.Ordered](vals ...T) *BsTree[T] {
 	tree := &BsTree[T]{}
 	if len(vals) > 0 {
 		tree.Inserts(vals...)
@@ -53,7 +53,7 @@ func (b *BsTree[T]) Delete(val T) {
 	b.Root = removeNode(b.Root, val)
 }
 
-func removeNode[T ctool.Numberic](b *BsNode[T], val T) *BsNode[T] {
+func removeNode[T ctool.Ordered](b *BsNode[T], val T) *BsNode[T] {
 	if b == nil {
 		return nil
 	}
@@ -98,7 +98,7 @@ func (b *BsTree[T]) Rank(val T) int {
 	return rank(b.Root, val) + 1
 }
 
-func rank[T ctool.Numberic](node *BsNode[T], val T) int {
+func rank[T ctool.Ordered](node *BsNode[T], val T) int {
 	if node == nil {
 		return 0
 	}
@@ -111,7 +111,7 @@ func rank[T ctool.Numberic](node *BsNode[T], val T) int {
 	}
 }
 
-func sumCount[T ctool.Numberic](node *BsNode[T]) int {
+func sumCount[T ctool.Ordered](node *BsNode[T]) int {
 	if node == nil {
 		return 0
 	}
@@ -120,7 +120,8 @@ func sumCount[T ctool.Numberic](node *BsNode[T]) int {
 
 func (b *BsTree[T]) Min() T {
 	if b.Root == nil {
-		return 0
+		var zero T
+		return zero
 	}
 	var val T
 	p := b.Root
@@ -133,7 +134,8 @@ func (b *BsTree[T]) Min() T {
 
 func (b *BsTree[T]) Max() T {
 	if b.Root == nil {
-		return 0
+		var zero T
+		return zero
 	}
 	var val T
 	p := b.Root
@@ -144,11 +146,11 @@ func (b *BsTree[T]) Max() T {
 	return val
 }
 
-func newNode[T ctool.Numberic](val T) *BsNode[T] {
+func newNode[T ctool.Ordered](val T) *BsNode[T] {
 	return &BsNode[T]{Data: val, Count: 1}
 }
 
-func search[T ctool.Numberic](b *BsNode[T], val T) *BsNode[T] {
+func search[T ctool.Ordered](b *BsNode[T], val T) *BsNode[T] {
 	if b == nil {
 		return nil
 	}
@@ -162,7 +164,7 @@ func search[T ctool.Numberic](b *BsNode[T], val T) *BsNode[T] {
 	}
 }
 
-func insert[T ctool.Numberic](b *BsNode[T], val T) {
+func insert[T ctool.Ordered](b *BsNode[T], val T) {
 	if b.Data == val {
 		b.Count += 1
 		return
@@ -184,7 +186,7 @@ func insert[T ctool.Numberic](b *BsNode[T], val T) {
 }
 
 // 中序遍历
-func dfsIn[T ctool.Numberic](root *BsNode[T], result []T) []T {
+func dfsIn[T ctool.Ordered](root *BsNode[T], result []T) []T {
 	if root == nil {
 		return result
 	}

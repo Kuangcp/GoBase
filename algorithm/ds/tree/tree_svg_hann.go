@@ -64,7 +64,7 @@ func build(Data ...any) *biTree {
 	return &biTree{Root: node}
 }
 
-func buildByTree[T ctool.Numberic](root *BsNode[T]) *biTree {
+func buildByTree[T ctool.Ordered](root *BsNode[T]) *biTree {
 	if root == nil {
 		return &biTree{}
 	}
@@ -72,7 +72,7 @@ func buildByTree[T ctool.Numberic](root *BsNode[T]) *biTree {
 	return &biTree{Root: fillNode(root)}
 }
 
-func fillNode[T ctool.Numberic](root *BsNode[T]) *btNode {
+func fillNode[T ctool.Ordered](root *BsNode[T]) *btNode {
 	if root == nil {
 		return nil
 	}
