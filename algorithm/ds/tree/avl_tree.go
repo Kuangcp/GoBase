@@ -14,12 +14,12 @@ type (
 	// AvlTree 自平衡二叉搜索树  https://en.wikipedia.org/wiki/Self-balancing_binary_search_tree
 	// 平衡性的定义是指：以 T 为根节点的树，每一个节点的左子树和右子树高度差最多为 1。
 	// 显然地，增加了树维护成本，但是使得查询的成本变得均匀
-	AvlTree[T ctool.Numberic] struct {
+	AvlTree[T ctool.Ordered] struct {
 		Root *BsNode[T]
 	}
 )
 
-func InitAvlTree[T ctool.Numberic](val ...T) *AvlTree[T] {
+func InitAvlTree[T ctool.Ordered](val ...T) *AvlTree[T] {
 	tree := &AvlTree[T]{}
 	if len(val) > 0 {
 		tree.Inserts(val...)
@@ -68,7 +68,7 @@ func (b *AvlTree[T]) Insert(val T) {
 // reBalance 二叉平衡树在调整时需要保证中序遍历序列不变
 // 依据左右子树的差异，可分为四种情况：LL LR RR RL。
 // 又因为不平衡的情况仅由插入删除导致，每次不平衡后都处理为平衡，所以只会出现这四种不平衡情况（局部）
-func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
+func reBalance[T ctool.Ordered](root *BsNode[T]) *BsNode[T] {
 	if root == nil {
 		return nil
 	}
@@ -109,7 +109,7 @@ func reBalance[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
 	return root
 }
 
-func rotateLeft[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
+func rotateLeft[T ctool.Ordered](root *BsNode[T]) *BsNode[T] {
 	// 旧根右节点成为新根
 	newRoot := root.Right
 	// 新根左子树成为旧根右子树
@@ -119,7 +119,7 @@ func rotateLeft[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
 	return newRoot
 }
 
-func rotateRight[T ctool.Numberic](root *BsNode[T]) *BsNode[T] {
+func rotateRight[T ctool.Ordered](root *BsNode[T]) *BsNode[T] {
 	// 旧根左节点成为新根
 	newRoot := root.Left
 	// 新根右子树成为旧根左子树

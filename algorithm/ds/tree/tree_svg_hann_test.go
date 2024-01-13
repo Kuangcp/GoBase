@@ -22,7 +22,7 @@ func TestHannSvg(t *testing.T) {
 }
 
 func TestHannSvg2(t *testing.T) {
-	var ds = []int{1, 0, 5, 8, 3, 7, 2, 9}
+	var ds = []int{1, 0, 5, 8, 3, 7, 2, 9, 11, 5, 3}
 	balance := InitAvlTree[int](ds...)
 	tree := buildByTree(balance.Root)
 	tree.buildTreeInfo()
