@@ -46,8 +46,10 @@ func TestFile(t *testing.T) {
 	statisticsJudge(tokens, result, func(runes []rune) bool {
 		return len(runes) == 1
 	})
-	printSort(result, func(s string, i int) bool {
+	consumeSort(result, func(s string, i int) bool {
 		return i > 15
+	}, func(s string, i int) {
+		fmt.Println(s, i)
 	})
 	println("==============")
 
@@ -56,8 +58,10 @@ func TestFile(t *testing.T) {
 	statisticsJudge(tokens, result, func(runes []rune) bool {
 		return len(runes) > 1
 	})
-	printSort(result, func(s string, i int) bool {
+	consumeSort(result, func(s string, i int) bool {
 		return i > 10
+	}, func(s string, i int) {
+		fmt.Println(s, i)
 	})
 }
 
@@ -65,10 +69,15 @@ func TestDir(t *testing.T) {
 	tokenizer := InitTrieTokenizer("dict/dict.log")
 
 	tokenizer.Append("dict/code.dict")
+	tokenizer.Append("dict/zk.dict.log")
 
 	var result = make(map[string]int)
-	err := filepath.WalkDir("/home/zk/Note/WorkLog/", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir("/home/zk/Note/WorkLog/ZK/", func(path string, d fs.DirEntry, err error) error {
+		if strings.Contains(path, "node_modules") {
+			return nil
+		}
 		if strings.HasSuffix(path, "md") {
+			fmt.Println(path)
 			tokens := tokenizer.TokenizeFile(path)
 			statistics(tokens, result)
 		}
@@ -80,11 +89,16 @@ func TestDir(t *testing.T) {
 	}
 
 	format := time.Now().Format(ctool.HH_MM_SS_MS)
-	writer, _ := ctool.NewWriter("log/result-"+format+".log", true)
+	writer, _ := ctool.NewWriter("log/work-log-"+format+".log", true)
 	defer writer.Close()
-	for k, v := range result {
-		writer.WriteLine(fmt.Sprint(v, " ", k))
-	}
+
+	consumeSort(result, func(s string, i int) bool {
+		runes := []rune(s)
+
+		return len(runes) > 1 && i > 10
+	}, func(s string, i int) {
+		writer.WriteLine(fmt.Sprint(i, " ", s))
+	})
 }
 
 func statisticsError(tokens []string, result map[string]int) {
@@ -118,7 +132,7 @@ func statistics(tokens []string, result map[string]int) {
 	}
 }
 
-func printSort(data map[string]int, filter func(string, int) bool) {
+func consumeSort(data map[string]int, filter func(string, int) bool, han func(string, int)) {
 	type KV struct {
 		k string
 		v int
@@ -134,9 +148,9 @@ func printSort(data map[string]int, filter func(string, int) bool) {
 		return result[i].v < result[j].v
 	})
 	for _, kv := range result {
-		fmt.Println(kv.k, kv.v)
+		//fmt.Println(kv.k, kv.v)
+		han(kv.k, kv.v)
 	}
-
 }
 func statisticsJudge(tokens []string, result map[string]int, filter func([]rune) bool) {
 	for _, t := range tokens {
