@@ -21,7 +21,36 @@ type MonitorItem struct {
 	widget             *gtk.DrawingArea
 }
 
+func buildLineOneItem(grid *gtk.Grid, left *MonitorItem) {
+	grid.Attach(left.buildItem(), 0, 0, width*2, height)
+
+	fillLineBackground(grid)
+}
+
 func buildLineItem(grid *gtk.Grid, left, right *MonitorItem) {
+	fillMidSeparation(grid)
+
+	grid.Attach(left.buildItem(), 0, 0, width, height)
+	grid.Attach(right.buildItem(), 0, 0, width, height)
+
+	fillLineBackground(grid)
+}
+
+func fillLineBackground(grid *gtk.Grid) {
+	background, err := gtk.DrawingAreaNew()
+	if err != nil {
+		log.Fatal("", err)
+	}
+	background.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
+		cr.SetSourceRGBA(50, 50, 50, 0.6)
+		cr.Rectangle(0, 0, lineWeight+width, lineWeight)
+		cr.Fill()
+	})
+	grid.Attach(background, 0, 0, width, height)
+}
+
+func fillMidSeparation(grid *gtk.Grid) {
+	// 黑色隔断
 	mid, err := gtk.DrawingAreaNew()
 	if err != nil {
 		log.Fatal("", err)
@@ -33,20 +62,6 @@ func buildLineItem(grid *gtk.Grid, left, right *MonitorItem) {
 		cr.Fill()
 	})
 	grid.Attach(mid, 0, 0, width, height)
-
-	grid.Attach(left.buildItem(), 0, 0, width, height)
-	grid.Attach(right.buildItem(), 0, 0, width, height)
-
-	background, err := gtk.DrawingAreaNew()
-	if err != nil {
-		log.Fatal("", err)
-	}
-	background.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
-		cr.SetSourceRGB(200, 200, 200)
-		cr.Rectangle(0, 0, lineWeight+width, lineWeight)
-		cr.Fill()
-	})
-	grid.Attach(background, 0, 0, width, height)
 }
 
 // https://docs.gtk.org/gtk3/class.DrawingArea.html
@@ -65,6 +80,10 @@ func (t *MonitorItem) buildItem() *gtk.DrawingArea {
 	return t.widget
 }
 
+func memoryInfoOne(t *MonitorItem) {
+	memInfo, _ := mem.VirtualMemory()
+	t.x = (100 - memInfo.UsedPercent) * width / 100
+}
 func memoryInfo(t *MonitorItem) {
 	memInfo, _ := mem.VirtualMemory()
 	t.x = (100 - memInfo.UsedPercent) * width / 200

@@ -18,6 +18,7 @@ import (
 
 var (
 	DashboardMsMode bool // 以 ms 格式刷新时间
+	SwapMemory      bool
 	DashboardMs     = DefaultRefreshMs
 )
 
@@ -61,6 +62,7 @@ var info = ctool.HelpInfo{
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help info"},
 		{Short: "-m", BoolVar: &DashboardMsMode, Comment: "show time with ms"},
+		{Short: "-s", BoolVar: &SwapMemory, Comment: "show swap memory rate"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-host", Value: "host", Comment: "redis host"},
@@ -113,12 +115,20 @@ func createWindow() {
 	win.SetDefaultSize(width, height)
 
 	win.SetPosition(gtk.WIN_POS_MOUSE)
-	gridWidget := createMainGrid()
-	win.Add(gridWidget)
+	win.Add(createMainGrid())
 
 	win.Connect("destroy", gtk.MainQuit)
 	bindMouseActionForWindow()
 
+	// Load CSS stylesheet
+	mRefProvider, _ := gtk.CssProviderNew()
+	mRefProvider.LoadFromPath("style.css")
+
+	// Apply to whole app
+	screen, _ := gdk.ScreenGetDefault()
+	gtk.AddProviderForScreen(screen, mRefProvider, 1)
+
+	win.SetOpacity(0)
 	app.AddWindow(win)
 	win.ShowAll()
 
@@ -146,13 +156,20 @@ func createMainGrid() *gtk.Widget {
 	kpmLabel.SetVExpand(true)
 	grid.Attach(kpmLabel, 0, 0, width, height)
 
-	var items []*MonitorItem
-	left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfo}
-	right := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
-	items = append(items, left, right)
-	buildLineItem(grid, left, right)
-
-	go refreshDrawArea(items)
+	if SwapMemory {
+		var items []*MonitorItem
+		left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfo}
+		right := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
+		items = append(items, left, right)
+		buildLineItem(grid, left, right)
+		go refreshDrawArea(items)
+	} else {
+		var items []*MonitorItem
+		left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfoOne}
+		items = append(items, left)
+		buildLineOneItem(grid, left)
+		go refreshDrawArea(items)
+	}
 
 	return &grid.Container.Widget
 }
@@ -196,13 +213,14 @@ func latestLabelStr(now time.Time) string {
 	}
 
 	// style https://blog.csdn.net/bitscro/article/details/3874616
-	return "<span font_family='Cascadia Mono PL' font_desc='10'>" +
-		// time
-		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(timeFmt)) + "</span>\n" +
-		// kpm
+	// 时间居中调整： 时间的fmt以及字体大小
+	return "<span font_desc='10'>" +
+		// now time
+		"<span foreground='#00FFF6' font_desc='10'>" + fmt.Sprintf("%9s", now.Format(timeFmt)) + "</span>\n" +
+		// today kpm
 		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
-		// max kpm
-		"<span foreground='gray' font_desc='8'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
+		// today max kpm
+		"<span foreground='gray' font_desc='6'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
 		// today total
 		"<span foreground='white' font_desc='6'>" + fmt.Sprintf("%-6d", total) + "</span>" +
 		"</span>"
