@@ -17,7 +17,7 @@ import (
 
 func TestSelfDict(t *testing.T) {
 	// https://github.com/mapull/chinese-dictionary
-	bts, _ := os.ReadFile("/home/zk/Code/go/chinese-dictionary/word/word.json")
+	bts, _ := os.ReadFile("dict/word.json")
 	var sli []map[string]interface{}
 	json.Unmarshal(bts, &sli)
 
@@ -38,7 +38,7 @@ func TestFile(t *testing.T) {
 	tokenizer := InitTrieTokenizer("dict/dict.log")
 	tokenizer.Append("dict/code.dict")
 	tokenizer.Append("dict/zk.dict.log")
-	tokens := tokenizer.TokenizeFile("meeting_record.md")
+	tokens := tokenizer.TokenizeFile("input/rep.txt")
 	//println(FmtTokens(tokens))
 
 	// Error
@@ -47,7 +47,7 @@ func TestFile(t *testing.T) {
 		return len(runes) == 1
 	})
 	consumeSort(result, func(s string, i int) bool {
-		return i > 15
+		return i > 2
 	}, func(s string, i int) {
 		fmt.Println(s, i)
 	})
@@ -72,7 +72,7 @@ func TestDir(t *testing.T) {
 	tokenizer.Append("dict/zk.dict.log")
 
 	var result = make(map[string]int)
-	err := filepath.WalkDir("/home/zk/Note/WorkLog/ZK/", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir("input/diary/", func(path string, d fs.DirEntry, err error) error {
 		if strings.Contains(path, "node_modules") {
 			return nil
 		}
@@ -88,8 +88,16 @@ func TestDir(t *testing.T) {
 		return
 	}
 
-	format := time.Now().Format(ctool.HH_MM_SS_MS)
-	writer, _ := ctool.NewWriter("log/work-log-"+format+".log", true)
+	consumeSort(result, func(s string, i int) bool {
+		runes := []rune(s)
+		return len(runes) == 1 && i > 10
+	}, func(s string, i int) {
+		fmt.Println(s, i)
+	})
+
+	now := time.Now()
+	format := now.Format(ctool.HH_MM_SS_MS)
+	writer, _ := ctool.NewWriter("log/"+fmt.Sprint(now.UnixMilli())+"-"+format+".log", true)
 	defer writer.Close()
 
 	consumeSort(result, func(s string, i int) bool {
