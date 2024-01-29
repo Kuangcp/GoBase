@@ -18,7 +18,6 @@ type MonitorItem struct {
 	initX, initY, x, y float64
 	red, green, blue   float64
 	deltaFunc          func(*MonitorItem)
-	widget             *gtk.DrawingArea
 }
 
 func buildLineOneItem(grid *gtk.Grid, left *MonitorItem) {
@@ -76,8 +75,7 @@ func (t *MonitorItem) buildItem() *gtk.DrawingArea {
 		cr.Rectangle(t.initX, t.initY, lineWeight+t.x, lineWeight+t.y)
 		cr.Fill()
 	})
-	t.widget = da
-	return t.widget
+	return da
 }
 
 func memoryInfoOne(t *MonitorItem) {
