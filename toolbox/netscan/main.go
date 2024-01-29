@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -34,6 +35,7 @@ func init() {
 func main() {
 	flag.Parse()
 	if help {
+		logger.Info("netscan -i 192.168.1.0/24")
 		logger.Info("netscan -i 192.168.1.3")
 		logger.Info("netscan -i 192.168.1.3 -p 443")
 		logger.Info("netscan -i 192.168.1.3 -P -c 10")
@@ -48,41 +50,67 @@ func main() {
 	}
 	total = end - start + 1
 
+	if strings.Contains(hostStr, "/") {
+		_, ipNet, err := net.ParseCIDR(hostStr)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+
+		startHost, endHost := AddressRange(ipNet)
+		logger.Info("scan range:", startHost, endHost)
+		cur := startHost
+		a, _ := sizedpool.New(sizedpool.PoolOption{Size: 100})
+
+		for !cur.Equal(endHost) {
+			cur = Inc(cur)
+			h := cur.String()
+			a.Run(func() {
+				//fmt.Println("======", cur.String())
+				scanHost(start, end, h)
+			})
+		}
+		a.Wait()
+	}
+
+	scanHost(start, end, hostStr)
+}
+
+func scanHost(start, end int, host string) {
 	if con != 0 {
-		parallelScan(start, end)
+		parallelScan(start, end, host)
 		return
 	}
 
 	if end == 0 {
-		pingS(hostStr, fmt.Sprint(start))
+		pingS(host, fmt.Sprint(start))
 	} else {
 		var ps = make(chan int, total)
-		bar := pb.StartNew(total)
+		bar := pb.Full.Start(total)
 		for i := start; i <= end; i++ {
-			if ping(hostStr, fmt.Sprint(i)) {
+			if ping(host, fmt.Sprint(i)) {
 				ps <- i
 			}
 			bar.Increment()
 		}
+		readResult(host, ps)
 		bar.Finish()
-		readResult(ps)
 	}
 }
 
-func parallelScan(start, end int) {
+func parallelScan(start, end int, host string) {
 	noLimit := con == -1
 
 	// 并不一定无限制的效率更高，创建太多协程反而使得调度更耗时吞吐量下降明细
 	if noLimit {
 		var ps = make(chan int, 1000)
-
 		var w sync.WaitGroup
 		w.Add(total)
 		bar := pb.Full.Start(total)
 		for i := start; i <= end; i++ {
 			i := i
 			go func() {
-				if ping(hostStr, fmt.Sprint(i)) {
+				if ping(host, fmt.Sprint(i)) {
 					ps <- i
 				}
 				bar.Increment()
@@ -91,7 +119,7 @@ func parallelScan(start, end int) {
 		}
 		w.Wait()
 		bar.Finish()
-		readResult(ps)
+		readResult(host, ps)
 	} else {
 		var ps = make(chan int, 1000)
 		group, _ := sizedpool.New(sizedpool.PoolOption{Size: con})
@@ -99,7 +127,7 @@ func parallelScan(start, end int) {
 		for i := start; i <= end; i++ {
 			i := i
 			group.Run(func() {
-				if ping(hostStr, fmt.Sprint(i)) {
+				if ping(host, fmt.Sprint(i)) {
 					ps <- i
 				}
 				bar.Increment()
@@ -107,12 +135,12 @@ func parallelScan(start, end int) {
 		}
 
 		group.Wait()
-		readResult(ps)
+		readResult(host, ps)
 		bar.Finish()
 	}
 }
 
-func readResult(ps chan int) {
+func readResult(host string, ps chan int) {
 	close(ps)
 	var res []int
 	for p := range ps {
@@ -122,7 +150,7 @@ func readResult(ps chan int) {
 		return res[i] < res[j]
 	})
 	for _, re := range res {
-		fmt.Printf("%v\t%s\t\n", re, "open")
+		fmt.Printf("%v %v\t%s\t\n", host, re, "open")
 	}
 }
 
@@ -156,12 +184,12 @@ func parsePort() (int, int, error) {
 
 func pingS(host, port string) {
 	if ping(host, port) {
-		fmt.Printf("%v %s \n", port, "open")
+		fmt.Printf("%v %v %s \n", host, port, "open")
 	}
 }
 
 func ping(host, port string) bool {
 	addr := fmt.Sprintf("%s:%s", host, port)
-	_, err := net.Dial("tcp", addr)
+	_, err := net.DialTimeout("tcp", addr, time.Second*3)
 	return err == nil
 }
