@@ -35,7 +35,7 @@ func init() {
 func main() {
 	flag.Parse()
 	if help {
-		logger.Info("netscan -i 192.168.1.0/24")
+		logger.Info("netscan -i 192.168.1.0/24 -c 100")
 		logger.Info("netscan -i 192.168.1.3")
 		logger.Info("netscan -i 192.168.1.3 -p 443")
 		logger.Info("netscan -i 192.168.1.3 -P -c 10")
@@ -123,6 +123,7 @@ func parallelScan(start, end int, host string, bar *pb.ProgressBar) {
 	noLimit := con == -1
 
 	// 并不一定无限制的效率更高，创建太多协程反而使得调度更耗时吞吐量下降明细
+	// 但是目标端网络延迟高且大量端口未开启时创建大量协程的效率会更高，因为大量的协程会阻塞在IO出让CPU执行，相当于网络延迟被忽视了
 	if noLimit {
 		var ps = make(chan int, 1000)
 		var w sync.WaitGroup

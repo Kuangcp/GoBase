@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-// https://github.com/apparentlymart/go-cidr
+// AddressRange https://github.com/apparentlymart/go-cidr
 func AddressRange(network *net.IPNet) (net.IP, net.IP) {
 	// the first IP is easy
 	firstIP := network.IP
