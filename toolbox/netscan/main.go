@@ -15,23 +15,33 @@ import (
 
 var (
 	portStr string
+	allPort bool
 	hostStr string
 	con     int
-	sorted  bool
+	help    bool
 
 	total int
 )
 
 func init() {
 	flag.StringVar(&portStr, "p", "80", "port")
-	flag.StringVar(&hostStr, "h", "", "host")
+	flag.StringVar(&hostStr, "i", "", "host")
 	flag.IntVar(&con, "c", 0, "parallel count")
-	flag.BoolVar(&sorted, "s", false, "sorted output")
+	flag.BoolVar(&allPort, "P", false, "all port")
+	flag.BoolVar(&help, "h", false, "help info")
 }
 
 func main() {
 	flag.Parse()
-	logger.Info("Start", hostStr, portStr)
+	if help {
+		logger.Info("netscan -i 192.168.1.3")
+		logger.Info("netscan -i 192.168.1.3 -p 443")
+		logger.Info("netscan -i 192.168.1.3 -P -c 10")
+		logger.Info("netscan -i 192.168.1.3 -p 5000-8000 -c 10")
+		return
+	}
+
+	logger.Info("Start scan", hostStr, portStr)
 	start, end, err := parsePort()
 	if err != nil {
 		return
@@ -43,72 +53,66 @@ func main() {
 		return
 	}
 
-	if end != 0 {
+	if end == 0 {
+		pingS(hostStr, fmt.Sprint(start))
+	} else {
+		var ps = make(chan int, total)
 		bar := pb.StartNew(total)
 		for i := start; i <= end; i++ {
+			if ping(hostStr, fmt.Sprint(i)) {
+				ps <- i
+			}
 			bar.Increment()
-			pingS(hostStr, fmt.Sprint(i))
 		}
 		bar.Finish()
-	} else {
-		pingS(hostStr, fmt.Sprint(start))
+		readResult(ps)
 	}
 }
 
 func parallelScan(start, end int) {
 	noLimit := con == -1
 
-	var doPing = func(i int, ps chan int) {
-		if sorted {
-			if ping(hostStr, fmt.Sprint(i)) {
-				ps <- i
-			}
-		} else {
-			pingS(hostStr, fmt.Sprint(i))
-		}
-	}
-
 	// 并不一定无限制的效率更高，创建太多协程反而使得调度更耗时吞吐量下降明细
 	if noLimit {
-		var ps chan int
-		if sorted {
-			ps = make(chan int, end-start+1)
-		}
+		var ps = make(chan int, 1000)
 
 		var w sync.WaitGroup
 		w.Add(total)
+		bar := pb.Full.Start(total)
 		for i := start; i <= end; i++ {
 			i := i
 			go func() {
-				doPing(i, ps)
+				if ping(hostStr, fmt.Sprint(i)) {
+					ps <- i
+				}
+				bar.Increment()
 				w.Done()
 			}()
 		}
 		w.Wait()
+		bar.Finish()
 		readResult(ps)
 	} else {
-		var ps chan int
-		if sorted {
-			ps = make(chan int, end-start+1)
-		}
+		var ps = make(chan int, 1000)
 		group, _ := sizedpool.New(sizedpool.PoolOption{Size: con})
+		bar := pb.Full.Start(total)
 		for i := start; i <= end; i++ {
 			i := i
 			group.Run(func() {
-				doPing(i, ps)
+				if ping(hostStr, fmt.Sprint(i)) {
+					ps <- i
+				}
+				bar.Increment()
 			})
 		}
 
 		group.Wait()
 		readResult(ps)
+		bar.Finish()
 	}
 }
 
 func readResult(ps chan int) {
-	if !sorted {
-		return
-	}
-
 	close(ps)
 	var res []int
 	for p := range ps {
@@ -123,6 +127,9 @@ func readResult(ps chan int) {
 }
 
 func parsePort() (int, int, error) {
+	if allPort {
+		return 1, 65535, nil
+	}
 	portRange := strings.Contains(portStr, "-")
 	if portRange {
 		pair := strings.Split(portStr, "-")
@@ -149,18 +156,12 @@ func parsePort() (int, int, error) {
 
 func pingS(host, port string) {
 	if ping(host, port) {
-		fmt.Printf("%v\t%s\t\n", port, "open")
+		fmt.Printf("%v %s \n", port, "open")
 	}
 }
 
 func ping(host, port string) bool {
 	addr := fmt.Sprintf("%s:%s", host, port)
 	_, err := net.Dial("tcp", addr)
-	if err == nil {
-		//fmt.Printf("%v\t%s\t\n", port, "open")
-		return true
-	} else {
-		//fmt.Printf("%v\t%s\t\n", port, "closed")
-		return false
-	}
+	return err == nil
 }
