@@ -63,7 +63,7 @@ func execCommand(command string) (string, bool) {
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		logger.Error(err)
+		logger.Error(command, err)
 		return "", false
 	}
 
