@@ -8,6 +8,8 @@ import (
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"github.com/shirou/gopsutil/mem"
 	"log"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -97,6 +99,7 @@ func main() {
 	// killer
 	var list = []string{"firefox"}
 	go runKiller(list)
+	go oomKiller()
 
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
 	store.InitConnection(option, false)
@@ -116,11 +119,54 @@ func main() {
 	//gtk.Main()
 }
 
+func oomKiller() {
+	type Score struct {
+		pid   string
+		score int
+	}
+	for range time.NewTicker(time.Second * 10).C {
+		memInfo, _ := mem.VirtualMemory()
+		fmt.Println(memInfo.UsedPercent)
+		if memInfo.UsedPercent < 95 {
+			continue
+		}
+		var list []Score
+		out, _ := execCommand("ls /proc/*/oom_score")
+		pids := strings.Split(out, "\n")
+		for _, pid := range pids {
+			if strings.Contains(pid, "self") || pid == "" {
+				continue
+			}
+			oomScore, success := execCommand("cat " + pid)
+			if !success {
+				continue
+			}
+
+			id := strings.Split(pid, "/")[2]
+			//fmt.Printf("%v  %v [%v] \n", id, pid, strings.TrimSpace(oomScore))
+			score, _ := strconv.Atoi(strings.TrimSpace(oomScore))
+			if score == 0 {
+				continue
+			}
+			list = append(list, Score{pid: id, score: score})
+		}
+		sort.Slice(list, func(i, j int) bool {
+			return list[i].score >= list[j].score
+		})
+		if len(list) == 0 {
+			continue
+		}
+		logger.Error("all: ", len(list), " kill PID:", list[0].pid, list[0].score)
+		execCommand("kill -9" + list[0].pid)
+	}
+
+}
+
 func runKiller(list []string) {
 	for range time.NewTicker(time.Second * 5).C {
 		memInfo, _ := mem.VirtualMemory()
 		fmt.Println(memInfo.UsedPercent)
-		if memInfo.UsedPercent < 90 {
+		if memInfo.UsedPercent < 92 {
 			continue
 		}
 		for _, app := range list {
