@@ -126,7 +126,7 @@ func oomKiller() {
 	}
 	for range time.NewTicker(time.Second * 10).C {
 		memInfo, _ := mem.VirtualMemory()
-		fmt.Println(memInfo.UsedPercent)
+		//fmt.Println(memInfo.UsedPercent)
 		if memInfo.UsedPercent < 95 {
 			continue
 		}
@@ -165,7 +165,7 @@ func oomKiller() {
 func runKiller(list []string) {
 	for range time.NewTicker(time.Second * 5).C {
 		memInfo, _ := mem.VirtualMemory()
-		fmt.Println(memInfo.UsedPercent)
+		//fmt.Println(memInfo.UsedPercent)
 		if memInfo.UsedPercent < 92 {
 			continue
 		}
