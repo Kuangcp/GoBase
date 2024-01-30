@@ -188,7 +188,7 @@ func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, string) {
 			logger.Error(err)
 		}
 
-		return parse, Replace
+		return parse, Modify
 	}
 
 	for _, conf := range trackList {
