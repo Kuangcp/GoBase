@@ -83,16 +83,13 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	}
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
 	reqLog := reqCtx.reqLog
-
-	resp.Header.Add("Ack", "dev-proxy: "+reqCtx.proxyType)
-
+	resp.Header.Add("Ack-Proxy", reqCtx.proxyType+"  "+ctx.Req.Host)
 	startMs := reqCtx.startMs
 
 	bodyBt, body := ctool.CopyStream(resp.Body)
 	resp.Body = body
 
 	resMes := core.Message{Header: resp.Header, Body: bodyBt}
-
 	endMs := time.Now().UnixMilli()
 	waste := endMs - startMs
 

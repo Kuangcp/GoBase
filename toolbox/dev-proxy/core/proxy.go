@@ -27,8 +27,6 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Ack", "dev-proxy")
-
 	defer func() {
 		re := recover()
 		if re != nil {
@@ -48,6 +46,8 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	if findNewUrl != nil {
 		proxyLog, reqLog = RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
 	}
+
+	w.Header().Add("Ack-Proxy", proxyType+"  "+r.Host)
 
 	// TODO websocket
 	//if websocketHandler(w, r, proxyReq) {
