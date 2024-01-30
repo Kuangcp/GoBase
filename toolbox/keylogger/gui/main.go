@@ -6,7 +6,9 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
+	"github.com/shirou/gopsutil/mem"
 	"log"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -90,7 +92,11 @@ func main() {
 	}
 
 	//main2()
-	go notifyAny()
+	//go notifyAny()
+
+	// killer
+	var list = []string{"firefox"}
+	go runKiller(list)
 
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
 	store.InitConnection(option, false)
@@ -108,6 +114,30 @@ func main() {
 
 	//createWindow()
 	//gtk.Main()
+}
+
+func runKiller(list []string) {
+	for range time.NewTicker(time.Second * 5).C {
+		memInfo, _ := mem.VirtualMemory()
+		fmt.Println(memInfo.UsedPercent)
+		if memInfo.UsedPercent < 90 {
+			continue
+		}
+		for _, app := range list {
+			command, _ := execCommand("ps ux | awk '/" + app + "/ && !/awk/ {print $2}'")
+			if command == "" {
+				continue
+			}
+			pids := strings.Split(command, "\n")
+			for _, id := range pids {
+				if id == "" {
+					continue
+				}
+				logger.Warn("kill " + id)
+				execCommand("kill " + id)
+			}
+		}
+	}
 }
 
 func createWindow() {

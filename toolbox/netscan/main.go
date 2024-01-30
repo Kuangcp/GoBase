@@ -35,11 +35,12 @@ func init() {
 func main() {
 	flag.Parse()
 	if help {
-		logger.Info("netscan -i 192.168.1.0/24 -c 100")
-		logger.Info("netscan -i 192.168.1.3")
-		logger.Info("netscan -i 192.168.1.3 -p 443")
-		logger.Info("netscan -i 192.168.1.3 -P -c 10")
-		logger.Info("netscan -i 192.168.1.3 -p 5000-8000 -c 10")
+		fmt.Println("Usage: ")
+		fmt.Println("    netscan -i 192.168.1.0/24 -c 100")
+		fmt.Println("    netscan -i 192.168.1.3")
+		fmt.Println("    netscan -i 192.168.1.3 -p 443")
+		fmt.Println("    netscan -i 192.168.1.3 -P -c 10")
+		fmt.Println("    netscan -i 192.168.1.3 -p 5000-8000 -c 10")
 		return
 	}
 
