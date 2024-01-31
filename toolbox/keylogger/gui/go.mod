@@ -10,6 +10,7 @@ require (
 	github.com/kuangcp/logger v1.0.9
 	github.com/onsi/gomega v1.31.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 )
 

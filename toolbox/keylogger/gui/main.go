@@ -187,22 +187,22 @@ func runKiller(list []string) {
 }
 
 func createWindow() {
+	grid := createMainGrid()
+
 	win, _ = gtk.WindowNew(gtk.WINDOW_POPUP)
 	win.SetDefaultSize(width, height)
-
 	win.SetPosition(gtk.WIN_POS_MOUSE)
-	win.Add(createMainGrid())
-
+	win.Add(grid)
 	win.Connect("destroy", gtk.MainQuit)
 	bindMouseActionForWindow()
 
 	// Load CSS stylesheet
-	mRefProvider, _ := gtk.CssProviderNew()
-	mRefProvider.LoadFromPath("style.css")
+	//mRefProvider, _ := gtk.CssProviderNew()
+	//mRefProvider.LoadFromPath("style.css")
 
 	// Apply to whole app
-	screen, _ := gdk.ScreenGetDefault()
-	gtk.AddProviderForScreen(screen, mRefProvider, 1)
+	//screen, _ := gdk.ScreenGetDefault()
+	//gtk.AddProviderForScreen(screen, mRefProvider, 1)
 
 	win.SetOpacity(0)
 	app.AddWindow(win)
@@ -232,20 +232,22 @@ func createMainGrid() *gtk.Widget {
 	kpmLabel.SetVExpand(true)
 	grid.Attach(kpmLabel, 0, 0, width, height)
 
+	var items []*MonitorItem
+	cpuItem := &MonitorItem{initX: 0, initY: 0, red: 0, height: 3.8 * height, green: 100, blue: 50, deltaFunc: cpuInfo}
+	drawCpuItem(grid, cpuItem)
+	items = append(items, cpuItem)
+
 	if SwapMemory {
-		var items []*MonitorItem
 		left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfo}
 		right := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
+		drawMemAndSwapItem(grid, left, right)
 		items = append(items, left, right)
-		buildLineItem(grid, left, right)
-		go refreshDrawArea(items)
 	} else {
-		var items []*MonitorItem
 		left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfoOne}
+		drawMemItem(grid, left)
 		items = append(items, left)
-		buildLineOneItem(grid, left)
-		go refreshDrawArea(items)
 	}
+	go refreshDrawArea(items)
 
 	return &grid.Container.Widget
 }
