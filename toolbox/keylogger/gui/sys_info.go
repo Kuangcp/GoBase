@@ -4,8 +4,10 @@ import (
 	"github.com/gotk3/gotk3/cairo"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 	"log"
+	"math"
 	"time"
 )
 
@@ -15,27 +17,43 @@ const (
 )
 
 type MonitorItem struct {
+	height             int
 	initX, initY, x, y float64
 	red, green, blue   float64
 	deltaFunc          func(*MonitorItem)
 }
 
-func buildLineOneItem(grid *gtk.Grid, left *MonitorItem) {
-	grid.Attach(left.buildItem(), 0, 0, width*2, height)
+func drawCpuItem(grid *gtk.Grid, item *MonitorItem) {
+	grid.Attach(item.buildItem(), 0, 0, 1, height)
 
-	fillLineBackground(grid)
+	background, err := gtk.DrawingAreaNew()
+	if err != nil {
+		log.Fatal("", err)
+	}
+	background.Connect("draw", func(da *gtk.DrawingArea, cr *cairo.Context) {
+		cr.SetSourceRGBA(50, 50, 50, 0.6)
+		cr.Rectangle(0, 0, 1, float64(item.height))
+		cr.Fill()
+	})
+	grid.Attach(background, 0, 0, 1, item.height)
 }
 
-func buildLineItem(grid *gtk.Grid, left, right *MonitorItem) {
-	fillMidSeparation(grid)
+func drawMemItem(grid *gtk.Grid, left *MonitorItem) {
+	grid.Attach(left.buildItem(), 0, 0, width*2, height)
+
+	drawLineBackground(grid)
+}
+
+func drawMemAndSwapItem(grid *gtk.Grid, left, right *MonitorItem) {
+	drawMidSeparation(grid)
 
 	grid.Attach(left.buildItem(), 0, 0, width, height)
 	grid.Attach(right.buildItem(), 0, 0, width, height)
 
-	fillLineBackground(grid)
+	drawLineBackground(grid)
 }
 
-func fillLineBackground(grid *gtk.Grid) {
+func drawLineBackground(grid *gtk.Grid) {
 	background, err := gtk.DrawingAreaNew()
 	if err != nil {
 		log.Fatal("", err)
@@ -48,7 +66,7 @@ func fillLineBackground(grid *gtk.Grid) {
 	grid.Attach(background, 0, 0, width, height)
 }
 
-func fillMidSeparation(grid *gtk.Grid) {
+func drawMidSeparation(grid *gtk.Grid) {
 	// 黑色隔断
 	mid, err := gtk.DrawingAreaNew()
 	if err != nil {
@@ -82,9 +100,19 @@ func memoryInfoOne(t *MonitorItem) {
 	memInfo, _ := mem.VirtualMemory()
 	t.x = (100 - memInfo.UsedPercent) * width / 100
 }
+
 func memoryInfo(t *MonitorItem) {
 	memInfo, _ := mem.VirtualMemory()
 	t.x = (100 - memInfo.UsedPercent) * width / 200
+}
+
+func cpuInfo(t *MonitorItem) {
+	go func() {
+		// 阻塞计算采样区间内的平均值
+		memInfo, _ := cpu.Percent(time.Millisecond*100, false)
+		t.y = math.Round((memInfo[0]) * float64(t.height) / 100)
+		//fmt.Println(memInfo[0], t.height, t.y)
+	}()
 }
 
 func swapMemoryInfo(t *MonitorItem) {
