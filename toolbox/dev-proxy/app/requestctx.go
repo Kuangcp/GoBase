@@ -6,6 +6,7 @@ type ReqCtx struct {
 	reqLog      *core.ReqLog[core.Message]
 	proxyLog    string
 	proxyType   string
-	startMs     int64
+	startReq    int64
+	receiveReq  int64
 	needStorage bool
 }
