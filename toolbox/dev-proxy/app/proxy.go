@@ -37,6 +37,7 @@ func (e *EventHandler) Auth(ctx *goproxy.Context, rw http.ResponseWriter) {
 }
 
 func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
+	receive := time.Now()
 	// 修改header
 	//ctx.Req.Header.Add("X-Request-Id", ctx.Data["req_id"].(string))
 
@@ -73,7 +74,8 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 		proxyLog:    proxyLog,
 		needStorage: needStorage,
 		proxyType:   proxyType,
-		startMs:     now.UnixMilli(),
+		startReq:    now.UnixMilli(),
+		receiveReq:  receive.UnixMilli(),
 	}
 }
 
@@ -84,7 +86,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
 	reqLog := reqCtx.reqLog
 	resp.Header.Add("Ack-Proxy", reqCtx.proxyType+"  "+ctx.Req.Host)
-	startMs := reqCtx.startMs
+	startMs := reqCtx.startReq
 
 	bodyBt, body := ctool.CopyStream(resp.Body)
 	resp.Body = body
@@ -101,9 +103,13 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	}
 
 	core.HandleCompressed(&resMes, resp)
-
 	if reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
 		core.TrySaveLog(reqLog, resp)
+	}
+
+	proxyMs := time.Now().UnixMilli() - reqCtx.receiveReq
+	if proxyMs-waste > 5 {
+		logger.Warn("%4vms %v", proxyMs, reqCtx.proxyLog)
 	}
 }
 
