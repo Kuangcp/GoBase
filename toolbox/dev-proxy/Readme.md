@@ -23,16 +23,20 @@
 技术栈: Golang Redis LevelDB
 
 ## 2. Install
+
 > 当前代理有两套实现：一个需要安装证书支持HTTPS解密和修改，另一个仅支持HTTPS密文转发，但是都支持HTTP代理和修改。
 > 镜像内默认是HTTPS实现
 
-### Docker 
+### Docker
+
 docker run --init -d --name dev-proxy --network host mythkuang/dev-proxy:1.3
+
 - 低版本Docker还会遇到[issues](https://github.com/docker-library/golang/issues/467) 需要run添加参数：--privileged=true
 
 ### Go
-1. go install 
-1. dev-proxy 
+
+1. go install
+1. dev-proxy
 
 ******************
 
@@ -41,11 +45,13 @@ docker run --init -d --name dev-proxy --network host mythkuang/dev-proxy:1.3
 HTTPS 证书安装： https://github.com/ouqiang/goproxy
 
 ### 3.1. Config页面方式
+
 按页面填写配置规则后 按 Ctrl S 保存或者点击保存
 
 配置规则参考配置文件中配置的示例
 
 ### 3.2. 配置文件方式
+
 > 配置文件目录路径： ~/.dev-proxy/dev-proxy.json
 
 - groups: 抓包并修改请求： 按正则匹配，配置域名或路径都可以
@@ -81,32 +87,31 @@ HTTPS 证书安装： https://github.com/ouqiang/goproxy
     ]
   }
 }
-
 ```
 
-routers 每两个组成一对, 例如: 
+routers 每两个组成一对, 例如:
 
 > src: http://host1:port1/api   
-> dst: http://host2:port2  
+> dst: http://host2:port2
 
 - /api/a -> /a
 - /api/b/c -> /b/c
 
 > src: http://host1:port1/api  
-> dst: http://host2:port2/api2  
+> dst: http://host2:port2/api2
+
 - /api/a -> /api2/a
 - host1:port1/api2/a -> host1:port1/api2/a
 
-## 4. Docker 镜像构建
+## 4. Docker部署
 
-- go build -o dev-proxy.bin
-- docker build -t dev-proxy:1.x .
+- sh run.sh 完成打包镜像和容器重启
 
 ## 5. TODO
 
 1. [x] 按URL域名统计请求频率和时间分布
 1. [ ] websocket 代理
-1. 移除Redis依赖, 缓存层使用 文件+内存 存储
+1. [ ] 移除Redis依赖, 缓存层使用 文件+内存 存储
     - 优点: 减少组件依赖
     - 缺点: 数据的一致性保证, 数据完整性保证 
 

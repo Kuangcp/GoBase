@@ -1,4 +1,4 @@
-package main
+package raft
 
 import (
 	"fmt"
@@ -7,33 +7,53 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	Follower  = "Follower"
 	Leader    = "Leader"
 	Candidate = "Candidate"
+
+	// 投票
+	act_vote = 1
+	// leader 宣告自身
+	act_declare = 2
+	// leader 日志复制
+	act_log_distri = 3
+	// 节点同步信息
+	act_syncInfo = 4
+)
+
+var (
+	ElectionTimeoutSec = 3
 )
 
 type (
 	Node struct {
 		host net.IP
 		port int
-		role string
+		//role string
 	}
 	// Raft: https://raft.github.io/
 	Raft struct {
-		term   int
-		self   *Node
-		leader *Node
-		hosts  map[string]*Node
+		term            int
+		role            string
+		self            *Node
+		leader          *Node
+		leaderLast      time.Time
+		electionTimeout time.Duration
+		hosts           map[string]*Node
+	}
+
+	CanvassReq struct {
+		term    int
+		nodeKey string
+		//act     int
 	}
 )
 
-func main() {
-
-}
-
+// https://zhuanlan.zhihu.com/p/28560167 解决的问题，过程的口语化
 // https://www.cnblogs.com/mindwind/p/5231986.html
 func CreateRaft(port int, addrList []string) *Raft {
 	if len(addrList) < 2 {
@@ -42,7 +62,7 @@ func CreateRaft(port int, addrList []string) *Raft {
 	}
 
 	selfIp := GetInternalIP()
-	self := &Node{host: selfIp, port: port, role: Follower}
+	self := &Node{host: selfIp, port: port}
 
 	cache := make(map[string]*Node)
 	for _, h := range addrList {
@@ -62,7 +82,7 @@ func CreateRaft(port int, addrList []string) *Raft {
 			port = atoi
 		}
 		tmp.port = port
-		cache[tmp.Key()] = tmp
+		cache[tmp.String()] = tmp
 	}
 
 	return &Raft{self: self, hosts: cache}
@@ -84,6 +104,12 @@ func (r *Raft) Election() {
 	if r.leader != nil {
 		return
 	}
+	// leader 存活且心跳没超时
+	if time.Now().Sub(r.leaderLast).Milliseconds() < r.electionTimeout.Milliseconds() {
+		return
+	}
+	r.term++
+	r.role = Candidate
 
 }
 
@@ -92,9 +118,6 @@ func (r *Raft) Stat() string {
 }
 
 func (r *Node) String() string {
-	return fmt.Sprintf("%v:%v %v", r.host, r.port, r.role)
-}
-func (r *Node) Key() string {
 	return fmt.Sprintf("%v:%v", r.host, r.port)
 }
 

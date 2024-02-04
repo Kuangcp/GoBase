@@ -37,32 +37,23 @@
     <!--    <a href="/debug/statsviz" target="_blank">Statsviz</a>-->
     <button type="button" onclick="exit()" class="req-btn req-btn-page">Exit</button>
 
-    <div id="ConfigPage"
-         style="position: absolute; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.2); z-index: 998; display: none">
-        <div
-                style="position: absolute; width: 90%; height: 80%; background-color: white;
-             top: 40%; margin-left: -45%; margin-top: -20%;">
-            <iframe id="myFrame" src="config.html"
-                    style="position: absolute; width: 100%; height: 100%; border-radius: 3px; background-color: white;"></iframe>
+    <div id="ConfigPage" class="iframe-box">
+        <div class="iframe-page">
+            <iframe id="myFrame" src="config.html" class="iframe-self"></iframe>
         </div>
     </div>
 
-    <div id="VizPage"
-         style="position: absolute; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.2); z-index: 998; display: none">
-        <div style="position: absolute; width: 90%; height: 80%; background-color: white;
-             top: 40%; margin-left: -45%; margin-top: -20%;">
-            <iframe src="/debug/statsviz"
-                    style="position: absolute; width: 100%; height: 100%; border-radius: 3px; background-color: white;"></iframe>
+    <div id="VizPage" class="iframe-box">
+        <div class="iframe-page">
+            <iframe src="/debug/statsviz" class="iframe-self"></iframe>
         </div>
     </div>
-    <div id="PerfPage"
-         style="position: absolute; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.2); z-index: 998; display: none">
-        <div style="position: absolute; width: 90%; height: 80%; background-color: white;
-             top: 40%; margin-left: -45%; margin-top: -20%;">
-            <iframe src="/perf.html"
-                    style="position: absolute; width: 100%; height: 100%; border-radius: 3px; background-color: white;"></iframe>
+    <div id="PerfPage" class="iframe-box">
+        <div class="iframe-page">
+            <iframe src="/perf.html" class="iframe-self"></iframe>
         </div>
     </div>
+
 </form>
 <table id="req-log">
     <thead id="req-log-head"></thead>

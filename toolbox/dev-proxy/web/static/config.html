@@ -31,13 +31,15 @@
 
         .router-input {
             width: 750px;
-            border-top: none;
-            border-left: none;
-            border-right: none;
+            border: none;
+            /*border-top: none;*/
+            /*border-left: none;*/
+            /*border-right: none;*/
         }
 
+        /*奇数输入框样式*/
         .router-input:nth-child(even) {
-            background: #7597de;
+            background: #dee5fd;
         }
 
         .pathCnf {
@@ -47,9 +49,10 @@
         .pathCnf input {
             margin-left: 20px;
             width: 530px;
-            border-top: none;
-            border-left: none;
-            border-right: none;
+            border: none;
+            /*border-top: none;*/
+            /*border-left: none;*/
+            /*border-right: none;*/
         }
 
         .pathCnf input:nth-child(even) {
@@ -90,8 +93,8 @@
 
 <nav>
     Profile ID: <input id="id">
-    <button type="button" onclick="save()">保存</button>
-    <button type="button" onclick="refresh()">刷新</button>
+    <button type="button" onclick="save()">Save</button>
+    <button type="button" onclick="refresh()">Refresh</button>
 </nav>
 <main>
     Groups:
@@ -140,9 +143,8 @@
 
     <div class="pac-file">
         <textarea id="pac-file-input">
-
         </textarea>
-        <button onclick="savePac()">保存 PAC</button>
+        <button onclick="savePac()">Save PAC</button>
     </div>
 
 </main>
