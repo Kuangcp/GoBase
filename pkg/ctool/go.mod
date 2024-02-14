@@ -6,8 +6,8 @@ go 1.18
 
 require (
 	github.com/stretchr/testify v1.8.4
-	go.uber.org/goleak v1.2.1
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
+	go.uber.org/goleak v1.3.0
+	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 )
 
 require (

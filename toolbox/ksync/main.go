@@ -45,7 +45,7 @@ func init() {
 	flag.IntVar(&port, "p", 8000, "port")
 	flag.IntVar(&checkSec, "c", 2, "check duration second")
 	flag.BoolVar(&version, "v", false, "version")
-	flag.StringVar(&serverAddr, "s", "", "init server host&port. ag: 192.168.0.1:8000")
+	flag.StringVar(&serverAddr, "s", "", "init server host and port. ag: 192.168.0.1:8000")
 	flag.StringVar(&localHost, "l", "", "local side host. ag: 192.168.0.2")
 	flag.StringVar(&syncDir, "d", "./", "sync dir.")
 }

@@ -1,0 +1,11 @@
+//go 1.19
+//
+//use (
+//	.
+//	huffman
+//	linkedlist
+//)
+//
+//replace (
+//	github.com/kuangcp/gobase/pkg/ctool v1.1.5 => ../pkg/ctool
+//)

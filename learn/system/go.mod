@@ -1,5 +1,7 @@
 module system
 
+// 系统级信息
+
 go 1.20
 
 require (
