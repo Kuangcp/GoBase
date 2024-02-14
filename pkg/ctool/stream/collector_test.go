@@ -68,11 +68,11 @@ func TestToSet(t *testing.T) {
 func TestJoinPerformance(t *testing.T) {
 	start := time.Now().UnixMicro()
 	_ = ToJoin(JustN(10000).MapStr())
-	fmt.Println(time.Now().UnixMicro()-start, "us")
+	fmt.Println("sin", time.Now().UnixMicro()-start, "us")
 
 	start = time.Now().UnixMicro()
 	_ = ToJoin(JustN(10000).Map(ToString, WithWorkers(100)))
-	fmt.Println(time.Now().UnixMicro()-start, "us")
+	fmt.Println("con", time.Now().UnixMicro()-start, "us")
 }
 
 func TestMultiGet(t *testing.T) {
