@@ -1,7 +1,17 @@
 package main
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
-func TestCompare(t *testing.T) {
-	println("xa" > "f")
+func TestCeil(t *testing.T) {
+	println(math.Floor(7 / 3))
+	println(math.Ceil(7 / 3))
+}
+
+func TestInitBayerTree(t *testing.T) {
+	tree := CreateBayerTree[int, string](5)
+
+	tree.Insert(3, "3key")
 }
