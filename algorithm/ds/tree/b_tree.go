@@ -13,14 +13,13 @@ type (
 		pre  *BValNode[V]
 		next *BValNode[V]
 	}
-	BKey[K constraints.Ordered, V any] struct {
+	BayerEntry[K constraints.Ordered, V any] struct {
 		key  K            // 索引字段
 		val  V            // 记录值
-		head *BValNode[V] // key值重复时溢出值链表 或者溢出块的链表(单个node有多个val) 提高缓存命中
-		tail *BValNode[V]
+		head *BValNode[V] // key值重复时溢出值链表 或者溢出块的链表(单个node有多个val) 提高缓存命中, 注意头插法读取时需要逆序
 	}
 	BayerNode[K constraints.Ordered, V any] struct {
-		Keys    []*BKey[K, V]
+		Keys    []*BayerEntry[K, V]
 		Childes []*BayerNode[K, V] // 例如m为5时 单个节点上 3个key 4个child时的逻辑结构: c0 k0 c1 k1 c2 k3 c4
 		Parent  *BayerNode[K, V]
 	}
@@ -40,32 +39,30 @@ func CreateBayerTree[K constraints.Ordered, V any](m int) *BayerTree[K, V] {
 
 func (t *BayerTree[K, V]) Insert(key K, val V) {
 	if t.root == nil {
-		keys := make([]*BKey[K, V], t.m-1)
+		keys := make([]*BayerEntry[K, V], t.m-1)
 		childes := make([]*BayerNode[K, V], t.m)
-		keys[0] = &BKey[K, V]{key: key, val: val}
+		keys[0] = &BayerEntry[K, V]{key: key, val: val}
 		t.root = &BayerNode[K, V]{Keys: keys, Childes: childes}
 		return
 	}
 	node, idx, match := searchBayerNode(t.root, key)
 	if match {
 		entry := node.Keys[idx]
+		var exist *BValNode[V]
 		if entry.head == nil {
-			first := &BValNode[V]{val: entry.val}
-			entry.head = first
-			first.next = &BValNode[V]{val: val, pre: first}
-			entry.tail = first.next
+			exist = &BValNode[V]{val: entry.val}
 		} else {
-			tail := entry.tail
-			tail.next = &BValNode[V]{val: val, pre: tail}
-			entry.tail = tail.next
+			exist = entry.head
 		}
+		entry.head = &BValNode[V]{val: val, next: exist}
+		exist.pre = entry.head
 	} else {
 		// TODO 需要分情况处理 左边 中间 最右边 key的插入以及判断是否到了边界值需要调整树
 	}
 
 }
 
-func (t *BayerTree[K, V]) Search(key K) *BKey[K, V] {
+func (t *BayerTree[K, V]) Search(key K) *BayerEntry[K, V] {
 	if t.root == nil {
 		return nil
 	}
