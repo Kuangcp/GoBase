@@ -5,8 +5,8 @@ go 1.19
 require (
 	github.com/arl/statsviz v0.6.0
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/google/uuid v1.3.0
-	github.com/gorilla/websocket v1.5.0
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.1
 	github.com/kuangcp/gobase/pkg/ctool v1.1.9
 	github.com/kuangcp/gobase/pkg/ratelimiter v1.0.1
 	github.com/kuangcp/goproxy v1.3.5
@@ -22,5 +22,5 @@ require (
 	github.com/ouqiang/websocket v1.6.2 // indirect
 	github.com/viki-org/dnscache v0.0.0-20130720023526-c70c1f23c5d8 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/net v0.16.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
 )
