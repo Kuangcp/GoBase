@@ -1,4 +1,5 @@
 *.pu
 *.puml
 *.km
-img
+img/
+test.*.svg
