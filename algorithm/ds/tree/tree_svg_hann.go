@@ -277,7 +277,7 @@ func (bt *biTree) showSVG(FileName ...string) {
 	Xml = strings.Replace(Xml, "Width", strconv.Itoa(bt.Info.SvgWidth), 1)
 	Xml = strings.Replace(Xml, "Height", strconv.Itoa(bt.Info.SvgHeight), 1)
 	Xml = strings.Replace(Xml, "CONTENT", bt.Info.SvgXml, 1)
-	svgFile := "biTree.svg"
+	svgFile := "test.biTree.svg"
 	if len(FileName) > 0 {
 		svgFile = FileName[0] + ".svg"
 	}
