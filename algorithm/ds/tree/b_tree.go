@@ -22,7 +22,7 @@ type (
 		head *BValNode[V] // key值重复时溢出值链表 或者溢出块的链表(单个node有多个val) 提高缓存命中, 注意头插法读取时需要逆序
 	}
 	BayerNode[K Order, V any] struct {
-		keyN    int // 有效key数量
+		keyN    int // 有效key数量 1 2 3 ...
 		Keys    []*BayerEntry[K, V]
 		Childes []*BayerNode[K, V] // 例如m为5时 单个节点上 3个key 4个child时的逻辑结构: c0 k0 c1 k1 c2 k3 c4
 		Parent  *BayerNode[K, V]
@@ -95,27 +95,65 @@ func (t *BayerTree[K, V]) Insert(key K, val V) {
 		entry.head = &BValNode[V]{val: val, next: exist}
 		exist.pre = entry.head
 	} else {
-		// TODO 需要分情况处理 左边 中间 最右边 key的插入以及判断是否到了边界值需要调整树
-
+		// TODO  key的插入以及拆分节点
 		if node.keyN >= t.maxKey {
-			// TODO 拆分node
-			//continue
-		}
+			mid := t.maxKey / 2
 
-		var tmp *BayerEntry[K, V]
-		for i, b := range node.Keys {
-			if i < idx {
-				continue
+			rc := -1
+			var tmpKey *BayerEntry[K, V]
+			for i := range node.Keys {
+				if i < idx {
+					rc++
+					continue
+				} else if i == idx {
+					newKey := &BayerEntry[K, V]{key: key, val: val}
+					rc++
+					if rc == mid {
+						// 提升中间节点到父节点去， 判断父节点空的情况
+						node.Parent.Keys[node.Parent.keyN-1] = newKey
+					} else {
+						tmpKey = node.Keys[i]
+						node.Keys[i] = newKey
+					}
+				} else {
+					rc++
+					if rc == mid {
+						// 提升中间节点到父节点去
+						node.Parent.Keys[node.Parent.keyN-1] = tmpKey
+					} else {
+						roundKey := node.Keys[i]
+						node.Keys[i] = tmpKey
+						tmpKey = roundKey
+					}
+				}
+
+			}
+			// TODO 新key补到右节点上 右节点从上面拆分来
+			if idx == node.keyN {
+
 			}
 
-			if i == idx {
-				node.Keys[idx] = &BayerEntry[K, V]{key: key, val: val}
-				node.keyN += 1
-			} else {
-				node.Keys[i] = tmp
+		} else {
+			// 单纯插入key的情况 左边 中间 最右边
+			var tmp *BayerEntry[K, V]
+			for i, b := range node.Keys {
+				if i < idx {
+					continue
+				}
+
+				if i == idx {
+					node.Keys[idx] = &BayerEntry[K, V]{key: key, val: val}
+					node.keyN += 1
+				} else {
+					node.Keys[i] = tmp
+				}
+				tmp = b
+				if tmp == nil {
+					break
+				}
 			}
-			tmp = b
 		}
+
 	}
 }
 
