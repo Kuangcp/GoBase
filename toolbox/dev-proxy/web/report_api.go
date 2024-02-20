@@ -253,7 +253,7 @@ func HostPerformance(request *http.Request) ctool.ResultVO[[]PerfPageVo] {
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
 	if param.Start != nil && param.End != nil {
-		rsp = queryData(param.Start.Add(-time.Hour*8), param.End.Add(-time.Hour*8), param.Host, param.Url, param.Min)
+		rsp = queryData(*param.Start, *param.End, param.Host, param.Url, param.Min)
 	} else {
 		rsp.Msg = "invalid param"
 		rsp.Code = 400
@@ -266,7 +266,6 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
 
-	// 为什么会有时区问题
 	zr, err := core.Conn.ZRangeByScoreWithScores(core.RequestList, redis.ZRangeBy{
 		Min: fmt.Sprint(start.UnixNano()),
 		Max: fmt.Sprint(end.UnixNano()),
