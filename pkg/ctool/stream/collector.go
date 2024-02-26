@@ -52,10 +52,35 @@ func ToListFunc[R any](s Stream, fn func(s any) R) []R {
 }
 
 func ToMap[K comparable, V any](s Stream, key func(any) K, val func(any) V) map[K]V {
+	return ToMaps[K, V](s, key, val, nil)
+}
+
+func ToMaps[K comparable, V any](s Stream, key func(any) K, val func(any) V, merge func(V, V) V) map[K]V {
 	result := make(map[K]V)
 	for item := range s.source {
-		result[key(item)] = val(item)
+		v := val(item)
+		old, ok := result[key(item)]
+		if ok {
+			result[key(item)] = merge(old, v)
+		} else {
+			result[key(item)] = v
+		}
 	}
+	return result
+}
+
+func ToGroupBy[K comparable, V any](s Stream, fn func(V) K) map[K][]V {
+	result := make(map[K][]V)
+	s.Group(func(item any) any {
+		return fn(item.(V))
+	}).ForEach(func(item any) {
+		v := item.(GroupItem)
+		var group []V
+		for _, each := range v.Val {
+			group = append(group, each.(V))
+		}
+		result[v.Key.(K)] = group
+	})
 	return result
 }
 
