@@ -206,6 +206,7 @@ func (s Stream) ForEach(fn ForEachFunc) {
 }
 
 // Group groups the elements into different groups based on their keys.
+// 成员方法不能有泛型，无法指定key函数
 func (s Stream) Group(fn KeyFunc, opts ...Option) Stream {
 	source := make(chan any)
 	go func() {
