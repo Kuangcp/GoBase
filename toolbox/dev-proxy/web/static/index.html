@@ -10,16 +10,23 @@
     <link rel="stylesheet" href="css/main.css">
     <script src="js/highlight.min.js"></script>
     <script src="js/main.js"></script>
+
+    <style>
+        body {
+            /*background: #95a5a6;*/
+            background: #aaaaaa;
+        }
+    </style>
 </head>
 <body>
 
 <form style="text-align:center;">
     <!--顺序索引或者分页大小-->
     <input name="idx" style="width:60px;" type="number" id="idx" placeholder="idx" min="1" value="1"/>
-    <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1" value="15"/>
+    <input name="size" style="width:60px;" type="number" id="size" placeholder="size" min="1" value="8"/>
 
     <input name="id" style="width:120px;" id="id" placeholder="id"/>
-    <button type="button" class="req-btn req-btn-replay" onclick="replay()">Replay</button>
+    <button type="button" class="req-btn req-btn-replay" onclick="replay()">Run</button>
     <input type="date" id="date">
     <input name="kwd" id="kwd" style="width:280px;" placeholder="key word"/>
     <button type="button" class="req-btn req-btn-curl" onclick="search()">Search</button>
@@ -31,10 +38,10 @@
     Total: <span id="totalDiv" style="width: 40px"></span>
 
     <button type="button" onclick="OpenPage('ConfigPage')" class="req-btn req-btn-curl">Config</button>
-    <button type="button" onclick="OpenPage('VizPage')" class="req-btn req-btn-curl">Stats</button>
+    <!--    <button type="button" onclick="OpenPage('VizPage')" class="req-btn req-btn-curl">Stats</button>-->
     <button type="button" onclick="OpenPage('PerfPage')" class="req-btn req-btn-curl">Perf</button>
     <!--    <a href="perf.html">性能分析</a>-->
-    <!--    <a href="/debug/statsviz" target="_blank">Statsviz</a>-->
+    <a href="/debug/statsviz" target="_blank">Statsviz</a>
     <button type="button" onclick="exit()" class="req-btn req-btn-page">Exit</button>
 
     <div id="ConfigPage" class="iframe-box">
@@ -43,11 +50,11 @@
         </div>
     </div>
 
-    <div id="VizPage" class="iframe-box">
-        <div class="iframe-page">
-            <iframe src="/debug/statsviz" class="iframe-self"></iframe>
-        </div>
-    </div>
+    <!--    <div id="VizPage" class="iframe-box">-->
+    <!--        <div class="iframe-page">-->
+    <!--                        <iframe src="/debug/statsviz" class="iframe-self"></iframe>-->
+    <!--        </div>-->
+    <!--    </div>-->
     <div id="PerfPage" class="iframe-box">
         <div class="iframe-page">
             <iframe src="/perf.html" class="iframe-self"></iframe>
@@ -56,15 +63,18 @@
 
 </form>
 <table id="req-log">
-    <thead id="req-log-head"></thead>
+    <thead id="req-log-head">
+    </thead>
     <tbody id="req-log-body" style="border: solid" class="req-log-body"></tbody>
 </table>
 <div id="detail">
     <div class="detail-nav">
-        <span id="detail-nav-header" onclick="showDetailTab('header')">Header</span>
-        <span id="detail-nav-request" onclick="showDetailTab('request')">Request</span>
-        <span id="detail-nav-response" onclick="showDetailTab('response')">Response</span>
+        <span id="detail-nav-header" class="nav-inactive" onclick="showDetailTab('header')">Header</span>
+        <span id="detail-nav-request" class="nav-inactive" onclick="showDetailTab('request')">Request</span>
+        <span id="detail-nav-response" class="nav-inactive" onclick="showDetailTab('response')">Response</span>
     </div>
+    <div id="active-detail-id"></div>
+    <br>
     <div id="detail-request-head"></div>
     <div id="detail-request"></div>
     <div id="detail-response-head"></div>
@@ -76,7 +86,7 @@
 
     function OpenPage(id) {
         let obj = document.getElementById(id);
-        if (obj.style.display === 'none') {
+        if (!obj.style.display || obj.style.display === 'none') {
             obj.style.display = "block";
         } else {
             obj.style.display = "none";
@@ -91,6 +101,7 @@
     }
 
     let reqDict = {}
+    let detailCache = {}
     // 初始化
     init()
 
@@ -168,27 +179,54 @@
         }
     }
 
-    function showDetail(id) {
+    function showDetail(id, self) {
         let req = reqDict[id];
+        // self.style.color = '#9b59b6'
+        let start = new Date();
+        console.log('render', start)
+        let cache = detailCache[id]
+        let reH, resH, re, res;
+        if (cache) {
+            console.log('hint cache')
+            reH = cache.reH
+            resH = cache.resH
+            re = cache.re
+            res = cache.res
+        } else {
+            reH = JSON.stringify(req.request.header, null, 2);
+            resH = JSON.stringify(req.response.header, null, 2);
+            re = JSON.stringify(req.request.body, null, 2);
+            res = JSON.stringify(req.response.body, null, 2);
+            detailCache[id] = {
+                reH: reH,
+                resH: resH,
+                re: re,
+                res: res
+            }
+        }
+        document.getElementById("active-detail-id").innerText = id
+        document.getElementById("detail-request-head").innerHTML = "<div class='req-req-head'> <pre class='hljs'><code>" + reH + "</code></pre></div>";
+        document.getElementById("detail-response-head").innerHTML = "<div class='req-req-head'> <pre class='hljs'><code>" + resH + "</code></pre></div>"
+        document.getElementById("detail-request").innerHTML = "<div class='req-req-body'> <pre class='hljs'><code>" + re + "</code></pre></div>"
+        document.getElementById("detail-response").innerHTML = "<div class='req-rsp-body'> <pre class='hljs'><code>" + res + "</code></pre></div>"
 
-        document.getElementById("detail-request-head").innerHTML = "<div class='req-req-head'> <pre class='hljs'><code>" + JSON.stringify(req.request.header, null, 2) + "</code></pre></div>"
-        document.getElementById("detail-response-head").innerHTML = "<div class='req-req-head'> <pre class='hljs'><code>" + JSON.stringify(req.response.header, null, 2) + "</code></pre></div>"
-        document.getElementById("detail-request").innerHTML = "<div class='req-req-body'> <pre class='hljs'><code>" + JSON.stringify(req.request.body, null, 2) + "</code></pre></div>"
-        document.getElementById("detail-response").innerHTML = "<div class='req-rsp-body'> <pre class='hljs'><code>" + JSON.stringify(req.response.body, null, 2) + "</code></pre></div>"
         hljs.highlightAll()
+        let end = new Date();
+        console.log('finish', end, end - start, 'ms')
+        // self.style.color = ''
     }
 
     function buildLine(i, l) {
         reqDict[l.id] = l
 
-        return "<tr onclick='showDetail(\"" + l.id + "\")'>" +
+        return "<tr onclick='showDetail(\"" + l.id + "\", this)'>" +
             "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> <span style='color:rebeccapurple'> [ " + (parseInt(i) + 1) + " ] </span> " + l.id + "</td>" +
             "<td style='font-size: small;width: 20px'> " + l.method + '<br/>' + l.statusCode + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time'>" + l.useTime + "</td>" +
             '<td> ' +
-            '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Re</button>' +
+            '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Run</button>' +
             '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
             '<button type="button" class="req-btn req-btn-delete" onclick="deleteReq(\'' + l.id + '\')">Del</button>' +
             '<button type="button" class="req-btn req-btn-delete" onclick="perfPage(\'' + l.id + '\')">Perf</button>' +
@@ -201,8 +239,6 @@
         get("/list?" + appendParam("id", "idx", "date", "kwd", "size"), function (data) {
             let result = JSON.parse(data);
             let table = document.getElementById("req-log-body");
-            let head = document.getElementById("req-log-head");
-            head.innerHTML = ""
             table.innerHTML = ""
             if (!result.data) {
                 return
@@ -213,15 +249,6 @@
             if (!result.data.data || result.data.data.length <= 0) {
                 return
             }
-
-            head.innerHTML = "<th>Id</th>" +
-                "            <th title='98 不可达 99 服务异常'>Code</th>" +
-                "            <th>URL</th>" +
-                "            <th>请求时间</th>" +
-                "            <th>耗时</th>" +
-                // "            <th>请求</th>" +
-                // "            <th>响应</th>" +
-                "            <th>操作</th>"
 
             for (let i in result.data.data) {
                 let l = result.data.data[i]

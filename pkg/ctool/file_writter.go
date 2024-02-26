@@ -32,7 +32,7 @@ func NewWriter(filePath string, truncate bool) (*BufferWriter, error) {
 		return nil, err
 	}
 
-	fmt.Println(file.Name())
+	//fmt.Println(file.Name())
 	buffer := bufio.NewWriter(file)
 	return &BufferWriter{file: file, writer: buffer}, nil
 }

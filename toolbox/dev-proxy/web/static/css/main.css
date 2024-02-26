@@ -34,7 +34,7 @@ a {
 }
 
 #req-log-head {
-    color: seagreen;
+    /*color: seagreen;*/
 }
 
 .req-log-body tr {
@@ -46,7 +46,7 @@ a {
 .req-log-body tr:nth-child(odd) {
     /*background-color: #EAEBFF;*/
     /*background-color: #ECF1DF;*/
-    background-color: #F2FFD3;
+    background-color: #ecf0f1;
     /*background-color: #f3e7e9;*/
     /*background-color: lightgreen;*/
 }
@@ -55,7 +55,7 @@ a {
 .req-log-body tr:nth-child(even) {
     /*background: white;*/
     /*background: #E5E0ED;*/
-    background: #F2F5EC;
+    background: #bdc3c7;
     /*background: #dad4ec;*/
     /*background: #ECF1DF;*/
 }
@@ -83,20 +83,19 @@ a {
 }
 
 .req-btn-replay {
-    background-color: lightgreen;
+    background-color: #7597de;
 }
 
 .req-btn-curl {
-    background-color: lightskyblue;
+    background-color: #3498db;
 }
 
 .req-btn-page {
-    background-color: lightpink;
+    background-color: #e74c3c;
 }
 
-
 .req-btn-delete {
-    background-color: lightcoral;
+    background-color: #e67e22;
 }
 
 code {
@@ -143,19 +142,25 @@ code {
     border-radius: 8px;
 }
 
+.noClick {
+    cursor: not-allowed;
+    pointer-events: none; /* 禁止鼠标点击 */
+}
+
 .detail-nav {
     margin-top: 20px;
 }
 
 .detail-nav span {
-    width: 50px;
-    height: 40px;
-    margin-right: 20px;
+    display: block;
+    text-align: center;
+    width: 90px;
+    margin-right: -4px;
+    float: left;
 }
 
 .nav-active {
-    background-color: #87CEFA;
-    border-radius: 5px;
+    background-color: #3498db;
 }
 
 .nav-inactive {
@@ -187,4 +192,9 @@ code {
     height: 100%;
     border-radius: 3px;
     background-color: white;
+}
+
+.display-row {
+    background-color: #00bb00;
+    border: #66d9ef;
 }
