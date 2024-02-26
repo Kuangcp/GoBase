@@ -18,6 +18,7 @@ function addGroup(val) {
         let nav = tmp.children[0]
         for (let child of nav.children) {
             if (child.name === 'proxy_type') {
+                child.className = 'all-checkbox'
                 child.checked = val.proxy_type === 1
             } else if (child.name === 'name') {
                 child.value = val.name
@@ -29,6 +30,7 @@ function addGroup(val) {
             routeDom.innerHTML = document.getElementById('router-temp').innerHTML
             for (let child of routeDom.children) {
                 if (child.name === 'proxy_type') {
+                    child.className = 'all-checkbox'
                     child.checked = router.proxy_type === 1
                 } else if (child.name === 'src') {
                     child.value = router.src

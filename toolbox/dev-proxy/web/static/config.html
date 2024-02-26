@@ -37,9 +37,9 @@
             /*border-right: none;*/
         }
 
-        /*奇数输入框样式*/
+        /*奇数输入框样式 目标URL*/
         .router-input:nth-child(even) {
-            background: #dee5fd;
+            background: #dbe1e8;
         }
 
         .pathCnf {
@@ -57,6 +57,10 @@
 
         .pathCnf input:nth-child(even) {
             background: #E8E8E9;
+        }
+
+        body {
+            background: #aaaaaa;
         }
 
         main {
@@ -87,6 +91,11 @@
             width: 100%;
             height: 100%;
         }
+
+        .all-checkbox {
+            width: 23px;
+            height: 23px;
+        }
     </style>
 </head>
 <body>
@@ -103,11 +112,11 @@
 
     <br/>
     <div style="float: left">
-        <input id="proxy-switch-type" name="proxy_type" type="checkbox"/>
+        <input id="proxy-switch-type" name="proxy_type" type="checkbox" class="all-checkbox"/>
         Proxy:
         <button onclick="addProxyPath('proxy')">Add</button>
         <div id="proxy" class="pathCnf"></div>
-        <input id="direct-switch-type" name="proxy_type" type="checkbox"/>
+        <input id="direct-switch-type" name="proxy_type" type="checkbox" class="all-checkbox"/>
         Direct:
         <button onclick="addProxyPath('direct')">Add</button>
         <div id="direct" class="pathCnf"></div>
