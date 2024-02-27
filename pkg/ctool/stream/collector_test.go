@@ -134,4 +134,37 @@ func TestToGroupBy(t *testing.T) {
 	for k, v := range result {
 		fmt.Println(k, v)
 	}
+	userStream := JustN(17).Map(func(item any) any {
+		v := item.(int)
+		return User{
+			id:     v,
+			name:   "user-" + fmt.Sprint(v),
+			areaId: v % 7,
+		}
+	})
+	userMap := ToGroupBy[int, User](userStream, func(user User) int {
+		return user.areaId
+	})
+	for k, v := range userMap {
+		fmt.Println(k, v)
+	}
+}
+
+func TestGroupByMap(t *testing.T) {
+	userStream := JustN(17).Map(func(item any) any {
+		v := item.(int)
+		return User{
+			id:     v,
+			name:   "user-" + fmt.Sprint(v),
+			areaId: v % 7,
+		}
+	})
+	userMap := ToGroupByMap[User, int, string](userStream, func(user User) int {
+		return user.areaId
+	}, func(user User) string {
+		return user.name
+	})
+	for k, v := range userMap {
+		fmt.Println(k, v)
+	}
 }

@@ -69,6 +69,21 @@ func ToMaps[K comparable, V any](s Stream, key func(any) K, val func(any) V, mer
 	return result
 }
 
+func ToGroupByMap[I any, K comparable, V any](s Stream, fn func(I) K, vf func(I) V) map[K][]V {
+	result := make(map[K][]V)
+	s.Group(func(item any) any {
+		return fn(item.(I))
+	}).ForEach(func(item any) {
+		v := item.(GroupItem)
+		var group []V
+		for _, each := range v.Val {
+			group = append(group, vf(each.(I)))
+		}
+		result[v.Key.(K)] = group
+	})
+	return result
+}
+
 func ToGroupBy[K comparable, V any](s Stream, fn func(V) K) map[K][]V {
 	result := make(map[K][]V)
 	s.Group(func(item any) any {

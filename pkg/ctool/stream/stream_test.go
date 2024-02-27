@@ -871,6 +871,17 @@ func TestBackpressure(t *testing.T) {
 	})
 }
 
+func TestLines(t *testing.T) {
+	lines, err := Lines("Readme.md")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	lines.ForEach(func(item any) {
+		fmt.Print(item)
+	})
+}
+
 func assetEqual(t *testing.T, except, data any) {
 	if !reflect.DeepEqual(except, data) {
 		t.Errorf(" %v, want %v", data, except)
