@@ -14,6 +14,7 @@ var (
 	HttpMode     bool
 	JsonPath     string
 	PacPath      string
+	ID           string
 )
 
 var HelpInfo = ctool.HelpInfo{
@@ -31,5 +32,6 @@ var HelpInfo = ctool.HelpInfo{
 		{Short: "-w", IntVar: &ApiPort, Int: 1235, Value: "port", Comment: "web api port"},
 		{Short: "-j", StringVar: &JsonPath, String: "", Value: "path", Comment: "json config file abs path"},
 		{Short: "-a", StringVar: &PacPath, String: "", Value: "path", Comment: "pac file abs path"},
+		{Short: "-i", StringVar: &ID, String: "", Value: "id", Comment: "param id over json id"},
 	},
 }

@@ -372,6 +372,9 @@ func cleanAndRegisterFromFile(configFile string) {
 		return
 	}
 
+	if ID != "" {
+		ProxyConfVar.Id = ID
+	}
 	ReloadConfByCacheObj()
 	if guiMode {
 		ConfigReload <- true
