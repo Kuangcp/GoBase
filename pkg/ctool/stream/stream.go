@@ -1,6 +1,10 @@
 package stream
 
 import (
+	"bufio"
+	"io"
+	"log"
+	"os"
 	"sort"
 	"sync"
 )
@@ -623,4 +627,41 @@ func (s Stream) NoneMatch(predicate func(item any) bool) bool {
 	}
 
 	return true
+}
+
+func Lines(filename string) (*Stream, error) {
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0666)
+	if err != nil {
+		log.Println("Open file error!", err)
+		return nil, err
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if stat.Size() == 0 {
+		log.Printf("file:%s is empty", filename)
+		return &Stream{}, nil
+	}
+
+	result := From(func(source chan<- any) {
+		defer file.Close()
+		buf := bufio.NewReader(file)
+		end := false
+		for !end {
+			line, err := buf.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					end = true
+				} else {
+					log.Println("Read file error!", err)
+					break
+				}
+			}
+			source <- line
+		}
+	})
+
+	return &result, nil
 }
