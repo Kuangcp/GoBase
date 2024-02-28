@@ -21,6 +21,12 @@ var HiddenHeader = []string{"User-Agent", "Accept-Encoding", "Referer", "Cache-C
 
 func PageListReqHistory(request *http.Request) ctool.ResultVO[*ctool.PageVO[*core.ReqLog[core.MessageVO]]] {
 	result := ctool.ResultVO[*ctool.PageVO[*core.ReqLog[core.MessageVO]]]{}
+	if core.Conn == nil {
+		result.Code = 101
+		result.Msg = "empty data"
+		return result
+	}
+
 	param := &PageQueryParam{}
 	if err := ctool.Unpack(request, param); err != nil {
 		logger.Error(err)

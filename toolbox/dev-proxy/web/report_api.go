@@ -222,6 +222,9 @@ func DetailById(writer http.ResponseWriter, request *http.Request) {
 }
 
 func HostPerformance(request *http.Request) ctool.ResultVO[[]PerfPageVo] {
+	if core.Conn == nil {
+		return ctool.FailedWithMsg[[]PerfPageVo]("empty")
+	}
 	var param struct {
 		Id    string     `form:"id"`
 		Host  string     `form:"host"`
