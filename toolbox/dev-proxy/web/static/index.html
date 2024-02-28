@@ -73,7 +73,7 @@
         <span id="detail-nav-request" class="nav-inactive" onclick="showDetailTab('request')">Request</span>
         <span id="detail-nav-response" class="nav-inactive" onclick="showDetailTab('response')">Response</span>
     </div>
-    <div id="active-detail-id"></div>
+    <!--    <div id="active-detail-id"></div>-->
     <br>
     <div id="detail-request-head"></div>
     <div id="detail-request"></div>
@@ -82,26 +82,26 @@
 </div>
 <script>
 
-    let floatPages = ['ConfigPage', 'VizPage', 'PerfPage']
-
-    function OpenPage(id) {
-        let obj = document.getElementById(id);
-        if (!obj.style.display || obj.style.display === 'none') {
-            obj.style.display = "block";
-        } else {
-            obj.style.display = "none";
-        }
-
-        for (let page of floatPages) {
-            if (page === id) {
-                continue
-            }
-            document.getElementById(page).style.display = "none";
-        }
-    }
-
+    let lastDetailId
+    let floatPages = ['ConfigPage',
+        // 'VizPage',
+        'PerfPage']
     let reqDict = {}
-    let detailCache = {}
+
+    let tabGroup = [{
+        key: 'header',
+        header: document.getElementById("detail-nav-header"),
+        win: [document.getElementById("detail-request-head"), document.getElementById("detail-response-head")]
+    }, {
+        key: 'request',
+        header: document.getElementById("detail-nav-request"),
+        win: [document.getElementById("detail-request")],
+    }, {
+        key: 'response',
+        header: document.getElementById("detail-nav-response"),
+        win: [document.getElementById("detail-response")],
+    }]
+
     // 初始化
     init()
 
@@ -119,6 +119,22 @@
         document.getElementById("detail-response").innerHTML = ""
     }
 
+    function OpenPage(id) {
+        let obj = document.getElementById(id);
+        if (!obj.style.display || obj.style.display === 'none') {
+            obj.style.display = "block";
+        } else {
+            obj.style.display = "none";
+        }
+
+        for (let page of floatPages) {
+            if (page === id) {
+                continue
+            }
+            document.getElementById(page).style.display = "none";
+        }
+    }
+
     function refresh() {
         window.location.reload();
     }
@@ -134,77 +150,38 @@
     }
 
     function showDetailTab(type) {
-        let navH = document.getElementById("detail-nav-header")
-        let navR = document.getElementById("detail-nav-request")
-        let navS = document.getElementById("detail-nav-response")
-
-        let rh = document.getElementById("detail-request-head")
-        let r = document.getElementById("detail-request")
-        let sh = document.getElementById("detail-response-head")
-        let s = document.getElementById("detail-response")
-
-        if (type === 'header') {
-            rh.style.display = "block"
-            sh.style.display = "block"
-
-            r.style.display = "none"
-            s.style.display = "none"
-
-            navH.setAttribute("class", "nav-active")
-            navR.setAttribute("class", "nav-inactive")
-            navS.setAttribute("class", "nav-inactive")
-        }
-        if (type === 'request') {
-            rh.style.display = "none"
-            sh.style.display = "none"
-
-            r.style.display = "block"
-            s.style.display = "none"
-
-            navH.setAttribute("class", "nav-inactive")
-            navR.setAttribute("class", "nav-active")
-            navS.setAttribute("class", "nav-inactive")
-        }
-        if (type === 'response') {
-            rh.style.display = "none"
-            sh.style.display = "none"
-
-            r.style.display = "none"
-            s.style.display = "block"
-
-
-            navH.setAttribute("class", "nav-inactive")
-            navR.setAttribute("class", "nav-inactive")
-            navS.setAttribute("class", "nav-active")
+        for (let tab of tabGroup) {
+            if (tab.key === type) {
+                tab.header.setAttribute("class", "nav-active")
+                for (let w of tab.win) {
+                    w.style.display = "block"
+                }
+            } else {
+                tab.header.setAttribute("class", "nav-inactive")
+                for (let w of tab.win) {
+                    w.style.display = "none"
+                }
+            }
         }
     }
 
     function showDetail(id, self) {
+        if (id === lastDetailId) {
+            return
+        }
+        lastDetailId = id
         let req = reqDict[id];
         // self.style.color = '#9b59b6'
         let start = new Date();
         console.log('render', start)
-        let cache = detailCache[id]
         let reH, resH, re, res;
-        if (cache) {
-            console.log('hint cache')
-            reH = cache.reH
-            resH = cache.resH
-            re = cache.re
-            res = cache.res
-        } else {
-            reH = JSON.stringify(req.request.header, null, 2);
-            resH = JSON.stringify(req.response.header, null, 2);
-            re = JSON.stringify(req.request.body, null, 2);
-            res = JSON.stringify(req.response.body, null, 2);
-            detailCache[id] = {
-                reH: reH,
-                resH: resH,
-                re: re,
-                res: res
-            }
-        }
-        document.getElementById("active-detail-id").innerText = id
+
+        reH = JSON.stringify(req.request.header, null, 2);
+        resH = JSON.stringify(req.response.header, null, 2);
+        re = JSON.stringify(req.request.body, null, 2);
+        res = JSON.stringify(req.response.body, null, 2);
+
+        // document.getElementById("active-detail-id").innerText = id
         document.getElementById("detail-request-head").innerHTML = "<div class='req-req-head'> <pre class='hljs'><code>" + reH + "</code></pre></div>";
         document.getElementById("detail-response-head").innerHTML = "<div class='req-req-head'> <pre class='hljs'><code>" + resH + "</code></pre></div>"
         document.getElementById("detail-request").innerHTML = "<div class='req-req-body'> <pre class='hljs'><code>" + re + "</code></pre></div>"
@@ -219,13 +196,13 @@
     function buildLine(i, l) {
         reqDict[l.id] = l
 
-        return "<tr onclick='showDetail(\"" + l.id + "\", this)'>" +
+        return "<tr>" +
             "<td class='req-use-time' onclick='copyVal(\"" + l.id + "\")'> <span style='color:rebeccapurple'> [ " + (parseInt(i) + 1) + " ] </span> " + l.id + "</td>" +
             "<td style='font-size: small;width: 20px'> " + l.method + '<br/>' + l.statusCode + "</td>" +
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
-            "<td style='width: 110px;font-size: small'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
-            "<td class='req-use-time'>" + l.useTime + "</td>" +
-            '<td> ' +
+            "<td style='width: 90px;font-size: small;text-align: center' onclick='showDetail(\"" + l.id + "\", this)'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
+            "<td class='req-use-time' onclick='showDetail(\"" + l.id + "\", this)'>" + l.useTime + "</td>" +
+            "<td onclick='showDetail(\"" + l.id + "\", this)'> " +
             '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Run</button>' +
             '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
             '<button type="button" class="req-btn req-btn-delete" onclick="deleteReq(\'' + l.id + '\')">Del</button>' +
