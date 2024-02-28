@@ -112,7 +112,7 @@ code {
 
 .req-req-head {
     font-size: small;
-    max-height: 150px;
+    max-height: 500px;
     overflow: auto;
     word-wrap: break-word;
     border-radius: 8px;
@@ -121,7 +121,7 @@ code {
 
 .req-req-body {
     font-size: small;
-    max-height: 400px;
+    max-height: 600px;
     overflow: auto;
     word-wrap: break-word;
     border-radius: 8px;
@@ -136,7 +136,7 @@ code {
 .req-rsp-body {
     margin-top: 4px;
     font-size: small;
-    max-height: 500px;
+    max-height: 600px;
     overflow: auto;
     word-wrap: break-word;
     border-radius: 8px;
