@@ -76,10 +76,10 @@ a {
 }
 
 .req-btn {
-    border-radius: 4px;
+    border-radius: 1px;
     border: none;
-    margin: 1px;
-    padding: 2px;
+    /*margin: 1px;*/
+    padding: 3px;
 }
 
 .req-btn-replay {
@@ -90,11 +90,11 @@ a {
     background-color: #3498db;
 }
 
-.req-btn-page {
+.req-btn-delete {
     background-color: #e74c3c;
 }
 
-.req-btn-delete {
+.req-btn-page {
     background-color: #e67e22;
 }
 
