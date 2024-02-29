@@ -266,9 +266,9 @@ func InitConfig() {
 
 	RequestList = fmt.Sprintf(listFmt, Prefix, hostId)
 	RequestUrlList = fmt.Sprintf(urlListFmt, Prefix, hostId)
-	if ReloadConf {
-		go listenConfig()
-	}
+	//if ReloadConf {
+	//	go listenConfig()
+	//}
 }
 
 func MarkGuiMode() {

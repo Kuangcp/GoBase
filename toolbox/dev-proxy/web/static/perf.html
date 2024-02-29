@@ -5,29 +5,38 @@
     <title>Api Top Perf</title>
 
     <script src="js/main.js"></script>
+    <style>
+        body {
+            background: #aaaaaa;
+        }
+
+        table tr:nth-child(even) {
+            background: #efefef;
+        }
+
+        table tr:nth-child(odd) {
+            background: #F6F6F6;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #req-log-body tr {
+            text-align: right;
+        }
+
+        .string-col-fmt {
+            text-align: left;
+        }
+
+        .number-col-fmt {
+            text-align: right;
+        }
+    </style>
 </head>
 <body>
-<style>
-    table tr:nth-child(even) {
-        background: #efefef;
-    }
 
-    table {
-        border-collapse: collapse;
-    }
-
-    #req-log-body tr {
-        text-align: right;
-    }
-
-    .string-col-fmt {
-        text-align: left;
-    }
-
-    .number-col-fmt {
-        text-align: right;
-    }
-</style>
 <form>
     <input type="text" id="id" placeholder="id"/>
     <input name="host" id="host" placeholder="host" autocomplete="on"/>
@@ -43,22 +52,23 @@
     <input type="number" id="min" min="1" value="1"/>
     <button type="button" onclick="query()">查询</button>
     <a href="perf.html">重置</a>
-    <a href="index.html">首页</a>
+    <!--    <a href="index.html">首页</a>-->
 </form>
 
 <table id="req-tp">
     <thead id="req-tp-head">
-    <tr style="text-align: center">
-        <th style="width: 900px;text-align: center"><a href="javascript:SortTable('req-tp',0,'T');">Url</a></th>
-        <th style="width: 50px;text-align: right"><a href="javascript:SortTable('req-tp',1,'N');">Count</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',2,'N');">All</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',3,'N');">Avg</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',4,'N');">TP30</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',5,'N');">TP50</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',6,'N');">TP90</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',7,'N');">TP95</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',8,'N');">TP99</a></th>
-        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',9,'N');">Max QPS</a></th>
+    <tr class="perf-head" style="text-align: center">
+        <th style="width: 40px;text-align: right"><a href="javascript:SortTable('req-tp',0,'N');">No</a></th>
+        <th style="width: 980px;text-align: center"><a href="javascript:SortTable('req-tp',1,'T');">Url</a></th>
+        <th style="width: 50px;text-align: right"><a href="javascript:SortTable('req-tp',2,'N');">Count</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',3,'N');">All</a></th>
+        <th style="width: 60px;text-align: right"><a href="javascript:SortTable('req-tp',4,'N');">Avg</a></th>
+        <th style="width: 60px;text-align: right"><a href="javascript:SortTable('req-tp',5,'N');">TP30</a></th>
+        <th style="width: 60px;text-align: right"><a href="javascript:SortTable('req-tp',6,'N');">TP50</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',7,'N');">TP90</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',8,'N');">TP95</a></th>
+        <th style="width: 80px;text-align: right"><a href="javascript:SortTable('req-tp',9,'N');">TP99</a></th>
+        <th style="width: 50px;text-align: right"><a href="javascript:SortTable('req-tp',10,'N');">QPS</a></th>
     </tr>
     </thead>
     <tbody></tbody>
@@ -123,8 +133,8 @@
         get("/hostPerf?" + appendParam("id", "host", "url", "start", "end", "min"),
             function (data) {
                 // console.log(data);
-                var table = document.getElementById('req-tp');
-                var tbody = table.getElementsByTagName("tbody")[0];
+                let table = document.getElementById('req-tp');
+                let tbody = table.getElementsByTagName("tbody")[0];
                 tbody.innerHTML = "";
                 if (!data || data.length < 1) {
                     return;
@@ -142,13 +152,24 @@
                         console.log("null value");
                         tbody.innerHTML += "<tr>null</tr>";
                     } else {
-                        tbody.innerHTML += `<tr class="number-col-fmt"><td class="string-col-fmt">${l.Url}</td><td>${l.Tct}</td><td>${l.Tall}</td><td>${l.TAvg}</td>
-                    <td>${l.TP30}</td><td>${l.TP50}</td><td>${l.TP90}</td><td>${l.TP95}</td><td>${l.TP99}</td><td>${l.Qps}</td></tr>`;
+                        let no = parseInt(i) + 1
+                        tbody.innerHTML += `<tr class="number-col-fmt">
+                                            <td>${no}</td>
+                                            <td class="string-col-fmt">${l.Url}</td>
+                                            <td>${l.Tct}</td>
+                                            <td>${l.Tall}</td>
+                                            <td>${l.TAvg}</td>
+                                            <td>${l.TP30}</td>
+                                            <td>${l.TP50}</td>
+                                            <td>${l.TP90}</td>
+                                            <td>${l.TP95}</td>
+                                            <td>${l.TP99}</td>
+                                            <td>${l.Qps}</td></tr>`;
                     }
                 }
                 TableLastSortedColumn = -1;
-                SortTable("req-tp", 1, "N", "");
-                SortTable("req-tp", 1, "N", "");
+                SortTable("req-tp", 2, "N", "");
+                SortTable("req-tp", 2, "N", "");
             }
         );
     }
