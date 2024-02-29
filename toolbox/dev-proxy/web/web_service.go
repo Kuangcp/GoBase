@@ -45,7 +45,7 @@ func PageListReqHistory(request *http.Request) ctool.ResultVO[*ctool.PageVO[*cor
 		param.Kwd = strings.TrimSpace(param.Kwd)
 	}
 
-	time.Sleep(time.Millisecond * 200)
+	time.Sleep(time.Millisecond * 800)
 	var pageResult *ctool.PageVO[*core.ReqLog[core.MessageVO]]
 	if param.Kwd != "" {
 		result.Msg = "kwd"

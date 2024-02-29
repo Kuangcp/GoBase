@@ -267,10 +267,10 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 		data.Total = 1
 	}
 
-	command := buildCommandById(data.Id, "")
+	//command := buildCommandById(data.Id, "")
 
-	//detail := core.GetDetailByKey(data.Id)
-	pool, err := sizedpool.New(sizedpool.PoolOption{Size: data.Total})
+	detail := core.GetDetailByKey(data.Id)
+	pool, err := sizedpool.NewWithName(data.Total, "x")
 	if err != nil {
 		return ctool.FailedWithMsg[*BenchStat](err.Error())
 	}
@@ -283,12 +283,23 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 	for i := 0; i < data.Total; i++ {
 		pool.Run(func() {
 			start := time.Now().UnixMilli()
-			_, success := core.ExecCommand(command)
+			//_, success := core.ExecCommand(command)
+
+			//client := http.Client{
+			//	Transport: &http.Transport{},
+			//}
+			//_, err := client.Get(detail.Url)
+
+			logger.Info("run", start, detail.Url)
+			_, err := http.Get(detail.Url)
+
 			end := time.Now().UnixMilli()
 			waste := end - start
 
+			logger.Info("finish", start, detail.Url)
 			lock.Lock()
-			if !success {
+			//if !success{
+			if err != nil {
 				stat.Failed += 1
 				//rs += "ERROR: \n" + command + "\n" + result + "\n➡️"
 			} else {
