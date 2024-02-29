@@ -30,7 +30,7 @@
     <input type="date" id="date">
     <input name="kwd" id="kwd" style="width:280px;" placeholder="key word"/>
     <button type="button" class="req-btn req-btn-curl" onclick="search()">Search</button>
-    <button type="button" class="req-btn req-btn-page" onclick="refresh()">Reload</button>
+    <button type="button" class="req-btn req-btn-replay" onclick="refresh()">Reload</button>
     <button type="button" onclick="addPageNo(-1)" class="req-btn req-btn-curl">Pre</button>
     <button type="button" onclick="addPageNo(1)" class="req-btn req-btn-curl">Next</button>
 
@@ -202,7 +202,7 @@
             "<td> <div class='req-url'> " + l.url + " </div></td>" +
             "<td style='width: 90px;font-size: small;text-align: center' onclick='showDetail(\"" + l.id + "\", this)'>" + new Date(Date.parse(l.reqTime)).format('MM-dd hh:mm:ss') + "</td>" +
             "<td class='req-use-time' onclick='showDetail(\"" + l.id + "\", this)'>" + l.useTime + "</td>" +
-            "<td style='padding: 0 2px 0 2px' onclick='showDetail(\"" + l.id + "\", this)'> " +
+            "<td style='padding: 0 2px 0 2px'> " +
             '<button type="button" class="req-btn req-btn-replay" onclick="replayById(\'' + l.id + '\')">Run</button>' +
             '<button type="button" class="req-btn req-btn-curl" onclick="copyCurlCommand(\'' + l.id + '\')">cUrl</button>' +
             '<button type="button" class="req-btn req-btn-page" onclick="perfPage(\'' + l.id + '\')">Perf</button>' +
