@@ -126,6 +126,7 @@ func SyncDetails(c *gin.Context) {
 	SyncAllDetails()
 	ghelp.GinSuccess(c)
 }
+
 func ScheduleSyncAllDetails() {
 	for range time.NewTicker(time.Hour * 24 * 5).C {
 		logger.Info("sync details")

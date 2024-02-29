@@ -9,6 +9,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ratelimiter"
+	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -66,7 +67,8 @@ func StartQueryServer() {
 	//mux.HandleFunc("/list", rtRateInt(Json(PageListReqHistory), limiter))
 	mux.HandleFunc("/list", core.Json(PageListReqHistory))
 	mux.HandleFunc("/curl", rtInt(buildCurlCommandApi))
-	mux.HandleFunc("/replay", rtRateInt(replayRequest, limiter))
+	mux.HandleFunc("/replay", rtRateInt(ReplayRequest, limiter))
+	mux.HandleFunc("/bench", rtInt(BenchRequest))
 
 	mux.HandleFunc("/del", rtInt(delRequest))
 	mux.HandleFunc("/uploadCache", rtInt(uploadCacheApi))
@@ -237,7 +239,45 @@ func deleteById(writer http.ResponseWriter, id string) {
 	core.WriteJsonRsp(writer, ctool.SuccessWith("OK"))
 }
 
-func replayRequest(writer http.ResponseWriter, request *http.Request) {
+func BenchRequest(writer http.ResponseWriter, request *http.Request) {
+	var data struct {
+		Id    string `form:"id"`
+		Con   int    `form:"con"`
+		Total int    `form:"total"`
+	}
+	if err := ctool.Unpack(request, &data); err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if data.Con <= 1 {
+		data.Con = 1
+	}
+	if data.Total <= 1 {
+		data.Total = 1
+	}
+
+	command := buildCommandById(data.Id, "Y")
+	pool, err := sizedpool.NewQueuePool(data.Con)
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	rs := ""
+	for i := 0; i < data.Total; i++ {
+		pool.Submit(func() {
+			result, success := core.ExecCommand(command)
+			if !success {
+				rs += "ERROR: \n" + command + "\n" + result + "\n➡️"
+			} else {
+				rs += result + "➡️"
+			}
+		})
+	}
+	pool.Wait()
+	core.RspStr(writer, rs)
+}
+func ReplayRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	idx := query.Get("idx")
 	id := query.Get("id")

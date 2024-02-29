@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/kuangcp/gobase/pkg/ctool v1.1.9
 	github.com/kuangcp/gobase/pkg/ratelimiter v1.0.1
+	github.com/kuangcp/gobase/pkg/sizedpool v1.0.3
 	github.com/kuangcp/goproxy v1.3.5
 	github.com/kuangcp/logger v1.0.9
 	github.com/syndtr/goleveldb v1.0.0
