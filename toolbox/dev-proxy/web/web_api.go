@@ -19,6 +19,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -29,6 +30,17 @@ type (
 		Id   string
 		Kwd  string
 		Date *time.Time `fmt:"2006-01-02"`
+	}
+	BenchStat struct {
+		Id           string `json:"id"`
+		Total        int    `json:"total"`
+		Complete     int    `json:"complete"`
+		Failed       int    `json:"failed"`
+		Mills        int64  `json:"mills"`
+		Duration     string `json:"duration"`
+		Qps          string `json:"qps"`
+		RealMills    int64  `json:"real_mills"`
+		RealDuration string `json:"real_duration"`
 	}
 )
 
@@ -68,7 +80,7 @@ func StartQueryServer() {
 	mux.HandleFunc("/list", core.Json(PageListReqHistory))
 	mux.HandleFunc("/curl", rtInt(buildCurlCommandApi))
 	mux.HandleFunc("/replay", rtRateInt(ReplayRequest, limiter))
-	mux.HandleFunc("/bench", rtInt(BenchRequest))
+	mux.HandleFunc("/bench", core.Json(BenchRequest))
 
 	mux.HandleFunc("/del", rtInt(delRequest))
 	mux.HandleFunc("/uploadCache", rtInt(uploadCacheApi))
@@ -239,15 +251,14 @@ func deleteById(writer http.ResponseWriter, id string) {
 	core.WriteJsonRsp(writer, ctool.SuccessWith("OK"))
 }
 
-func BenchRequest(writer http.ResponseWriter, request *http.Request) {
+func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 	var data struct {
 		Id    string `form:"id"`
 		Con   int    `form:"con"`
 		Total int    `form:"total"`
 	}
 	if err := ctool.Unpack(request, &data); err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
+		return ctool.FailedWithMsg[*BenchStat](err.Error())
 	}
 	if data.Con <= 1 {
 		data.Con = 1
@@ -256,27 +267,50 @@ func BenchRequest(writer http.ResponseWriter, request *http.Request) {
 		data.Total = 1
 	}
 
-	command := buildCommandById(data.Id, "Y")
-	pool, err := sizedpool.NewQueuePool(data.Con)
+	command := buildCommandById(data.Id, "")
+
+	//detail := core.GetDetailByKey(data.Id)
+	pool, err := sizedpool.New(sizedpool.PoolOption{Size: data.Total})
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusBadRequest)
-		return
+		return ctool.FailedWithMsg[*BenchStat](err.Error())
 	}
 
-	rs := ""
+	lock := &sync.Mutex{}
+
+	on := time.Now().UnixMilli()
+	stat := &BenchStat{}
+	//rs := ""
 	for i := 0; i < data.Total; i++ {
-		pool.Submit(func() {
-			result, success := core.ExecCommand(command)
+		pool.Run(func() {
+			start := time.Now().UnixMilli()
+			_, success := core.ExecCommand(command)
+			end := time.Now().UnixMilli()
+			waste := end - start
+
+			lock.Lock()
 			if !success {
-				rs += "ERROR: \n" + command + "\n" + result + "\n➡️"
+				stat.Failed += 1
+				//rs += "ERROR: \n" + command + "\n" + result + "\n➡️"
 			} else {
-				rs += result + "➡️"
+				//rs += result + "➡️"
+				stat.Complete += 1
 			}
+			stat.Mills += waste
+			stat.Total += 1
+			lock.Unlock()
 		})
 	}
 	pool.Wait()
-	core.RspStr(writer, rs)
+	//logger.Info(rs)
+	stat.RealMills = time.Now().UnixMilli() - on
+	stat.RealDuration = (time.Duration(stat.RealMills) * time.Millisecond).String()
+	stat.Id = data.Id
+	stat.Duration = (time.Duration(stat.Mills) * time.Millisecond).String()
+	stat.Qps = fmt.Sprint(int64(stat.Total*1000) / stat.RealMills)
+
+	return ctool.SuccessWith[*BenchStat](stat)
 }
+
 func ReplayRequest(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	idx := query.Get("idx")
