@@ -3,12 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <title>Load</title>
+
+    <script src="js/main.js"></script>
 </head>
 <body>
-<input type="text" id="reqId" placeholder="id">
-<input type="number" id="maxCon" placeholder="max concurrency">
-<input type="number" id="totalReq" placeholder="total request">
-<button>Benchmark</button>
-localhost:1235/bench\?id=1015b7a3897\&total=500\&con=10
+<input type="text" id="id" placeholder="id">
+<input type="number" id="con" placeholder="max concurrency" value="1">
+<input type="number" id="total" placeholder="total request" value="1">
+<button onclick="bench()">Benchmark</button>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Total</th>
+        <th>Complete</th>
+        <th>Failed</th>
+        <th>Duration</th>
+        <th>Qps</th>
+        <th>CompQps</th>
+        <th>RealTime</th>
+    </tr>
+    </thead>
+    <tbody id="bench-table"></tbody>
+</table>
+<script>
+    function bench() {
+        get('/bench?' + appendParam('id', 'con', 'total'), function (data) {
+            let r = JSON.parse(data);
+            let last = document.getElementById('bench-table').innerHTML;
+            last += `<tr><td>${r.data.id}</td><td>${r.data.total}</td><td>${r.data.complete}</td><td>${r.data.failed}</td><td>${r.data.duration}</td>
+                <td>${r.data.qps}</td>
+                <td>${r.data.real_duration}</td>
+                </tr>`;
+            document.getElementById('bench-table').innerHTML = last;
+        })
+    }
+</script>
 </body>
 </html>

@@ -38,7 +38,7 @@
     Total: <span id="totalDiv" style="width: 40px"></span>
 
     <button type="button" onclick="OpenPage('ConfigPage')" class="req-btn req-btn-curl">Config</button>
-    <!--    <button type="button" onclick="OpenPage('VizPage')" class="req-btn req-btn-curl">Stats</button>-->
+    <button type="button" onclick="OpenPage('BenchPage')" class="req-btn req-btn-curl">Bench</button>
     <button type="button" onclick="OpenPage('PerfPage')" class="req-btn req-btn-curl">Perf</button>
     <!--    <a href="perf.html">性能分析</a>-->
     <a href="/debug/statsviz" target="_blank">Statsviz</a>
@@ -50,11 +50,11 @@
         </div>
     </div>
 
-    <!--    <div id="VizPage" class="iframe-box">-->
-    <!--        <div class="iframe-page">-->
-    <!--                        <iframe src="/debug/statsviz" class="iframe-self"></iframe>-->
-    <!--        </div>-->
-    <!--    </div>-->
+    <div id="BenchPage" class="iframe-box">
+        <div class="iframe-page">
+            <iframe src="load.html" class="iframe-self"></iframe>
+        </div>
+    </div>
     <div id="PerfPage" class="iframe-box">
         <div class="iframe-page">
             <iframe src="/perf.html" class="iframe-self"></iframe>
@@ -83,9 +83,7 @@
 <script>
 
     let lastDetailId
-    let floatPages = ['ConfigPage',
-        // 'VizPage',
-        'PerfPage']
+    let floatPages = ['ConfigPage', 'BenchPage', 'PerfPage']
     let reqDict = {}
 
     let tabGroup = [{
