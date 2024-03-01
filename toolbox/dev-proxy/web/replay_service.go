@@ -1,12 +1,14 @@
 package web
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -37,6 +39,22 @@ type (
 	}
 )
 
+var (
+	client http.Client
+)
+
+func InitClient() {
+	proxy := fmt.Sprintf("http://127.0.0.1:%v", core.Port)
+	uri, _ := url.Parse(proxy)
+	client = http.Client{
+		Timeout: time.Second * 30,
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(uri),
+		},
+	}
+}
+
+// TODO 并发数多的时候 请求的延迟会快速上升，curl开启大量文件响应慢？
 func curlReplayCtx(id string) *ReplayCtx {
 	command := buildCommandById(id, true, false)
 
@@ -48,15 +66,39 @@ func curlReplayCtx(id string) *ReplayCtx {
 
 func httpReplayCtx(id string) *ReplayCtx {
 	detail := core.GetDetailByKey(id)
-
-	//client := http.Client{
-	//	Transport: &http.Transport{},
-	//}
-	//_, err := client.Get(detail.Url)
-
 	return &ReplayCtx{msg: detail, act: func() bool {
-		_, err := http.Get(detail.Url)
-		return err != nil
+		var request *http.Request
+		var err error
+		if len(detail.Request.Body) > 0 {
+			reader := bytes.NewReader(detail.Request.Body)
+			request, err = http.NewRequest(detail.Method, detail.Url, reader)
+		} else {
+			request, err = http.NewRequest(detail.Method, detail.Url, nil)
+		}
+
+		for k, v := range detail.Request.Header {
+			for _, i := range v {
+				request.Header.Set(k, i)
+			}
+		}
+		// 直接复制省内存但是有数据竞争问题
+		//request.Header = detail.Request.Header
+		request.Header[core.HeaderProxyBench] = []string{"1"}
+
+		resp, err := client.Do(request)
+		if resp == nil || err != nil {
+			logger.Error(err)
+			return false
+		}
+
+		//rspBody, err := io.ReadAll(resp.Body)
+		//if err != nil {
+		//	return false
+		//}
+		//logger.Info(string(rspBody))
+		//logger.Info(resp.Header)
+
+		return true
 	}}
 }
 
@@ -76,8 +118,8 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 		data.Total = 1
 	}
 
-	ctx := curlReplayCtx(data.Id)
-	//ctx := httpReplayCtx(data.Id)
+	//ctx := curlReplayCtx(data.Id)
+	ctx := httpReplayCtx(data.Id)
 
 	pool, _ := sizedpool.NewQueuePool(data.Con)
 	lock := &sync.Mutex{}
@@ -109,8 +151,12 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 	stat.RealDuration = (time.Duration(stat.RealMills) * time.Millisecond).String()
 	stat.Id = data.Id
 	stat.Duration = (time.Duration(stat.Mills) * time.Millisecond).String()
-	stat.Qps = fmt.Sprint(int64(stat.Total*1000) / stat.RealMills)
-	stat.Rt = (time.Duration(stat.Mills/int64(stat.Total)) * time.Millisecond).String()
+	if stat.RealMills > 0 {
+		stat.Qps = fmt.Sprint(int64(stat.Total*1000) / stat.RealMills)
+	}
+	if stat.Total > 0 {
+		stat.Rt = (time.Duration(stat.Mills/int64(stat.Total)) * time.Millisecond).String()
+	}
 	stat.Con = data.Con
 
 	return ctool.SuccessWith[*BenchStat](stat)

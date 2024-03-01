@@ -12,6 +12,7 @@ func main() {
 	core.InitConfig()
 	core.MarkGuiMode()
 
+	web.InitClient()
 	core.InitConnection()
 
 	if core.HttpMode {
