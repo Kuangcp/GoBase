@@ -9,6 +9,7 @@ import (
 func main() {
 	core.HelpInfo.Parse()
 	core.InitConfig()
+	web.InitClient()
 
 	core.InitConnection()
 
