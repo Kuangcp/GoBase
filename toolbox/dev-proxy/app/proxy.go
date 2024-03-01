@@ -158,6 +158,7 @@ func HttpsProxy() {
 	core.StartLog("HTTPS")
 
 	// TODO 优化高并发下 transport 锁竞争问题
+	// TODO 刚启动时延迟很低，跑了几千个压测后 延迟很高，怀疑代理逻辑有资源泄漏
 	ProxyHandler = goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", core.Port),
