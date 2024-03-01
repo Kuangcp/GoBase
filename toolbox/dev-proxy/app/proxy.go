@@ -157,6 +157,7 @@ func (c *Cache) Get(host string) *tls.Certificate {
 func HttpsProxy() {
 	core.StartLog("HTTPS")
 
+	// TODO 优化高并发下 transport 锁竞争问题
 	ProxyHandler = goproxy.New(goproxy.WithDecryptHTTPS(&Cache{}), goproxy.WithDelegate(&EventHandler{}))
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", core.Port),
