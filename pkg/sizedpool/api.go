@@ -48,5 +48,7 @@ type (
 		Wait()
 
 		Run(action func())
+
+		Close()
 	}
 )

@@ -48,6 +48,12 @@ func NewWithName(limit int, name string) (SizedWait, error) {
 	return New(PoolOption{Size: limit, Name: name})
 }
 
+func (s *SizedWaitGroup) Close() {
+	close(s.queue)
+	close(s.futureQueue)
+	close(s.current)
+}
+
 func (s *SizedWaitGroup) GetName() string {
 	return s.Name
 }
