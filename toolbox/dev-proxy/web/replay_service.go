@@ -28,6 +28,7 @@ type (
 
 		RealMills    int64  `json:"real_mills"`
 		RealDuration string `json:"real_duration"`
+		Start        string `json:"start"`
 	}
 	ReplayCtx struct {
 		cmd string
@@ -80,14 +81,13 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 
 	pool, _ := sizedpool.NewQueuePool(data.Con)
 	lock := &sync.Mutex{}
-	on := time.Now().UnixMilli()
+	startTime := time.Now()
+	startTimeMs := startTime.UnixMilli()
 	stat := &BenchStat{}
 	for i := 0; i < data.Total; i++ {
 		pool.Submit(func() {
 			start := time.Now().UnixMilli()
-
 			success := ctx.act()
-
 			end := time.Now().UnixMilli()
 			waste := end - start
 
@@ -98,12 +98,14 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 				stat.Complete += 1
 			}
 			stat.Mills += waste
+			//fmt.Println(waste)
 			stat.Total += 1
 			lock.Unlock()
 		})
 	}
 	pool.Wait()
-	stat.RealMills = time.Now().UnixMilli() - on
+	stat.Start = startTime.Format(ctool.YYYY_MM_DD_HH_MM_SS)
+	stat.RealMills = time.Now().UnixMilli() - startTimeMs
 	stat.RealDuration = (time.Duration(stat.RealMills) * time.Millisecond).String()
 	stat.Id = data.Id
 	stat.Duration = (time.Duration(stat.Mills) * time.Millisecond).String()

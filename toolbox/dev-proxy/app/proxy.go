@@ -108,8 +108,9 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	}
 
 	proxyMs := time.Now().UnixMilli() - reqCtx.receiveReq
-	if proxyMs-waste > 5 {
-		logger.Warn("%4vms %v", proxyMs, reqCtx.proxyLog)
+	proxyDelta := proxyMs - waste
+	if proxyDelta > 10 {
+		logger.Warn("SlowProxy %4vms rt: %4vms %v", proxyDelta, proxyMs, reqCtx.proxyLog)
 	}
 }
 
