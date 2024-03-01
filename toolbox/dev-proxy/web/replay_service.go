@@ -7,6 +7,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -40,7 +41,9 @@ type (
 )
 
 var (
-	client http.Client
+	client     http.Client
+	clientList []*http.Client
+	cliCnt     = 100
 )
 
 func InitClient() {
@@ -52,6 +55,20 @@ func InitClient() {
 			Proxy: http.ProxyURL(uri),
 		},
 	}
+
+	//clientList = make([]*http.Client, cliCnt)
+	//for i := 0; i < cliCnt; i++ {
+	//	clientList[i] = &http.Client{
+	//		Timeout: time.Second * 30,
+	//		Transport: &http.Transport{
+	//			Proxy: http.ProxyURL(uri),
+	//		},
+	//	}
+	//}
+}
+
+func getClient() *http.Client {
+	return clientList[rand.Int()%cliCnt]
 }
 
 // TODO 并发数多的时候 请求的延迟会快速上升，curl开启大量文件响应慢？
@@ -86,6 +103,7 @@ func httpReplayCtx(id string) *ReplayCtx {
 		request.Header[core.HeaderProxyBench] = []string{"1"}
 
 		resp, err := client.Do(request)
+		//resp, err := getClient().Do(request)
 		if resp == nil || err != nil {
 			logger.Error(err)
 			return false
@@ -121,6 +139,7 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 	//ctx := curlReplayCtx(data.Id)
 	ctx := httpReplayCtx(data.Id)
 
+	// TODO pool 资源回收
 	pool, _ := sizedpool.NewQueuePool(data.Con)
 	lock := &sync.Mutex{}
 	startTime := time.Now()
@@ -146,6 +165,8 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 		})
 	}
 	pool.Wait()
+	pool.Close()
+
 	stat.Start = startTime.Format(ctool.YYYY_MM_DD_HH_MM_SS)
 	stat.RealMills = time.Now().UnixMilli() - startTimeMs
 	stat.RealDuration = (time.Duration(stat.RealMills) * time.Millisecond).String()
