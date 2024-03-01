@@ -9,7 +9,6 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ratelimiter"
-	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -19,7 +18,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -30,17 +28,6 @@ type (
 		Id   string
 		Kwd  string
 		Date *time.Time `fmt:"2006-01-02"`
-	}
-	BenchStat struct {
-		Id           string `json:"id"`
-		Total        int    `json:"total"`
-		Complete     int    `json:"complete"`
-		Failed       int    `json:"failed"`
-		Mills        int64  `json:"mills"`
-		Duration     string `json:"duration"`
-		Qps          string `json:"qps"`
-		RealMills    int64  `json:"real_mills"`
-		RealDuration string `json:"real_duration"`
 	}
 )
 
@@ -57,7 +44,6 @@ func StartQueryServer() {
 		logger.Warn("debug mode")
 		//fs := http.FileServer(http.Dir("./core/static"))
 		//http.Handle("/", http.StripPrefix("/", fs))
-
 		mux.Handle("/", http.FileServer(http.Dir("./web/static")))
 	} else {
 		sub, err := fs.Sub(static, "static")
@@ -251,109 +237,6 @@ func deleteById(writer http.ResponseWriter, id string) {
 	core.WriteJsonRsp(writer, ctool.SuccessWith("OK"))
 }
 
-func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
-	var data struct {
-		Id    string `form:"id"`
-		Con   int    `form:"con"`
-		Total int    `form:"total"`
-	}
-	if err := ctool.Unpack(request, &data); err != nil {
-		return ctool.FailedWithMsg[*BenchStat](err.Error())
-	}
-	if data.Con <= 1 {
-		data.Con = 1
-	}
-	if data.Total <= 1 {
-		data.Total = 1
-	}
-
-	//command := buildCommandById(data.Id, "")
-
-	detail := core.GetDetailByKey(data.Id)
-	pool, err := sizedpool.NewWithName(data.Total, "x")
-	if err != nil {
-		return ctool.FailedWithMsg[*BenchStat](err.Error())
-	}
-
-	lock := &sync.Mutex{}
-
-	on := time.Now().UnixMilli()
-	stat := &BenchStat{}
-	//rs := ""
-	for i := 0; i < data.Total; i++ {
-		pool.Run(func() {
-			start := time.Now().UnixMilli()
-			//_, success := core.ExecCommand(command)
-
-			//client := http.Client{
-			//	Transport: &http.Transport{},
-			//}
-			//_, err := client.Get(detail.Url)
-
-			logger.Info("run", start, detail.Url)
-			_, err := http.Get(detail.Url)
-
-			end := time.Now().UnixMilli()
-			waste := end - start
-
-			logger.Info("finish", start, detail.Url)
-			lock.Lock()
-			//if !success{
-			if err != nil {
-				stat.Failed += 1
-				//rs += "ERROR: \n" + command + "\n" + result + "\n➡️"
-			} else {
-				//rs += result + "➡️"
-				stat.Complete += 1
-			}
-			stat.Mills += waste
-			stat.Total += 1
-			lock.Unlock()
-		})
-	}
-	pool.Wait()
-	//logger.Info(rs)
-	stat.RealMills = time.Now().UnixMilli() - on
-	stat.RealDuration = (time.Duration(stat.RealMills) * time.Millisecond).String()
-	stat.Id = data.Id
-	stat.Duration = (time.Duration(stat.Mills) * time.Millisecond).String()
-	stat.Qps = fmt.Sprint(int64(stat.Total*1000) / stat.RealMills)
-
-	return ctool.SuccessWith[*BenchStat](stat)
-}
-
-func ReplayRequest(writer http.ResponseWriter, request *http.Request) {
-	query := request.URL.Query()
-	idx := query.Get("idx")
-	id := query.Get("id")
-	selfProxy := query.Get("selfProxy")
-	if idx != "" && id == "" {
-		sortIdx, _ := strconv.Atoi(idx)
-		result, err := core.Conn.ZRange(core.RequestList, int64(sortIdx-1), int64(sortIdx-1)).Result()
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		if len(result) == 0 {
-			return
-		}
-		id = core.ConvertToDbKey(result[0])
-	}
-
-	command := buildCommandById(id, selfProxy)
-	if command == "" {
-		core.RspStr(writer, id+" not found")
-		return
-	}
-	logger.Info("Replay ", id)
-	result, success := core.ExecCommand(command)
-	if !success {
-		core.RspStr(writer, "ERROR: \n"+command+"\n"+result+"\n")
-	} else {
-		core.RspStr(writer, result)
-	}
-}
-
 // PacFileApi 默认使用缺省文件，优先使用独立配置文件
 func PacFileApi(writer http.ResponseWriter, _ *http.Request) {
 	direct := "function FindProxyForURL(url, host) { return \"DIRECT\";}"
@@ -392,16 +275,9 @@ func buildCurlCommandApi(writer http.ResponseWriter, request *http.Request) {
 	id := query.Get("id")
 	selfProxy := query.Get("selfProxy")
 
-	res := buildCommandById(id, selfProxy)
+	res := buildCommandById(id, selfProxy == "Y", true)
 	if res == "" {
 		return
 	}
 	core.RspStr(writer, res)
-}
-
-func bindStatic(s, contentType string) func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Add("Content-Type", contentType)
-		core.RspStr(writer, s)
-	}
 }

@@ -247,13 +247,13 @@ func detailToPage(param *PageQueryParam, detail []*core.ReqLog[core.Message], to
 
 // buildCommandById 目前仅支持常见的后端服务 GET POST请求
 // TODO 待扩展,或者寻找成熟的方案
-func buildCommandById(id, selfProxy string) string {
+func buildCommandById(id string, proxy, storage bool) string {
 	detail := core.GetDetailByKey(id)
 	if detail == nil {
 		return ""
 	}
 	cmd := "curl "
-	if selfProxy == "Y" {
+	if proxy {
 		cmd += fmt.Sprintf(" -x 127.0.0.1:%v ", core.Port)
 	}
 	parseUrl, _ := url.Parse(detail.Url)
@@ -273,6 +273,9 @@ func buildCommandById(id, selfProxy string) string {
 		for _, v := range val {
 			cmd += fmt.Sprintf(" -H '%s: %s'", k, v)
 		}
+	}
+	if !storage {
+		cmd += fmt.Sprintf(" -H '%s: %s'", core.HeaderProxyBench, "1")
 	}
 
 	if len(detail.Request.Body) > 0 {
