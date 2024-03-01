@@ -148,6 +148,11 @@ func matchConf(originConf, fullUrl string) bool {
 }
 
 func MatchNeedStorage(proxyReq http.Request) bool {
+	val := proxyReq.Header[HeaderProxyBench]
+	if len(val) != 0 && val[0] == "1" {
+		return false
+	}
+
 	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 	return stream.Just(directList...).NoneMatch(func(item any) bool {
 		return matchConf(item.(string), fullUrl)
