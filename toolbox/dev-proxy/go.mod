@@ -14,6 +14,7 @@ require (
 	github.com/kuangcp/logger v1.0.9
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/tidwall/pretty v1.2.1
+	github.com/umisama/go-regexpcache v0.0.0-20150417035358-2444a542492f
 )
 
 require (
@@ -21,7 +22,6 @@ require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.24.2 // indirect
 	github.com/ouqiang/websocket v1.6.2 // indirect
-	github.com/umisama/go-regexpcache v0.0.0-20150417035358-2444a542492f // indirect
 	github.com/viki-org/dnscache v0.0.0-20130720023526-c70c1f23c5d8 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/net v0.21.0 // indirect

@@ -21,7 +21,7 @@ var (
 func init() {
 	flag.IntVar(&port, "p", 33311, "port")
 	flag.StringVar(&user, "user", "gin", "username")
-	flag.StringVar(&pwd, "pwd", "jiushi", "pwd")
+	flag.StringVar(&pwd, "pwd", "jiushi", "password")
 	flag.Var(&dirPair, "d", "webdav dir(default current dir). eg: x=/path/to")
 }
 
@@ -97,12 +97,14 @@ func authUser(w http.ResponseWriter, req *http.Request) bool {
 	if !ok {
 		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 		w.WriteHeader(http.StatusUnauthorized)
+		logger.Warn("no auth")
 		return false
 	}
 
 	// 验证用户名/密码
 	if username != user || password != pwd {
 		http.Error(w, "WebDAV: need authorized!", http.StatusUnauthorized)
+		logger.Warn("no match user:", username, password)
 		return false
 	}
 	return true
