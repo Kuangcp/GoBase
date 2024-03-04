@@ -9,6 +9,7 @@ import (
 	"github.com/kuangcp/logger"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"strings"
@@ -156,6 +157,10 @@ func (c *Cache) Get(host string) *tls.Certificate {
 // HttpsProxy replaced core.HttpProxy HTTP HTTPS 代理修改，密文解密
 func HttpsProxy() {
 	core.StartLog("HTTPS")
+
+	go func() {
+		http.ListenAndServe("0.0.0.0:1255", nil)
+	}()
 
 	// TODO 优化高并发下 transport 锁竞争问题
 	// TODO 刚启动时延迟很低，跑了几千个压测后 延迟很高，怀疑代理逻辑有资源泄漏

@@ -8,6 +8,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
 	"github.com/kuangcp/logger"
 	"github.com/tidwall/pretty"
+	"github.com/umisama/go-regexpcache"
 	"io"
 	"net/http"
 	"net/url"
@@ -138,7 +139,7 @@ func tryToReplacePath(originConf, targetConf, fullUrl string) string {
 }
 
 func matchConf(originConf, fullUrl string) bool {
-	compile, err := regexp.Compile(originConf)
+	compile, err := regexpcache.Compile(originConf)
 	if err != nil {
 		logger.Error(err)
 		return false
