@@ -278,7 +278,7 @@ func StartAndCloseHook(server *http.Server, fns ...func() error) {
 	Watch(fns...)
 }
 
-// 监听信号
+// Watch 监听进程收到的信号量
 func Watch(fns ...func() error) {
 	// 程序无法捕获信号 SIGKILL 和 SIGSTOP （终止和暂停进程），因此 os/signal 包对这两个信号无效。
 	ch := make(chan os.Signal, 1)
