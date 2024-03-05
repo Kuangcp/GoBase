@@ -7,6 +7,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -29,7 +30,7 @@ type (
 		Qps string `json:"qps"`
 		Rt  string `json:"rt"`
 
-		RealMills    int64  `json:"real_mills"`
+		RealMills    int64  `json:"real_mills"` // 实际耗时
 		RealDuration string `json:"real_duration"`
 		Start        string `json:"start"`
 	}
@@ -44,15 +45,22 @@ var (
 	client     http.Client
 	clientList []*http.Client
 	cliCnt     = 100
+	prf        func(*http.Request) (*url.URL, error)
 )
 
 func InitClient() {
 	proxy := fmt.Sprintf("http://127.0.0.1:%v", core.Port)
 	uri, _ := url.Parse(proxy)
+	proxyConf := http.ProxyURL(uri)
+	prf = proxyConf
 	client = http.Client{
 		Timeout: time.Second * 30,
 		Transport: &http.Transport{
-			Proxy: http.ProxyURL(uri),
+			Proxy: proxyConf,
+			//MaxConnsPerHost:     50,
+			//MaxIdleConns:        20,
+			//MaxIdleConnsPerHost: 50,
+			//IdleConnTimeout:     60 * time.Second,
 		},
 	}
 
@@ -61,7 +69,11 @@ func InitClient() {
 	//	clientList[i] = &http.Client{
 	//		Timeout: time.Second * 30,
 	//		Transport: &http.Transport{
-	//			Proxy: http.ProxyURL(uri),
+	//			Proxy:               proxyConf,
+	//			MaxConnsPerHost:     0,
+	//			MaxIdleConns:        100,
+	//			MaxIdleConnsPerHost: 20,
+	//			IdleConnTimeout:     60 * time.Second,
 	//		},
 	//	}
 	//}
@@ -71,7 +83,7 @@ func getClient() *http.Client {
 	return clientList[rand.Int()%cliCnt]
 }
 
-// TODO 并发数多的时候 请求的延迟会快速上升，curl开启大量文件响应慢？
+// TODO 并发数多的时候 请求的延迟会剧烈上升，curl开启大量文件响应慢？
 func curlReplayCtx(id string) *ReplayCtx {
 	command := buildCommandById(id, true, false)
 
@@ -81,16 +93,28 @@ func curlReplayCtx(id string) *ReplayCtx {
 	}}
 }
 
+// FIXME 当并发数超过10后当前主机6核12线程 对比 wrk ab 等工具 压测出的QPS误差非常大
 func httpReplayCtx(id string) *ReplayCtx {
+	debug := false
 	detail := core.GetDetailByKey(id)
 	return &ReplayCtx{msg: detail, act: func() bool {
 		var request *http.Request
 		var err error
+
+		u, err := url.Parse(detail.Url)
+		if err != nil {
+			logger.Error(err)
+			return false
+		}
+		tUrl := u.Scheme + "://" + u.Host + u.Path
+		if u.RawQuery != "" {
+			tUrl += "?" + url.QueryEscape(u.RawQuery)
+		}
 		if len(detail.Request.Body) > 0 {
 			reader := bytes.NewReader(detail.Request.Body)
-			request, err = http.NewRequest(detail.Method, detail.Url, reader)
+			request, err = http.NewRequest(detail.Method, tUrl, reader)
 		} else {
-			request, err = http.NewRequest(detail.Method, detail.Url, nil)
+			request, err = http.NewRequest(detail.Method, tUrl, nil)
 		}
 
 		for k, v := range detail.Request.Header {
@@ -109,12 +133,14 @@ func httpReplayCtx(id string) *ReplayCtx {
 			return false
 		}
 
-		//rspBody, err := io.ReadAll(resp.Body)
-		//if err != nil {
-		//	return false
-		//}
-		//logger.Info(string(rspBody))
-		//logger.Info(resp.Header)
+		if debug {
+			rspBody, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return false
+			}
+			logger.Info(string(rspBody))
+			logger.Info(resp.Header)
+		}
 
 		return true
 	}}
@@ -147,10 +173,10 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 	stat := &BenchStat{}
 	for i := 0; i < data.Total; i++ {
 		pool.Submit(func() {
-			start := time.Now().UnixMilli()
+			start := time.Now()
 			success := ctx.act()
-			end := time.Now().UnixMilli()
-			waste := end - start
+			end := time.Now()
+			waste := end.Sub(start)
 
 			lock.Lock()
 			if !success {
@@ -158,7 +184,7 @@ func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 			} else {
 				stat.Complete += 1
 			}
-			stat.Mills += waste
+			stat.Mills += waste.Milliseconds()
 			//fmt.Println(waste)
 			stat.Total += 1
 			lock.Unlock()

@@ -39,9 +39,6 @@ func (e *EventHandler) Auth(ctx *goproxy.Context, rw http.ResponseWriter) {
 
 func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	receive := time.Now()
-	// 修改header
-	//ctx.Req.Header.Add("X-Request-Id", ctx.Data["req_id"].(string))
-
 	// 设置X-Forwarded-For
 	proxyReq := ctx.Req
 	if clientIP, _, err := net.SplitHostPort(proxyReq.RemoteAddr); err == nil {
@@ -85,31 +82,29 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		return
 	}
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
+	startMs := reqCtx.startReq
+	reqTime := time.Now().UnixMilli() - startMs
+
 	reqLog := reqCtx.reqLog
 	resp.Header.Add("Ack-Proxy", reqCtx.proxyType+"  "+ctx.Req.Host)
-	startMs := reqCtx.startReq
 
 	bodyBt, body := ctool.CopyStream(resp.Body)
 	resp.Body = body
-
-	resMes := core.Message{Header: resp.Header, Body: bodyBt}
-	endMs := time.Now().UnixMilli()
-	waste := endMs - startMs
 
 	if reqCtx.proxyLog != "" {
 		if reqCtx.proxyType == core.Proxy {
 			reqCtx.proxyLog += " SELF"
 		}
-		logger.Debug("%4vms %v", waste, reqCtx.proxyLog)
+		logger.Debug("%4vms %v", reqTime, reqCtx.proxyLog)
 	}
-
+	resMes := core.Message{Header: resp.Header, Body: bodyBt}
 	core.HandleCompressed(&resMes, resp)
 	if reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
 		core.TrySaveLog(reqLog, resp)
 	}
 
 	proxyMs := time.Now().UnixMilli() - reqCtx.receiveReq
-	proxyDelta := proxyMs - waste
+	proxyDelta := proxyMs - reqTime
 	if proxyDelta > 10 {
 		logger.Warn("SlowProxy %4vms rt: %4vms %v", proxyDelta, proxyMs, reqCtx.proxyLog)
 	}
