@@ -178,6 +178,8 @@ func history(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+// https://www.svgrepo.com/show/490957/cup.svg
+
 func buildWeekData(startDay time.Time, frame int, calc string) []opts.LineData {
 	cache := make([]int, 24/frame)
 	var items []opts.LineData

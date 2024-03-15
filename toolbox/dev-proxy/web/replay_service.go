@@ -146,6 +146,8 @@ func httpReplayCtx(id string) *ReplayCtx {
 	}}
 }
 
+// https://github.com/tsliwowicz/go-wrk
+// https://github.com/adjust/go-wrk
 func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
 	var data struct {
 		Id    string `form:"id"`

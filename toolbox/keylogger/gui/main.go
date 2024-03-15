@@ -99,7 +99,7 @@ func main() {
 	// killer
 	var list = []string{"firefox"}
 	go runKiller(list)
-	go oomKiller()
+	//go oomKiller()
 
 	option = redis.Options{Addr: host + ":" + port, Password: pwd, DB: db}
 	store.InitConnection(option, false)
