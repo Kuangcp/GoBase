@@ -12,7 +12,7 @@ require (
 require (
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.28.1 // indirect
-	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
+	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848 // indirect
 )
 
 replace github.com/kuangcp/gobase/pkg/ctool v1.1.9 => ../../pkg/ctool
