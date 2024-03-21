@@ -3,6 +3,7 @@ package excel
 import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/logger"
 	"github.com/xuri/excelize/v2"
 	"strings"
 	"testing"
@@ -49,4 +50,49 @@ func TestReadParse(t *testing.T) {
 	}
 	writer.WriteString(sql)
 	//fmt.Println(sql)
+}
+
+func extractFileName(path string) string {
+	if path == "" {
+		return ""
+	}
+
+	start := strings.LastIndex(path, "/")
+	end := strings.LastIndex(path, ".")
+	if end == -1 {
+		return path[start+1:]
+	}
+
+	return path[start+1 : end]
+}
+
+func TestFileName(t *testing.T) {
+	logger.Info(extractFileName("/home/kcp/test/tocsv/short-parts-price.xlsx"))
+}
+
+func TestToCsvSpeed(t *testing.T) {
+	path := "/home/kcp/test/tocsv/short-parts-price.xlsx"
+	file, err := excelize.OpenFile(path)
+	if err != nil {
+		logger.Info(err)
+		return
+	}
+	rows, err := file.Rows("Sheet1")
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	writer, _ := ctool.NewWriter(extractFileName(path)+".csv", true)
+	defer writer.Close()
+
+	for rows.Next() {
+		cols, err := rows.Columns()
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+		logger.Info(cols)
+		writer.WriteLine(strings.Join(cols, ","))
+	}
+
 }
