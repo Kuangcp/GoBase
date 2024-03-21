@@ -6,6 +6,7 @@ require (
 	github.com/kuangcp/gobase/pkg/ctool v1.0.8
 	github.com/kuangcp/logger v1.0.9
 	github.com/xuri/excelize/v2 v2.6.1
+	github.com/yeka/zip v0.0.0-20231116150916-03d6312748a9
 )
 
 require (
