@@ -61,9 +61,9 @@ func TestToCsvSpeed(t *testing.T) {
 }
 
 func TestZipBuild(t *testing.T) {
-	// 5300ms
+	// 5300ms Python pandas 需要 17993ms
 	zipBuild("./data/以岭-感冒药_238.xlsx", "data")
-	// 2min
+	// 2min Python pandas 需要7分钟
 	//zipBuild("./data/英诺珐-月度-三品类-自定义品名_362.xlsx", "data")
 }
 
