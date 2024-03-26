@@ -9,4 +9,5 @@
     - keylogger : log key press
     - hosts-group : switch host
     - recycle-bin : recycle bin by cli
+    - [ws-client](/toolbox/web-socket/ws-client) websocket benchmark client
 - [wework robot api](/pkg/wxrobot)`wework group robot`

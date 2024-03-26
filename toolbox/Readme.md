@@ -13,3 +13,4 @@
 | kwebdav     | quick create web dav for any dir 
 | dev-proxy   | proxy for http and https         
 | lunarcal    | lunar cal                        
+| web-socket  | web-socket client and server               
