@@ -42,7 +42,7 @@ func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	proxyLog := ""
 	var reqLog *ReqLog[Message]
 	findNewUrl, proxyType := FindReplaceByRegexp(*proxyReq)
-	needStorage := MatchNeedStorage(*proxyReq)
+	needStorage := MatchNeedStorage(*proxyReq, proxyType)
 	if findNewUrl != nil {
 		proxyLog, reqLog = RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
 	}
@@ -185,27 +185,27 @@ func FmtDuration(d time.Duration) string {
 }
 
 func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStorage bool) (string, *ReqLog[Message]) {
-	now := time.Now()
-	id := uuid.New().String()
-
-	bodyBt, body := ctool.CopyStream(proxyReq.Body)
-	query, _ := url.QueryUnescape(proxyReq.URL.String())
-	reqMes := Message{Header: proxyReq.Header, Body: FilterFormType(bodyBt)}
-
-	id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
-	cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
-	reqLog := &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
-
+	var reqLog *ReqLog[Message]
 	var logStr string
 	if needStorage {
+		now := time.Now()
+		id := uuid.New().String()
 		if newUrl.Path == proxyReq.URL.Path {
 			logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
 		} else {
 			logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+newUrl.Path)
 		}
+
+		bodyBt, body := ctool.CopyStream(proxyReq.Body)
+		proxyReq.Body = body
+		query, _ := url.QueryUnescape(proxyReq.URL.String())
+		reqMes := Message{Header: proxyReq.Header, Body: FilterFormType(bodyBt)}
+
+		id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
+		cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
+		reqLog = &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
 	}
 
-	proxyReq.Body = body
 	proxyReq.Host = newUrl.Host
 	//proxyReq.URL.Scheme = newUrl.Scheme
 	proxyReq.URL.Host = newUrl.Host

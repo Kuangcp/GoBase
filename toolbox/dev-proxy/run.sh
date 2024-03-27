@@ -44,8 +44,15 @@ build_image(){
 }
 
 case $1 in 
+
 clean)
 
+;;
+mem.alloc)
+  go tool pprof -alloc_space http://localhost:1255/debug/pprof/heap
+;;
+mem.use)
+  go tool pprof -inuse_space http://localhost:1255/debug/pprof/heap
 ;;
 
 *)

@@ -31,6 +31,10 @@ func (e *EventHandler) Connect(ctx *goproxy.Context, rw http.ResponseWriter) {
 	//	ctx.Abort()
 	//	return
 	//}
+	receive := time.Now()
+	ctx.Data["ReqCtx"] = &ReqCtx{
+		receiveReqMs: receive.UnixMilli(),
+	}
 }
 
 func (e *EventHandler) Auth(ctx *goproxy.Context, rw http.ResponseWriter) {
@@ -38,7 +42,6 @@ func (e *EventHandler) Auth(ctx *goproxy.Context, rw http.ResponseWriter) {
 }
 
 func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
-	receive := time.Now()
 	// 设置X-Forwarded-For
 	proxyReq := ctx.Req
 	if clientIP, _, err := net.SplitHostPort(proxyReq.RemoteAddr); err == nil {
@@ -47,12 +50,20 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 		}
 		proxyReq.Header.Set("X-Forwarded-For", clientIP)
 	}
+
 	proxyLog := ""
 	var reqLog *core.ReqLog[core.Message]
-	findNewUrl, proxyType := core.FindReplaceByRegexp(*proxyReq)
-	needStorage := core.MatchNeedStorage(*proxyReq)
-	if findNewUrl != nil {
-		proxyLog, reqLog = core.RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
+	var proxyType = core.Direct
+	needStorage := false
+	hostPath := proxyReq.Host + proxyReq.URL.Path
+	if core.TrackAllType || !core.IsMatch(core.StaticUrlPattern, hostPath) {
+		//logger.Debug("none static %v", hostPath)
+		var findNewUrl *url.URL
+		findNewUrl, proxyType = core.FindReplaceByRegexp(*proxyReq)
+		needStorage = core.MatchNeedStorage(*proxyReq, proxyType)
+		if findNewUrl != nil {
+			proxyLog, reqLog = core.RewriteRequestAndBuildLog(findNewUrl, proxyReq, needStorage)
+		}
 	}
 
 	// rebuild
@@ -66,15 +77,13 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	proxyReq.ProtoMinor = 1
 	proxyReq.Close = false
 
-	now := time.Now()
-	ctx.Data["ReqCtx"] = &ReqCtx{
-		reqLog:      reqLog,
-		proxyLog:    proxyLog,
-		needStorage: needStorage,
-		proxyType:   proxyType,
-		startReq:    now.UnixMilli(),
-		receiveReq:  receive.UnixMilli(),
-	}
+	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
+	reqCtx.startReqMs = time.Now().UnixMilli()
+	reqCtx.reqLog = reqLog
+	reqCtx.proxyLog = proxyLog
+	reqCtx.needStorage = needStorage
+	reqCtx.proxyType = proxyType
+	reqCtx.originUrl = hostPath
 }
 
 func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response, err error) {
@@ -82,14 +91,11 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		return
 	}
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
-	startMs := reqCtx.startReq
+	startMs := reqCtx.startReqMs
 	reqTime := time.Now().UnixMilli() - startMs
 
 	reqLog := reqCtx.reqLog
 	resp.Header.Add("Ack-Proxy", reqCtx.proxyType+"  "+ctx.Req.Host)
-
-	bodyBt, body := ctool.CopyStream(resp.Body)
-	resp.Body = body
 
 	if reqCtx.proxyLog != "" {
 		if reqCtx.proxyType == core.Proxy {
@@ -97,16 +103,21 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		}
 		logger.Debug("%4vms %v", reqTime, reqCtx.proxyLog)
 	}
-	resMes := core.Message{Header: resp.Header, Body: bodyBt}
-	core.HandleCompressed(&resMes, resp)
-	if reqCtx.needStorage && reqCtx.proxyType != core.Direct && reqLog != nil {
+
+	if reqCtx.needStorage && reqCtx.proxyType != core.Direct {
+		// TODO https://cloud.tencent.com/developer/article/1532122 优化buffer
+		bodyBt, body := ctool.CopyStream(resp.Body)
+		resp.Body = body
+		resMes := core.Message{Header: resp.Header, Body: bodyBt}
+		core.HandleCompressed(&resMes, resp)
 		core.TrySaveLog(reqLog, resp)
 	}
 
-	proxyMs := time.Now().UnixMilli() - reqCtx.receiveReq
+	proxyMs := time.Now().UnixMilli() - reqCtx.receiveReqMs
 	proxyDelta := proxyMs - reqTime
 	if proxyDelta > 10 {
-		logger.Warn("SlowProxy %4vms rt: %4vms %v", proxyDelta, proxyMs, reqCtx.proxyLog)
+		//logger.Warn("SlowProxy %4vms rt: %4vms %v", proxyDelta, proxyMs, reqCtx.proxyLog)
+		logger.Warn("SlowProxy %3vms rt: %4vms %v %v", proxyDelta, proxyMs, reqCtx.originUrl, reqTime)
 	}
 }
 
@@ -121,6 +132,10 @@ func (e *EventHandler) Finish(ctx *goproxy.Context) {
 
 // ErrorLog 记录错误日志
 func (e *EventHandler) ErrorLog(err error) {
+	msg := err.Error()
+	if strings.Contains(msg, "context canceled") {
+		return
+	}
 	logger.Error(err)
 }
 
