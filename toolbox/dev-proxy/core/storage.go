@@ -136,9 +136,17 @@ func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
 	}
 
 	jsonType := strings.Contains(contentType, "application/json")
-	if TrackAllType || jsonType {
-		FillReqLogResponse(reqLog, res)
-		SaveReqLog(reqLog)
+	if TrackAllType || jsonType && reqLog != nil {
+		// TODO https://cloud.tencent.com/developer/article/1532122 优化buffer
+		bodyBts, body := ctool.CopyStream(res.Body)
+		res.Body = body
+		resMes := Message{Header: res.Header, Body: bodyBts}
+		reqLog.Response = resMes
+		//FillReqLogResponse(reqLog, res)
+		go func() {
+			FillReqLogResponseV2(reqLog, res)
+			SaveReqLog(reqLog)
+		}()
 	}
 }
 
@@ -148,10 +156,6 @@ func IsJsonResponse(header http.Header) bool {
 }
 
 func SaveReqLog(log *ReqLog[Message]) {
-	if log == nil {
-		return
-	}
-
 	// redis cache
 	Conn.ZAdd(RequestList, redis.Z{Member: log.CacheId, Score: float64(log.ReqTime.UnixNano())})
 	Conn.HSet(RequestUrlList, log.Id, log.Url)

@@ -3,7 +3,6 @@ package app
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/goproxy"
 	"github.com/kuangcp/logger"
@@ -104,12 +103,7 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		logger.Debug("%4vms %v", reqTime, reqCtx.proxyLog)
 	}
 
-	if reqCtx.needStorage && reqCtx.proxyType != core.Direct {
-		// TODO https://cloud.tencent.com/developer/article/1532122 优化buffer
-		bodyBt, body := ctool.CopyStream(resp.Body)
-		resp.Body = body
-		resMes := core.Message{Header: resp.Header, Body: bodyBt}
-		core.HandleCompressed(&resMes, resp)
+	if reqCtx.needStorage {
 		core.TrySaveLog(reqLog, resp)
 	}
 
