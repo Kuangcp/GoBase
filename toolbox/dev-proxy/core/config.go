@@ -77,9 +77,10 @@ var (
 	lock         = &sync.RWMutex{}
 	ConfigReload = make(chan bool, 1)
 	guiMode      = false
-	// DirectType https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
+	// DirectContentType https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type
 	// https://tool.oschina.net/commons/_contenttype.dea
-	DirectType = []string{"javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
+	DirectContentType = []string{"javascript", "css", "image/", "pdf", "msword", "octet-stream", "audio", "video"}
+	StaticUrlPattern  = ".*((js)|(css)|(html))$"
 )
 
 func (p *ProxyGroup) GetName() string {
@@ -138,8 +139,8 @@ func tryToReplacePath(originConf, targetConf, fullUrl string) string {
 	return replaceResult
 }
 
-func matchConf(originConf, fullUrl string) bool {
-	compile, err := regexpcache.Compile(originConf)
+func IsMatch(pattern, fullUrl string) bool {
+	compile, err := regexpcache.Compile(pattern)
 	if err != nil {
 		logger.Error(err)
 		return false
@@ -148,7 +149,10 @@ func matchConf(originConf, fullUrl string) bool {
 	return compile.Match([]byte(fullUrl))
 }
 
-func MatchNeedStorage(proxyReq http.Request) bool {
+func MatchNeedStorage(proxyReq http.Request, proxyType string) bool {
+	if proxyType == Direct {
+		return false
+	}
 	val := proxyReq.Header[HeaderProxyBench]
 	if len(val) != 0 && val[0] == "1" {
 		return false
@@ -156,7 +160,7 @@ func MatchNeedStorage(proxyReq http.Request) bool {
 
 	fullUrl := proxyReq.URL.Scheme + "://" + proxyReq.URL.Host + proxyReq.URL.Path
 	return stream.Just(directList...).NoneMatch(func(item any) bool {
-		return matchConf(item.(string), fullUrl)
+		return IsMatch(item.(string), fullUrl)
 	})
 }
 
@@ -169,7 +173,7 @@ func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, string) {
 	matchResult := ""
 
 	for _, conf := range directList {
-		if matchConf(conf, fullUrl) {
+		if IsMatch(conf, fullUrl) {
 			return nil, Direct
 		}
 	}
@@ -198,7 +202,7 @@ func FindReplaceByRegexp(proxyReq http.Request) (*url.URL, string) {
 	}
 
 	for _, conf := range trackList {
-		if matchConf(conf, fullUrl) {
+		if IsMatch(conf, fullUrl) {
 			parse, err := url.Parse(fullUrl)
 			if err != nil {
 				logger.Error(err)

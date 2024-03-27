@@ -128,7 +128,7 @@ func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
 		return
 	}
 
-	staticType := stream.Just(DirectType...).AnyMatch(func(item any) bool {
+	staticType := stream.Just(DirectContentType...).AnyMatch(func(item any) bool {
 		return strings.Contains(contentType, item.(string))
 	})
 	if staticType {
