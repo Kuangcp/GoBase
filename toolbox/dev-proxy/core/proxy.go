@@ -134,15 +134,21 @@ func HandleCompressed(msg *Message, res *http.Response) {
 }
 
 func FillReqLogResponse(reqLog *ReqLog[Message], res *http.Response) {
-	if reqLog == nil {
-		return
-	}
 	bodyBts, body := ctool.CopyStream(res.Body)
 	res.Body = body
 	resMes := Message{Header: res.Header, Body: bodyBts}
 	HandleCompressed(&resMes, res)
 
 	reqLog.Response = resMes
+	reqLog.ResTime = time.Now()
+	reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
+	reqLog.Status = res.Status
+	reqLog.StatusCode = res.StatusCode
+}
+
+func FillReqLogResponseV2(reqLog *ReqLog[Message], res *http.Response) {
+	HandleCompressed(&reqLog.Response, res)
+
 	reqLog.ResTime = time.Now()
 	reqLog.ElapsedTime = FmtDuration(reqLog.ResTime.Sub(reqLog.ReqTime))
 	reqLog.Status = res.Status
