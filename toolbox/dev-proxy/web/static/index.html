@@ -81,6 +81,7 @@
     <div id="detail-response"></div>
 </div>
 <script>
+    bindKeyDown()
 
     let lastDetailId
     let floatPages = ['ConfigPage', 'BenchPage', 'PerfPage']
@@ -115,6 +116,18 @@
 
         document.getElementById("detail-request").innerHTML = ""
         document.getElementById("detail-response").innerHTML = ""
+    }
+
+    function bindKeyDown() {
+        console.log("bind")
+        document.onkeydown = function (event) {
+            // Ctrl E
+            if (event.ctrlKey === true && event.altKey === true) {
+                console.log('hit')
+                event.preventDefault();
+                OpenPage('ConfigPage')
+            }
+        }
     }
 
     function OpenPage(id) {
