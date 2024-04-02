@@ -13,7 +13,7 @@ func main() {
 
 	core.InitConnection()
 
-	go web.StartQueryServer()
+	core.Go(web.StartQueryServer)
 
 	if core.HttpMode {
 		core.HttpProxy()

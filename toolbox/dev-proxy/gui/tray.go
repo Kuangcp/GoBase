@@ -23,12 +23,12 @@ func OnReady() {
 	systray.SetTooltip("Dev Proxy")
 
 	exitItem := systray.AddMenuItem("Exit  (v"+core.HelpInfo.Version+")", "Exit the whole app")
-	go func() {
+	core.Go(func() {
 		<-exitItem.ClickedCh
 		logger.Info("Requesting quit")
 		systray.Quit()
 		logger.Info("Finished quitting")
-	}()
+	})
 
 	systray.AddSeparator()
 
@@ -39,7 +39,7 @@ func OnReady() {
 	addFileItem(core.ProxyConfVar.ProxySelf)
 	addFileItem(core.ProxyConfVar.ProxyDirect)
 
-	go refreshUIByConfigReload()
+	core.Go(refreshUIByConfigReload)
 }
 
 func refreshUIByConfigReload() {
@@ -61,7 +61,7 @@ func addFileItem(vo core.ProxySwitch) {
 	}
 	checkbox := systray.AddMenuItemCheckbox(vo.GetName(), "Check Me", vo.HasUse())
 	fileMap.Store(vo, checkbox)
-	go func() {
+	core.Go(func() {
 		for {
 			select {
 			case <-checkbox.ClickedCh:
@@ -75,7 +75,7 @@ func addFileItem(vo core.ProxySwitch) {
 				updateCheckBox(!useState, checkbox)
 			}
 		}
-	}()
+	})
 }
 
 func updateCheckBox(use bool, checkbox *systray.MenuItem) {

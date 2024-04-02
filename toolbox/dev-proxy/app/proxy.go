@@ -162,9 +162,9 @@ func (c *Cache) Get(host string) *tls.Certificate {
 func HttpsProxy() {
 	core.StartLog("HTTPS")
 
-	go func() {
+	core.Go(func() {
 		http.ListenAndServe("0.0.0.0:1255", nil)
-	}()
+	})
 
 	// TODO 优化高并发下 transport 锁竞争问题
 	// TODO 刚启动时延迟很低，跑了几千个压测后 延迟很高，怀疑代理逻辑有资源泄漏

@@ -16,12 +16,12 @@ func main() {
 	core.InitConnection()
 
 	if core.HttpMode {
-		go core.HttpProxy()
+		core.Go(core.HttpProxy)
 	} else {
-		go app.HttpsProxy()
+		core.Go(app.HttpsProxy)
 	}
 
-	go web.StartQueryServer()
+	core.Go(web.StartQueryServer)
 
 	systray.Run(OnReady, OnExit)
 }

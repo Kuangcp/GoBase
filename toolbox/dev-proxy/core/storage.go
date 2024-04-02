@@ -143,10 +143,10 @@ func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
 		resMes := Message{Header: res.Header, Body: bodyBts}
 		reqLog.Response = resMes
 		//FillReqLogResponse(reqLog, res)
-		go func() {
+		Go(func() {
 			FillReqLogResponseV2(reqLog, res)
 			SaveReqLog(reqLog)
-		}()
+		})
 	}
 }
 
