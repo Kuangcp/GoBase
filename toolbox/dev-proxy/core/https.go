@@ -79,8 +79,12 @@ func handleHttps(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	}
-	go transfer(destConn, clientConn)
-	go transfer(clientConn, destConn)
+	Go(func() {
+		transfer(destConn, clientConn)
+	})
+	Go(func() {
+		transfer(clientConn, destConn)
+	})
 
 }
 func transfer(destination io.WriteCloser, source io.ReadCloser) {

@@ -267,12 +267,12 @@ func HttpProxy() {
 }
 
 func StartAndCloseHook(server *http.Server, fns ...func() error) {
-	go func() {
+	Go(func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error(err)
 			os.Exit(0)
 		}
-	}()
+	})
 	if fns == nil {
 		fns = []func() error{}
 	}

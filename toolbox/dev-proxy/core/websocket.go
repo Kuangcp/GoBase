@@ -68,7 +68,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request, proxyReq *http.Req
 	defer c_to_next.Close()
 	/*****************接收返回并转回给浏览器*******************/
 
-	go func() {
+	Go(func() {
 		logger.Info("run read from next proc")
 		for {
 			mt, message, err := c_to_next.ReadMessage()
@@ -83,7 +83,7 @@ func websocketHandler(w http.ResponseWriter, r *http.Request, proxyReq *http.Req
 				break
 			}
 		}
-	}()
+	})
 
 	/*****************接收浏览器信息并转发*******************/
 	//此处不能再协程了，否则会defer c_to_next.Close()
