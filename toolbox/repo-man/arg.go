@@ -3,11 +3,12 @@ package main
 import "github.com/kuangcp/gobase/pkg/ctool"
 
 var (
-	list   bool
-	fetch  bool
-	push   bool
-	status bool
-	repo   string
+	list    bool
+	fetch   bool
+	push    bool
+	pushAll bool // pushAll all remote
+	status  bool
+	repo    string
 )
 var helpInfo = ctool.HelpInfo{
 	Description: "Repo management",
@@ -17,6 +18,7 @@ var helpInfo = ctool.HelpInfo{
 		{Short: "-l", BoolVar: &list, Comment: "list all repo"},
 		{Short: "-f", BoolVar: &fetch, Comment: "fetch remote upstream"},
 		{Short: "-p", BoolVar: &push, Comment: "push to remote"},
+		{Short: "-pa", BoolVar: &pushAll, Comment: "push to remote"},
 		{Short: "-s", BoolVar: &status, Comment: "show status"},
 	},
 	Options: []ctool.ParamVO{
