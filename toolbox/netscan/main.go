@@ -123,8 +123,8 @@ func scanHost(start, end int, host string, bar *pb.ProgressBar) {
 func parallelScan(start, end int, host string, bar *pb.ProgressBar) {
 	noLimit := con == -1
 
-	// 并不一定无限制的效率更高，创建太多协程反而使得调度更耗时吞吐量下降明细
-	// 但是目标端网络延迟高且大量端口未开启时创建大量协程的效率会更高，因为大量的协程会阻塞在IO出让CPU执行，相当于网络延迟被忽视了
+	// 并不一定无限制开启协程的方式会效率更高，创建太多协程反而使得调度更耗时吞吐量下降明显
+	// 但是目标端网络延迟高且大量端口未开启时创建大量协程的效率会更高，因为大量的协程会阻塞在IO 出让了CPU执行，相当于网络延迟被忽视了
 	if noLimit {
 		var ps = make(chan int, 1000)
 		var w sync.WaitGroup

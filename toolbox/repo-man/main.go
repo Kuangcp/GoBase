@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"strings"
-	"sync"
-
 	"github.com/go-git/go-git/v5"
-	"github.com/kuangcp/gobase/cuibase"
-	"github.com/wonderivan/logger"
+	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/sizedpool"
+	"github.com/kuangcp/logger"
+	"io/fs"
+	"path/filepath"
+	"strings"
 )
 
 type RepoAlias struct {
@@ -18,62 +19,73 @@ type RepoAlias struct {
 }
 
 func (r RepoAlias) String() string {
-	var nameColor = cuibase.Blue
+	var nameColor = ctool.Blue
 	if r.ignore {
-		nameColor = cuibase.Red
+		nameColor = ctool.Red
 	}
 	return fmt.Sprintf("%-30s %-50s %-10s",
-		cuibase.Yellow.PrintNoEnd(r.alias),
-		cuibase.Green.PrintNoEnd(r.path),
+		ctool.Yellow.PrintNoEnd(r.alias),
+		ctool.Green.PrintNoEnd(r.path),
 		nameColor.Print(r.name))
 }
 
-func HelpInfo(_ []string) {
-	info := cuibase.HelpInfo{
-		Description: "Git repository manager",
-		VerbLen:     -3,
-		ParamLen:    -5,
-		Params: []cuibase.ParamInfo{
-			{
-				Verb:    "-h",
-				Param:   "",
-				Comment: "Help info",
-			},
-		}}
-	info.PrintHelp()
-}
-func PullRepo(dir string, latch *sync.WaitGroup) {
-	defer latch.Done()
-
+func PullRepo(dir string) {
 	r, err := git.PlainOpen(dir)
-	cuibase.CheckIfError(err)
+	ctool.CheckIfError(err)
 	worktree, err := r.Worktree()
-	cuibase.CheckIfError(err)
+	ctool.CheckIfError(err)
 
-	// TODO ssh bug
-	err = worktree.Pull(&git.PullOptions{SingleBranch: true})
+	//status, err := worktree.Status()
+	//ctool.CheckIfError(err)
+	//if !status.IsClean() {
+	//	logger.Warn("exist change")
+	//	for k, v := range status {
+	//		logger.Info(k, string(v.Staging), string(v.Worktree), v.Extra)
+	//	}
+	//	return
+	//}
+
+	remote, err := findRemote(dir)
+	ctool.CheckIfError(err)
+	//logger.Info(remote)
+	err = worktree.Pull(&git.PullOptions{SingleBranch: true, RemoteName: remote})
+	if err.Error() == "already up-to-date" {
+		return
+	}
 	logger.Error(dir, err)
 }
 
-func PushRepo(dir string, latch *sync.WaitGroup) {
-	defer latch.Done()
+func findRemote(dir string) (string, error) {
+	remoteFile := ""
+	err := filepath.Walk(dir+"/.git/refs/remotes/", func(path string, info fs.FileInfo, err error) error {
+		if strings.HasSuffix(path, "HEAD") {
+			remoteFile = path
+		}
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	list := strings.Split(remoteFile, "/")
 
+	return list[len(list)-2], nil
+}
+
+func PushRepo(dir string) {
 	r, err := git.PlainOpen(dir)
-	cuibase.CheckIfError(err)
+	ctool.CheckIfError(err)
 
 	err = r.Push(&git.PushOptions{})
 	logger.Error(dir, err)
 }
 
-func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
-	defer latch.Done()
-
+func ShowRepoStatus(dir string) {
 	r, err := git.PlainOpen(dir)
-	cuibase.CheckIfError(err)
+	ctool.CheckIfError(err)
 	worktree, err := r.Worktree()
-	cuibase.CheckIfError(err)
+	ctool.CheckIfError(err)
 	status, err := worktree.Status()
-	cuibase.CheckIfError(err)
+	ctool.CheckIfError(err)
 	if status.IsClean() {
 		return
 	}
@@ -85,37 +97,37 @@ func ShowRepoStatus(dir string, latch *sync.WaitGroup) {
 	add := 0
 	for filePath := range status {
 		fileStatus := status.File(filePath)
-		var color = cuibase.End
+		var color = ctool.End
 		if fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified {
-			color = cuibase.Cyan
+			color = ctool.Cyan
 			modify++
 		}
 		if fileStatus.Staging == git.Deleted || fileStatus.Worktree == git.Deleted {
-			color = cuibase.Red
+			color = ctool.Red
 		}
 		if fileStatus.Staging == git.Added || fileStatus.Worktree == git.Added {
-			color = cuibase.Green
+			color = ctool.Green
 			add++
 		}
 		if fileStatus.Staging == git.Untracked || fileStatus.Worktree == git.Untracked {
-			color = cuibase.Yellow
+			color = ctool.Yellow
 			add++
 		}
 		content += color.Printf("%c%c    %s\n", fileStatus.Staging, fileStatus.Worktree, filePath)
 	}
 
-	fmt.Println("▶ " + cuibase.Blue.Printf("%-17s", temps[len(temps)-1]) +
-		cuibase.Green.Printf("%-45s", dir) +
-		cuibase.Blue.Printf("M:%-3vA:%-3v", modify, add) + " ◀\n")
+	fmt.Print("\033[48;5;244m▶ " + fmt.Sprintf("\033[48;5;244m%-17s\033[0m", temps[len(temps)-1]) +
+		fmt.Sprintf("\u001B[48;5;244m%-45s\u001B[0m", dir) +
+		fmt.Sprintf("\u001B[48;5;244mM:%-3vA:%-3v", modify, add) + " ◀\033[0m\n")
 	fmt.Println(content)
 }
 
-func getRepoList() []interface{} {
-	home, err := cuibase.Home()
-	cuibase.CheckIfError(err)
-	return cuibase.ReadFileLines(home+"/.repos.sh", func(s string) bool {
+func getRepoList() []RepoAlias {
+	home, err := ctool.Home()
+	ctool.CheckIfError(err)
+	return ctool.ReadLines[RepoAlias](home+"/.repos.sh", func(s string) bool {
 		return strings.Contains(s, "alias")
-	}, func(s string) interface{} {
+	}, func(s string) RepoAlias {
 		temps := strings.Split(s, "'")
 		return RepoAlias{alias: temps[0][5 : len(temps[0])-1],
 			path:   temps[1][3:],
@@ -125,38 +137,50 @@ func getRepoList() []interface{} {
 	})
 }
 
-func ParallelActionRepo(action func(string, *sync.WaitGroup)) {
+func ParallelActionRepo(action func(string)) {
 	list := getRepoList()
-	var latch sync.WaitGroup
-	for _, s := range list {
-		repoAlias := s.(RepoAlias)
+
+	pool, _ := sizedpool.NewQueuePool(len(list))
+
+	//var latch sync.WaitGroup
+	for _, repoAlias := range list {
 		if repoAlias.ignore {
 			continue
 		}
+		if repo != "" && repoAlias.name != repo {
+			continue
+		}
 
-		latch.Add(1)
-		go action(repoAlias.path, &latch)
+		path := repoAlias.path
+		pool.Run(func() {
+			action(path)
+		})
+
+		//latch.Add(1)
+		//go action(repoAlias.path, &latch)
 	}
-	latch.Wait()
+	pool.Wait()
 }
 
 func main() {
-	logger.SetLogPathTrim("/toolbox/")
-	cuibase.RunAction(map[string]func(params []string){
-		"-h": HelpInfo,
-		"l": func(params []string) {
-			list := getRepoList()
-			for i := range list {
-				println(list[i].(RepoAlias).String())
-			}
-		},
-		"pla": func(_ []string) {
-			ParallelActionRepo(PullRepo)
-		},
-		"pa": func(_ []string) {
-			ParallelActionRepo(PushRepo)
-		},
-	}, func(_ []string) {
+	helpInfo.Parse()
+
+	if list {
+		list := getRepoList()
+		for i := range list {
+			println(list[i].String())
+		}
+		return
+	} else if fetch {
+		ParallelActionRepo(PullRepo)
+		return
+	} else if status {
 		ParallelActionRepo(ShowRepoStatus)
-	})
+		return
+	} else if push {
+		ParallelActionRepo(PushRepo)
+		return
+	}
+
+	ParallelActionRepo(ShowRepoStatus)
 }
