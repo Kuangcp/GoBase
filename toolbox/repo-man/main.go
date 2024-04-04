@@ -71,12 +71,47 @@ func findRemote(dir string) (string, error) {
 	return list[len(list)-2], nil
 }
 
+func findAllRemote(dir string) ([]string, error) {
+	var all []string
+	err := filepath.Walk(dir+"/.git/refs/remotes/", func(path string, info fs.FileInfo, err error) error {
+		logger.Info(path, info.Name())
+		if info.IsDir() && info.Name() != "remotes" {
+			all = append(all, info.Name())
+		}
+		return nil
+	})
+	if err != nil {
+		return all, err
+	}
+	return all, nil
+}
+
 func PushRepo(dir string) {
 	r, err := git.PlainOpen(dir)
 	ctool.CheckIfError(err)
 
-	err = r.Push(&git.PushOptions{})
-	logger.Error(dir, err)
+	remote, err := findRemote(dir)
+	ctool.CheckIfError(err)
+	err = r.Push(&git.PushOptions{RemoteName: remote})
+	if err != nil {
+		logger.Error(dir, err)
+	}
+}
+
+func PushAllRemote(dir string) {
+	r, err := git.PlainOpen(dir)
+	ctool.CheckIfError(err)
+
+	remote, err := findAllRemote(dir)
+	ctool.CheckIfError(err)
+	logger.Info(remote, r)
+
+	for _, rm := range remote {
+		err = r.Push(&git.PushOptions{RemoteName: rm})
+		if err != nil {
+			logger.Error(dir, err)
+		}
+	}
 }
 
 func ShowRepoStatus(dir string) {
@@ -179,6 +214,9 @@ func main() {
 		return
 	} else if push {
 		ParallelActionRepo(PushRepo)
+		return
+	} else if pushAll {
+		ParallelActionRepo(PushAllRemote)
 		return
 	}
 
