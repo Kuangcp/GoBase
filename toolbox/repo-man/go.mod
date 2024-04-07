@@ -7,6 +7,7 @@ require (
 	github.com/kuangcp/gobase/pkg/ctool v1.2.0
 	github.com/kuangcp/gobase/pkg/sizedpool v1.0.4
 	github.com/kuangcp/logger v1.0.9
+	github.com/pkg/errors v0.9.1
 )
 
 require (
@@ -33,3 +34,5 @@ require (
 	golang.org/x/tools v0.16.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
+
+replace github.com/kuangcp/gobase/pkg/sizedpool v1.0.4 => ../../pkg/sizedpool
