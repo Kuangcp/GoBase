@@ -24,7 +24,9 @@ func NewTmpFuturePool(option PoolOption) (FuturePool, error) {
 
 func NewFuturePool(option PoolOption) (FuturePool, error) {
 	group, err := New(option)
-	go group.ExecFuturePool(nil)
+	Go(func() {
+		group.ExecFuturePool(nil)
+	})
 	return group, err
 }
 
@@ -33,10 +35,10 @@ func (s *SizedWaitGroup) ExecQueuePool() {
 	for task := range s.queue {
 		action := task
 		s.Add()
-		go func() {
+		Go(func() {
 			defer s.Done()
 			action()
-		}()
+		})
 	}
 }
 

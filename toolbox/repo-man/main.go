@@ -6,6 +6,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/logger"
+	"github.com/pkg/errors"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -52,23 +53,34 @@ func PullRepo(dir string) {
 	if err.Error() == "already up-to-date" {
 		return
 	}
-	logger.Error(dir, err)
+	logger.Error(dir, remote, err)
 }
 
 func findRemote(dir string) (string, error) {
-	remoteFile := ""
-	err := filepath.Walk(dir+"/.git/refs/remotes/", func(path string, info fs.FileInfo, err error) error {
+	curRemote := ""
+	logger.Info(dir)
+	last := ""
+	remoteBase := dir + "/.git/refs/remotes/"
+	err := filepath.Walk(remoteBase, func(path string, info fs.FileInfo, err error) error {
+		tmp := path[len(remoteBase):]
 		if strings.HasSuffix(path, "HEAD") {
-			remoteFile = path
+			curRemote = strings.TrimRight(tmp, "/HEAD")
+		}
+		if !strings.Contains(tmp, "/") && tmp != "" {
+			last = tmp
 		}
 		return nil
 	})
 	if err != nil {
 		return "", err
 	}
-	list := strings.Split(remoteFile, "/")
-
-	return list[len(list)-2], nil
+	if curRemote == "" && last == "" {
+		return "", errors.Errorf("No remote setup")
+	}
+	if curRemote == "" {
+		return last, nil
+	}
+	return curRemote, nil
 }
 
 func findAllRemote(dir string) ([]string, error) {
@@ -115,12 +127,23 @@ func PushAllRemote(dir string) {
 }
 
 func ShowRepoStatus(dir string) {
+	watch := ctool.NewStopWatch()
+
+	watch.Start("open")
 	r, err := git.PlainOpen(dir)
 	ctool.CheckIfError(err)
+	watch.Stop()
+
+	watch.Start("worktree")
 	worktree, err := r.Worktree()
 	ctool.CheckIfError(err)
+	watch.Stop()
+
+	//TODO 重大性能问题
+	watch.Start("status")
 	status, err := worktree.Status()
 	ctool.CheckIfError(err)
+	watch.Stop()
 	if status.IsClean() {
 		return
 	}
@@ -155,6 +178,7 @@ func ShowRepoStatus(dir string) {
 		fmt.Sprintf("\u001B[48;5;244m%-45s\u001B[0m", dir) +
 		fmt.Sprintf("\u001B[48;5;244mM:%-3vA:%-3v", modify, add) + " ◀\033[0m\n")
 	fmt.Println(content)
+	fmt.Println(watch.PrettyPrint())
 }
 
 func getRepoList() []RepoAlias {

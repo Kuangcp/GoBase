@@ -59,11 +59,13 @@ func RspStr(writer http.ResponseWriter, val string) {
 }
 
 func Go(act func()) {
-	defer func() {
-		//捕获抛出的panic
-		if err := recover(); err != nil {
-			logger.Warn(err)
-		}
+	go func() {
+		defer func() {
+			//捕获抛出的panic
+			if err := recover(); err != nil {
+				logger.Warn(err)
+			}
+		}()
+		act()
 	}()
-	go act()
 }

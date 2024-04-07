@@ -109,8 +109,8 @@ func (s *SizedWaitGroup) Run(action func()) {
 	if err != nil {
 		return
 	}
-	go func() {
+	Go(func() {
 		defer s.Done()
 		action()
-	}()
+	})
 }
