@@ -1,6 +1,6 @@
 # cli tool
 
-[中文](/toolbox/Readme_CN.md)
+[🇨🇳](/toolbox/Readme_CN.md)
 
 | name        | description                      |
 |:------------|:---------------------------------|
@@ -13,4 +13,4 @@
 | kwebdav     | quick create web dav for any dir 
 | dev-proxy   | proxy for http and https         
 | lunarcal    | lunar cal                        
-| web-socket  | web-socket client and server               
+| web-socket  | web-socket client and server     
