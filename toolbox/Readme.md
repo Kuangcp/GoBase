@@ -11,6 +11,7 @@
 | hosts-group | switch Hosts by group            |
 | recycle-bin | recycle bin for file or dir      
 | kwebdav     | quick create web dav for any dir 
-| dev-proxy   | proxy for http and https         
+| dev-proxy   | proxy for http and https
+| netscan     | scan host all port          
 | lunarcal    | lunar cal                        
 | web-socket  | web-socket client and server     
