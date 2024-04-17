@@ -1,6 +1,8 @@
 module algorithm
 
-go 1.19
+go 1.21
+
+toolchain go1.22.0
 
 require (
 	github.com/kuangcp/gobase/pkg/ctool v1.1.9
