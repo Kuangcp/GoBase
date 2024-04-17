@@ -142,9 +142,13 @@ func TrySaveLog(reqLog *ReqLog[Message], res *http.Response) {
 		res.Body = body
 		resMes := Message{Header: res.Header, Body: bodyBts}
 		reqLog.Response = resMes
-		//FillReqLogResponse(reqLog, res)
+		encoding := res.Header.Get("Content-Encoding")
+
+		// 注意协程内不可以读写 res的Header， goproxy库里在请求结束后会将status写入header
+		// github.com/kuangcp/goproxy@v1.3.5/proxy.go:353
 		Go(func() {
-			FillReqLogResponseV2(reqLog, res)
+			FillReqLogResponse(reqLog, res)
+			HandleCompressed(&reqLog.Response, encoding)
 			SaveReqLog(reqLog)
 		})
 	}

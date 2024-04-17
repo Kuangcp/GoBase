@@ -1,6 +1,6 @@
 module github.com/kuangcp/gobase/pkg/ctool
 
-go 1.18
+go 1.21
 
 // v1.1.2
 
