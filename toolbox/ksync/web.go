@@ -54,36 +54,19 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 	writer.Write([]byte(""))
 }
 
-//func notifySyncFile(writer http.ResponseWriter, request *http.Request) {
-//	syncFile()
-//	actionList := request.URL.Query().Get("actionList")
-//	if strings.Contains(actionList, localAddr) {
-//		//logger.Warn("cycle notify", actionList)
-//		writer.Write([]byte(""))
-//		return
-//	}
-//
-//	sideList.Loop(func(s interface{}) {
-//		logger.Info("notify refresh", s)
-//		http.Get("http://" + s.(string) + "/refresh?actionList=" + actionList + "," + localAddr)
-//	})
-//	writer.Write([]byte("OK"))
-//}
-
 func register(writer http.ResponseWriter, request *http.Request) {
 	client := request.Header.Get("self")
-	logger.Info("register new", client)
 	if sideList.Contains(client) {
-		logger.Warn("already register")
+		//logger.Warn("already register", client)
 		writer.Write([]byte("EXIST"))
 		return
 	}
+	logger.Info("register new", client)
 	sideList.Add(client)
 	writer.Write([]byte("OK"))
 }
 
 func webServer() {
-
 	http.HandleFunc("/exist", exist)
 	// 接收文件
 	http.HandleFunc("/upload", upload)
@@ -92,6 +75,7 @@ func webServer() {
 	// 触发检查文件同步
 	//http.HandleFunc("/refresh", notifySyncFile)
 
+	logger.Info("listening on :%v", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		log.Fatal("error: ", err)

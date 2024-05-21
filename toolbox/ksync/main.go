@@ -31,13 +31,14 @@ var (
 var (
 	lastFile   = cuibase.NewSet()
 	sideList   = cuibase.NewSet() // 对端列表 格式 host:port
-	configName = "ksync.config.json"
+	configName = ".ksync.config.json"
 )
 
 type (
 	ArgVO struct {
 		ServerAddr string `json:"server_addr"`
 		LocalHost  string `json:"local_host"`
+		LocalPort  int    `json:"local_port"`
 	}
 )
 
@@ -57,17 +58,22 @@ func main() {
 		return
 	}
 
-	initFromConfig()
-	//pprofDebug()
-	logger.Info("start success. server:", serverAddr, "local:", localHost)
 	normalizeParam()
+	initFromConfig()
+	pprofDebug()
+	logger.Info("start success. server:", serverAddr, "local:", localHost)
 
 	go syncTimerTask()
+	go func() {
+		for range time.NewTicker(time.Minute).C {
+			logger.Info(sideList.Len())
+		}
+	}()
 	webServer()
 }
 
 func pprofDebug() {
-	debugPort := "8891"
+	debugPort := "33054"
 	go func() {
 		fmt.Println("http://127.0.0.1:" + debugPort + "/debug/pprof/")
 		_ = http.ListenAndServe("0.0.0.0:"+debugPort, nil)
@@ -80,17 +86,23 @@ func initFromConfig() {
 		return
 	}
 
-	file, err := ioutil.ReadFile(configName)
+	file, err := os.ReadFile(configName)
 	if err != nil {
+		logger.Error(err)
 		return
 	}
 
 	var arg ArgVO
 	err = json.Unmarshal(file, &arg)
 	if err != nil {
+		logger.Error(err)
 		return
 	}
 
+	logger.Info("load config", arg)
+	if arg.LocalPort != 0 {
+		port = arg.LocalPort
+	}
 	if serverAddr == "" {
 		serverAddr = arg.ServerAddr
 	}
@@ -101,18 +113,14 @@ func initFromConfig() {
 
 func normalizeParam() {
 	localAddr = localHost + ":" + fmt.Sprint(port)
+	home, err := cuibase.Home()
+	if err == nil {
+		configName = home + "/" + configName
+	}
 	if "windows" == runtime.GOOS {
 		//if !strings.HasSuffix(syncDir, "\\") {
 		//	syncDir += "\\"
 		//}
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-
-		if home == "" {
-
-			home = os.Getenv("USERPROFILE")
-
-		}
-		fmt.Println(home)
 	} else {
 		if !strings.HasSuffix(syncDir, "/") {
 			syncDir += "/"
