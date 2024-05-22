@@ -10,6 +10,14 @@ import (
 	"github.com/kuangcp/logger"
 )
 
+const (
+	pong = "Pong"
+)
+
+func ping(writer http.ResponseWriter, request *http.Request) {
+	writer.Write([]byte(pong))
+}
+
 func exist(writer http.ResponseWriter, request *http.Request) {
 	name := request.URL.Query().Get("name")
 	unescape, err := url.QueryUnescape(name)
@@ -67,6 +75,7 @@ func register(writer http.ResponseWriter, request *http.Request) {
 }
 
 func webServer() {
+	http.HandleFunc("/ping", ping)
 	http.HandleFunc("/exist", exist)
 	// 接收文件
 	http.HandleFunc("/upload", upload)
