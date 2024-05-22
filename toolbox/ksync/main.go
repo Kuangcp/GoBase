@@ -175,7 +175,7 @@ func registerOnRemote() {
 		}
 		if err != nil {
 			logger.Error(err)
-			return
+			continue
 		}
 		sideList.Add(serverAddr)
 	}
