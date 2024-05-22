@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,7 +32,6 @@ var (
 )
 
 var (
-	lastFile   = ctool.NewSet[string]()
 	sideList   = ctool.NewSet[string]() // 对端列表 格式 host:port
 	configName = ".ksync.config.json"
 )
@@ -55,8 +56,8 @@ func init() {
 	flag.IntVar(&port, "p", 8000, "port")
 	flag.IntVar(&checkSec, "c", 5, "check duration second")
 	flag.BoolVar(&version, "v", false, "version")
-	flag.StringVar(&serverAddr, "s", "", "init server host and port. ag: 192.168.0.1:8000")
-	flag.StringVar(&localHost, "l", "", "local side host. ag: 192.168.0.2")
+	flag.StringVar(&serverAddr, "s", "", "init server host and port. ag: 192.168.0.4:8000")
+	flag.StringVar(&localHost, "l", "", "local side host. ag: 192.168.0.5")
 	flag.StringVar(&syncDir, "d", "", "sync dir.")
 }
 
@@ -69,19 +70,21 @@ func main() {
 
 	initFromConfig()
 	normalizeParam()
-	go pprofDebug()
-	logger.Info("start success. server:", serverAddr, "local:", localHost)
 
-	go syncTimerTask()
+	watchFileThenSync()
+
+	logger.Info("start success. server:", serverAddr, "local:", localHost)
 	go displayRemoteSide()
+	go pprofDebug()
 	webServer()
 }
 
 func displayRemoteSide() {
 	for range time.NewTicker(time.Minute).C {
-		logger.Info(sideList.Join(","))
+		logger.Info("Remote:", sideList.Join(","))
 	}
 }
+
 func pprofDebug() {
 	debugPort := "33054"
 	logger.Info("http://127.0.0.1:" + debugPort + "/debug/pprof/")
@@ -130,15 +133,6 @@ func normalizeParam() {
 	if syncDir == "" {
 		syncDir = "./"
 	}
-	if "windows" == runtime.GOOS {
-		if !strings.HasSuffix(syncDir, "\\") {
-			syncDir += "\\"
-		}
-	} else {
-		if !strings.HasSuffix(syncDir, "/") {
-			syncDir += "/"
-		}
-	}
 }
 
 func absPath(filename string) string {
@@ -148,36 +142,12 @@ func absPath(filename string) string {
 		return syncDir + "/" + filename
 	}
 }
-
-func readNeedSyncFile() []string {
-	var result []string
-	dir, err := ioutil.ReadDir(syncDir)
-	if err != nil {
-		logger.Error(err)
-		return result
+func trimAbs(path string) string {
+	if "windows" == runtime.GOOS {
+		return strings.TrimPrefix(path, syncDir+"\\")
+	} else {
+		return strings.TrimPrefix(path, syncDir+"/")
 	}
-
-	firstInit := lastFile.IsEmpty()
-	for _, info := range dir {
-		if info.IsDir() {
-			continue
-		}
-		fileName := info.Name()
-		if strings.HasPrefix(fileName, ".") {
-			continue
-		}
-		if fileName == configName {
-			continue
-		}
-		contains := lastFile.Contains(fileName)
-		lastFile.Add(fileName)
-
-		if !contains || firstInit {
-			logger.Info("need sync", fileName, info.ModTime())
-			result = append(result, fileName)
-		}
-	}
-	return result
 }
 
 func isFileExist(filename string) bool {
@@ -185,83 +155,107 @@ func isFileExist(filename string) bool {
 	return err == nil
 }
 
-// 客户端模式：注册自身到服务端
-func registerOnServer() {
+// 接收模式：注册自身到远程
+func registerOnRemote() {
 	if serverAddr == "" {
 		return
 	}
 	// 必须要声明自身可被访问的host
 	if localHost == "" {
-		logger.Warn("local host is missing")
-		os.Exit(1)
+		logger.Fatal("local host is missing")
 	}
 
 	req, _ := http.NewRequest("GET", "http://"+serverAddr+"/register", nil)
 	req.Header.Set("self", localAddr)
-	rsp, err := http.DefaultClient.Do(req)
-	if rsp != nil && rsp.Body != nil {
-		defer rsp.Body.Close()
+
+	for range time.NewTicker(time.Second * 5).C {
+		rsp, err := http.DefaultClient.Do(req)
+		if rsp != nil && rsp.Body != nil {
+			rsp.Body.Close()
+		}
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		sideList.Add(serverAddr)
 	}
-	if err != nil {
-		logger.Error(err, rsp)
-		return
-	}
-	sideList.Add(serverAddr)
 }
 
 // 检查本地可访问性
 func checkLocalHostReachable(localAddr string) {
 	resp, err := http.DefaultClient.Get("http://" + localAddr + "/ping")
 	if err != nil {
-		logger.Warn("local host unreachable", localAddr, err)
-		os.Exit(1)
+		logger.Fatal("local host unreachable", localAddr, err)
 	}
 
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
 		all, err := io.ReadAll(resp.Body)
 		if err != nil {
-			logger.Warn("local host unreachable", localAddr, err)
-			os.Exit(1)
+			logger.Fatal("local host unreachable", localAddr, err)
 		}
 		respStr := string(all)
 		if respStr != pong {
-			logger.Warn("un except local host", localAddr, respStr)
-			os.Exit(1)
+			logger.Fatal("un except local host", localAddr, respStr)
 		}
 	}
 }
 
-func syncTimerTask() {
-	localAddr = fmt.Sprintf("%v:%v", localHost, port)
-	checkLocalHostReachable(localAddr)
-	registerOnServer()
-	ticker := time.NewTicker(time.Second * time.Duration(checkSec))
-	for range ticker.C {
-		registerOnServer()
-		syncFile()
+func watchFileThenSync() {
+	if serverAddr != "" {
+		localAddr = fmt.Sprintf("%v:%v", localHost, port)
+		go func() {
+			time.Sleep(time.Second * 5)
+			checkLocalHostReachable(localAddr)
+		}()
 	}
+
+	go registerOnRemote()
+	go watchSyncFile()
 }
 
-func syncFile() {
-	if sideList.Len() == 0 {
-		return
+// 发送模式：检查文件变化 发送到对端
+func watchSyncFile() {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer watcher.Close()
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				//logger.Info("event:", event)
+				if event.Has(fsnotify.Create) {
+					sideList.Loop(func(addr string) {
+						postFile(addr, trimAbs(event.Name))
+					})
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				logger.Error("error:", err)
+			}
+		}
+	}()
+
+	logger.Info("Start watch ", syncDir)
+	err = watcher.Add(syncDir)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	fileList := readNeedSyncFile()
-	if len(fileList) == 0 {
-		return
-	}
-	logger.Info("check sync %v", sideList)
-	for _, path := range fileList {
-		sideList.Loop(func(addr string) {
-			postFile(addr, path)
-		})
-	}
+	// 为什么需要 block，当前web环境下主协程是不会退出的
+	<-make(chan struct{})
 }
 
-func postFile(server string, path string) {
-	name := url.QueryEscape(path)
+func postFile(server string, file string) {
+	name := url.QueryEscape(file)
 	existURL := "http://" + server + "/exist?name=" + name
 
 	existRsp, err := http.Get(existURL)
@@ -275,7 +269,7 @@ func postFile(server string, path string) {
 	}
 	defer existRsp.Body.Close()
 
-	open, err := os.Open(absPath(path))
+	open, err := os.Open(absPath(file))
 	if err != nil {
 		logger.Error(err)
 		return
@@ -288,5 +282,5 @@ func postFile(server string, path string) {
 		return
 	}
 	defer postRsp.Body.Close()
-	logger.Info("send to ", server, name)
+	logger.Info("send to", server, name)
 }

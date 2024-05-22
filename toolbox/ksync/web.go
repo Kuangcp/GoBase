@@ -25,7 +25,7 @@ func exist(writer http.ResponseWriter, request *http.Request) {
 		logger.Error(err)
 		return
 	}
-	exist := isFileExist(syncDir + "" + unescape)
+	exist := isFileExist(absPath(unescape))
 	if exist {
 		writer.Write([]byte("EXIST"))
 	} else {
@@ -41,7 +41,7 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	open, err := os.Create(syncDir + unescape)
+	open, err := os.Create(absPath(unescape))
 	if err != nil {
 		logger.Error(err)
 		return
