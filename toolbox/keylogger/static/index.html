@@ -42,7 +42,8 @@
     <label for="top">top:</label>
     <input id="top" value="10" type="number" min="1"/>
 
-    <label for="showLabel">label:</label><input id="showLabel" type="checkbox">
+    <label for="showLabel">Label:</label><input id="showLabel" type="checkbox">
+    <label>HideZero:</label><input id="hideZero" type="checkbox">
 
     <button onclick="lineChart()">折线图</button>
     <button onclick="barChart()">柱状图</button>
@@ -78,8 +79,9 @@
         let offset = $("#offset").val();
         let top = $("#top").val();
         let showLabel = $("#showLabel").prop("checked");
+        let hideZero = $("#hideZero").prop("checked");
 
-        return '?length=' + period + '&offset=' + offset + '&top=' + top + "&showLabel=" + showLabel;
+        return '?length=' + period + '&offset=' + offset + '&top=' + top + "&showLabel=" + showLabel + "&hideZero=" + hideZero;
     }
 
     function barChart() {
@@ -277,7 +279,8 @@
                 legend: {
                     data: response.data.keyNames
                 },
-                series: appendSumLine(response.data.lines)
+                // series: appendSumLine(response.data.lines)
+                series: response.data.lines
             });
         }, function (data) {
             alert('连接失败' + data.responseText)
