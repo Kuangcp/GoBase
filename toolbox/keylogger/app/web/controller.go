@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"sort"
 	"strconv"
 	"strings"
@@ -49,9 +50,9 @@ type (
 	LineTimeUnit string
 
 	LineChartVO struct {
-		Lines    []LineVO `json:"lines"`
-		Days     []string `json:"days"`
-		KeyNames []string `json:"keyNames"`
+		Lines    []*LineVO `json:"lines"`
+		Days     []string  `json:"days"`
+		KeyNames []string  `json:"keyNames"`
 	}
 
 	LineVO struct {
@@ -104,6 +105,7 @@ type (
 		Top       int64
 		ChartType string
 		ShowLabel bool
+		HideZero  bool
 		TimeUnit  LineTimeUnit
 	}
 )
@@ -469,7 +471,7 @@ func LineMap(c *gin.Context) {
 	// lines
 	sortHotKeys := getMapKeys(hotKey)
 	sort.Strings(sortHotKeys)
-	var lines []LineVO
+	var lines []*LineVO
 	commonLabel.Show = param.ShowLabel
 	for _, key := range sortHotKeys {
 		var hitPreDay []int
@@ -483,7 +485,7 @@ func LineMap(c *gin.Context) {
 
 		keyCode, err := strconv.Atoi(key)
 		ctk.CheckIfError(err)
-		lines = append(lines, LineVO{
+		lines = append(lines, &LineVO{
 			Type:      param.ChartType,
 			Name:      nameMap[key],
 			Data:      hitPreDay,
@@ -494,7 +496,52 @@ func LineMap(c *gin.Context) {
 		})
 	}
 	//logger.Info(lines)
-	ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
+	if param.HideZero {
+		zeroDay := ctool.NewSet[int]()
+		var newDays []string
+		for i := range days {
+			dayStr := days[i]
+			if isIdleDay(dayStr, 8000) {
+				//if isZeroDay(dayStr) {
+				zeroDay.Add(i)
+			} else {
+				newDays = append(newDays, dayStr)
+			}
+		}
+		if zeroDay.IsEmpty() {
+			ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
+			return
+		}
+
+		for i := range lines {
+			line := lines[i]
+			var newData []int
+			for idx := range line.Data {
+				if zeroDay.Contains(idx) {
+					continue
+				}
+				newData = append(newData, line.Data[idx])
+			}
+			line.Data = newData
+		}
+
+		ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, Days: newDays, KeyNames: keyNames})
+	} else {
+		ghelp.GinSuccessWith(c, LineChartVO{Lines: lines, Days: days, KeyNames: keyNames})
+	}
+}
+
+func isZeroDay(day string) bool {
+	return strings.HasSuffix(day, "0|0")
+}
+func isIdleDay(day string, low int) bool {
+	arr := strings.Split(day, "|")
+	total := arr[len(arr)-2]
+	atoi, err := strconv.Atoi(total)
+	if err != nil {
+		return false
+	}
+	return atoi < low
 }
 
 func getMapKeys(m map[string]bool) []string {
@@ -514,6 +561,7 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 	showLabel := c.DefaultQuery("showLabel", "false")
 	weeks := c.DefaultQuery("weeks", "1")
 	timeUnit := c.DefaultQuery("timeUnit", "day")
+	hideZero := c.DefaultQuery("hideZero", "false")
 
 	unit, err := valueOf(timeUnit)
 	if err != nil {
@@ -532,6 +580,10 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 		return nil, err
 	}
 	showLabelBool, err := strconv.ParseBool(showLabel)
+	if err != nil {
+		return nil, err
+	}
+	hideZeroBool, err := strconv.ParseBool(hideZero)
 	if err != nil {
 		return nil, err
 	}
@@ -556,6 +608,7 @@ func parseParam(c *gin.Context) (*QueryParam, error) {
 		ChartType: chartType,
 		ShowLabel: showLabelBool,
 		TimeUnit:  unit,
+		HideZero:  hideZeroBool,
 	}, nil
 }
 

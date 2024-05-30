@@ -1,6 +1,6 @@
 module github.com/kuangcp/gobase/toolbox/keylogger
 
-go 1.16
+go 1.18
 
 require (
 	github.com/gin-gonic/gin v1.9.1
