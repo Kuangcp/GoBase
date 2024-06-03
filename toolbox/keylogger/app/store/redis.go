@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	poolSize = 5
+	poolSize          = 5
+	checkRedisTimeout = 23
 )
 
 var connection *redis.Client
@@ -18,24 +19,29 @@ func GetConnection() *redis.Client {
 	return connection
 }
 
-func InitConnection(option redis.Options, verifyExit bool) {
+func InitConnection(option redis.Options, coreApp bool) {
 	option.PoolSize = poolSize
 	connection = redis.NewClient(&option)
 
 	assertFunc := func(client *redis.Client) {
-		if !isValidConnection(client) {
-			if verifyExit {
-				os.Exit(1)
-			} else {
-				logger.Warn("redis connect failed")
-			}
+		if isValidConnection(client) {
+			// TODO heart beat and mark color
+			//if coreApp {
+			//	client.Set(CoreLive, 1, time.Minute*1)
+			//}
+			return
+		}
+
+		if coreApp {
+			os.Exit(1)
+		} else {
+			logger.Warn("redis connect failed")
 		}
 	}
 
 	assertFunc(connection)
 	go func() {
-		for {
-			time.Sleep(time.Second * 23)
+		for range time.NewTicker(time.Duration(checkRedisTimeout) * time.Second).C {
 			assertFunc(connection)
 		}
 	}()
