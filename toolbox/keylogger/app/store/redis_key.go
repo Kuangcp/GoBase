@@ -17,6 +17,7 @@ const (
 	LastInputEvent = Prefix + "last-event" // last use event. STRING
 	TotalCount     = Prefix + "total"      // total count. ZSET
 	KeyMap         = Prefix + "key-map"    // all key code map. HASH
+	CoreLive       = Prefix + "core-live"  // core process live heart beat
 )
 
 // string max kpm in today
