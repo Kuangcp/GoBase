@@ -14,4 +14,4 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 )
 
-replace github.com/kuangcp/gobase/toolbox/keylogger v0.0.0-20220417170000-8b486ea221d8 => ../
+replace github.com/kuangcp/gobase/toolbox/keylogger => ../
