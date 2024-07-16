@@ -50,6 +50,13 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 		proxyReq.Header.Set("X-Forwarded-For", clientIP)
 	}
 
+	for k, v := range core.GetHeaders() {
+		if k == "" {
+			continue
+		}
+		proxyReq.Header.Set(k, v)
+	}
+
 	proxyLog := ""
 	var reqLog *core.ReqLog[core.Message]
 	var proxyType = core.Direct
