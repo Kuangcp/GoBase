@@ -15,22 +15,25 @@ func SetReqHeader(request *http.Request) ctool.ResultVO[string] {
 	}
 
 	type data struct {
-		Key string `form:"key"`
-		Val string `form:"val"`
+		Host string `form:"host"`
+		Key  string `form:"key"`
+		Val  string `form:"val"`
 	}
 	var d data
 	json.Unmarshal(bd, &d)
-	core.SetHeader(d.Key, d.Val)
+	core.SetHeader(d.Host, d.Key, d.Val)
 	return ctool.Success[string]()
 }
 
 func GetReqHeader(request *http.Request) ctool.ResultVO[map[string]string] {
-	headers := core.GetHeaders()
+	headers := core.GetHeaders(request.URL.Query().Get("host"))
 	return ctool.SuccessWith(headers)
 }
 
 func DelReqHeader(request *http.Request) ctool.ResultVO[string] {
-	key := request.URL.Query().Get("key")
-	core.DeleteHeader(key)
-	return ctool.Failed[string]()
+	query := request.URL.Query()
+	host := query.Get("host")
+	key := query.Get("key")
+	core.DeleteHeader(host, key)
+	return ctool.Success[string]()
 }
