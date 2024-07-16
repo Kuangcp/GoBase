@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-var reqHeaders = make(map[string]string)
+var hostHeaders = make(map[string]map[string]string)
 
 func ProxyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodConnect {
@@ -287,13 +287,26 @@ func Watch(fns ...func() error) {
 	}
 }
 
-func GetHeaders() map[string]string {
-	return reqHeaders
-}
-func SetHeader(key, value string) {
-	reqHeaders[key] = value
+func GetHeaders(host string) map[string]string {
+	headerMap, ok := hostHeaders[host]
+	if !ok {
+		return nil
+	}
+	return headerMap
 }
 
-func DeleteHeader(key string) {
-	delete(reqHeaders, key)
+func SetHeader(host, key, value string) {
+	headers := GetHeaders(host)
+	if headers == nil {
+		headers = make(map[string]string)
+		hostHeaders[host] = headers
+	}
+	headers[key] = value
+}
+
+func DeleteHeader(host, key string) {
+	headers := GetHeaders(host)
+	if headers == nil {
+		delete(headers, key)
+	}
 }
