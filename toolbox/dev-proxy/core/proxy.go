@@ -306,7 +306,7 @@ func SetHeader(host, key, value string) {
 
 func DeleteHeader(host, key string) {
 	headers := GetHeaders(host)
-	if headers == nil {
+	if headers != nil {
 		delete(headers, key)
 	}
 }
