@@ -51,7 +51,7 @@ func (e *EventHandler) BeforeRequest(ctx *goproxy.Context) {
 	}
 
 	headers := core.GetHeaders(proxyReq.Host)
-	logger.Info(proxyReq.Host, headers)
+	//logger.Info(proxyReq.Host, headers)
 	if headers != nil {
 		for k, v := range headers {
 			if k == "" {
