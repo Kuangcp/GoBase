@@ -11,7 +11,7 @@ grey='\033[3;37;40m'
 log_info(){
     i=$(($i + 1))
     ts=$(date "+%F %T.%N" | cut -b 1-23)
-    printf "$green$ts $i/$total $blue $1 $end\n"
+    printf "$green$ts $i/$total $yellow $1 $end\n"
 }
 
 build_image(){
