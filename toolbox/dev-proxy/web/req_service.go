@@ -6,6 +6,7 @@ import (
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type HostHeaderParam struct {
@@ -26,9 +27,23 @@ func SetReqHeader(request *http.Request) ctool.ResultVO[string] {
 	return ctool.Success[string]()
 }
 
-func GetReqHeader(request *http.Request) ctool.ResultVO[map[string]string] {
-	headers := core.GetHeaders(request.URL.Query().Get("host"))
-	return ctool.SuccessWith(headers)
+func SetReqHeaders(request *http.Request) ctool.ResultVO[string] {
+	bd, err := io.ReadAll(request.Body)
+	if err != nil {
+		return ctool.FailedWithMsg[string](err.Error())
+	}
+
+	var ds []HostHeaderParam
+	json.Unmarshal(bd, &ds)
+	for _, d := range ds {
+		core.SetHeader(d.Host, d.Key, d.Val)
+	}
+	return ctool.Success[string]()
+}
+
+func GetReqHeader(request *http.Request) ctool.ResultVO[core.TMap] {
+	host := request.URL.Query().Get("host")
+	return ctool.SuccessWith(core.QueryHeaders(host))
 }
 
 func DelReqHeader(request *http.Request) ctool.ResultVO[string] {
@@ -41,5 +56,14 @@ func DelReqHeader(request *http.Request) ctool.ResultVO[string] {
 	json.Unmarshal(bd, &d)
 
 	core.DeleteHeader(d.Host, d.Key)
+	return ctool.Success[string]()
+}
+
+func DelReqHeaderViaHost(request *http.Request) ctool.ResultVO[string] {
+	host := request.URL.Query().Get("host")
+	hs := strings.Split(host, ",")
+	for _, h := range hs {
+		core.DeleteHeaderViaHost(h)
+	}
 	return ctool.Success[string]()
 }
