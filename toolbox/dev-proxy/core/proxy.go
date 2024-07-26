@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+type TMap map[string]map[string]string
+
 var hostHeaders = make(map[string]map[string]string)
 
 func ProxyHandler(w http.ResponseWriter, r *http.Request) {
@@ -295,6 +297,18 @@ func GetHeaders(host string) map[string]string {
 	return headerMap
 }
 
+func QueryHeaders(host string) TMap {
+	var res = make(TMap)
+	hs := strings.Split(host, ",")
+	for _, h := range hs {
+		headerMap, ok := hostHeaders[h]
+		if ok && len(headerMap) > 0 {
+			res[h] = headerMap
+		}
+	}
+	return res
+}
+
 func SetHeader(host, key, value string) {
 	headers := GetHeaders(host)
 	if headers == nil {
@@ -309,4 +323,8 @@ func DeleteHeader(host, key string) {
 	if headers != nil {
 		delete(headers, key)
 	}
+}
+
+func DeleteHeaderViaHost(host string) {
+	hostHeaders[host] = nil
 }

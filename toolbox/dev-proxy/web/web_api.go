@@ -69,8 +69,10 @@ func StartQueryServer() {
 	mux.HandleFunc("/bench", core.Json(BenchRequest))
 
 	mux.HandleFunc("/setReqHeader", core.Json(SetReqHeader))
+	mux.HandleFunc("/setReqHeaders", core.Json(SetReqHeaders))
 	mux.HandleFunc("/getReqHeader", core.Json(GetReqHeader))
 	mux.HandleFunc("/delReqHeader", core.Json(DelReqHeader))
+	mux.HandleFunc("/delReqHeaderHost", core.Json(DelReqHeaderViaHost))
 
 	mux.HandleFunc("/del", rtInt(delRequest))
 	mux.HandleFunc("/uploadCache", rtInt(uploadCacheApi))
