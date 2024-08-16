@@ -25,7 +25,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&portStr, "p", "80", "port")
+	flag.StringVar(&portStr, "p", "80", "port. default port 80")
 	flag.StringVar(&hostStr, "i", "", "host")
 	flag.IntVar(&con, "c", 0, "parallel count")
 	flag.BoolVar(&allPort, "P", false, "all port")
@@ -57,9 +57,7 @@ func main() {
 	}
 
 	var bar *pb.ProgressBar
-	if end != 0 {
-		bar = pb.Full.Start(total)
-	}
+	bar = pb.Full.Start(total)
 	scanHost(start, end, hostStr, bar)
 	if bar != nil {
 		bar.Finish()
@@ -76,7 +74,6 @@ func scanHostRange(end int, start int) {
 	startHost, endHost := AddressRange(ipNet)
 	logger.Info("scan range:", startHost, endHost)
 	cur := startHost
-	a, _ := sizedpool.New(sizedpool.PoolOption{Size: 100})
 
 	var ips []string
 	for !cur.Equal(endHost) {
@@ -84,16 +81,20 @@ func scanHostRange(end int, start int) {
 		ips = append(ips, cur.String())
 	}
 	var bar *pb.ProgressBar
-	if end != 0 {
-		bar = pb.Full.Start(total * len(ips))
+	bar = pb.Full.Start(total * len(ips))
+	fCon := con
+	if con == 0 {
+		fCon = 1
 	}
+	pool, _ := sizedpool.New(sizedpool.PoolOption{Size: fCon})
 	for _, host := range ips {
-		a.Run(func() {
-			//fmt.Println("======", cur.String())
-			scanHost(start, end, host, bar)
+		fHost := host
+		pool.Run(func() {
+			//fmt.Println("======", fHost)
+			scanHost(start, end, fHost, bar)
 		})
 	}
-	a.Wait()
+	pool.Wait()
 	if bar != nil {
 		bar.Finish()
 	}
@@ -107,11 +108,12 @@ func scanHost(start, end int, host string, bar *pb.ProgressBar) {
 	}
 
 	if end == 0 {
-		pingS(host, fmt.Sprint(start))
+		// 单端口
+		tryTcpPrint(host, fmt.Sprint(start))
 	} else {
 		var ps = make(chan int, total)
 		for i := start; i <= end; i++ {
-			if ping(host, fmt.Sprint(i)) {
+			if tryTcp(host, fmt.Sprint(i)) {
 				ps <- i
 			}
 			bar.Increment()
@@ -123,6 +125,9 @@ func scanHost(start, end int, host string, bar *pb.ProgressBar) {
 func parallelScan(start, end int, host string, bar *pb.ProgressBar) {
 	noLimit := con == -1
 
+	if end == 0 {
+		end = start
+	}
 	// 并不一定无限制开启协程的方式会效率更高，创建太多协程反而使得调度更耗时吞吐量下降明显
 	// 但是目标端网络延迟高且大量端口未开启时创建大量协程的效率会更高，因为大量的协程会阻塞在IO 出让了CPU执行，相当于网络延迟被忽视了
 	if noLimit {
@@ -132,7 +137,7 @@ func parallelScan(start, end int, host string, bar *pb.ProgressBar) {
 		for i := start; i <= end; i++ {
 			i := i
 			go func() {
-				if ping(host, fmt.Sprint(i)) {
+				if tryTcp(host, fmt.Sprint(i)) {
 					ps <- i
 				}
 				bar.Increment()
@@ -147,7 +152,7 @@ func parallelScan(start, end int, host string, bar *pb.ProgressBar) {
 		for i := start; i <= end; i++ {
 			i := i
 			group.Run(func() {
-				if ping(host, fmt.Sprint(i)) {
+				if tryTcp(host, fmt.Sprint(i)) {
 					ps <- i
 				}
 				bar.Increment()
@@ -201,13 +206,14 @@ func parsePort() (int, int, error) {
 	}
 }
 
-func pingS(host, port string) {
-	if ping(host, port) {
+func tryTcpPrint(host, port string) {
+	logger.Info("try ", host, port)
+	if tryTcp(host, port) {
 		fmt.Printf("%v %v %s \n", host, port, "open")
 	}
 }
 
-func ping(host, port string) bool {
+func tryTcp(host, port string) bool {
 	addr := fmt.Sprintf("%s:%s", host, port)
 	_, err := net.DialTimeout("tcp", addr, time.Second*1)
 	return err == nil
