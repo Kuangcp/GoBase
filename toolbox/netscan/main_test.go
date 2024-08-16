@@ -23,3 +23,16 @@ func TestIpNet(t *testing.T) {
 		cur = Inc(cur)
 	}
 }
+
+func TestScanOneHostAll(t *testing.T) {
+	hostStr = "192.168.9.174"
+	//portStr = "7000-9000"
+	allPort = true
+	main()
+}
+
+func TestAllHost80Port(t *testing.T) {
+	hostStr = "192.168.9.0/24"
+	con = 50
+	main()
+}
