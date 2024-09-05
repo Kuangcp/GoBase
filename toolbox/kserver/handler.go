@@ -78,6 +78,19 @@ func appendLink(rootPath string, origin http.Handler) http.HandlerFunc {
 			origin.ServeHTTP(writer, request)
 			writer.Write([]byte("</html>"))
 		} else {
+			// 修改响应头，支持浏览器直接预览
+			// 注意 Header().Set() 如果在 WriteHeader(http.StatusOK) 之后调用会不生效
+			pathFile := request.URL.Path
+			if strings.HasSuffix(pathFile, ".md") ||
+				strings.HasSuffix(pathFile, ".log") ||
+				strings.HasSuffix(pathFile, ".go") ||
+				strings.HasSuffix(pathFile, ".mod") ||
+				strings.HasSuffix(pathFile, ".java") ||
+				strings.HasSuffix(pathFile, ".yml") ||
+				strings.HasSuffix(pathFile, ".sh") {
+				writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			}
+
 			origin.ServeHTTP(writer, request)
 		}
 	}
