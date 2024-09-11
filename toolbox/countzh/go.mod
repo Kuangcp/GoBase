@@ -1,4 +1,4 @@
-module github.com/kuangcp/gobase/countzh
+module github.com/kuangcp/gobase/toolbox/countzh
 
 go 1.13
 

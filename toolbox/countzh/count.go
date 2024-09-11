@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis/v7"
 )
@@ -168,8 +169,10 @@ func showChineseChar(perCharHandler func(string), printFileInfo bool) {
 				totalFile, totalChineseChar, cuibase.Green.Printf("%-5v", total), fileName)
 		}
 	}
-	fmt.Printf("\nTotal characters: %v%v%v files  %v%v%v chars \n",
-		cuibase.Yellow, totalFile, cuibase.End, cuibase.Yellow, totalChineseChar, cuibase.End)
+	fmt.Printf("%s Total characters: %v%v%v files  %v%v%v chars \n",
+		time.Now().Format("2006-01-02 15:04:05.000"),
+		cuibase.Yellow, totalFile, cuibase.End,
+		cuibase.Yellow, totalChineseChar, cuibase.End)
 }
 
 func delRank() {
