@@ -16,8 +16,6 @@ import (
 	"github.com/go-redis/redis/v7"
 )
 
-var totalFile = 0
-var totalChineseChar = 0
 var fileList = list.New()
 
 var client *redis.Client
@@ -147,6 +145,17 @@ func countWithRedis() {
 }
 
 func showChineseChar(perCharHandler func(string), printFileInfo bool) {
+	totalChineseChar, totalFile := countSummaryResult(perCharHandler, printFileInfo)
+	if perCharHandler != nil {
+		fmt.Println()
+	}
+	fmt.Printf("%s Total characters: %v%v%v files  %v%v%v chars \n",
+		time.Now().Format("2006-01-02 15:04:05.000"),
+		cuibase.Yellow, totalFile, cuibase.End,
+		cuibase.Yellow, totalChineseChar, cuibase.End)
+}
+
+func countSummaryResult(perCharHandler func(string), printFileInfo bool) (int, int) {
 	if printFileInfo {
 		fmt.Printf("%v%-3v %-5v %-5v %v%v\n", cuibase.Yellow, "No", "Total", "Cur", "File", cuibase.End)
 	}
@@ -154,6 +163,8 @@ func showChineseChar(perCharHandler func(string), printFileInfo bool) {
 	if err != nil {
 		log.Println(err)
 	}
+	var totalChineseChar = 0
+	var totalFile = 0
 	for e := fileList.Front(); e != nil; e = e.Next() {
 		fileName := e.Value.(string)
 		if !isNeedHandle(fileName) {
@@ -169,10 +180,7 @@ func showChineseChar(perCharHandler func(string), printFileInfo bool) {
 				totalFile, totalChineseChar, cuibase.Green.Printf("%-5v", total), fileName)
 		}
 	}
-	fmt.Printf("%s Total characters: %v%v%v files  %v%v%v chars \n",
-		time.Now().Format("2006-01-02 15:04:05.000"),
-		cuibase.Yellow, totalFile, cuibase.End,
-		cuibase.Yellow, totalChineseChar, cuibase.End)
+	return totalChineseChar, totalFile
 }
 
 func delRank() {
@@ -255,7 +263,9 @@ func main() {
 		return
 	}
 	if countSummary {
-		showChineseChar(nil, false)
+		allChChar, totalFile := countSummaryResult(nil, false)
+		nowStr := time.Now().Format("2006-01-02 15:04:05.000")
+		fmt.Printf("%s Total characters: %v files  %v chars \n", nowStr, totalFile, allChChar)
 		return
 	}
 
