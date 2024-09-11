@@ -18,17 +18,18 @@ func TestCloud(t *testing.T) {
 func TestReadFile(t *testing.T) {
 	cache := make(map[string]interface{})
 	ignore := ctool.NewSet("使用", "一个", "可以", "如果", "这个")
-	ctool.ReadLines("/home/zk/Code/go/GoBase/algorithm/ds/tree/log/1726021197042-10:19:57.042.log",
-		func(s string) bool {
-			return len(s) > 0
-		}, func(s string) bool {
-			fields := strings.Fields(s)
-			if ignore.Contains(fields[1]) {
-				return false
-			}
-			cache[fields[1]] = fields[0]
+	// Work
+	logfile := "log"
+	ctool.ReadLines(logfile, func(s string) bool {
+		return len(s) > 0
+	}, func(s string) bool {
+		fields := strings.Fields(s)
+		if ignore.Contains(fields[1]) {
 			return false
-		})
+		}
+		cache[fields[1]] = fields[0]
+		return false
+	})
 	logger.Info(cache)
 	createWordCloud(generateWordCloudData(cache))
 }
@@ -69,11 +70,14 @@ func createWordCloud(items []opts.WordCloudData) {
 				opts.WordCloudChart{
 					SizeRange: []float32{10, 42},
 					// The shape of the "cloud" to draw. Can be any polar equation represented as a
-					// callback function, or a keyword present. Available presents are circle (default),
+					// callback function, or a keyword present.
+					//
+					//Available presents are circle (default),
 					// cardioid (apple or heart shape curve, the most known polar equation), diamond (alias of square),
 					// triangle-forward, triangle, (alias of triangle-upright, pentagon,
 					//Shape: "triangle",
-					Shape: "diamond",
+					Shape:         "circle",
+					RotationRange: []float32{-30, 30},
 				}),
 		)
 	f, _ := os.Create("word_cloud.html")

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -65,6 +66,7 @@ func TestFile(t *testing.T) {
 	})
 }
 
+// 中文词组 分词
 func TestDir(t *testing.T) {
 	tokenizer := InitTrieTokenizer("dict/dict.log")
 
@@ -72,14 +74,15 @@ func TestDir(t *testing.T) {
 	tokenizer.Append("dict/zk.dict.log")
 
 	var result = make(map[string]int)
-	err := filepath.WalkDir("input/diary/", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir("input/Note/", func(path string, d fs.DirEntry, err error) error {
 		if strings.Contains(path, "node_modules") {
 			return nil
 		}
 		if strings.HasSuffix(path, "md") {
 			fmt.Println(path)
 			tokens := tokenizer.TokenizeFile(path)
-			statistics(tokens, result)
+			//statistics(tokens, result)
+			statisticsZh(tokens, result)
 		}
 		return nil
 	})
@@ -88,6 +91,7 @@ func TestDir(t *testing.T) {
 		return
 	}
 
+	fmt.Println("单字 统计")
 	consumeSort(result, func(s string, i int) bool {
 		runes := []rune(s)
 		return len(runes) == 1 && i > 10
@@ -109,13 +113,65 @@ func TestDir(t *testing.T) {
 	})
 }
 
-func statisticsError(tokens []string, result map[string]int) {
+// 英文 分词
+func TestDirForEn(t *testing.T) {
+	tokenizer := InitTrieTokenizer("dict/en.dict.log")
+	tokenizer.Append("dict/code-en.dict.log")
+	var result = make(map[string]int)
+	err := filepath.WalkDir("input/Note/", func(path string, d fs.DirEntry, err error) error {
+		if strings.Contains(path, "node_modules") {
+			return nil
+		}
+		if strings.HasSuffix(path, "md") {
+			fmt.Println(path)
+			tokens := tokenizer.TokenizeFile(path)
+			statisticsEn(tokens, result)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	consumeSort(result, func(s string, i int) bool {
+		runes := []rune(s)
+		return len(runes) == 1 && i > 10
+	}, func(s string, i int) {
+		fmt.Println(s, i)
+	})
+
+	now := time.Now()
+	writer, _ := ctool.NewWriter("log/en-"+fmt.Sprint(now.UnixMilli())+".log", true)
+	defer writer.Close()
+
+	consumeSort(result, func(s string, i int) bool {
+		runes := []rune(s)
+
+		return len(runes) > 1 && i > 10
+	}, func(s string, i int) {
+		writer.WriteLine(fmt.Sprint(i, " ", s))
+	})
+}
+
+func TestBuildEnDict(t *testing.T) {
+	path := "EnWords.csv"
+	lines := ctool.ReadCsvLines(path)
+	writer, _ := ctool.NewWriter("dict/en.dict.log", true)
+	for _, row := range lines {
+		word := row[0]
+		fmt.Println(word)
+		writer.WriteLine(word)
+	}
+	defer writer.Close()
+}
+
+func statisticsZh(tokens []string, result map[string]int) {
 	for _, t := range tokens {
 		runes := []rune(t)
-		if unicode.Is(unicode.Scripts["Han"], runes[0]) {
-			if len(runes) != 1 {
-				continue
-			}
+
+		zhChar := unicode.Is(unicode.Scripts["Han"], runes[0])
+		if zhChar {
 			n, ok := result[t]
 			if !ok {
 				result[t] = 1
@@ -126,10 +182,29 @@ func statisticsError(tokens []string, result map[string]int) {
 	}
 }
 
+var pp = regexp.MustCompile("\\w+\\s?$")
+
+func statisticsEn(tokens []string, result map[string]int) {
+	for _, t := range tokens {
+		if pp.MatchString(t) && len(t) > 2 {
+			n, ok := result[t]
+			if !ok {
+				result[t] = 1
+			} else {
+				result[t] = n + 1
+			}
+		}
+	}
+}
+
+// 混合中文 英文
 func statistics(tokens []string, result map[string]int) {
 	for _, t := range tokens {
 		runes := []rune(t)
-		if unicode.Is(unicode.Scripts["Han"], runes[0]) {
+
+		letter := unicode.IsLetter(runes[0]) && len(t) > 1
+		zhChar := unicode.Is(unicode.Scripts["Han"], runes[0])
+		if zhChar || letter {
 			n, ok := result[t]
 			if !ok {
 				result[t] = 1
