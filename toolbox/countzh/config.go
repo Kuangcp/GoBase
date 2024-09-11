@@ -42,8 +42,8 @@ var info = cuibase.HelpInfo{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-s", BoolVar: &countSummary, Comment: "count all files, print summary"},
 		{Short: "-p", BoolVar: &printAllChar, Comment: "print all chinese char"},
-		{Short: "-d", BoolVar: &delCache, Comment: "delete rank data"},
-		{Short: "-a", BoolVar: &allFile, Comment: "count chinese char on current dir"},
+		{Short: "-d", BoolVar: &delCache, Comment: "delete rank data in redis"},
+		{Short: "-a", BoolVar: &allFile, Comment: "count chinese char on current dir. write to redis"},
 	},
 	Options: []cuibase.ParamVO{
 		{Short: "-c", Value: "start,end", Comment: "cursor"},
