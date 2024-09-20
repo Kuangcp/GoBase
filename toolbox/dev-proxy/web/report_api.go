@@ -249,9 +249,10 @@ func HostPerformance(request *http.Request) ctool.ResultVO[[]PerfPageVo] {
 			return ctool.FailedWithMsg[[]PerfPageVo](err.Error())
 		}
 
-		path := parse.Scheme + "://" + parse.Host + parse.Path
-		rsp := queryData(targetMsg.ReqTime.Add(-time.Minute*5), targetMsg.ResTime.Add(time.Minute*5), "", path, 1)
-		return rsp
+		fullUrl := parse.Scheme + "://" + parse.Host + parse.Path
+		start := targetMsg.ReqTime.Add(-time.Minute * 5)
+		end := targetMsg.ResTime.Add(time.Minute * 5)
+		return queryData(start, end, "", fullUrl, 1)
 	}
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
@@ -293,9 +294,14 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 				core.RemoveReqMember(zr[bi*batchSize+i].Member)
 				continue
 			}
-			path := tmp.(string)
-			if (hostStr != "" && (strings.HasPrefix(path, "http://"+hostStr) || strings.HasPrefix(path, "https://"+hostStr))) ||
-				(urlStr != "" && strings.HasPrefix(path, urlStr)) {
+			fullURL := tmp.(string)
+			matchHost := hostStr != "" && (strings.HasPrefix(fullURL, "http://"+hostStr) ||
+				strings.HasPrefix(fullURL, "https://"+hostStr))
+
+			matchUrl := urlStr != "" && (strings.HasPrefix(fullURL, urlStr) ||
+				strings.HasPrefix(fullURL, "http://"+urlStr) ||
+				strings.HasPrefix(fullURL, "https://"+urlStr))
+			if matchHost || matchUrl {
 				msg := core.GetDetailByKey(batch[i])
 				cache = append(cache, msg)
 			}
@@ -323,7 +329,12 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 			return
 		}
 
-		ele := PerfPageVo{Url: groupItem.Key.(string)}
+		showUrl := groupItem.Key.(string)
+		idx := strings.Index(showUrl, "/")
+		if idx != -1 {
+			showUrl = showUrl[idx:]
+		}
+		ele := PerfPageVo{Url: showUrl}
 		var ts []int
 		var reqList []int64
 		for _, v := range val {
@@ -355,6 +366,9 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 			}
 		})
 		result = append(result, ele)
+	})
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Url < result[j].Url
 	})
 
 	rsp.Data = result
