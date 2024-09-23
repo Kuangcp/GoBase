@@ -18,7 +18,9 @@ func NewTmpFuturePool(option PoolOption) (FuturePool, error) {
 	if option.Timeout == 0 {
 		return nil, errors.New("not init timeout")
 	}
-	go group.ExecTmpFuturePool(option.Timeout)
+	if group != nil {
+		go group.ExecTmpFuturePool(option.Timeout)
+	}
 	return group, err
 }
 
@@ -55,8 +57,9 @@ func (s *SizedWaitGroup) ExecTmpFuturePool(timeout time.Duration) {
 	select {
 	case <-timeoutCtx.Done():
 		if timeoutCtx.Err().Error() == "context deadline exceeded" {
-			log.Println("total timeout")
+			log.Println("Pool exited by timeout")
 			s.tmpAbort = true
+			s.Close()
 		}
 		return
 	}

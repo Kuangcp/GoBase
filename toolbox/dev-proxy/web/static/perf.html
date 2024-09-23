@@ -88,9 +88,14 @@
     let reqId = getQueryVariable("id");
     document.getElementById("id").value = reqId;
 
-    if (reqId) {
+    let reqUrl = getQueryVariable("url");
+    document.getElementById("url").value = reqUrl;
+
+    if (reqId || reqUrl) {
         query()
-        fillParamById(reqId)
+        if (reqId) {
+            fillParamById(reqId);
+        }
     }
 
     function getQueryVariable(variable) {
