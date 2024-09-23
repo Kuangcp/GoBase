@@ -21,8 +21,9 @@ type SizedWaitGroup struct {
 }
 
 type PoolOption struct {
-	Size    int
-	Name    string
+	Size int
+	Name string
+	// Timeout 整个池子存活时间，从实例化开始算
 	Timeout time.Duration
 }
 

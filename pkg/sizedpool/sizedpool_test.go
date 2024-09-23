@@ -8,8 +8,11 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"runtime"
 	"testing"
 	"time"
+
+	_ "net/http/pprof"
 )
 
 func TestQueue(t *testing.T) {
@@ -148,15 +151,12 @@ func TestFutureGetWithCancel(t *testing.T) {
 	future.Wait()
 }
 
+// 限时完成一批任务
 func TestNewTmpWithFuture(t *testing.T) {
 	log.Println("start")
 	//future, _ := NewTmpWithFuture(30, time.Second*4)
-	future, err := NewTmpFuturePool(PoolOption{Size: 30, Timeout: time.Second * 7})
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
+	future, _ := NewTmpFuturePool(PoolOption{Size: 30, Timeout: time.Second * 7})
+	//time.Sleep(time.Second * 5)
 	for i := 0; i < 3; i++ {
 		fi := i
 		future.SubmitFutureTimeout(time.Second*5, Callable{
@@ -172,6 +172,54 @@ func TestNewTmpWithFuture(t *testing.T) {
 		})
 	}
 	future.Wait()
+	log.Println("finish")
+}
+
+// 尝试找到内存泄漏的原因，但是没有
+func TestNewTmpWithFutureLeak(t *testing.T) {
+	go func() {
+		// 访问 http://ip:8899/debug/pprof/
+		http.ListenAndServe("0.0.0.0:8899", nil)
+	}()
+
+	time.Sleep(time.Second * 10)
+	for i := 0; i < 200; i++ {
+		log.Println("start")
+
+		var tasks []*FutureTask
+		future, _ := NewTmpFuturePool(PoolOption{Size: 30, Timeout: time.Second * 10})
+		//time.Sleep(time.Second * 5)
+		for i := 0; i < 6; i++ {
+			fi := i
+			task := future.SubmitFutureTimeout(time.Second*5, Callable{
+				fmt.Sprint(fi),
+				func(ctx context.Context) (interface{}, error) {
+					value := ctx.Value(TraceID)
+					//log.Println(value, "start")
+					sl := rand.Intn(200) + 20
+					time.Sleep(time.Millisecond * time.Duration(sl))
+					log.Println(value, "finish", sl, "s")
+					return fi, nil
+				}, nil, nil,
+			})
+			tasks = append(tasks, task)
+		}
+		future.Wait()
+		log.Println("finish all", i)
+		for _, t := range tasks {
+			data, err := t.GetData()
+			if err == nil {
+				fmt.Print(data)
+			}
+		}
+		fmt.Println()
+		future.Close()
+	}
+
+	time.Sleep(time.Second * 30)
+	runtime.GC()
+
+	time.Sleep(time.Minute * 10)
 }
 
 func TestLongWait(t *testing.T) {
