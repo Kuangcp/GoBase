@@ -270,6 +270,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
 
+	logger.Info("query data")
 	zr, err := core.Conn.ZRangeByScoreWithScores(core.RequestList, redis.ZRangeBy{
 		Min: fmt.Sprint(start.UnixNano()),
 		Max: fmt.Sprint(end.UnixNano()),
@@ -285,6 +286,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 	for bi, batch := range array {
 		result, err := core.Conn.HMGet(core.RequestUrlList, batch...).Result()
 		if err != nil {
+			logger.Error(err)
 			continue
 		}
 		for i := range batch {
@@ -303,10 +305,14 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 				strings.HasPrefix(fullURL, "https://"+urlStr))
 			if matchHost || matchUrl {
 				msg := core.GetDetailByKey(batch[i])
+				// 提早释放内存
+				msg.Request = core.Message{}
+				msg.Response = core.Message{}
 				cache = append(cache, msg)
 			}
 		}
 	}
+	logger.Info("query from leveldb")
 
 	stream.Just(cache...).Filter(func(item any) bool {
 		msg := item.(*core.ReqLog[core.Message])
@@ -370,6 +376,8 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Url < result[j].Url
 	})
+
+	logger.Info("group by")
 
 	rsp.Data = result
 	rsp.Code = 0

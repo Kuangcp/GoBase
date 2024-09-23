@@ -202,28 +202,35 @@ func delRequest(writer http.ResponseWriter, request *http.Request) {
 }
 
 func deleteByPath(writer http.ResponseWriter, path string, size int) {
-	result, err := core.Conn.ZRevRange(core.RequestList, 0, -1).Result()
-	if err != nil {
-		logger.Error(err)
-		core.WriteJsonRsp(writer, err.Error())
-		return
-	}
+	keyCnt, _ := core.Conn.ZCard(core.RequestList).Result()
 
+	batch := 1000
 	total := 0
-	for _, key := range result {
-		log := core.MatchDetailByKeyAndKwd(core.ConvertToDbKey(key), path)
-		if log == nil {
-			continue
-		}
-		total++
 
-		logger.Info(log.Url, log.CacheId, log.Id)
-		core.RemoveReqMember(log.CacheId)
-		core.RemoveReqUrlKey(log.Id)
-		core.Leveldb.Delete([]byte(log.Id), nil)
-		if total >= size {
-			core.WriteJsonRsp(writer, fmt.Sprintf("out of count %v", size))
+	page := int(keyCnt)/batch + 1
+	for i := 0; i < page; i++ {
+		result, err := core.Conn.ZRange(core.RequestList, int64(i*batch), int64((i+1)*batch)).Result()
+		if err != nil {
+			logger.Error(err)
+			core.WriteJsonRsp(writer, err.Error())
 			return
+		}
+
+		for _, key := range result {
+			log := core.MatchDetailByKeyAndKwd(core.ConvertToDbKey(key), path)
+			if log == nil {
+				continue
+			}
+			total++
+
+			logger.Info(log.Url, log.CacheId, log.Id)
+			core.RemoveReqMember(log.CacheId)
+			core.RemoveReqUrlKey(log.Id)
+			core.Leveldb.Delete([]byte(log.Id), nil)
+			if total >= size {
+				core.WriteJsonRsp(writer, fmt.Sprintf("out of count %v", size))
+				return
+			}
 		}
 	}
 
