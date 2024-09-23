@@ -1,10 +1,12 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ctool/stream"
+	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/app"
 	"github.com/kuangcp/gobase/toolbox/dev-proxy/core"
 	"github.com/kuangcp/logger"
@@ -270,7 +272,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 
 	rsp := ctool.ResultVO[[]PerfPageVo]{}
 
-	logger.Info("query data")
+	//logger.Info("query data")
 	zr, err := core.Conn.ZRangeByScoreWithScores(core.RequestList, redis.ZRangeBy{
 		Min: fmt.Sprint(start.UnixNano()),
 		Max: fmt.Sprint(end.UnixNano()),
@@ -283,12 +285,19 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 	batchSize := 300
 	array := splitArray(ids, batchSize)
 	var cache []*core.ReqLog[core.Message]
+
+	// TODO memory leak?
+	pool, _ := sizedpool.NewTmpFuturePool(sizedpool.PoolOption{Size: 20, Timeout: time.Second * 20})
+
+	//logger.Info("query from leveldb")
+	var tasks []*sizedpool.FutureTask
 	for bi, batch := range array {
 		result, err := core.Conn.HMGet(core.RequestUrlList, batch...).Result()
 		if err != nil {
 			logger.Error(err)
 			continue
 		}
+
 		for i := range batch {
 			tmp := result[i]
 			if tmp == nil {
@@ -299,20 +308,34 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 			fullURL := tmp.(string)
 			matchHost := hostStr != "" && (strings.HasPrefix(fullURL, "http://"+hostStr) ||
 				strings.HasPrefix(fullURL, "https://"+hostStr))
-
 			matchUrl := urlStr != "" && (strings.HasPrefix(fullURL, urlStr) ||
 				strings.HasPrefix(fullURL, "http://"+urlStr) ||
 				strings.HasPrefix(fullURL, "https://"+urlStr))
 			if matchHost || matchUrl {
-				msg := core.GetDetailByKey(batch[i])
-				// 提早释放内存
-				msg.Request = core.Message{}
-				msg.Response = core.Message{}
-				cache = append(cache, msg)
+				key := batch[i]
+				future := pool.SubmitFuture(sizedpool.Callable{
+					ActionFunc: func(ctx context.Context) (interface{}, error) {
+						msg := core.GetDetailByKey(key)
+						// 提早释放内存
+						msg.Request = core.Message{}
+						msg.Response = core.Message{}
+						return msg, nil
+					},
+				})
+				tasks = append(tasks, future)
 			}
 		}
 	}
-	logger.Info("query from leveldb")
+	pool.Wait()
+	for _, f := range tasks {
+		data, err := f.GetData()
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+		cache = append(cache, data.(*core.ReqLog[core.Message]))
+	}
+	pool.Close()
 
 	stream.Just(cache...).Filter(func(item any) bool {
 		msg := item.(*core.ReqLog[core.Message])
@@ -377,7 +400,7 @@ func queryData(start time.Time, end time.Time, hostStr string, urlStr string, mi
 		return result[i].Url < result[j].Url
 	})
 
-	logger.Info("group by")
+	//logger.Info("group by")
 
 	rsp.Data = result
 	rsp.Code = 0
