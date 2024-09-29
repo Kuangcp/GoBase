@@ -39,14 +39,30 @@ func (t *Task) buildData(min, max, frame int64) {
 	t.Data = items
 }
 
+func TestAnalyzeLog(t *testing.T) {
+	logFile := "/home/zk/Downloads/firefox/1727597442521.log"
+	finishLog := ctool.ReadStrLines(logFile, func(s string) bool {
+		return strings.Contains(s, "records/s")
+	})
+	for _, l := range finishLog {
+		//a := strings.Index(l, "StandAloneJobContainerCommunicator")
+		b := strings.Index(l, "2024-")
+		c := strings.Index(l, "Speed ")
+		//fmt.Print(l[b:b+23], l[a+34:])
+		fmt.Println(l[b:b+23], l[c+6:c+29])
+	}
+}
+
 // 解析 datax log 得到每个任务运行时间段
 func TestExtractLog(t *testing.T) {
-	finishLog := ctool.ReadStrLines("/home/zk/Downloads/firefox/1727589631044.log", func(s string) bool {
+	logFile := "/home/zk/Downloads/firefox/1727598245788.log"
+	csvFile := "run-data29.csv"
+	finishLog := ctool.ReadStrLines(logFile, func(s string) bool {
 		return strings.Contains(s, "is successed, used")
 	})
 
 	//格式：id,start,end,weight
-	writer := ctool.NewWriterIgnoreError("run-data2.csv", true)
+	writer := ctool.NewWriterIgnoreError(csvFile, true)
 	defer writer.Close()
 	for _, l := range finishLog {
 		//fmt.Println(l)
@@ -79,34 +95,23 @@ func TestExtractLog(t *testing.T) {
 }
 
 func TestConcatWeight(t *testing.T) {
-	writer := ctool.NewWriterIgnoreError("run-data2-w.csv", true)
+	inCsv := "run-data29.csv"
+	outCsv := "run-data29-w.csv"
+
+	writer := ctool.NewWriterIgnoreError(outCsv, true)
 	defer writer.Close()
-	lines := ctool.ReadCsvLines("run-data2.csv")
-	var weight = []int64{4466162,
-		4555800,
-		3535773,
-		4846170,
-		4996228,
-		3866885,
-		6370524,
-		7560920,
-		5747293,
-		7965687,
-		8302327,
-		6876701,
-		10128650,
-		7727466,
-		10768946,
-		11283096,
-		9221867,
-		12960388,
-		13560612,
-		10678018,
-		14756670,
-		14868640,
-		11716800,
-		16813336,
-		16786591, 1}
+	lines := ctool.ReadCsvLines(inCsv)
+	// 27 28 使用period_int做拆分
+	//var weight = []int64{4466162, 4555800, 3535773, 4846170,
+	//	4996228, 3866885, 6370524, 7560920, 5747293, 7965687, 8302327, 6876701, 10128650, 7727466, 10768946, 11283096,
+	//	9221867, 12960388, 13560612, 10678018, 14756670, 14868640, 11716800, 16813336, 16786591, 1}
+
+	// 29 使用月份拆分
+	var weight = []int64{9958032, 9958032, 9958032, 9958032, 9958032, 9958032,
+		9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020, 9958020,
+		8704046, 6897405, 6638680, 6174019, 2786928, 1,
+	}
+
 	for _, line := range lines {
 		if len(line) == 0 || line[0] == "" {
 			continue
@@ -139,11 +144,12 @@ var (
 
 	// 超大图样式宽度的阈值
 	hugeWidthFlag = 1500
+	noSelect      = true
 )
 
 // 生成 运行序列 仿甘特图
 func TestRunSerial(t *testing.T) {
-	tasks, minT, maxT := parseCsv("run-data2-w.csv")
+	tasks, minT, maxT := parseCsv("run-data29-w.csv")
 
 	logger.Info("parse: ", len(tasks), time.UnixMilli(minT), time.UnixMilli(maxT))
 	if ignoreWeight {
@@ -211,6 +217,11 @@ func renderLineChart(maxT int64, minT int64, tasks []*Task) {
 		return a < b
 	})
 
+	sta := make(map[string]bool)
+	for _, name := range names {
+		sta[name] = noSelect
+	}
+
 	ch := charts.NewLine()
 	show := true
 	ch.SetGlobalOptions(
@@ -223,7 +234,8 @@ func renderLineChart(maxT int64, minT int64, tasks []*Task) {
 			Height: fmt.Sprint(height) + "px",
 		}),
 		charts.WithLegendOpts(opts.Legend{
-			Data: names,
+			Data:     names,
+			Selected: sta,
 		}),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "axis",
