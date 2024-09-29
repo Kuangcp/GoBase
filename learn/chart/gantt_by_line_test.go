@@ -39,10 +39,62 @@ func (t *Task) buildData(min, max, frame int64) {
 	t.Data = items
 }
 
-func TestConcatWeight(t *testing.T) {
-	writer := ctool.NewWriterIgnoreError("run-data.csv", true)
+func TestFixedPoint(t *testing.T) {
+	var n int64 = 1727427946482
+	var x int64 = 1727435438746
+
+	frame := (x - n) / 100
+	cursor := n
+	for cursor < x {
+		fmt.Println(cursor)
+		cursor += frame
+	}
+
+}
+
+// 解析 datax log 得到每个任务运行时间段
+func TestExtractLog(t *testing.T) {
+	finishLog := ctool.ReadStrLines("/home/zk/Downloads/firefox/1727589631044.log", func(s string) bool {
+		return strings.Contains(s, "is successed, used")
+	})
+
+	//格式：id,start,end,weight
+	writer := ctool.NewWriterIgnoreError("run-data2.csv", true)
 	defer writer.Close()
-	lines := ctool.ReadCsvLines("/home/zk/Work/supersonic/sssss.csv")
+	for _, l := range finishLog {
+		//fmt.Println(l)
+
+		a := strings.Index(l, "taskId")
+		b := strings.Index(l, "is successed")
+		c := strings.Index(l, "2024-")
+		name := l[a+7 : b-2]
+		finishT := l[c : c+23]
+		waste := l[b+19 : len(l)-4]
+
+		fmt.Println(name, finishT, waste)
+
+		// 注意time.Parse默认0时区
+		finish, err := time.ParseInLocation("2006-01-02 15:04:05.000", finishT, time.Local)
+		if err != nil {
+			panic(err)
+		}
+
+		runMs, err := strconv.Atoi(waste)
+		if err != nil {
+			panic(err)
+		}
+
+		end := finish.Format("2006-01-02 15:04:05.000")
+		start := finish.Add(-time.Millisecond * time.Duration(runMs)).Format("2006-01-02 15:04:05.000")
+
+		writer.WriteLine(name + ", " + start + ", " + end)
+	}
+}
+
+func TestConcatWeight(t *testing.T) {
+	writer := ctool.NewWriterIgnoreError("run-data2-w.csv", true)
+	defer writer.Close()
+	lines := ctool.ReadCsvLines("run-data2.csv")
 	var weight = []int64{4466162,
 		4555800,
 		3535773,
@@ -69,10 +121,13 @@ func TestConcatWeight(t *testing.T) {
 		16813336,
 		16786591, 1}
 	for _, line := range lines {
+		if len(line) == 0 || line[0] == "" {
+			continue
+		}
 		name := line[0]
-		name = strings.Replace(name, "taskId", "", 1)
-		name = strings.Replace(name, "[", "", 1)
-		name = strings.Replace(name, "]", "", 1)
+		//name = strings.Replace(name, "taskId", "", 1)
+		//name = strings.Replace(name, "[", "", 1)
+		//name = strings.Replace(name, "]", "", 1)
 		taskId, err := strconv.Atoi(name)
 		if err != nil {
 			panic(err)
@@ -84,14 +139,23 @@ func TestConcatWeight(t *testing.T) {
 	}
 }
 
-// 运行序列
+// 生成 运行序列 仿甘特图
 func TestRunSerial(t *testing.T) {
-	tasks, minT, maxT := parseCsv("run-data.csv")
+	ignoreWeight := false
+	tasks, minT, maxT := parseCsv("run-data2-w.csv")
+
+	logger.Info("parse: ", len(tasks), time.UnixMilli(minT), time.UnixMilli(maxT))
+	if ignoreWeight {
+		for _, task := range tasks {
+			task.Weight = 1
+		}
+	}
+
 	renderLineChart(maxT, minT, tasks)
 }
 
+// parseCsv 格式：id,start,end,weight
 func parseCsv(path string) ([]*Task, int64, int64) {
-	// id,start,end,weight
 	lines := ctool.ReadCsvLines(path)
 	var tasks []*Task
 	var minT, maxT int64 = time.Now().UnixMilli(), 0
@@ -111,15 +175,17 @@ func parseCsv(path string) ([]*Task, int64, int64) {
 		if err != nil {
 			panic(err)
 		}
-		atoi, err := strconv.Atoi(strings.TrimSpace(row[3]))
-		if err != nil {
-			atoi = 1
-		} else {
-			atoi = atoi / 100_000
+
+		weight := 1
+		if len(row) > 3 {
+			atoi, err := strconv.Atoi(strings.TrimSpace(row[3]))
+			if err == nil {
+				weight = atoi / 100_000
+			}
 		}
 		task.Start = parse1
 		task.End = parse2
-		task.Weight = atoi
+		task.Weight = weight
 		tasks = append(tasks, task)
 		if minT > task.Start.UnixMilli() {
 			minT = task.Start.UnixMilli()
@@ -132,9 +198,10 @@ func parseCsv(path string) ([]*Task, int64, int64) {
 }
 
 func renderLineChart(maxT int64, minT int64, tasks []*Task) {
-	var point int64 = 100
-	frame := (maxT - minT) / point
+	var point int64 = 140
+	width, height := 6500, 600
 
+	frame := (maxT - minT) / point
 	var names []string
 	for _, task := range tasks {
 		names = append(names, task.Name)
@@ -147,14 +214,15 @@ func renderLineChart(maxT int64, minT int64, tasks []*Task) {
 	})
 
 	ch := charts.NewLine()
+	show := true
 	ch.SetGlobalOptions(
 		charts.WithTitleOpts(opts.Title{
 			Title:    "Gantt",
-			Subtitle: "all markdown file",
+			Subtitle: "Datax task run serial",
 		}),
 		charts.WithInitializationOpts(opts.Initialization{
-			Width:  "1600px",
-			Height: "600px",
+			Width:  fmt.Sprint(width) + "px",
+			Height: fmt.Sprint(height) + "px",
 		}),
 		charts.WithLegendOpts(opts.Legend{
 			Data: names,
@@ -167,6 +235,11 @@ func renderLineChart(maxT int64, minT int64, tasks []*Task) {
 				Label: &opts.Label{
 					BackgroundColor: "#6a7985",
 				},
+			},
+		}),
+		charts.WithToolboxOpts(opts.Toolbox{
+			Feature: &opts.ToolBoxFeature{
+				SaveAsImage: &opts.ToolBoxFeatureSaveAsImage{Show: &show},
 			},
 		}),
 	)
@@ -201,5 +274,15 @@ func renderLineChart(maxT int64, minT int64, tasks []*Task) {
 	ch.SetXAxis(xs)
 
 	f, _ := os.Create("gantt.html")
-	_ = ch.Render(f)
+	html := ch.RenderContent()
+	tmp := string(html)
+
+	if width > 1500 {
+		tmp = strings.Replace(tmp, "justify-content: center;", "", 1)
+		tmp = strings.Replace(tmp, "margin-top:30px;", "margin-top:300px;", 1)
+	}
+	f.Write([]byte(tmp))
+
+	//f, _ := os.Create("gantt.html")
+	//_ = ch.Render(f)
 }
