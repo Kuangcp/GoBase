@@ -39,19 +39,6 @@ func (t *Task) buildData(min, max, frame int64) {
 	t.Data = items
 }
 
-func TestFixedPoint(t *testing.T) {
-	var n int64 = 1727427946482
-	var x int64 = 1727435438746
-
-	frame := (x - n) / 100
-	cursor := n
-	for cursor < x {
-		fmt.Println(cursor)
-		cursor += frame
-	}
-
-}
-
 // 解析 datax log 得到每个任务运行时间段
 func TestExtractLog(t *testing.T) {
 	finishLog := ctool.ReadStrLines("/home/zk/Downloads/firefox/1727589631044.log", func(s string) bool {
@@ -139,9 +126,23 @@ func TestConcatWeight(t *testing.T) {
 	}
 }
 
+var (
+	// 忽略权重区别
+	ignoreWeight = false
+
+	// 时间划分的段数
+	point         int64 = 300
+	width, height       = 6500, 600
+
+	// 比例缩小权重
+	weightFold = 100_000
+
+	// 超大图样式宽度的阈值
+	hugeWidthFlag = 1500
+)
+
 // 生成 运行序列 仿甘特图
 func TestRunSerial(t *testing.T) {
-	ignoreWeight := false
 	tasks, minT, maxT := parseCsv("run-data2-w.csv")
 
 	logger.Info("parse: ", len(tasks), time.UnixMilli(minT), time.UnixMilli(maxT))
@@ -180,7 +181,7 @@ func parseCsv(path string) ([]*Task, int64, int64) {
 		if len(row) > 3 {
 			atoi, err := strconv.Atoi(strings.TrimSpace(row[3]))
 			if err == nil {
-				weight = atoi / 100_000
+				weight = atoi / weightFold
 			}
 		}
 		task.Start = parse1
@@ -198,9 +199,6 @@ func parseCsv(path string) ([]*Task, int64, int64) {
 }
 
 func renderLineChart(maxT int64, minT int64, tasks []*Task) {
-	var point int64 = 140
-	width, height := 6500, 600
-
 	frame := (maxT - minT) / point
 	var names []string
 	for _, task := range tasks {
@@ -277,7 +275,7 @@ func renderLineChart(maxT int64, minT int64, tasks []*Task) {
 	html := ch.RenderContent()
 	tmp := string(html)
 
-	if width > 1500 {
+	if width > hugeWidthFlag {
 		tmp = strings.Replace(tmp, "justify-content: center;", "", 1)
 		tmp = strings.Replace(tmp, "margin-top:30px;", "margin-top:300px;", 1)
 	}
