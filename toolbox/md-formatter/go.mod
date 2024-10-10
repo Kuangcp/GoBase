@@ -1,11 +1,15 @@
 module github.com/kuangcp/gobase/toolbox/md-formatter
 
-go 1.21
+go 1.22.0
+
+toolchain go1.23.2
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/kuangcp/gobase/pkg/ctk v1.0.9
 	github.com/kuangcp/logger v1.0.9
+	golang.org/x/net v0.30.0
 )
 
 require (
@@ -24,11 +28,13 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/skeema/knownhosts v1.2.0 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.13.0 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/tools v0.13.0 // indirect
+	golang.org/x/crypto v0.28.0 // indirect
+	golang.org/x/mod v0.21.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/tools v0.26.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

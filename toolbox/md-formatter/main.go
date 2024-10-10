@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"github.com/atotto/clipboard"
 	"github.com/go-git/go-git/v5"
 	"github.com/kuangcp/gobase/pkg/ctk"
 	"github.com/kuangcp/logger"
@@ -57,6 +58,7 @@ var (
 	printCatalog     string
 	rmFile           string
 	rmAppendFile     string
+	extractTitleUrl  string
 
 	titleReplace *strings.Replacer
 )
@@ -68,6 +70,54 @@ func main() {
 		return
 	}
 
+	if extractTitleUrl != "" {
+		if extractTitleUrl == "auto" {
+			//robotgo.KeyTap("y")
+			//robotgo.KeyTap("y")
+
+			last, err := clipboard.ReadAll()
+			if err != nil {
+				logger.Error(err)
+				return
+			}
+			last = strings.TrimSpace(last)
+			if last == "" || !strings.Contains(last, "http") {
+				return
+			}
+			extractTitleUrl = last
+		}
+
+		//fmt.Println(extractTitleUrl)
+
+		// 库主要是为了获取站点主页面的信息，所以要禁用重定向才能获取当前页信息
+		s, err := Scrape(extractTitleUrl, 0)
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		title := s.Preview.Title
+		if title != "" {
+			//fmt.Printf("Title : %s\n", title)
+			clipboard.WriteAll("[" + title + "](" + extractTitleUrl + ")")
+		}
+		return
+	}
+
+	if len(os.Args) < 2 {
+		logger.Fatal("Usage: md-formatter <command> [<args>]")
+	}
+	prepareContext()
+
+	// action
+	for _, a := range acts {
+		a.tryInvoke()
+	}
+
+	filename := os.Args[1]
+	RefreshTagAndCatalog(filename)
+}
+
+func prepareContext() {
 	var replacePairList []string
 	for i := range titleRemoveChar {
 		replacePairList = append(replacePairList, titleRemoveChar[i], "")
@@ -77,14 +127,6 @@ func main() {
 	for _, dir := range ignoreDirs {
 		ignoreDirMap[dir] = 1
 	}
-
-	// action
-	for _, a := range acts {
-		a.tryInvoke()
-	}
-
-	filename := os.Args[1]
-	RefreshTagAndCatalog(filename)
 }
 
 func readFileLines(filename string) []string {

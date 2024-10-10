@@ -8,6 +8,7 @@ import (
 func TestReplace(t *testing.T) {
 	title := "pre（）测试 【使用】"
 
+	prepareContext()
 	result := normalizeForTitle(title)
 	fmt.Println(result)
 
