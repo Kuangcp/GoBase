@@ -71,35 +71,7 @@ func main() {
 	}
 
 	if extractTitleUrl != "" {
-		if extractTitleUrl == "auto" {
-			//robotgo.KeyTap("y")
-			//robotgo.KeyTap("y")
-
-			last, err := clipboard.ReadAll()
-			if err != nil {
-				logger.Error(err)
-				return
-			}
-			last = strings.TrimSpace(last)
-			if last == "" || !strings.Contains(last, "http") {
-				return
-			}
-			extractTitleUrl = last
-		}
-
-		//fmt.Println(extractTitleUrl)
-
-		// 库主要是为了获取站点主页面的信息，所以要禁用重定向才能获取当前页信息
-		s, err := Scrape(extractTitleUrl, 0)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		title := s.Preview.Title
-		if title != "" {
-			//fmt.Printf("Title : %s\n", title)
-			clipboard.WriteAll("[" + title + "](" + extractTitleUrl + ")")
-		}
+		CopyWebsiteTitle()
 		return
 	}
 
@@ -115,6 +87,40 @@ func main() {
 
 	filename := os.Args[1]
 	RefreshTagAndCatalog(filename)
+}
+
+func CopyWebsiteTitle() {
+	if extractTitleUrl == "auto" {
+		//"github.com/go-vgo/robotgo"
+		//robotgo.KeyTap("y")
+		//robotgo.KeyTap("y")
+		//time.Sleep(time.Second)
+
+		last, err := clipboard.ReadAll()
+		if err != nil {
+			logger.Error(err)
+			return
+		}
+		last = strings.TrimSpace(last)
+		if last == "" || !strings.Contains(last, "http") {
+			return
+		}
+		extractTitleUrl = last
+	}
+
+	//fmt.Println(extractTitleUrl)
+
+	// 库主要是为了获取站点主页面的信息，所以要禁用重定向才能获取当前页信息
+	s, err := Scrape(extractTitleUrl, 0)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	title := s.Preview.Title
+	if title != "" {
+		//fmt.Printf("Title : %s\n", title)
+		clipboard.WriteAll("> [" + title + "](" + extractTitleUrl + ")  ")
+	}
 }
 
 func prepareContext() {
