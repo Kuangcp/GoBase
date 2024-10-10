@@ -39,12 +39,15 @@ var info = ctk.HelpInfo{
 		{Short: "-ra", Value: "file", Comment: "Remove then Append catalog and title for file. default options"},
 		{Short: "-c", Value: "dir", Comment: "Refresh git repo dir changed file. same to -ra"},
 		{Short: "-d", Value: "dir", Comment: "Refresh file catalog that recursive dir, default current dir. same to -ra"},
+		{Short: "-xt", Value: "url", Comment: "Extract title from article url"},
 	},
 }
 
 func init() {
 	flag.BoolVar(&help, "h", false, "")
+	flag.StringVar(&extractTitleUrl, "xt", "", "")
 
+	// 组合使用
 	optionToFunction("p", &printCatalog, PrintCatalog)
 	optionToFunction("mm", &mindMapFile, PrintMindMap)
 
