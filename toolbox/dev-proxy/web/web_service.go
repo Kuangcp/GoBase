@@ -280,6 +280,8 @@ func buildCommandById(id string, proxy, storage bool) string {
 	if len(detail.Request.Body) > 0 {
 		cmd += fmt.Sprintf(" --data-raw $'%s'", string(detail.Request.Body))
 	}
+	// gzip 解压
+	cmd += " --compressed "
 	//logger.Info(cmd)
 
 	return cmd
