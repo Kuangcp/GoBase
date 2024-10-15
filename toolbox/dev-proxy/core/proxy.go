@@ -184,6 +184,7 @@ func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStor
 	if needStorage {
 		now := time.Now()
 		id := uuid.New().String()
+		id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
 		if newUrl.Path == proxyReq.URL.Path {
 			logStr = fmt.Sprintf("%v %s => %s", id, proxyReq.Host+proxyReq.URL.Path, newUrl.Host+" .")
 		} else {
@@ -195,7 +196,6 @@ func RewriteRequestAndBuildLog(newUrl *url.URL, proxyReq *http.Request, needStor
 		query, _ := url.QueryUnescape(proxyReq.URL.String())
 		reqMes := Message{Header: proxyReq.Header, Body: FilterFormType(bodyBt)}
 
-		id = fmt.Sprintf("%v%v", id[0:8], now.UnixMilli()%1000)
 		cacheId := fmt.Sprintf("%v  %v", now.Format("01-02 15:04:05.000"), id)
 		reqLog = &ReqLog[Message]{Id: id, CacheId: cacheId, Url: query, Request: reqMes, ReqTime: now, Method: proxyReq.Method}
 	}

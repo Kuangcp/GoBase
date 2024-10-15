@@ -100,10 +100,10 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 	if err != nil {
 		return
 	}
+	rspTick := time.Now().UnixMilli()
 	reqCtx := ctx.Data["ReqCtx"].(*ReqCtx)
-	startMs := reqCtx.startReqMs
-	reqTime := time.Now().UnixMilli() - startMs
-
+	startTick := reqCtx.startReqMs
+	reqMs := rspTick - startTick
 	reqLog := reqCtx.reqLog
 	resp.Header.Add("Ack-Proxy", reqCtx.proxyType+"  "+ctx.Req.Host)
 
@@ -111,18 +111,25 @@ func (e *EventHandler) BeforeResponse(ctx *goproxy.Context, resp *http.Response,
 		if reqCtx.proxyType == core.Proxy {
 			reqCtx.proxyLog += " SELF"
 		}
-		logger.Debug("%4vms %v", reqTime, reqCtx.proxyLog)
+		logger.Debug("%4vms %v", reqMs, reqCtx.proxyLog)
 	}
-
 	if reqCtx.needStorage {
 		core.TrySaveLog(reqLog, resp)
 	}
 
-	proxyMs := time.Now().UnixMilli() - reqCtx.receiveReqMs
-	proxyDelta := proxyMs - reqTime
-	if proxyDelta > 10 {
-		//logger.Warn("SlowProxy %4vms rt: %4vms %v", proxyDelta, proxyMs, reqCtx.proxyLog)
-		logger.Warn("SlowProxy %3vms rt: %4vms %v %v", proxyDelta, proxyMs, reqCtx.originUrl, reqTime)
+	// 当前时刻 - 建立连接时刻 = 请求前处理耗时 + 请求&响应耗时 + 读取响应处理耗时
+	handleRspTick := time.Now().UnixMilli()
+	allMs := handleRspTick - reqCtx.receiveReqMs
+
+	// 代理处理逻辑的耗时
+	proxyReqMs := reqCtx.startReqMs - reqCtx.receiveReqMs
+	proxyRspMs := handleRspTick - rspTick
+
+	// 代理耗时 = 总耗时 - 请求&响应耗时
+	proxyMs := allMs - reqMs
+	if proxyMs > 10 {
+		logger.Warn("SlowProxy proxy:%3vms=%v+%v total:%4v req:%v %v", proxyMs, proxyReqMs, proxyRspMs,
+			allMs, reqMs, reqCtx.originUrl)
 	}
 }
 
