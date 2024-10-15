@@ -268,6 +268,12 @@ func main() {
 		fmt.Printf("%s Total characters: %v files  %v chars \n", nowStr, totalFile, allChChar)
 		return
 	}
+	if countSummary2 {
+		allChChar, totalFile := countSummaryResult(nil, false)
+		nowStr := time.Now().Format("2006-01-02 15:04:05.000")
+		fmt.Printf("%s Total characters: %v files  %v chars %v l/f\n", nowStr, totalFile, allChChar, allChChar/totalFile)
+		return
+	}
 
 	showChineseChar(nil, true)
 }

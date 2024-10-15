@@ -23,11 +23,12 @@ var (
 	rankPair         string
 	targetFile       string
 
-	printAllChar bool
-	countSummary bool
-	help         bool
-	delCache     bool
-	allFile      bool
+	printAllChar  bool
+	countSummary  bool
+	countSummary2 bool
+	help          bool
+	delCache      bool
+	allFile       bool
 )
 var (
 	startIdx int64 = 0
@@ -41,6 +42,7 @@ var info = cuibase.HelpInfo{
 	Flags: []cuibase.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-s", BoolVar: &countSummary, Comment: "count all files, print summary"},
+		{Short: "-sd", BoolVar: &countSummary2, Comment: "count all files, print summary"},
 		{Short: "-p", BoolVar: &printAllChar, Comment: "print all chinese char"},
 		{Short: "-d", BoolVar: &delCache, Comment: "delete rank data in redis"},
 		{Short: "-a", BoolVar: &allFile, Comment: "count chinese char on current dir. write to redis"},
