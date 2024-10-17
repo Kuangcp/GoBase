@@ -231,13 +231,26 @@ func PrintDay() {
 		days = append(days, float64(day))
 	}
 
-	fmt.Println(asciigraph.Plot(kpms,
-		asciigraph.Width(len(days)),
+	var kpms_ []float64
+	var days_ []float64
+	for i := range kpms {
+		val := kpms[i]
+		if val > 0 {
+			kpms_ = append(kpms_, val)
+		}
+		val = days[i]
+		if val > 0 {
+			days_ = append(days_, val)
+		}
+	}
+
+	fmt.Println(asciigraph.Plot(kpms_,
+		asciigraph.Width(len(kpms_)),
 		asciigraph.Height(20),
 		asciigraph.Caption("KPM "+start+" => "+now.Format(ctk.YYYY_MM_DD))),
 	)
-	fmt.Println(asciigraph.Plot(days,
-		asciigraph.Width(len(days)),
+	fmt.Println(asciigraph.Plot(days_,
+		asciigraph.Width(len(days_)),
 		asciigraph.Height(20),
 		asciigraph.Caption("Daily "+start+" => "+now.Format(ctk.YYYY_MM_DD))),
 	)
