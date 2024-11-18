@@ -329,7 +329,7 @@ func PrintMindMap(filename string) {
 	}
 }
 
-// 更新指定目录的Git仓库中 发生变更 的文件
+// RefreshChangeFile 更新指定目录的Git仓库中 发生变更 的文件
 func RefreshChangeFile(dir string) {
 	r, err := git.PlainOpen(dir)
 	ctk.CheckIfError(err)
@@ -345,7 +345,8 @@ func RefreshChangeFile(dir string) {
 	for filePath := range status {
 		fileStatus := status.File(filePath)
 
-		careStatus := fileStatus.Staging == git.Modified || fileStatus.Worktree == git.Modified
+		careStatus := fileStatus.Staging == git.Added || fileStatus.Staging == git.Modified ||
+			fileStatus.Worktree == git.Modified || fileStatus.Worktree == git.Untracked
 		if careStatus && !showChange {
 			logger.Info("Repository:", refreshChangeDir)
 			showChange = true
