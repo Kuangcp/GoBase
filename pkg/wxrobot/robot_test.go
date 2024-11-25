@@ -2,7 +2,6 @@ package wxrobot
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
@@ -10,18 +9,19 @@ import (
 	"time"
 )
 
-//var appKey = os.Getenv("appkey")
-var appKey = "ec80ba3f-9b61-4130-aee9-b62a454834a6" // 机器人群 机器人
+var appKey = os.Getenv("appkey") // 机器人群 机器人
 
 func TestText(t *testing.T) {
 	robot := NewRobot(appKey)
 	robot.MockRequest()
+	robot.ShowRequestLog()
 	robot.SendText(Content{Content: "闹钟", MentionedList: []string{"xx", "@all"}})
 }
 
 func TestTextWithLimiter(t *testing.T) {
 	robot := NewRobot(appKey)
 	robot.MockRequest()
+	robot.ShowRequestLog()
 
 	go loopSend(robot)
 	time.Sleep(time.Second * 3)
@@ -57,6 +57,7 @@ func TestArticle(t *testing.T) {
 func TestImage(t *testing.T) {
 	robot := NewRobot(appKey)
 	robot.MockRequest()
+	robot.ShowRequestLog()
 
 	//robot.SendImageByFile("/home/kcp/Pictures/2020-06-20_17-19.png")
 	//err := robot.SendImageByFile("/home/kcp/Pictures/uml.svg")
@@ -75,7 +76,7 @@ func TestImageBase64(t *testing.T) {
 		if entry.IsDir() {
 			continue
 		}
-		file, err := ioutil.ReadFile("/home/kcp/Pictures/" + entry.Name())
+		file, err := os.ReadFile("/home/kcp/Pictures/" + entry.Name())
 		if err != nil {
 			continue
 		}
