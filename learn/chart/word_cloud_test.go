@@ -5,7 +5,9 @@ import (
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -13,13 +15,31 @@ import (
 func TestCloud(t *testing.T) {
 	createWordCloud(generateWordCloudData(wordCloudData))
 }
+func latestLogFile() string {
+	fi := ""
+	err := filepath.WalkDir("log/",
+		func(path string, d fs.DirEntry, err error) error {
+			if strings.HasSuffix(path, "log") {
+				fi = path
+			}
+			return nil
+		})
+	if err != nil {
+		return ""
+	}
+
+	return fi
+}
 
 // algorithm/ds/tree/trie_tokenizer_test.go TestDir
 func TestReadFile(t *testing.T) {
 	cache := make(map[string]interface{})
 	ignore := ctool.NewSet("使用", "一个", "可以", "如果", "这个")
-	// Work
-	logfile := "log"
+
+	// TestDir 生成的日志文件绝对路径
+	//logfile := "log/"
+	logfile := latestLogFile()
+	logger.Info("parse file", logfile)
 	ctool.ReadLines(logfile, func(s string) bool {
 		return len(s) > 0
 	}, func(s string) bool {
