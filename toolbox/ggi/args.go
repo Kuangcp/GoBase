@@ -9,6 +9,7 @@ var (
 	buildVersion string
 	addRepo      string
 	delRepo      string
+	jumpRepo     string
 
 	help     bool
 	push     bool
@@ -17,14 +18,11 @@ var (
 	listRepo bool
 )
 
-var (
-	cfgFile = ".ggi.ini"
-)
 var info = ctool.HelpInfo{
 	Description:   "Manage multiple repository",
 	Version:       "1.0.0",
 	BuildVersion:  buildVersion,
-	SingleFlagLen: -2,
+	SingleFlagLen: -4,
 	ValueLen:      -6,
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
@@ -34,13 +32,14 @@ var info = ctool.HelpInfo{
 		{Short: "-all", BoolVar: &allRepo, Comment: "all repo"},
 	},
 	Options: []ctool.ParamVO{
-		{Short: "-a", Value: "add", Comment: "add repo"},
-		{Short: "-d", Value: "del", Comment: "del repo"},
+		{Short: "-a", Value: "alias", Comment: "add repo"},
+		{Short: "-d", Value: "alias", Comment: "del repo"},
+		{Short: "-j", Value: "alias", Comment: "jump repo"},
 	}}
 
 func init() {
-
 	flag.StringVar(&addRepo, "a", "", "")
 	flag.StringVar(&delRepo, "d", "", "")
+	flag.StringVar(&jumpRepo, "j", "", "")
 
 }
