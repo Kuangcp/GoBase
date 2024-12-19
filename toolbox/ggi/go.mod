@@ -1,10 +1,11 @@
 module ggi
 
-go 1.23
+go 1.22
 
 require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/kuangcp/gobase/pkg/ctool v1.2.0
+	github.com/kuangcp/gobase/pkg/sizedpool v1.0.6
 	github.com/kuangcp/logger v1.0.9
 )
 
