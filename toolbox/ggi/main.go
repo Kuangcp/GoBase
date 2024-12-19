@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-git/go-git/v5"
@@ -9,6 +10,7 @@ import (
 	"github.com/kuangcp/logger"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -23,6 +25,12 @@ type Repo struct {
 	Alias   string `json:"alias"`
 	Path    string `json:"path"`
 	Comment string `json:"comment"`
+}
+type RunLog struct {
+	start   time.Time
+	end     time.Time
+	success bool
+	msg     string
 }
 
 func init() {
@@ -43,21 +51,10 @@ func main() {
 	}
 
 	if addRepo != "" {
-		dir := FindRootDir()
-		if dir == "" {
-			logger.Error("None git repo")
-			return
-		}
-		cfg := Read()
-		for _, r := range cfg.Repos {
-			if r.Path == dir {
-				logger.Error("Repo %s already exists", dir)
-				return
-			}
-		}
-		repo := Repo{Path: dir, Alias: addRepo}
-		cfg.Repos = append(cfg.Repos, repo)
-		Write(cfg)
+		addRepos()
+		return
+	} else if delRepo != "" {
+		deleteRepos()
 		return
 	} else if jumpRepo != "" {
 		cfg := Read()
@@ -66,25 +63,6 @@ func main() {
 				fmt.Print(r.Path)
 				return
 			}
-		}
-		return
-	} else if delRepo != "" {
-		cfg := Read()
-		var nlist []Repo
-		find := false
-		for _, r := range cfg.Repos {
-			if r.Alias != delRepo {
-				nlist = append(nlist, r)
-			} else {
-				find = true
-				logger.Info("Delete repo %s", delRepo)
-			}
-		}
-		if find {
-			cfg.Repos = nlist
-			Write(cfg)
-		} else {
-			logger.Error("Repo %s not found", delRepo)
 		}
 		return
 	} else if listRepo {
@@ -97,100 +75,176 @@ func main() {
 
 	if push {
 		if allRepo {
-			cfg := Read()
-			for _, repo := range cfg.Repos {
-				r, err := git.PlainOpen(repo.Path)
-				if err != nil {
-					logger.Error("Repo %s not found: %v", repo.Alias, err)
-					continue
-				}
-				list, err := r.Remotes()
-				if err != nil {
-					logger.Error("Repo %s open error: %v", repo.Alias, err)
-					return
-				}
-				for _, remote := range list {
-					name := remote.Config().Name
-					err := r.Push(&git.PushOptions{RemoteName: name})
-					if err != nil {
-						if err.Error() == "already up-to-date" {
-							logger.Info("Repo %s %s already up-to-date", repo.Alias, name)
-						} else {
-							logger.Error("Repo %s push %s error %v", repo.Alias, name, err)
-						}
-					}
-				}
-			}
+			pushAllRepo()
+			return
 		} else {
-			rootDir := FindRootDir()
-			if rootDir == "" {
-				logger.Error("None git repo")
-				return
-			}
-
-			r, err := git.PlainOpen(rootDir)
-			if err != nil {
-				logger.Error("Repo %s not found: %v", rootDir, err)
-				return
-			}
-
-			list, err := r.Remotes()
-			if err != nil {
-				logger.Error("Repo %s open error: %v", rootDir, err)
-				return
-			}
-			group, _ := sizedpool.New(sizedpool.PoolOption{
-				Size: 4,
-			})
-			for _, remote := range list {
-				name := remote.Config().Name
-				group.Run(func() {
-					err := r.Push(&git.PushOptions{RemoteName: name})
-					if err != nil {
-						if err.Error() == "already up-to-date" {
-							logger.Info("Repo %s %s already up-to-date", rootDir, name)
-						} else {
-							logger.Error("Repo %s push %s error %v", rootDir, name, err)
-						}
-					}
-				})
-			}
-			group.Wait()
+			pushCurDir()
+			return
 		}
 	}
 	if pull {
-		cfg := Read()
-		group, _ := sizedpool.New(sizedpool.PoolOption{
-			Size: 4,
+		pullRepo()
+	}
+}
+
+func deleteRepos() {
+	cfg := Read()
+	var nlist []Repo
+	find := false
+	for _, r := range cfg.Repos {
+		if r.Alias != delRepo {
+			nlist = append(nlist, r)
+		} else {
+			find = true
+			logger.Info("Delete repo %s", delRepo)
+		}
+	}
+	if find {
+		cfg.Repos = nlist
+		Write(cfg)
+	} else {
+		logger.Error("Repo %s not found", delRepo)
+	}
+}
+
+func addRepos() {
+	dir := FindRootDir()
+	if dir == "" {
+		logger.Error("None git repo")
+		return
+	}
+	cfg := Read()
+	for _, r := range cfg.Repos {
+		if r.Path == dir {
+			logger.Error("Repo %s already exists", dir)
+			return
+		}
+	}
+	repo := Repo{Path: dir, Alias: addRepo}
+	cfg.Repos = append(cfg.Repos, repo)
+	Write(cfg)
+	return
+}
+
+func pushCurDir() bool {
+	rootDir := FindRootDir()
+	if rootDir == "" {
+		logger.Error("None git repo")
+		return true
+	}
+
+	r, err := git.PlainOpen(rootDir)
+	if err != nil {
+		logger.Error("Repo %s not found: %v", rootDir, err)
+		return true
+	}
+
+	list, err := r.Remotes()
+	if err != nil {
+		logger.Error("Repo %s open error: %v", rootDir, err)
+		return true
+	}
+	group, _ := sizedpool.New(sizedpool.PoolOption{
+		Size: 4,
+	})
+	for _, remote := range list {
+		name := remote.Config().Name
+		group.Run(func() {
+			err := r.Push(&git.PushOptions{RemoteName: name})
+			if err != nil {
+				if err.Error() == "already up-to-date" {
+					logger.Info("Repo %s %s already up-to-date", rootDir, name)
+				} else {
+					logger.Error("Repo %s push %s error %v", rootDir, name, err)
+				}
+			}
 		})
-		for _, repo := range cfg.Repos {
-			group.Run(func() {
+	}
+	group.Wait()
+	return false
+}
+
+func pushAllRepo() bool {
+	cfg := Read()
+	for _, repo := range cfg.Repos {
+		r, err := git.PlainOpen(repo.Path)
+		if err != nil {
+			logger.Error("Repo %s not found: %v", repo.Alias, err)
+			continue
+		}
+		list, err := r.Remotes()
+		if err != nil {
+			logger.Error("Repo %s open error: %v", repo.Alias, err)
+			return true
+		}
+		for _, remote := range list {
+			name := remote.Config().Name
+			err := r.Push(&git.PushOptions{RemoteName: name})
+			if err != nil {
+				if err.Error() == "already up-to-date" {
+					logger.Info("Repo %s %s already up-to-date", repo.Alias, name)
+				} else {
+					logger.Error("Repo %s push %s error %v", repo.Alias, name, err)
+				}
+			}
+		}
+	}
+	return false
+}
+
+func pullRepo() {
+	cfg := Read()
+	group, _ := sizedpool.NewFuturePool(sizedpool.PoolOption{
+		Size: 4,
+	})
+
+	var res []*sizedpool.FutureTask
+	for _, repo := range cfg.Repos {
+		task := group.SubmitFuture(sizedpool.Callable{
+			ActionFunc: func(ctx context.Context) (interface{}, error) {
+				log := &RunLog{start: time.Now()}
 				r, err := git.PlainOpen(repo.Path)
 				if err != nil {
-					logger.Error("Repo %s not found: %v", repo.Alias, err)
-					return
+					//logger.Error("Repo %s not found: %v", repo.Alias, err)
+					log.msg = fmt.Sprintf("Repo %8s not found: %v", repo.Alias, err)
+					return log, err
 				}
 				w, err := r.Worktree()
 				if err != nil {
-					logger.Error("Repo %s open error: %v", repo.Alias, err)
-					return
+					//logger.Error("Repo %s open error: %v", repo.Alias, err)
+					log.msg = fmt.Sprintf("Repo %8s open error: %v", repo.Alias, err)
+					return log, err
 				}
 
 				// chmod 600 ~/.ssh/id_rsa
 				// ssh-add ~/.ssh/id_rsa
 				// Pull the latest changes from the origin remote and merge into the current branch
-				logger.Info("Try pull repo %s", repo.Alias)
+				//logger.Info("Try pull repo %s", repo.Alias)
 				err = w.Pull(&git.PullOptions{})
 				if err != nil {
 					if err.Error() == "already up-to-date" {
-						logger.Info("Repo %s already up-to-date", repo.Alias)
+						//logger.Info("Repo %s already up-to-date", repo.Alias)
+						log.msg = fmt.Sprintf("Repo %8s already up-to-date", repo.Alias)
+						return log, nil
 					} else {
-						logger.Error("Repo %s pull error %v", repo.Alias, err)
+						//logger.Error("Repo %s pull error %v", repo.Alias, err)
+						log.msg = fmt.Sprintf("Repo %8s pull error %v", repo.Alias, err)
+						return log, err
 					}
 				}
-			})
+				return log, nil
+			}})
+		res = append(res, task)
+	}
+	go group.ExecFuturePool(nil)
+	for _, re := range res {
+		data, err := re.GetData()
+		if err == nil {
+			var log = data.(*RunLog)
+			fmt.Println(log.msg)
+		} else {
+			fmt.Println(err)
 		}
-		group.Wait()
 	}
 }
 
