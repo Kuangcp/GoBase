@@ -10,12 +10,12 @@ var (
 	addRepo      string
 	delRepo      string
 	jumpRepo     string
+	listRepo     bool
+	help         bool
 
-	help     bool
-	push     bool
-	pull     bool
-	allRepo  bool
-	listRepo bool
+	push    bool
+	pull    bool
+	allRepo bool
 )
 
 var info = ctool.HelpInfo{
