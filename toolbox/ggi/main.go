@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-git/go-git/v5"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"os"
@@ -53,8 +54,7 @@ func main() {
 		cfg.Repos = append(cfg.Repos, repo)
 		Write(cfg)
 		return
-	}
-	if jumpRepo != "" {
+	} else if jumpRepo != "" {
 		cfg := Read()
 		for _, r := range cfg.Repos {
 			if r.Alias == jumpRepo {
@@ -63,9 +63,7 @@ func main() {
 			}
 		}
 		return
-	}
-
-	if delRepo != "" {
+	} else if delRepo != "" {
 		cfg := Read()
 		var nlist []Repo
 		find := false
@@ -84,14 +82,44 @@ func main() {
 			logger.Error("Repo %s not found", delRepo)
 		}
 		return
-	}
-
-	if listRepo {
+	} else if listRepo {
 		cfg := Read()
 		for _, r := range cfg.Repos {
 			fmt.Println(r.Alias, r.Path)
 		}
 		return
+	}
+
+	if push {
+
+	}
+	if pull {
+		cfg := Read()
+		for _, repo := range cfg.Repos {
+			r, err := git.PlainOpen(repo.Path)
+			if err != nil {
+				logger.Error("Repo %s not found: %v", repo.Alias, err)
+				continue
+			}
+			w, err := r.Worktree()
+			if err != nil {
+				logger.Error("Repo %s open error: %v", repo.Alias, err)
+				continue
+			}
+
+			// chmod 600 ~/.ssh/id_rsa
+			// ssh-add ~/.ssh/id_rsa
+			// Pull the latest changes from the origin remote and merge into the current branch
+			logger.Info("Try pull repo %s", repo.Alias)
+			err = w.Pull(&git.PullOptions{})
+			if err != nil {
+				if err.Error() == "already up-to-date" {
+					logger.Info("Repo %s already up-to-date", repo.Alias)
+				} else {
+					logger.Error("Repo %s pull error %v", repo.Alias, err)
+				}
+			}
+		}
 	}
 }
 
