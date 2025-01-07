@@ -79,7 +79,7 @@ func TestDir(t *testing.T) {
 			return nil
 		}
 		if strings.HasSuffix(path, "md") {
-			fmt.Println(path)
+			//fmt.Println("dir", path)
 			tokens := tokenizer.TokenizeFile(path)
 			//statistics(tokens, result)
 			statisticsZh(tokens, result)
@@ -91,12 +91,15 @@ func TestDir(t *testing.T) {
 		return
 	}
 
-	fmt.Println("单字 统计")
+	fmt.Println("\n单字 统计")
+	ig := ctool.NewSet("是", "的", "和", "在", "了", "不", "个", "中", "为", "就", "有", "也", "到", "用", "将", "上")
 	consumeSort(result, func(s string, i int) bool {
 		runes := []rune(s)
 		return len(runes) == 1 && i > 10
 	}, func(s string, i int) {
-		fmt.Println(s, i)
+		if !ig.Contains(s) {
+			fmt.Println("- ", s, i)
+		}
 	})
 
 	now := time.Now()
@@ -104,13 +107,38 @@ func TestDir(t *testing.T) {
 	writer, _ := ctool.NewWriter("log/"+fmt.Sprint(now.UnixMilli())+"-"+format+".log", true)
 	defer writer.Close()
 
+	cache := make(map[int][]string)
 	consumeSort(result, func(s string, i int) bool {
 		runes := []rune(s)
-
 		return len(runes) > 1 && i > 10
 	}, func(s string, i int) {
-		writer.WriteLine(fmt.Sprint(i, " ", s))
+		_, ok := cache[i]
+		if ok {
+			cache[i] = append(cache[i], s)
+		} else {
+			var tmp []string
+			cache[i] = append(tmp, s)
+		}
 	})
+	type KV struct {
+		k int
+		v []string
+	}
+	var kvs []KV
+	for k, v := range cache {
+		tmp := KV{k: k, v: v}
+		kvs = append(kvs, tmp)
+	}
+
+	sort.Slice(kvs, func(i, j int) bool {
+		return kvs[i].k < kvs[j].k
+	})
+	for _, kv := range kvs {
+		sort.Strings(kv.v)
+		for _, vv := range kv.v {
+			writer.WriteLine(fmt.Sprint(kv.k, " ", vv))
+		}
+	}
 }
 
 // 英文 分词
