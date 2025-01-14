@@ -130,7 +130,7 @@ func SyncDetails(c *gin.Context) {
 }
 
 func ScheduleSyncAllDetails() {
-	for range time.NewTicker(time.Hour * 24 * 5).C {
+	for range time.NewTicker(time.Hour * 24 * 3).C {
 		logger.Info("sync details")
 		SyncAllDetails()
 	}
