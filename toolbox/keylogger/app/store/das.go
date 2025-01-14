@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/conf"
 	"github.com/kuangcp/logger"
 	"time"
@@ -86,7 +86,7 @@ func ExportDetailToCsv(day time.Time) {
 	}
 
 	dayFmt := day.Format("2006-01-02")
-	writer, err := ctk.NewWriter(conf.LogDir+"/"+dayFmt+"-detail.csv", true)
+	writer, err := ctool.NewWriter(conf.LogDir+"/"+dayFmt+"-detail.csv", true)
 	if err != nil {
 		logger.Error(err)
 		return

@@ -2,9 +2,9 @@ package web
 
 import (
 	"embed"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"net/http"
 
-	"github.com/kuangcp/gobase/pkg/ctk"
 	"github.com/kuangcp/logger"
 
 	"github.com/gin-gonic/gin"
@@ -46,7 +46,7 @@ func Server(f embed.FS, debugStatic, notOpenPage bool, port string) {
 	url := "http://localhost" + srv.Addr
 	logger.Info(url)
 	if !notOpenPage {
-		_ = ctk.OpenBrowser(url)
+		_ = ctool.OpenBrowser(url)
 	}
 
 	ghelp.GracefulExit(srv)

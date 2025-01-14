@@ -7,7 +7,6 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/guptarohit/asciigraph v0.5.6
 	github.com/gvalkov/golang-evdev v0.0.0-20191114124502-287e62b94bcb
-	github.com/kuangcp/gobase/pkg/ctk v1.0.9
 	github.com/kuangcp/gobase/pkg/ctool v1.2.0
 	github.com/kuangcp/gobase/pkg/ghelp v1.0.2
 	github.com/kuangcp/gobase/pkg/stopwatch v1.0.1

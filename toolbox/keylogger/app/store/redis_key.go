@@ -1,16 +1,15 @@
 package store
 
 import (
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"time"
-
-	"github.com/kuangcp/gobase/pkg/ctk"
 )
 
 const (
 	Prefix       = "keyboard:"
 	DateFormat   = "2006:01:02"
-	TimeFormat   = ctk.HH_MM_SS
-	MsTimeFormat = ctk.HH_MM_SS_MS
+	TimeFormat   = ctool.HH_MM_SS
+	MsTimeFormat = ctool.HH_MM_SS_MS
 )
 
 const (

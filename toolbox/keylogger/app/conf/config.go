@@ -1,7 +1,7 @@
 package conf
 
 import (
-	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"os"
 )
@@ -16,22 +16,22 @@ var (
 func ConfigLogger() {
 	//logger.SetLogPathTrim("/keylogger/")
 
-	home, err := ctk.Home()
-	ctk.CheckIfError(err)
+	home, err := ctool.Home()
+	ctool.CheckIfError(err)
 	MainDir = home + MainDir
 
 	err = os.MkdirAll(MainDir, 0755)
-	ctk.CheckIfError(err)
+	ctool.CheckIfError(err)
 	LogDir = home + LogDir
 
 	DbPath = MainDir + "/db"
 
 	err = os.MkdirAll(LogDir, 0755)
-	ctk.CheckIfError(err)
+	ctool.CheckIfError(err)
 
 	LogPath = LogDir + "/main.log"
 	_ = logger.SetLoggerConfig(&logger.LogConfig{
-		TimeFormat: ctk.YYYY_MM_DD_HH_MM_SS_MS,
+		TimeFormat: ctool.YYYY_MM_DD_HH_MM_SS_MS,
 		Console: &logger.ConsoleLogger{
 			Level:    logger.DebugDesc,
 			Colorful: true,

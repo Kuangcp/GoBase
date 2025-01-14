@@ -9,7 +9,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
-	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/web"
@@ -20,16 +20,16 @@ import (
 //go:embed static
 var fs embed.FS
 
-var user = ctk.Red.Print("root")
-var redisStr = ctk.Cyan.Print("redis")
-var info = ctk.HelpInfo{
+var user = ctool.Red.Print("root")
+var redisStr = ctool.Cyan.Print("redis")
+var info = ctool.HelpInfo{
 	Description:   "Record key input, show rank",
 	Version:       "1.2.1",
 	BuildVersion:  buildVersion,
 	SingleFlagLen: -5,
 	DoubleFlagLen: 0,
 	ValueLen:      -8,
-	Flags: []ctk.ParamVO{
+	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help info"},
 		{Short: "-l", BoolVar: &listKeyboardDevice, Comment: user + " list keyboard device"},
 		{Short: "-L", BoolVar: &listAllDevice, Comment: user + " list all device"},
@@ -37,23 +37,23 @@ var info = ctk.HelpInfo{
 		{Short: "-c", BoolVar: &cacheKeyMap, Comment: user + " cache key map"},
 		{Short: "-s", BoolVar: &listenDevice, Comment: user + " listen keyboard with last device or specific device"},
 		{Short: "-i", BoolVar: &interactiveListen, Comment: user + " listen keyboard with interactive select device\n"},
-		{Short: "-dt", BoolVar: &printDay, Comment: "print daily total. use with " + ctk.Green.Print("-t") + ctk.Yellow.Print(" x,y")},
-		{Short: "-dr", BoolVar: &printDayRank, Comment: "print daily rank.  use with " + ctk.Green.Print("-t") + ctk.Yellow.Print(" x,y")},
-		{Short: "-tr", BoolVar: &printTotalRank, Comment: "print total rank.  use with " + ctk.Green.Print("-t") + ctk.Yellow.Print(" x,y") + "\n"},
+		{Short: "-dt", BoolVar: &printDay, Comment: "print daily total. use with " + ctool.Green.Print("-t") + ctool.Yellow.Print(" x,y")},
+		{Short: "-dr", BoolVar: &printDayRank, Comment: "print daily rank.  use with " + ctool.Green.Print("-t") + ctool.Yellow.Print(" x,y")},
+		{Short: "-tr", BoolVar: &printTotalRank, Comment: "print total rank.  use with " + ctool.Green.Print("-t") + ctool.Yellow.Print(" x,y") + "\n"},
 		{Short: "-S", BoolVar: &webServer, Comment: "web server"},
 		{Short: "-d", BoolVar: &debug, Comment: "debug: logic and static file(must run on root dir)"},
 		{Short: "-O", BoolVar: &notOpenPage, Comment: "not auto open web page by browser"},
 		{Short: "-g", BoolVar: &showLog, Comment: "show log"},
 	},
-	Options: []ctk.ParamVO{
+	Options: []ctool.ParamVO{
 		{Short: "-t", Value: "x,y", Comment: "before " +
-			ctk.Yellow.Print("x") + " day ago with " +
-			ctk.Yellow.Print("y") + " days duration. Provide to " +
-			ctk.Green.Print("-dt -dr -tr") + " for use"},
+			ctool.Yellow.Print("x") + " day ago with " +
+			ctool.Yellow.Print("y") + " days duration. Provide to " +
+			ctool.Green.Print("-dt -dr -tr") + " for use"},
 		{Short: "-e", Value: "device", Comment: "operation target " +
-			ctk.Yellow.Print("device") + ". Provide to " +
-			ctk.Green.Print("-p -c -s") + " for use"},
-		{Short: "-P", Value: "port", Comment: "web server " + ctk.Yellow.Print("port") + ". default 9902"},
+			ctool.Yellow.Print("device") + ". Provide to " +
+			ctool.Green.Print("-p -c -s") + " for use"},
+		{Short: "-P", Value: "port", Comment: "web server " + ctool.Yellow.Print("port") + ". default 9902"},
 		{Short: "-host", Value: "host", Comment: redisStr + " host"},
 		{Short: "-port", Value: "port", Comment: redisStr + " port"},
 		{Short: "-pwd", Value: "pwd", Comment: redisStr + " password"},
