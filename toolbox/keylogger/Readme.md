@@ -36,9 +36,8 @@
 
 ## Install 
 1. make down 
-1. make statik
-1. make install 
-1. make web
+1. go install
+    - 指定版本信息 go install -ldflags "-X main.buildVersion=时间-版本号"
 
 ## Redis
 > 全局

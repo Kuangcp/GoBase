@@ -336,10 +336,8 @@ func printByColumn(columnCount int, dataLen int, toString func(index int) string
 		}
 		if len(lines) <= lineIdx {
 			lines = append(lines, halfLine)
-		} else {
-			if lines != nil {
-				lines[lineIdx] = lines[lineIdx] + halfLine
-			}
+		} else if lines != nil {
+			lines[lineIdx] = lines[lineIdx] + halfLine
 		}
 	}
 	fmt.Println()
