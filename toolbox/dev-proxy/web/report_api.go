@@ -18,6 +18,9 @@ import (
 )
 
 type (
+	PerfPage struct {
+		list []PerfPageVo
+	}
 	PerfPageVo struct {
 		Url  string
 		Tct  int

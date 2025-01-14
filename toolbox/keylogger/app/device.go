@@ -3,13 +3,13 @@ package app
 import (
 	"fmt"
 	"github.com/guptarohit/asciigraph"
+	"github.com/kuangcp/gobase/pkg/ctool"
 	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/ctk"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/queue"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 
@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	slideWindowMs        = 60_000                  // KPM 所以滑动窗口是一分钟
-	calculateKPMPeriod   = time.Millisecond * 888  // 从KPM队列，计算得到最大KPM 操作的周期
-	printKPMWindowPeriod = time.Millisecond * 4500 // 输出日志频率控制
+	slideWindowMs        = 60_000                  // KPM 滑动窗口是一分钟
+	calculateKPMPeriod   = time.Millisecond * 888  // 从按键队列，计算得到最大KPM 操作的周期
+	printKPMWindowPeriod = time.Millisecond * 4500 // 输出最大KPM日志窗口大小
 )
 
 var (
@@ -75,7 +75,7 @@ func ListenDevice() {
 		}
 	}
 
-	fmt.Println("Try to listen " + ctk.Yellow.Print(targetDevice) + " ...")
+	fmt.Println("Try to listen " + ctool.Yellow.Print(targetDevice) + " ...")
 
 	device, err := Open("/dev/input/" + targetDevice)
 	defer closeDevice(device)
@@ -101,7 +101,7 @@ func ListenDevice() {
 		handleResult := handleEvents(inputEvents)
 		if !hasSuccess && handleResult {
 			hasSuccess = true
-			fmt.Println(ctk.Green.Print("\n    Listen success."))
+			fmt.Println(ctool.Green.Print("\n    Listen success."))
 			connection.Set(store.LastInputEvent, targetDevice, 0)
 		}
 	}
@@ -206,7 +206,7 @@ func OpenDevice() *InputDevice {
 		event = targetDevice
 	}
 	if event == "" {
-		fmt.Println(ctk.Red.Print("Please select inputDevice"))
+		fmt.Println(ctool.Red.Print("Please select inputDevice"))
 		return nil
 	}
 
@@ -223,7 +223,7 @@ func PrintDay() {
 	indexDay, durationDay := parseTime(timeSegment)
 	var kpms []float64
 	var days []float64
-	var start = now.AddDate(0, 0, -indexDay).Format(ctk.YYYY_MM_DD)
+	var start = now.AddDate(0, 0, -indexDay).Format(ctool.YYYY_MM_DD)
 	for i := 0; i < durationDay; i++ {
 		idx := now.AddDate(0, 0, -indexDay+i)
 		kpm, day := handleTotalByDate(idx, store.GetConnection())
@@ -247,12 +247,12 @@ func PrintDay() {
 	fmt.Println(asciigraph.Plot(kpms,
 		asciigraph.Width(len(kpms)),
 		asciigraph.Height(20),
-		asciigraph.Caption("KPM "+start+" => "+now.Format(ctk.YYYY_MM_DD))),
+		asciigraph.Caption("KPM "+start+" => "+now.Format(ctool.YYYY_MM_DD))),
 	)
 	fmt.Println(asciigraph.Plot(days,
 		asciigraph.Width(len(days)),
 		asciigraph.Height(20),
-		asciigraph.Caption("Daily "+start+" => "+now.Format(ctk.YYYY_MM_DD))),
+		asciigraph.Caption("Daily "+start+" => "+now.Format(ctool.YYYY_MM_DD))),
 	)
 }
 
@@ -305,17 +305,17 @@ func PrintTotalRank() {
 		return sortList[i].Value > sortList[j].Value // 降序
 	})
 
-	fmt.Printf("    %s → %s\n", firstDay.Format(ctk.YYYY_MM_DD), lastDay.Format(ctk.YYYY_MM_DD))
+	fmt.Printf("    %s → %s\n", firstDay.Format(ctool.YYYY_MM_DD), lastDay.Format(ctool.YYYY_MM_DD))
 
 	if len(keyMap) != 0 {
 		printByFourColumn(len(sortList), func(index int) string {
 			val := sortList[index]
-			return fmt.Sprintf("%7v → %-28v", val.Value, ctk.LightGreen.Print(keyMap[val.Key]))
+			return fmt.Sprintf("%7v → %-28v", val.Value, ctool.LightGreen.Print(keyMap[val.Key]))
 		})
 	} else {
 		printByFourColumn(len(sortList), func(index int) string {
 			val := sortList[index]
-			return fmt.Sprintf("%7v → %-28v", val.Value, ctk.LightGreen.Print(val.Key))
+			return fmt.Sprintf("%7v → %-28v", val.Value, ctool.LightGreen.Print(val.Key))
 		})
 	}
 }
@@ -357,23 +357,23 @@ func handleRankByDate(time time.Time, conn *redis.Client) {
 	maxKPM := store.MaxKPMVal(time)
 
 	fmt.Printf("\n%s | %s | %-3s | Total: %s \n",
-		ctk.Green.Printf("%-9s", time.Weekday()),
-		time.Format(ctk.YYYY_MM_DD),
-		ctk.Yellow.Printf("%3s", maxKPM),
-		ctk.Green.Printf("%-5d", totalScore))
+		ctool.Green.Printf("%-9s", time.Weekday()),
+		time.Format(ctool.YYYY_MM_DD),
+		ctool.Yellow.Printf("%3s", maxKPM),
+		ctool.Green.Printf("%-5d", totalScore))
 
 	keyRank := conn.ZRevRangeByScoreWithScores(store.GetRankKey(time), redis.ZRangeBy{Min: "0", Max: "50000"})
 	if len(keyMap) != 0 {
 		valList := keyRank.Val()
 		printByFourColumn(len(valList), func(index int) string {
 			val := valList[index]
-			return fmt.Sprintf("%4v → %-26v", val.Score, ctk.LightGreen.Print(keyMap[val.Member.(string)]))
+			return fmt.Sprintf("%4v → %-26v", val.Score, ctool.LightGreen.Print(keyMap[val.Member.(string)]))
 		})
 	} else {
 		valList := keyRank.Val()
 		printByFourColumn(len(valList), func(index int) string {
 			val := valList[index]
-			return fmt.Sprintf("%4v → %-26v", val.Score, ctk.LightGreen.Print(val.Member.(string)))
+			return fmt.Sprintf("%4v → %-26v", val.Score, ctool.LightGreen.Print(val.Member.(string)))
 		})
 	}
 }
@@ -385,16 +385,16 @@ func parseTime(timeSegment string) (int, int) {
 	durationDay := 1
 	if len(timePairs) == 1 {
 		day, err := strconv.Atoi(timePairs[0])
-		ctk.CheckIfError(err)
+		ctool.CheckIfError(err)
 		indexDay = day - 1
 		durationDay = day
 	} else if len(timePairs) == 2 {
 		day, err := strconv.Atoi(timePairs[0])
-		ctk.CheckIfError(err)
+		ctool.CheckIfError(err)
 		indexDay = day
 
 		durationDay, err = strconv.Atoi(timePairs[1])
-		ctk.CheckIfError(err)
+		ctool.CheckIfError(err)
 	}
 	return indexDay, durationDay
 }
@@ -403,9 +403,9 @@ func handleTotalByDate(time time.Time, conn *redis.Client) (int, int) {
 	today := time.Format(store.DateFormat)
 	score := conn.ZScore(store.TotalCount, today)
 	maxKPM := store.MaxKPMVal(time)
-	fmt.Printf("%s %s %s %6v\n", time.Format(ctk.YYYY_MM_DD),
-		ctk.Green.Printf("%-9s", time.Weekday()),
-		ctk.Yellow.Printf("%4s", maxKPM),
+	fmt.Printf("%s %s %s %6v\n", time.Format(ctool.YYYY_MM_DD),
+		ctool.Green.Printf("%-9s", time.Weekday()),
+		ctool.Yellow.Printf("%4s", maxKPM),
 		int64(score.Val()))
 	kpm, _ := strconv.Atoi(maxKPM)
 	return kpm, int(score.Val())
@@ -436,12 +436,12 @@ func PrintKeyMap() {
 
 	fmt.Println(device)
 	for capType, codes := range device.Capabilities {
-		fmt.Printf("\n\n %s%v %v%s\n", ctk.Purple, capType.Type, capType.Name, ctk.End)
+		fmt.Printf("\n\n %s%v %v%s\n", ctool.Purple, capType.Type, capType.Name, ctool.End)
 		printByColumn(6, len(codes), func(index int) string {
 			if len(codes[index].Name) == 0 {
 				return ""
 			}
-			return fmt.Sprintf("%s%4d%s %20s┃", ctk.LightGreen, codes[index].Code, ctk.End, codes[index].Name)
+			return fmt.Sprintf("%s%4d%s %20s┃", ctool.LightGreen, codes[index].Code, ctool.End, codes[index].Name)
 		})
 	}
 }

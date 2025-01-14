@@ -2,19 +2,18 @@ package web
 
 import (
 	"fmt"
-	"github.com/kuangcp/gobase/pkg/ctool"
+
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/gin-gonic/gin"
+	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/ghelp"
 	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
-
-	"github.com/gin-gonic/gin"
-	"github.com/kuangcp/gobase/pkg/ghelp"
 	"github.com/kuangcp/logger"
 )
 
@@ -193,9 +192,9 @@ func ExportDetail(c *gin.Context) {
 func CalendarMap(c *gin.Context) {
 	conn := store.GetConnection()
 	data, err := conn.ZRange(store.TotalCount, 0, -1).Result()
-	ctk.CheckIfError(err)
+	ctool.CheckIfError(err)
 	totalData, err := conn.ZRangeWithScores(store.TotalCount, 0, -1).Result()
-	ctk.CheckIfError(err)
+	ctool.CheckIfError(err)
 	sort.Strings(data)
 
 	scoreMap := make(map[string]int)
@@ -255,7 +254,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 	var lastTime *time.Time = nil
 	for _, day := range data {
 		var dayTime, err = time.Parse(store.DateFormat, day)
-		ctk.CheckIfError(err)
+		ctool.CheckIfError(err)
 
 		if lastTime == nil {
 			// fill year start to dayTime
@@ -272,7 +271,7 @@ func buildYear(data []string, scoreMap map[string]int) ([][2]string, int) {
 			maxScore = score
 		}
 
-		result = append(result, [2]string{dayTime.Format(ctk.YYYY_MM_DD), strconv.Itoa(score)})
+		result = append(result, [2]string{dayTime.Format(ctool.YYYY_MM_DD), strconv.Itoa(score)})
 	}
 	return result, maxScore
 }
@@ -284,7 +283,7 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 		return nil
 	}
 	for !indexDay.Equal(endDay) {
-		result = append(result, [2]string{indexDay.Format(ctk.YYYY_MM_DD), "0"})
+		result = append(result, [2]string{indexDay.Format(ctool.YYYY_MM_DD), "0"})
 		indexDay = indexDay.AddDate(0, 0, 1)
 	}
 	return result
@@ -484,7 +483,7 @@ func LineMap(c *gin.Context) {
 		}
 
 		keyCode, err := strconv.Atoi(key)
-		ctk.CheckIfError(err)
+		ctool.CheckIfError(err)
 		lines = append(lines, &LineVO{
 			Type:      param.ChartType,
 			Name:      nameMap[key],
