@@ -67,6 +67,7 @@ func TestFile(t *testing.T) {
 }
 
 // 中文词组 分词
+// learn/chart/word_cloud_test.go:35 TestReadFile
 func TestDir(t *testing.T) {
 	tokenizer := InitTrieTokenizer("dict/dict.log")
 
