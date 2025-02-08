@@ -129,8 +129,12 @@ func SyncDetails(c *gin.Context) {
 }
 
 func ScheduleSyncAllDetails() {
+	time.Sleep(time.Second * 5)
+	logger.Info("sync details while start up")
+	SyncAllDetails()
+
 	for range time.NewTicker(time.Hour * 24 * 3).C {
-		logger.Info("sync details")
+		logger.Info("sync details by schedule")
 		SyncAllDetails()
 	}
 }
