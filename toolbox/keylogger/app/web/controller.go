@@ -130,11 +130,11 @@ func SyncDetails(c *gin.Context) {
 
 func ScheduleSyncAllDetails() {
 	time.Sleep(time.Second * 5)
-	logger.Info("sync details while start up")
+	logger.Info("Sync details on start up")
 	SyncAllDetails()
 
 	for range time.NewTicker(time.Hour * 24 * 3).C {
-		logger.Info("sync details by schedule")
+		logger.Info("Sync details by schedule")
 		SyncAllDetails()
 	}
 }
@@ -154,11 +154,11 @@ func SyncAllDetails() {
 		for _, k := range keys {
 			// 当天数据不全，不转移
 			if today == k {
-				logger.Info("ignore today", k)
+				logger.Info("  Ignore today ", k)
 				continue
 			}
 			if strings.HasSuffix(k, "detail") {
-				logger.Info("Sync: ", k)
+				logger.Info("Sync ", k)
 				syncDetail(k)
 			}
 		}
