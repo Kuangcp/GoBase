@@ -98,12 +98,12 @@ func (t *MonitorItem) buildItem() *gtk.DrawingArea {
 
 func memoryInfoOne(t *MonitorItem) {
 	memInfo, _ := mem.VirtualMemory()
-	t.x = (100 - memInfo.UsedPercent) * width / 100
+	t.x = (memInfo.UsedPercent) * width / 100
 }
 
 func memoryInfo(t *MonitorItem) {
 	memInfo, _ := mem.VirtualMemory()
-	t.x = (100 - memInfo.UsedPercent) * width / 200
+	t.x = (memInfo.UsedPercent) * width / 200
 }
 
 func cpuInfo(t *MonitorItem) {
