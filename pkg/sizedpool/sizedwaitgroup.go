@@ -45,7 +45,7 @@ func New(option PoolOption) (*SizedWaitGroup, error) {
 	}, nil
 }
 
-func NewWithName(limit int, name string) (SizedWait, error) {
+func NewWithName(limit int, name string) (*SizedWaitGroup, error) {
 	return New(PoolOption{Size: limit, Name: name})
 }
 

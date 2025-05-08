@@ -8,7 +8,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"runtime"
 	"sync"
 	"testing"
@@ -34,6 +33,8 @@ func TestQueue(t *testing.T) {
 
 func TestFuture(t *testing.T) {
 	future, _ := New(PoolOption{Size: 3})
+	go future.ExecFuturePool(context.Background())
+
 	var res []*FutureTask
 	for i := 0; i < 80; i++ {
 		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
@@ -52,9 +53,11 @@ func TestFuture(t *testing.T) {
 			}})
 		res = append(res, submitFuture)
 	}
+
+	// 等待任务入队列
 	time.Sleep(time.Second * 2)
 	future.Wait()
-
+	log.Println("finish all")
 	for _, re := range res {
 		log.Println(re.GetData())
 	}
@@ -66,10 +69,12 @@ func TestFutureGet(t *testing.T) {
 		id   int
 		name string
 	}
-	future, _ := New(PoolOption{Size: 2})
+	future, _ := NewWithName(2, "trace")
+	log.Println("start")
+	go future.ExecFuturePool(context.Background())
+	var res []*FutureTask
 	go func() {
-		var res []*FutureTask
-		for i := 0; i < 7; i++ {
+		for i := 0; i < 10; i++ {
 			fi := i
 			// 限制并发 提交任务
 			submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
@@ -90,93 +95,45 @@ func TestFutureGet(t *testing.T) {
 
 			res = append(res, submitFuture)
 		}
-
-		// 收集结果
-		d := sync.WaitGroup{}
-		for _, re := range res {
-			f := re
-			d.Add(1)
-			go func() {
-				// 不限时阻塞等待结果
-				//data, err := f.GetData()
-
-				// 限时阻塞等待结果，但是到期后任务的协程还在执行
-				data, err := f.GetDataTimeout(time.Millisecond * 600)
-				if err != nil {
-					log.Println("["+f.TraceId+"]", "future get error: ", err)
-				} else {
-					log.Println("["+f.TraceId+"]", "future get", data)
-				}
-				defer func() {
-					d.Done()
-				}()
-			}()
-		}
-		d.Wait()
-		log.Println("finish all task")
-		os.Exit(1)
 	}()
 
-	go future.ExecFuturePool(context.Background())
-	http.ListenAndServe(":9090", nil)
-}
-
-func TestFutureGetWithCancel(t *testing.T) {
-	type VO struct {
-		id   int
-		name string
-	}
-	future, _ := NewFuturePool(PoolOption{Size: 6})
-
-	var res []*FutureTask
-	for i := 0; i < 30; i++ {
-		fi := i
-
-		submitFuture := future.SubmitFuture(Callable{
-			fmt.Sprint(fi),
-			func(ctx context.Context) (interface{}, error) {
-				//submitFuture := future.SubmitFutureTimeout(time.Second*2, func() (interface{}, error) {
-				x := rand.Intn(900) + 1600
-				//fmt.Println(fi, x)
-				time.Sleep(time.Millisecond * time.Duration(x))
-				sec := time.Now().Second()
-				//if sec%4 == 0 {
-				return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
-				//}
-				//return nil, errors.New(fmt.Sprint(fi, " exception"))
-			}, func(ctx context.Context, data interface{}) {
-				log.Println("su call", data)
-			}, func(ctx context.Context, ex error) {
-				log.Println("fa call", ex)
-			},
-		})
-
-		res = append(res, submitFuture)
-	}
-
-	go func() {
-		for _, re := range res {
-			f := re
-			go func() {
-				data, err := f.GetData()
-				// 超时未获取到结果就返回，但是任务还在执行
-				//data, err := f.GetDataTimeout(time.Millisecond * 2300)
-				log.Println("future get", data, err)
-			}()
-		}
-	}()
-
-	time.Sleep(time.Second * 5)
+	// 等待任务进队列
+	time.Sleep(3 * time.Second)
 	future.Wait()
+	log.Println("finish future")
+	// 收集结果
+	d := sync.WaitGroup{}
+	for _, re := range res {
+		f := re
+		d.Add(1)
+		go func() {
+			// 不限时阻塞等待结果
+			//data, err := f.GetData()
+
+			// 限时阻塞等待结果，但是到期后任务的协程还在执行
+			data, err := f.GetDataTimeout(time.Millisecond * 600)
+			if err != nil {
+				log.Println("["+f.TraceId+"]", "future get error: ", err)
+			} else {
+				log.Println("["+f.TraceId+"]", "future get", data)
+			}
+			defer func() {
+				d.Done()
+			}()
+		}()
+	}
+	d.Wait()
+	log.Println("finish all task")
 }
 
 // 限时完成一批任务
+// TODO 不能准确关闭协程池 停止任务 ，存在 send on closed channel
 func TestNewTmpWithFuture(t *testing.T) {
 	log.Println("start")
 	//future, _ := NewTmpWithFuture(30, time.Second*4)
-	future, _ := NewTmpFuturePool(PoolOption{Size: 30, Timeout: time.Second * 7})
+	future, _ := NewTmpFuturePool(PoolOption{Size: 5, Timeout: time.Second * 7})
 	//time.Sleep(time.Second * 5)
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 30; i++ {
 		fi := i
 		future.SubmitFutureTimeout(time.Second*5, Callable{
 			fmt.Sprint(fi),
