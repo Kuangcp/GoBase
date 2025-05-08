@@ -17,7 +17,7 @@ import (
 )
 
 func TestQueue(t *testing.T) {
-	run, _ := NewQueuePool(2)
+	run, _ := NewQueuePool(3)
 	for i := 0; i < 7; i++ {
 		fi := i
 		run.Submit(func() {
@@ -73,32 +73,32 @@ func TestFutureGet(t *testing.T) {
 	log.Println("start")
 	go future.ExecFuturePool(context.Background())
 	var res []*FutureTask
-	go func() {
-		for i := 0; i < 10; i++ {
-			fi := i
-			// 限制并发 提交任务
-			submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
-				TraceId: fmt.Sprint(fi),
-				ActionFunc: func(ctx context.Context) (interface{}, error) {
-					time.Sleep(time.Millisecond * time.Duration(rand.Intn(900)))
-					sec := time.Now().Second()
-					if ctx != nil {
-						tid := ctx.Value(TraceID)
-						log.Println("[" + tid.(string) + "] run task")
-					}
-					if sec%2 == 0 {
-						return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
-					}
-					return nil, errors.New(fmt.Sprint(fi, " random exception"))
-				},
-			})
+	for i := 0; i < 20; i++ {
+		fi := i
+		// 限制并发 提交任务
+		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
+			TraceId: fmt.Sprintf("%2d", fi),
+			ActionFunc: func(ctx context.Context) (interface{}, error) {
+				if ctx != nil {
+					tid := ctx.Value(TraceID)
+					log.Println("[" + tid.(string) + "] run task")
+					defer log.Println("[" + tid.(string) + "] finish task")
+				}
 
-			res = append(res, submitFuture)
-		}
-	}()
+				sl := rand.Intn(9000)
+				time.Sleep(time.Millisecond * time.Duration(sl))
+				sec := time.Now().Second()
+				if sec%2 == 0 {
+					return VO{id: fi, name: fmt.Sprint("test", sl)}, nil
+				}
+				return nil, errors.New(fmt.Sprint(fi, " random exception"))
+			},
+		})
 
-	// 等待任务进队列
-	time.Sleep(3 * time.Second)
+		res = append(res, submitFuture)
+	}
+	log.Println("finish start task")
+	time.Sleep(time.Second * 2)
 	future.Wait()
 	log.Println("finish future")
 	// 收集结果
