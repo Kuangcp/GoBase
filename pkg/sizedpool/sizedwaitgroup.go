@@ -35,12 +35,13 @@ func New(option PoolOption) (*SizedWaitGroup, error) {
 		return nil, fmt.Errorf("size must great than 0")
 	}
 
+	// chan 无大小时阻塞，有大小时阻塞，大小是buffer
 	return &SizedWaitGroup{
 		Size:        option.Size,
 		Name:        option.Name,
 		current:     make(chan struct{}, option.Size),
-		queue:       make(chan func()),
-		futureQueue: make(chan *FutureTask),
+		queue:       make(chan func(), 100000),
+		futureQueue: make(chan *FutureTask, 100000),
 		wg:          sync.WaitGroup{},
 	}, nil
 }

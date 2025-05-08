@@ -9,6 +9,9 @@ import (
 
 func NewQueuePool(limit int) (QueuePool, error) {
 	group, err := New(PoolOption{Size: limit})
+	if err != nil {
+		return nil, err
+	}
 	go group.ExecQueuePool()
 	return group, err
 }
@@ -124,14 +127,17 @@ func (s *SizedWaitGroup) execAction(ctx context.Context, future *FutureTask) {
 	}
 }
 
+// nonblocking
 func (s *SizedWaitGroup) Submit(action func()) {
 	s.queue <- action
 }
 
+// nonblocking
 func (s *SizedWaitGroup) SubmitFuture(callable Callable) *FutureTask {
 	return s.SubmitFutureTimeout(time.Duration(0), callable)
 }
 
+// nonblocking
 func (s *SizedWaitGroup) SubmitFutureTimeout(timeout time.Duration, callable Callable) *FutureTask {
 	if s.tmpAbort {
 		return nil
