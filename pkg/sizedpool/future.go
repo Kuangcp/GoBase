@@ -11,7 +11,7 @@ type FutureTask struct {
 	ex         error
 	finish     chan struct{}
 	finishFlag bool
-	timeout    time.Duration
+	timeout    time.Duration // 任务执行的超时控制
 }
 
 func NewFutureTask() *FutureTask {
@@ -44,6 +44,6 @@ func (f *FutureTask) GetDataTimeout(timeout time.Duration) (interface{}, error) 
 	case <-f.finish:
 		return f.data, f.ex
 	case <-time.After(timeout):
-		return nil, errors.New("timeout")
+		return nil, errors.New("future timeout")
 	}
 }
