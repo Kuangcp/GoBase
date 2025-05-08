@@ -8,7 +8,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -43,9 +45,9 @@ func TestFuture(t *testing.T) {
 					return sec, nil
 				}
 				return nil, errors.New("oo")
-			}, func(data interface{}) {
+			}, func(ctx context.Context, data interface{}) {
 				log.Println("success:", data)
-			}, func(ex error) {
+			}, func(ctx context.Context, ex error) {
 				log.Println("fail:", ex)
 			}})
 		res = append(res, submitFuture)
@@ -58,47 +60,64 @@ func TestFuture(t *testing.T) {
 	}
 }
 
+// TraceId 传递及 超时控制
 func TestFutureGet(t *testing.T) {
 	type VO struct {
 		id   int
 		name string
 	}
 	future, _ := New(PoolOption{Size: 2})
-	var res []*FutureTask
-	for i := 0; i < 7; i++ {
-		fi := i
-		submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
-			fmt.Sprint(fi),
-			func(ctx context.Context) (interface{}, error) {
-				time.Sleep(time.Millisecond * time.Duration(rand.Intn(900)))
-				sec := time.Now().Second()
-				if sec%4 == 0 {
-					return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
-				}
-				return nil, errors.New(fmt.Sprint(fi, " exception"))
-			}, func(data interface{}) {
-				log.Println("su call", data)
-			}, func(ex error) {
-				log.Println("fa call", ex)
-			},
-		})
-
-		res = append(res, submitFuture)
-	}
-
 	go func() {
+		var res []*FutureTask
+		for i := 0; i < 7; i++ {
+			fi := i
+			// 限制并发 提交任务
+			submitFuture := future.SubmitFutureTimeout(time.Second*6, Callable{
+				TraceId: fmt.Sprint(fi),
+				ActionFunc: func(ctx context.Context) (interface{}, error) {
+					time.Sleep(time.Millisecond * time.Duration(rand.Intn(900)))
+					sec := time.Now().Second()
+					if ctx != nil {
+						tid := ctx.Value(TraceID)
+						log.Println("[" + tid.(string) + "] run task")
+					}
+					if sec%2 == 0 {
+						return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
+					}
+					return nil, errors.New(fmt.Sprint(fi, " random exception"))
+				},
+			})
+
+			res = append(res, submitFuture)
+		}
+
+		// 收集结果
+		d := sync.WaitGroup{}
 		for _, re := range res {
 			f := re
+			d.Add(1)
 			go func() {
+				// 不限时阻塞等待结果
 				//data, err := f.GetData()
-				// 超时不等待，但是任务还在执行
+
+				// 限时阻塞等待结果，但是到期后任务的协程还在执行
 				data, err := f.GetDataTimeout(time.Millisecond * 600)
-				log.Println("future get", data, err)
+				if err != nil {
+					log.Println("["+f.TraceId+"]", "future get error: ", err)
+				} else {
+					log.Println("["+f.TraceId+"]", "future get", data)
+				}
+				defer func() {
+					d.Done()
+				}()
 			}()
 		}
+		d.Wait()
+		log.Println("finish all task")
+		os.Exit(1)
 	}()
 
-	go future.ExecFuturePool(nil)
+	go future.ExecFuturePool(context.Background())
 	http.ListenAndServe(":9090", nil)
 }
 
@@ -125,9 +144,9 @@ func TestFutureGetWithCancel(t *testing.T) {
 				return VO{id: fi, name: fmt.Sprint("test", sec)}, nil
 				//}
 				//return nil, errors.New(fmt.Sprint(fi, " exception"))
-			}, func(data interface{}) {
+			}, func(ctx context.Context, data interface{}) {
 				log.Println("su call", data)
-			}, func(ex error) {
+			}, func(ctx context.Context, ex error) {
 				log.Println("fa call", ex)
 			},
 		})

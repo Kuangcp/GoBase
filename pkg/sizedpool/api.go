@@ -13,9 +13,10 @@ type (
 	Callable struct {
 		TraceId string
 		// ctx.Value(TraceID) 获取 traceId
-		ActionFunc  func(ctx context.Context) (interface{}, error)
-		SuccessFunc func(data interface{})
-		FailedFunc  func(ex error)
+		ActionFunc func(ctx context.Context) (interface{}, error)
+		// 使用Future方式时，以下两个函数不声明
+		SuccessFunc func(ctx context.Context, data interface{})
+		FailedFunc  func(ctx context.Context, ex error)
 	}
 
 	// QueuePool async submit task. then run with poll queue

@@ -115,11 +115,11 @@ func (s *SizedWaitGroup) execAction(ctx context.Context, future *FutureTask) {
 
 	if actionErr != nil {
 		if future.FailedFunc != nil {
-			future.FailedFunc(actionErr)
+			future.FailedFunc(ctx, actionErr)
 		}
 	} else {
 		if future.SuccessFunc != nil {
-			future.SuccessFunc(data)
+			future.SuccessFunc(ctx, data)
 		}
 	}
 }
