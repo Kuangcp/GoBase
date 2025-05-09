@@ -146,6 +146,7 @@ func httpReplayCtx(id string) *ReplayCtx {
 	}}
 }
 
+// TODO 并发低，延迟高，
 // https://github.com/tsliwowicz/go-wrk
 // https://github.com/adjust/go-wrk
 func BenchRequest(request *http.Request) ctool.ResultVO[*BenchStat] {
