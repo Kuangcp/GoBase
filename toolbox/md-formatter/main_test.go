@@ -16,3 +16,8 @@ func TestReplace(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestRefreshTitle(t *testing.T) {
+	prepareContext()
+	//RefreshTagAndCatalog("test.md")
+}

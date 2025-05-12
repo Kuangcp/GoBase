@@ -35,6 +35,7 @@ func BuildArticle(filename string) *Article {
 			contentIdx = i + 1
 			break
 		}
+
 		// 兼容脏数据
 		if strings.Contains(line, splitTag) && catalogMatch {
 			header = false
@@ -86,8 +87,16 @@ func (a *Article) writeToDisk(hiddenCatalog bool) {
 func (a *Article) generateCatalog() {
 	var pPath []int
 	var catalog []string
+	code := false
 	catalog = append(catalog, "\n"+splitTag+"\n\n")
 	for _, line := range a.content {
+
+		if strings.HasPrefix(line, codeBlock) {
+			code = !code
+		}
+		if code {
+			continue
+		}
 		if !strings.HasPrefix(line, "#") {
 			continue
 		}
