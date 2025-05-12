@@ -49,7 +49,6 @@ func init() {
 
 	// 组合使用
 	optionToFunction("p", &printCatalog, PrintCatalog)
-	optionToFunction("mm", &mindMapFile, PrintMindMap)
 
 	optionToFunction("r", &rmFile, RemoveCatalog)
 	optionToFunction("ra", &rmAppendFile, RefreshTagAndCatalog)
