@@ -40,6 +40,7 @@ var (
 	splitTag    = "💠"
 	headerFirst = "---\n"
 	headerLast  = "****************************************\n"
+	codeBlock   = "```"
 )
 
 var tagTemplate = headerFirst + `title: %s
