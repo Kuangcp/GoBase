@@ -237,42 +237,18 @@ func normalizeForTitle(title string) string {
 }
 
 func PrintCatalog(filename string) {
-	rows := generateCatalog(filename)
-	for _, r := range rows {
+	article := BuildArticle(filename)
+	if article == nil {
+		logger.Error(filename + " 格式有误，未包含定位行： " + headerLast)
+		return
+	}
+	article.Refresh()
+
+	for _, r := range article.catalog {
 		fmt.Print(r)
 	}
 }
 
-func generateCatalog(filename string) []string {
-	var pPath []int
-
-	rows := readLinesWithFunc(filename,
-		func(s string) bool {
-			return strings.HasPrefix(s, "#")
-		},
-		func(s string) string {
-			if len(pPath) == 0 {
-				pPath = []int{0}
-			}
-			level := strings.Count(s, "#")
-			for len(pPath) < level {
-				pPath = append(pPath, 0)
-			}
-			pPath[level-1] += 1
-			if level < len(pPath) {
-				for i := level; i < len(pPath); i++ {
-					pPath[i] = 0
-				}
-			}
-
-			title := strings.TrimSpace(strings.Replace(s, "#", "", -1))
-			strings.Count(s, "#")
-			temps := strings.Split(s, "# ")
-			levelStr := strings.Replace(temps[0], "#", "    ", -1)
-			return fmt.Sprintf("%s- %s. [%s](#%s)\n", levelStr, pathToString(pPath[:level]), title, normalizeForTitle(title))
-		})
-	return rows
-}
 func pathToString(path []int) string {
 	var result []string
 	for _, i := range path {
@@ -305,29 +281,6 @@ func RefreshTagAndCatalog(filename string) {
 	article.writeToDisk(false)
 	//logger.Info("\n" + strings.Join(article.tag, ""))
 	//logger.Info("\n" + strings.Join(article.catalog, ""))
-}
-
-// PrintMindMap 输出百度脑图支持的 MindMap 格式
-func PrintMindMap(filename string) {
-	if filename == "" {
-		return
-	}
-	lines := readLinesWithFunc(filename,
-		func(s string) bool {
-			return strings.HasPrefix(s, "#")
-		},
-		func(s string) string {
-			temp := strings.Split(s, "# ")
-			prefix := strings.Replace(temp[0], "#", "    ", -1)
-			return prefix + temp[1]
-		})
-
-	if lines == nil {
-		return
-	}
-	for i := range lines {
-		fmt.Print(lines[i])
-	}
 }
 
 // RefreshChangeFile 更新指定目录的Git仓库中 发生变更 的文件

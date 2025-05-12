@@ -15,6 +15,7 @@ type Article struct {
 	content  []string
 }
 
+// BuildArticle 仅分段：标签，目录，正文
 func BuildArticle(filename string) *Article {
 	lines := readFileLines(filename)
 	if len(lines) == 0 {
@@ -116,7 +117,6 @@ func (a *Article) generateCatalog() {
 		}
 
 		title := strings.TrimSpace(strings.Replace(line, "#", "", -1))
-		strings.Count(line, "#")
 		temps := strings.Split(line, "# ")
 		levelStr := strings.Replace(temps[0], "#", "    ", -1)
 		row := fmt.Sprintf("%s- %s. [%s](#%s)\n", levelStr, pathToString(pPath[:level]), title, normalizeForTitle(title))
@@ -126,7 +126,7 @@ func (a *Article) generateCatalog() {
 	a.catalog = catalog
 }
 
-// 创建/保留 tag 删除/创建 catalog 保留content
+// Refresh 创建/保留 tag 删除/创建 catalog 保留content
 func (a *Article) Refresh() {
 	// 处理 tag
 	if len(a.tag) == 0 {
@@ -137,6 +137,6 @@ func (a *Article) Refresh() {
 		}
 	}
 
-	// 处理 catalog
+	// 生成 catalog
 	a.generateCatalog()
 }
