@@ -29,7 +29,7 @@ var (
 )
 
 const (
-	width            = 90
+	width            = 80
 	height           = 10
 	DefaultRefreshMs = 57
 	appId            = "com.github.kuangcp.keylogger"
@@ -223,7 +223,7 @@ func createWindow() {
 		cr.ClosePath()
 		
 		// 设置背景颜色（RGB: 43,45,51, Alpha: 0.8）
-		cr.SetSourceRGBA(42.0/255.0, 42.0/255.0, 42.0/255.0, 1)
+		cr.SetSourceRGBA(40.0/255.0, 40.0/255.0, 40.0/255.0, 1)
 		cr.Fill()
 		
 		return false
@@ -250,7 +250,7 @@ func createWindow() {
 	
 	bindMouseActionForWindow()
 	
-	win.SetOpacity(0.90)
+	win.SetOpacity(0.92)
 	app.AddWindow(win)
 	win.ShowAll()
 

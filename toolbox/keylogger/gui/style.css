@@ -1,12 +1,12 @@
 .rounded {
     border-radius: 8px;
-    background: rgba(42, 42, 42, 1);
+    background: rgba(40, 40, 40, 1);
     /* padding: 1px; */
     overflow: hidden;
 }
 
 window {
-    background: rgba(42, 42, 42, 1);
+    background: rgba(40, 40, 40, 1);
 }
 
 grid {
