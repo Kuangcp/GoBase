@@ -212,7 +212,7 @@ func createWindow() {
 		height := float64(widget.GetAllocatedHeight())
 		
 		// 设置圆角矩形路径
-		radius := float64(16)
+		radius := float64(18)  // 减小圆角半径
 		degrees := math.Pi / 180.0
 		
 		cr.NewPath()
@@ -223,7 +223,7 @@ func createWindow() {
 		cr.ClosePath()
 		
 		// 设置背景颜色（RGB: 43,45,51, Alpha: 0.8）
-		cr.SetSourceRGBA(43.0/255.0, 45.0/255.0, 51.0/255.0, 0.9)
+		cr.SetSourceRGBA(42.0/255.0, 42.0/255.0, 42.0/255.0, 1)
 		cr.Fill()
 		
 		return false
@@ -250,7 +250,7 @@ func createWindow() {
 	
 	bindMouseActionForWindow()
 	
-	win.SetOpacity(0.8)
+	win.SetOpacity(0.90)
 	app.AddWindow(win)
 	win.ShowAll()
 

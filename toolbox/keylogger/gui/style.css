@@ -1,18 +1,18 @@
 .rounded {
-    border-radius: 16px;
-    background: rgba(43, 45, 51, 0.9);
-    padding: 2px;
+    border-radius: 8px;
+    background: rgba(42, 42, 42, 1);
+    /* padding: 1px; */
     overflow: hidden;
 }
 
 window {
-    background: rgba(43, 45, 51, 0.9);
+    background: rgba(42, 42, 42, 1);
 }
 
 grid {
-    border-radius: 16px;
+    border-radius: 8px;
 }
 
 label {
-    border-radius: 16px;
+    border-radius: 8px;
 }
