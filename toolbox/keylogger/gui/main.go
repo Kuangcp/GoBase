@@ -212,7 +212,7 @@ func createWindow() {
 		height := float64(widget.GetAllocatedHeight())
 		
 		// 设置圆角矩形路径
-		radius := float64(18)  // 减小圆角半径
+		radius := float64(8)  // 减小圆角半径
 		degrees := math.Pi / 180.0
 		
 		cr.NewPath()
@@ -250,7 +250,7 @@ func createWindow() {
 	
 	bindMouseActionForWindow()
 	
-	win.SetOpacity(0.92)
+	win.SetOpacity(0.96)
 	app.AddWindow(win)
 	win.ShowAll()
 
@@ -340,11 +340,11 @@ func latestLabelStr(now time.Time) string {
 
 	// style https://blog.csdn.net/bitscro/article/details/3874616
 	// 时间居中调整： 时间的fmt以及字体大小
-	return "<span font_desc='10'>" +
+	return "<span>" +
 		// now time
-		"<span foreground='#00FFF6' font_desc='10'>" + fmt.Sprintf("%9s", now.Format(timeFmt)) + "</span>\n" +
+		"<span foreground='#00FFF6' font_desc='11'>" + fmt.Sprintf("%9s", now.Format(timeFmt)) + "</span>\n" +
 		// today kpm
-		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
+		"<span foreground='#5AFF00' font_desc='9'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
 		// today max kpm
 		"<span foreground='gray' font_desc='6'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
 		// today total
