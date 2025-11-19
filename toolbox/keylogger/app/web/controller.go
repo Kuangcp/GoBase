@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/pkg/ghelp"
-	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"github.com/kuangcp/logger"
 )
@@ -348,7 +347,7 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	var latch sync.WaitGroup
 	latch.Add(len(dayList))
 
-	watch := stopwatch.NewWithName("")
+	watch := ctool.NewStopWatchWithName("")
 	watch.Start(fmt.Sprint(len(dayList), "day"))
 	for _, day := range dayList {
 		var curDay = day
