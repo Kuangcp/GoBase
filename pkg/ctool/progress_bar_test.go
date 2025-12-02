@@ -2,6 +2,7 @@ package ctool
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"testing"
 	"time"
 )
@@ -21,18 +22,21 @@ func TestProgressBar(t *testing.T) {
 	// 模拟进度更新
 	for i := 0; i < 100; i++ {
 		// 更新进度，每次增加10
-		fmt.Print(i)
 		pb.Update(1)
-		fmt.Println("update end")
-		fmt.Printf("进度更新 %d: %s\n", i+1, pb.String())
-		time.Sleep(30 * time.Millisecond) // 模拟处理时间
+		if i%10 == 0 {
+			//fmt.Printf("进度更新 %d: %s\n", i+1, pb.String())
+			fmt.Printf("%s\n", pb.String())
+		}
+
+		al := rand.IntN(100) + 20
+		time.Sleep(time.Duration(al) * time.Millisecond) // 模拟处理时间
 	}
 
 	fmt.Println("---------------------")
 	// 测试完成状态
 	fmt.Println("\n完成状态:")
 	fmt.Println(pb.String())
-	//fmt.Printf("是否完成: %v\n", pb.IsComplete())
+	fmt.Printf("是否完成: %v\n", pb.IsComplete())
 }
 
 func TestProgressBarWithDelta(t *testing.T) {

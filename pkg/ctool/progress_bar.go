@@ -8,11 +8,15 @@ import (
 
 // ProgressBar 进度条结构体
 type ProgressBar struct {
-	total      int64         // 总个数
-	current    int64         // 当前进度
-	startTime  time.Time     // 开始时间
-	lastUpdate time.Time     // 上次更新时间
-	width      int           // 进度条宽度（字符数）
+	total      int64     // 总个数
+	current    int64     // 当前进度
+	startTime  time.Time // 开始时间
+	lastUpdate time.Time // 上次更新时间
+	width      int       // 进度条宽度（字符数）
+}
+type Task struct {
+	startTime time.Time // 开始时间
+	endTime   time.Time // 上次更新时间
 }
 
 // NewProgressBar 创建新的进度条对象
@@ -167,4 +171,3 @@ func (pb *ProgressBar) Reset() {
 	pb.startTime = time.Now()
 	pb.lastUpdate = pb.startTime
 }
-
