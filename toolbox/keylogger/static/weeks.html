@@ -84,7 +84,7 @@
         document.getElementById("multiHeatMap").className = '';
         document.getElementById("multiHeatMap").innerHTML = ''
         let now = new Date();
-        let weekDay = now.getDay();
+        let weekDay = (now.getDay() + 6) % 7;
 
         let weeks = $("#heatMapWeeks").val();
 

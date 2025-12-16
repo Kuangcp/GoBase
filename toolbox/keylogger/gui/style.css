@@ -1,5 +1,18 @@
+.rounded {
+    border-radius: 8px;
+    background: rgba(40, 40, 40, 1);
+    /* padding: 1px; */
+    overflow: hidden;
+}
+
 window {
-    /*border-radius: 1px;*/
-    /*font-family: "JetBrains Mono";*/
-    /*font-size: 20px;*/
+    background: rgba(40, 40, 40, 1);
+}
+
+grid {
+    border-radius: 8px;
+}
+
+label {
+    border-radius: 8px;
 }

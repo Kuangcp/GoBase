@@ -33,7 +33,6 @@ var info = ctk.HelpInfo{
 	Options: []ctk.ParamVO{
 		{Short: "", Value: "file", Comment: "Refresh file catalog"},
 		{Short: "-p", Value: "file", Comment: "Print catalog"},
-		{Short: "-mm", Value: "file", Comment: "Print mind map"},
 		{Short: "-r", Value: "file", Comment: "Remove catalog"},
 		{Short: "-a", Value: "file", Comment: "Append catalog and title for file"},
 		{Short: "-ra", Value: "file", Comment: "Remove then Append catalog and title for file. default options"},

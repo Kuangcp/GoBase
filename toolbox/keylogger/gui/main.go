@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/gotk3/gotk3/cairo"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/gobase/toolbox/keylogger/app/store"
 	"github.com/shirou/gopsutil/mem"
 	"log"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,7 +29,7 @@ var (
 )
 
 const (
-	width            = 90
+	width            = 80
 	height           = 10
 	DefaultRefreshMs = 57
 	appId            = "com.github.kuangcp.keylogger"
@@ -190,21 +192,65 @@ func createWindow() {
 	grid := createMainGrid()
 
 	win, _ = gtk.WindowNew(gtk.WINDOW_POPUP)
+	win.SetTypeHint(gdk.WINDOW_TYPE_HINT_DOCK)  // 设置为停靠窗口类型，保持在顶层
 	win.SetDefaultSize(width, height)
 	win.SetPosition(gtk.WIN_POS_MOUSE)
 	win.Add(grid)
 	win.Connect("destroy", gtk.MainQuit)
-	bindMouseActionForWindow()
-
+	
+	// 设置窗口支持透明
+	screen, _ := gdk.ScreenGetDefault()
+	visual, _ := screen.GetRGBAVisual()
+	if visual != nil {
+		win.SetVisual(visual)
+	}
+	win.SetAppPaintable(true)
+	
+	// 设置窗口背景色
+	win.Connect("draw", func(widget *gtk.Window, cr *cairo.Context) bool {
+		width := float64(widget.GetAllocatedWidth())
+		height := float64(widget.GetAllocatedHeight())
+		
+		// 设置圆角矩形路径
+		radius := float64(8)  // 减小圆角半径
+		degrees := math.Pi / 180.0
+		
+		cr.NewPath()
+		cr.Arc(width-radius, radius, radius, -90*degrees, 0*degrees)
+		cr.Arc(width-radius, height-radius, radius, 0*degrees, 90*degrees)
+		cr.Arc(radius, height-radius, radius, 90*degrees, 180*degrees)
+		cr.Arc(radius, radius, radius, 180*degrees, 270*degrees)
+		cr.ClosePath()
+		
+		// 设置背景颜色（RGB: 43,45,51, Alpha: 0.8）
+		cr.SetSourceRGBA(40.0/255.0, 40.0/255.0, 40.0/255.0, 1)
+		cr.Fill()
+		
+		return false
+	})
+	
 	// Load CSS stylesheet
-	//mRefProvider, _ := gtk.CssProviderNew()
-	//mRefProvider.LoadFromPath("style.css")
-
-	// Apply to whole app
-	//screen, _ := gdk.ScreenGetDefault()
-	//gtk.AddProviderForScreen(screen, mRefProvider, 1)
-
-	win.SetOpacity(0)
+	mRefProvider, _ := gtk.CssProviderNew()
+	mRefProvider.LoadFromPath("style.css")
+	
+	// Apply CSS to window and its children
+	styleContext, _ := win.GetStyleContext()
+	styleContext.AddProvider(mRefProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	styleContext.AddClass("rounded")
+	
+	// Apply CSS to grid
+	gridStyleContext, _ := grid.GetStyleContext()
+	gridStyleContext.AddProvider(mRefProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	gridStyleContext.AddClass("rounded")
+	
+	// Apply CSS to label
+	labelStyleContext, _ := kpmLabel.GetStyleContext()
+	labelStyleContext.AddProvider(mRefProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	labelStyleContext.AddClass("rounded")
+	
+	bindMouseActionForWindow()
+	
+	win.SetOpacity(0.96)
 	app.AddWindow(win)
 	win.ShowAll()
 
@@ -221,6 +267,8 @@ func createMainGrid() *gtk.Widget {
 		log.Fatal("Unable to create grid:", err)
 	}
 	grid.SetOrientation(gtk.ORIENTATION_VERTICAL)
+	grid.SetHAlign(gtk.ALIGN_FILL)
+	grid.SetVAlign(gtk.ALIGN_FILL)
 
 	kpmLabel, err = gtk.LabelNew("")
 	if err != nil {
@@ -232,22 +280,22 @@ func createMainGrid() *gtk.Widget {
 	kpmLabel.SetVExpand(true)
 	grid.Attach(kpmLabel, 0, 0, width, height)
 
-	var items []*MonitorItem
-	cpuItem := &MonitorItem{initX: 0, initY: 0, red: 0, height: 3.8 * height, green: 100, blue: 50, deltaFunc: cpuInfo}
-	drawCpuItem(grid, cpuItem)
-	items = append(items, cpuItem)
+	// var items []*MonitorItem
+	// cpuItem := &MonitorItem{initX: 0, initY: 0, red: 0, height: 3.8 * height, green: 100, blue: 50, deltaFunc: cpuInfo}
+	// drawCpuItem(grid, cpuItem)
+	// items = append(items, cpuItem)
 
-	if SwapMemory {
-		left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfo}
-		right := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
-		drawMemAndSwapItem(grid, left, right)
-		items = append(items, left, right)
-	} else {
-		left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfoOne}
-		drawMemItem(grid, left)
-		items = append(items, left)
-	}
-	go refreshDrawArea(items)
+	// if SwapMemory {
+	// 	left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfo}
+	// 	right := &MonitorItem{initX: width / 2, initY: 0, red: 125, green: 0, blue: 0, deltaFunc: swapMemoryInfo}
+	// 	drawMemAndSwapItem(grid, left, right)
+	// 	items = append(items, left, right)
+	// } else {
+	// 	left := &MonitorItem{initX: 0, initY: 0, red: 0, green: 100, blue: 50, deltaFunc: memoryInfoOne}
+	// 	drawMemItem(grid, left)
+	// 	items = append(items, left)
+	// }
+	// go refreshDrawArea(items)
 
 	return &grid.Container.Widget
 }
@@ -292,11 +340,11 @@ func latestLabelStr(now time.Time) string {
 
 	// style https://blog.csdn.net/bitscro/article/details/3874616
 	// 时间居中调整： 时间的fmt以及字体大小
-	return "<span font_desc='10'>" +
+	return "<span>" +
 		// now time
-		"<span foreground='#00FFF6' font_desc='10'>" + fmt.Sprintf("%9s", now.Format(timeFmt)) + "</span>\n" +
+		"<span foreground='#00FFF6' font_desc='11'>" + fmt.Sprintf("%9s", now.Format(timeFmt)) + "</span>\n" +
 		// today kpm
-		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
+		"<span foreground='#5AFF00' font_desc='9'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
 		// today max kpm
 		"<span foreground='gray' font_desc='6'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
 		// today total

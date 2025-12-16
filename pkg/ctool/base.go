@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -126,16 +124,6 @@ func homeWindows() (string, error) {
 	}
 
 	return home, nil
-}
-
-func CopyStream(src io.ReadCloser) ([]byte, io.ReadCloser) {
-	bodyBt, err := io.ReadAll(src)
-	if err != nil {
-		log.Println(err)
-		return nil, nil
-	}
-
-	return bodyBt, io.NopCloser(bytes.NewBuffer(bodyBt))
 }
 
 func IsNil(vo interface{}) bool {

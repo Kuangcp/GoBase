@@ -9,7 +9,6 @@ require (
 	github.com/gvalkov/golang-evdev v0.0.0-20191114124502-287e62b94bcb
 	github.com/kuangcp/gobase/pkg/ctool v1.2.0
 	github.com/kuangcp/gobase/pkg/ghelp v1.0.2
-	github.com/kuangcp/gobase/pkg/stopwatch v1.0.3
 	github.com/kuangcp/logger v1.0.8
 	github.com/manifoldco/promptui v0.9.0
 	github.com/syndtr/goleveldb v1.0.0

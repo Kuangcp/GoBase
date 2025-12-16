@@ -56,6 +56,7 @@ func TestFuture(t *testing.T) {
 
 	// 等待任务入队列
 	time.Sleep(time.Second * 2)
+	// panic: sync: WaitGroup is reused before previous Wait has returned [recovered]
 	future.Wait()
 	log.Println("finish all")
 	for _, re := range res {
