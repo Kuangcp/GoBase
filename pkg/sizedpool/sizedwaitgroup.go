@@ -21,23 +21,23 @@ type SizedWaitGroup struct {
 }
 
 type PoolOption struct {
-	size    int
-	name    string
-	timeout time.Duration
+	Size    int
+	Name    string
+	Timeout time.Duration
 }
 
 // New creates a SizedWaitGroup. The most flexible way
 // The size parameter is the maximum amount of
 // goroutines which can be started concurrently.
 func New(option PoolOption) (*SizedWaitGroup, error) {
-	if option.size <= 0 {
+	if option.Size <= 0 {
 		return nil, fmt.Errorf("size must great than 0")
 	}
 
 	return &SizedWaitGroup{
-		Size:        option.size,
-		Name:        option.name,
-		current:     make(chan struct{}, option.size),
+		Size:        option.Size,
+		Name:        option.Name,
+		current:     make(chan struct{}, option.Size),
 		queue:       make(chan func()),
 		futureQueue: make(chan *FutureTask),
 		wg:          sync.WaitGroup{},
@@ -45,7 +45,7 @@ func New(option PoolOption) (*SizedWaitGroup, error) {
 }
 
 func NewWithName(limit int, name string) (SizedWait, error) {
-	return New(PoolOption{size: limit, name: name})
+	return New(PoolOption{Size: limit, Name: name})
 }
 
 func (s *SizedWaitGroup) GetName() string {
@@ -58,8 +58,7 @@ func (s *SizedWaitGroup) GetSize() int {
 
 // Add increments the internal WaitGroup counter.
 // It can be blocking if the size of spawned goroutines
-// has been reached. It will stop blocking when Done is
-// been called.
+// has been reached. It will stop blocking when Done has been called.
 //
 // See sync.WaitGroup documentation for more information.
 func (s *SizedWaitGroup) Add() error {

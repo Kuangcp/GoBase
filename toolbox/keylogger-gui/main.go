@@ -32,7 +32,7 @@ var (
 	app           *gtk.Application
 	win           *gtk.Window
 	kpmLabel      *gtk.Label
-	refreshPeriod = time.Millisecond * 450
+	refreshPeriod = time.Millisecond * 400
 )
 
 var (
@@ -104,6 +104,7 @@ func main() {
 func createWindow() {
 	win, _ = gtk.WindowNew(gtk.WINDOW_POPUP)
 	win.SetDefaultSize(width, height)
+
 	win.SetPosition(gtk.WIN_POS_MOUSE)
 	gridWidget := createLabelWidget()
 	win.Add(gridWidget)
@@ -165,18 +166,9 @@ func bindMouseActionForWindow() {
 }
 
 func latestLabelStr(now time.Time) string {
-	conn := store.GetConnection()
-	today := now.Format(store.DateFormat)
-
-	tempValue, err := conn.Get(store.GetTodayTempKPMKeyByString(today)).Result()
-	if err != nil {
-		tempValue = "0"
-	}
-	maxValue, err := conn.Get(store.GetTodayMaxKPMKeyByString(today)).Result()
-	if err != nil {
-		maxValue = "0"
-	}
-	total := conn.ZScore(store.TotalCount, today).Val()
+	tempValue := store.TempKPMVal(now)
+	maxValue := store.MaxKPMVal(now)
+	total := store.TotalCountVal(now)
 
 	var timeFmt = ""
 	if DashboardMsMode {
@@ -190,7 +182,7 @@ func latestLabelStr(now time.Time) string {
 		"<span foreground='#00FFF6'>" + fmt.Sprintf("%11s", now.Format(timeFmt)) + "</span>\n" +
 		"<span foreground='#5AFF00'>" + fmt.Sprintf("%3s", tempValue) + "</span> " +
 		"<span foreground='gray'>" + fmt.Sprintf("%3s", maxValue) + "</span> " +
-		"<span foreground='white'>" + fmt.Sprintf("%-6d", int(total)) + "</span></span>"
+		"<span foreground='white'>" + fmt.Sprintf("%-6d", total) + "</span></span>"
 }
 
 // 从缓存中更新窗口内面板

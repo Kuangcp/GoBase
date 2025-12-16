@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kuangcp/gobase/pkg/ctool"
+	"github.com/kuangcp/gobase/pkg/sizedpool"
 	"github.com/kuangcp/gobase/pkg/stopwatch"
 	"github.com/kuangcp/logger"
-	"github.com/kuangcp/sizedwaitgroup"
 )
 
 // 场景 A 和 B C，A 和 D E ,E 和 F C 三个子组 组内构成替换关系，由于可以发生传递 和无向图的子图合并联通行为类似
@@ -57,7 +57,7 @@ func TestMergeCodeMapBench(t *testing.T) {
 	//parts := initParts()
 	parts := readParts()
 
-	group, _ := sizedwaitgroup.New(2)
+	group, _ := sizedpool.New(sizedpool.PoolOption{})
 	for i := 0; i < 100; i++ {
 		group.Run(func() {
 			mergeCodeMap(parts)

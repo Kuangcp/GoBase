@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -49,7 +49,7 @@ func (w *WebClient) Get(key string) (ctool.ResultVO[string], error) {
 	}
 	defer resp.Body.Close()
 
-	bodyBt, err := ioutil.ReadAll(resp.Body)
+	bodyBt, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ctool.Failed[string](), err
 	}
@@ -105,7 +105,7 @@ func (w *WebClient) sendJsonPost(value interface{}, url string) []byte {
 	}
 	defer resp.Body.Close()
 
-	rspBody, err := ioutil.ReadAll(resp.Body)
+	rspBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error(err)
 		return nil
@@ -129,7 +129,7 @@ func (w *WebClient) PrefixSearch(prefix string) map[string]string {
 		return nil
 	}
 	defer resp.Body.Close()
-	all, err := ioutil.ReadAll(resp.Body)
+	all, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil
 	}

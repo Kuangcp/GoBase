@@ -48,7 +48,7 @@ func NewServer(opt *Options) (*WebLevel, error) {
 	}
 
 	if opt.DBPath != "" {
-		newDB, err := leveldb.OpenFile("test-db", nil)
+		newDB, err := leveldb.OpenFile(opt.DBPath, nil)
 		if err != nil {
 			return nil, err
 		}

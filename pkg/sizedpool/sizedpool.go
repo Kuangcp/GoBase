@@ -8,17 +8,17 @@ import (
 )
 
 func NewQueuePool(limit int) (QueuePool, error) {
-	group, err := New(PoolOption{size: limit})
+	group, err := New(PoolOption{Size: limit})
 	go group.ExecQueuePool()
 	return group, err
 }
 
 func NewTmpFuturePool(option PoolOption) (FuturePool, error) {
 	group, err := New(option)
-	if option.timeout == 0 {
+	if option.Timeout == 0 {
 		return nil, errors.New("not init timeout")
 	}
-	go group.ExecTmpFuturePool(option.timeout)
+	go group.ExecTmpFuturePool(option.Timeout)
 	return group, err
 }
 

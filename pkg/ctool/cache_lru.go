@@ -4,6 +4,8 @@ import (
 	"sync"
 )
 
+// 双向链表维护使用情况：每次访问过的数据都置于链表头，容量满时清除链表尾节点数据
+
 type (
 	Cache[T any] interface {
 		Get(string) T
