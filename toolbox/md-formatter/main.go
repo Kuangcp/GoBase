@@ -22,7 +22,7 @@ var (
 	buildVersion string
 	ignoreDirMap = make(map[string]int8)
 	ignoreDirs   = [...]string{
-		".git", ".svn", ".vscode", ".idea", ".gradle", "out", "build", "target", "log", "logs", "__pycache__",
+		"out", "build", "target", "log", "logs", "__pycache__",
 	}
 	ignoreFiles = [...]string{
 		"README", "Readme", "Readme_CN", "readme", "SUMMARY", "Process", "License", "LICENSE",
@@ -212,6 +212,13 @@ func RefreshDirAllFiles(path string) {
 		}
 
 		if info.IsDir() {
+			last := strings.Split(path, "/")
+			if strings.HasPrefix(last[len(last)-1], ".") {
+				return filepath.SkipDir
+			}
+			if strings.HasPrefix(path, ".") {
+				return filepath.SkipDir
+			}
 			_, ok := ignoreDirMap[path]
 			if ok {
 				return filepath.SkipDir
@@ -297,6 +304,9 @@ func RefreshChangeFile(dir string) {
 
 	showChange := false
 	for filePath := range status {
+		if strings.HasPrefix(filePath, ".") {
+			continue
+		}
 		fileStatus := status.File(filePath)
 
 		careStatus := fileStatus.Staging == git.Added || fileStatus.Staging == git.Modified ||
