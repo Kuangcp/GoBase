@@ -56,7 +56,8 @@ func uploadReadHandler(w http.ResponseWriter, r *http.Request) {
 
 			dst, _ := os.Create("./" + filename)
 			defer dst.Close()
-			_, err := io.Copy(dst, part)
+			size, err := io.Copy(dst, part)
+			fmt.Printf("size %v\n", size)
 			if err != nil {
 				logger.Error(err)
 				w.Write([]byte("copy file error"))
