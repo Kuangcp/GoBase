@@ -18,11 +18,12 @@ type JavaFile struct {
 	IsController bool   // 是否为 Controller 层（含 @RestController / @Controller），此类不被依赖视为正常
 }
 
+// 预编译正则，避免在热路径重复编译（regexp.Regexp 并发只读安全）
 var (
 	rePackage    = regexp.MustCompile(`(?m)^\s*package\s+([\w.]+)\s*;`)
 	reImport     = regexp.MustCompile(`(?m)^\s*import\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;`)
-	reWord       = regexp.MustCompile(`\b([A-Z][a-zA-Z0-9]*)\b`)       // 简单识别首字母大写的标识符（类名）
-	reController = regexp.MustCompile(`@(?:Rest)?Controller\b`)         // @Controller 或 @RestController
+	reWord       = regexp.MustCompile(`\b([A-Z][a-zA-Z0-9]*)\b`) // 简单识别首字母大写的标识符（类名）
+	reController = regexp.MustCompile(`@(?:Rest)?Controller\b`) // @Controller 或 @RestController
 )
 
 // findMavenProjectRoot 从 dir 向上查找包含 pom.xml 的目录，若 dir 自身有 pom.xml 则返回 dir
@@ -86,11 +87,11 @@ func collectJavaFiles(moduleRoot string) ([]string, error) {
 	return list, nil
 }
 
-// parseJavaFile 解析一个 Java 文件，得到包名、类名和 import 列表
-func parseJavaFile(path string) (*JavaFile, error) {
+// parseJavaFile 解析一个 Java 文件，得到包名、类名和 import 列表；content 为文件原文，供后续“类名出现”阶段复用，避免二次读盘。
+func parseJavaFile(path string) (*JavaFile, []byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	content := string(data)
 
@@ -121,7 +122,7 @@ func parseJavaFile(path string) (*JavaFile, error) {
 		FullClass:    fqcn,
 		Imports:      imports,
 		IsController: isController,
-	}, nil
+	}, data, nil
 }
 
 // FindNoDepClasses 扫描 Maven 项目，返回未被任何其他类的 import 或源码引用的类（仅限 import + 同包名引用）
@@ -154,16 +155,18 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 	}
 	wg.Wait()
 
-	// 解析每个文件（并发读文件+解析）
+	// 解析每个文件（并发读文件+解析），并缓存文件内容供阶段二复用，避免二次读盘
 	defined := make(map[string]JavaFile)
+	contentByPath := make(map[string][]byte)
 	var definedMu sync.Mutex
 	var files []*JavaFile
 	var filesMu sync.Mutex
+	var contentMu sync.Mutex
 	for _, p := range allJava {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			jf, err := parseJavaFile(path)
+			jf, content, err := parseJavaFile(path)
 			if err != nil {
 				return
 			}
@@ -173,6 +176,9 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 			filesMu.Lock()
 			files = append(files, jf)
 			filesMu.Unlock()
+			contentMu.Lock()
+			contentByPath[path] = content
+			contentMu.Unlock()
 		}(p)
 	}
 	wg.Wait()
@@ -187,17 +193,21 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 		}
 	}
 
-	// 源码中出现类名（词）：并发读文件并检查，只读不写 defined，写 referenced 时加锁
+	// 源码中出现类名（词）：复用已读内容，每文件只做一次 reWord 扫描，用 set 做 O(1) 查找；用 FindAll([]byte) 避免整文件转 string
 	var refMu sync.Mutex
 	for _, jf := range files {
 		wg.Add(1)
 		go func(j *JavaFile) {
 			defer wg.Done()
-			content, err := os.ReadFile(j.Path)
-			if err != nil {
+			content := contentByPath[j.Path]
+			if len(content) == 0 {
 				return
 			}
-			text := string(content)
+			wordBytes := reWord.FindAll(content, -1)
+			wordSet := make(map[string]struct{}, len(wordBytes))
+			for _, b := range wordBytes {
+				wordSet[string(b)] = struct{}{}
+			}
 			for fqcn := range defined {
 				if fqcn == j.FullClass {
 					continue
@@ -206,13 +216,10 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 				if simple == j.Class {
 					continue
 				}
-				for _, match := range reWord.FindAllString(text, -1) {
-					if match == simple {
-						refMu.Lock()
-						referenced[fqcn] = struct{}{}
-						refMu.Unlock()
-						break
-					}
+				if _, ok := wordSet[simple]; ok {
+					refMu.Lock()
+					referenced[fqcn] = struct{}{}
+					refMu.Unlock()
 				}
 			}
 		}(jf)
