@@ -55,17 +55,29 @@ func findNoDepClass() {
 	}
 }
 
+func findLessDepClass() {
+
+}
+
 func main() {
 	info.Parse()
 	if help {
 		info.PrintHelp()
 		return
 	}
+
+	// 如果projectRoot没有值，默认取当前目录的完整路径
+	if projectRoot == "" {
+		projectRoot, _ = os.Getwd()
+	}
 	if noDep {
 		findNoDepClass()
 		return
 	}
 	if lessDep {
-
+		findLessDepClass()
+		return
 	}
+
+	findNoDepClass()
 }

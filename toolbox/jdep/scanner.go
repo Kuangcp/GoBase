@@ -5,21 +5,24 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // JavaFile 表示一个 Java 源文件解析结果
 type JavaFile struct {
-	Path      string   // 完整路径
-	Package   string   // 包名
-	Class     string   // 当前文件主类名（与文件名一致）
-	FullClass string   // 全限定名 package.Class
-	Imports   []string // import 的全限定类名（不含 import static 的 *）
+	Path        string   // 完整路径
+	Package     string   // 包名
+	Class       string   // 当前文件主类名（与文件名一致）
+	FullClass   string   // 全限定名 package.Class
+	Imports     []string // import 的全限定类名（不含 import static 的 *）
+	IsController bool   // 是否为 Controller 层（含 @RestController / @Controller），此类不被依赖视为正常
 }
 
 var (
-	rePackage = regexp.MustCompile(`(?m)^\s*package\s+([\w.]+)\s*;`)
-	reImport  = regexp.MustCompile(`(?m)^\s*import\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;`)
-	reWord    = regexp.MustCompile(`\b([A-Z][a-zA-Z0-9]*)\b`) // 简单识别首字母大写的标识符（类名）
+	rePackage    = regexp.MustCompile(`(?m)^\s*package\s+([\w.]+)\s*;`)
+	reImport     = regexp.MustCompile(`(?m)^\s*import\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;`)
+	reWord       = regexp.MustCompile(`\b([A-Z][a-zA-Z0-9]*)\b`)       // 简单识别首字母大写的标识符（类名）
+	reController = regexp.MustCompile(`@(?:Rest)?Controller\b`)         // @Controller 或 @RestController
 )
 
 // findMavenProjectRoot 从 dir 向上查找包含 pom.xml 的目录，若 dir 自身有 pom.xml 则返回 dir
@@ -109,12 +112,15 @@ func parseJavaFile(path string) (*JavaFile, error) {
 		}
 	}
 
+	isController := reController.MatchString(content)
+
 	return &JavaFile{
-		Path:      path,
-		Package:   pkg,
-		Class:     class,
-		FullClass: fqcn,
-		Imports:   imports,
+		Path:         path,
+		Package:      pkg,
+		Class:        class,
+		FullClass:    fqcn,
+		Imports:      imports,
+		IsController: isController,
 	}, nil
 }
 
@@ -130,26 +136,49 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 		return nil, err
 	}
 
-	// 所有 .java 文件
+	// 所有 .java 文件（各模块并发收集）
 	var allJava []string
+	var listMu sync.Mutex
+	var wg sync.WaitGroup
 	for _, dir := range modDirs {
-		files, _ := collectJavaFiles(dir)
-		allJava = append(allJava, files...)
+		wg.Add(1)
+		go func(d string) {
+			defer wg.Done()
+			files, _ := collectJavaFiles(d)
+			if len(files) > 0 {
+				listMu.Lock()
+				allJava = append(allJava, files...)
+				listMu.Unlock()
+			}
+		}(dir)
 	}
+	wg.Wait()
 
-	// 解析每个文件
-	defined := make(map[string]JavaFile) // fqcn -> JavaFile
+	// 解析每个文件（并发读文件+解析）
+	defined := make(map[string]JavaFile)
+	var definedMu sync.Mutex
 	var files []*JavaFile
+	var filesMu sync.Mutex
 	for _, p := range allJava {
-		jf, err := parseJavaFile(p)
-		if err != nil {
-			continue
-		}
-		defined[jf.FullClass] = *jf
-		files = append(files, jf)
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			jf, err := parseJavaFile(path)
+			if err != nil {
+				return
+			}
+			definedMu.Lock()
+			defined[jf.FullClass] = *jf
+			definedMu.Unlock()
+			filesMu.Lock()
+			files = append(files, jf)
+			filesMu.Unlock()
+		}(p)
 	}
+	wg.Wait()
 
-	// 被引用的类：出现在任意文件的 import 中，或同包下被当作标识符使用
+	// 被引用的类：1) 出现在任意文件的显式 import 中（不处理 import *）
+	// 2) 在任意类文件源码中作为「词」出现（含跨包、含 import * 引入的类）
 	referenced := make(map[string]struct{})
 
 	for _, jf := range files {
@@ -158,41 +187,41 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 		}
 	}
 
-	// 同包引用：在源码中出现同包类的简单类名（作为词）
+	// 源码中出现类名（词）：并发读文件并检查，只读不写 defined，写 referenced 时加锁
+	var refMu sync.Mutex
 	for _, jf := range files {
-		content, err := os.ReadFile(jf.Path)
-		if err != nil {
-			continue
-		}
-		text := string(content)
-		for fqcn, _ := range defined {
-			if fqcn == jf.FullClass {
-				continue
+		wg.Add(1)
+		go func(j *JavaFile) {
+			defer wg.Done()
+			content, err := os.ReadFile(j.Path)
+			if err != nil {
+				return
 			}
-			pkg := jf.Package
-			if pkg == "" {
-				continue
-			}
-			if !strings.HasPrefix(fqcn, pkg+".") {
-				continue
-			}
-			simple := fqcn[strings.LastIndex(fqcn, ".")+1:]
-			if simple == jf.Class {
-				continue
-			}
-			// 在源码中作为词出现
-			for _, match := range reWord.FindAllString(text, -1) {
-				if match == simple {
-					referenced[fqcn] = struct{}{}
-					break
+			text := string(content)
+			for fqcn := range defined {
+				if fqcn == j.FullClass {
+					continue
+				}
+				simple := fqcn[strings.LastIndex(fqcn, ".")+1:]
+				if simple == j.Class {
+					continue
+				}
+				for _, match := range reWord.FindAllString(text, -1) {
+					if match == simple {
+						refMu.Lock()
+						referenced[fqcn] = struct{}{}
+						refMu.Unlock()
+						break
+					}
 				}
 			}
-		}
+		}(jf)
 	}
+	wg.Wait()
 
 	var noDep []JavaFile
 	for fqcn, jf := range defined {
-		if _, ref := referenced[fqcn]; !ref {
+		if _, ref := referenced[fqcn]; !ref && !jf.IsController {
 			noDep = append(noDep, jf)
 		}
 	}
