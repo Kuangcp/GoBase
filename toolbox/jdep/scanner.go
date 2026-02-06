@@ -423,6 +423,73 @@ func CompareDuplicateContents(list []JavaFile) (identical bool, diffPcts []float
 	return identical, diffPcts
 }
 
+// DiffLine 表示 diff 的一行：Op 为 "-"（仅在第一份）、"+"（仅在第二份）、" "（两边相同）
+type DiffLine struct {
+	Op   string // "-", "+", " "
+	Line string
+}
+
+// LineDiff 对两份内容按行做 LCS 对齐，返回 git 风格的 diff 行序列（删除=第一份独有标 "-"，新增=第二份独有标 "+"）
+func LineDiff(contentFirst, contentOther string) []DiffLine {
+	a := strings.Split(contentFirst, "\n")
+	b := strings.Split(contentOther, "\n")
+	n, m := len(a), len(b)
+	if n == 0 && m == 0 {
+		return nil
+	}
+	// dp[i][j] = LCS length of a[:i] and b[:j]
+	dp := make([][]int, n+1)
+	for i := range dp {
+		dp[i] = make([]int, m+1)
+	}
+	for i := 1; i <= n; i++ {
+		for j := 1; j <= m; j++ {
+			if a[i-1] == b[j-1] {
+				dp[i][j] = dp[i-1][j-1] + 1
+			} else {
+				if dp[i-1][j] > dp[i][j-1] {
+					dp[i][j] = dp[i-1][j]
+				} else {
+					dp[i][j] = dp[i][j-1]
+				}
+			}
+		}
+	}
+	var out []DiffLine
+	i, j := n, m
+	for i > 0 || j > 0 {
+		if i > 0 && j > 0 && a[i-1] == b[j-1] {
+			out = append(out, DiffLine{" ", a[i-1]})
+			i--
+			j--
+		} else if j > 0 && (i == 0 || dp[i][j-1] >= dp[i-1][j]) {
+			out = append(out, DiffLine{"+", b[j-1]})
+			j--
+		} else {
+			out = append(out, DiffLine{"-", a[i-1]})
+			i--
+		}
+	}
+	// 反转使顺序为从文件开头到结尾
+	for l, r := 0, len(out)-1; l < r; l, r = l+1, r-1 {
+		out[l], out[r] = out[r], out[l]
+	}
+	return out
+}
+
+// DiffTwoFiles 读取两个文件并返回相对第一个的 diff 行（第二个相对第一个：- 表示仅第一个有，+ 表示仅第二个有）
+func DiffTwoFiles(pathFirst, pathOther string) ([]DiffLine, error) {
+	data1, err := os.ReadFile(pathFirst)
+	if err != nil {
+		return nil, err
+	}
+	data2, err := os.ReadFile(pathOther)
+	if err != nil {
+		return nil, err
+	}
+	return LineDiff(string(data1), string(data2)), nil
+}
+
 // getModuleFromPath 从路径中解析出模块名（相对 projectRoot 的第一级目录，即含 pom.xml 的模块目录名）
 func getModuleFromPath(path, projectRoot string) string {
 	rel, err := filepath.Rel(projectRoot, path)
