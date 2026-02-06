@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -420,4 +421,126 @@ func CompareDuplicateContents(list []JavaFile) (identical bool, diffPcts []float
 		}
 	}
 	return identical, diffPcts
+}
+
+// getModuleFromPath 从路径中解析出模块名（相对 projectRoot 的第一级目录，即含 pom.xml 的模块目录名）
+func getModuleFromPath(path, projectRoot string) string {
+	rel, err := filepath.Rel(projectRoot, path)
+	if err != nil {
+		return ""
+	}
+	rel = filepath.ToSlash(rel)
+	parts := strings.Split(rel, "/")
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[0]
+}
+
+// moduleKeepPriority 用于“保留谁”的优先级，数值越小越优先保留（api > dao > service > 其他）
+func moduleKeepPriority(moduleName string) int {
+	name := strings.ToLower(moduleName)
+	switch {
+	case strings.Contains(name, "api"):
+		return 0
+	case strings.Contains(name, "dao"):
+		return 1
+	case strings.Contains(name, "service"):
+		return 2
+	default:
+		return 99
+	}
+}
+
+// SortDuplicateListForKeep 对同名类的多个文件按“优先保留”排序：优先保留顶级模块（api > dao > service），同模块取第一个；返回新切片，保留项在 [0]
+func SortDuplicateListForKeep(projectRoot string, list []JavaFile) []JavaFile {
+	if len(list) <= 1 {
+		return list
+	}
+	root, _ := filepath.Abs(projectRoot)
+	copied := make([]JavaFile, len(list))
+	copy(copied, list)
+	// 稳定排序：先按模块优先级，再按路径
+	sort.Slice(copied, func(i, j int) bool {
+		mi, mj := getModuleFromPath(copied[i].Path, root), getModuleFromPath(copied[j].Path, root)
+		pi, pj := moduleKeepPriority(mi), moduleKeepPriority(mj)
+		if pi != pj {
+			return pi < pj
+		}
+		return copied[i].Path < copied[j].Path
+	})
+	return copied
+}
+
+// collectAllJavaPaths 返回项目下所有 .java 文件路径（用于批量替换 import）
+func collectAllJavaPaths(projectRoot string) ([]string, error) {
+	root, ok := findMavenProjectRoot(projectRoot)
+	if !ok {
+		return nil, nil
+	}
+	modDirs, err := collectPomDirs(root)
+	if err != nil {
+		return nil, err
+	}
+	var allJava []string
+	for _, dir := range modDirs {
+		files, _ := collectJavaFiles(dir)
+		allJava = append(allJava, files...)
+	}
+	return allJava, nil
+}
+
+// ReplaceImportInProject 将项目中所有 Java 文件里的 import oldFQCN 改为 import newFQCN；
+// excludePaths 中的文件不修改（如即将被删除的重复类文件）；返回被修改过的文件路径列表。
+func ReplaceImportInProject(projectRoot, oldFQCN, newFQCN string, excludePaths map[string]struct{}) (modified []string, err error) {
+	paths, err := collectAllJavaPaths(projectRoot)
+	if err != nil || len(paths) == 0 {
+		return nil, err
+	}
+	// 匹配整行：空白 + import + oldFQCN + 空白 + ;
+	reImportOld := regexp.MustCompile(`(?m)^(\s*)import\s+` + regexp.QuoteMeta(oldFQCN) + `\s*;\s*$`)
+	reHasNew := regexp.MustCompile(`\bimport\s+` + regexp.QuoteMeta(newFQCN) + `\s*;`)
+
+	for _, path := range paths {
+		if _, skip := excludePaths[path]; skip {
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		content := string(data)
+		if !reImportOld.MatchString(content) {
+			continue
+		}
+		hasNew := reHasNew.MatchString(content)
+		lines := strings.Split(content, "\n")
+		var out []string
+		changed := false
+		for _, line := range lines {
+			if reImportOld.MatchString(line) {
+				if hasNew {
+					changed = true
+					continue
+				}
+				changed = true
+				subs := reImportOld.FindStringSubmatch(line)
+				indent := ""
+				if len(subs) > 1 {
+					indent = subs[1]
+				}
+				out = append(out, indent+"import "+newFQCN+";")
+				continue
+			}
+			out = append(out, line)
+		}
+		if !changed {
+			continue
+		}
+		if err := os.WriteFile(path, []byte(strings.Join(out, "\n")), 0644); err != nil {
+			return modified, err
+		}
+		modified = append(modified, path)
+	}
+	return modified, nil
 }

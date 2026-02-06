@@ -10,12 +10,13 @@ import (
 )
 
 var (
-	buildVersion   string
-	help           bool
-	noDep          bool
-	lessDep        bool
-	duplicateClass bool
-	projectRoot    string
+	buildVersion     string
+	help             bool
+	noDep            bool
+	lessDep          bool
+	duplicateClass   bool
+	rmDuplicateClass bool
+	projectRoot      string
 )
 var info = ctool.HelpInfo{
 	Description:   "Maven 项目依赖分析：找出无依赖类、少依赖类等",
@@ -28,6 +29,7 @@ var info = ctool.HelpInfo{
 		{Short: "-n", BoolVar: &noDep, Comment: "找出未被任何其他类 import 或引用的类"},
 		{Short: "-l", BoolVar: &lessDep, Comment: "lessDep"},
 		{Short: "-d", BoolVar: &duplicateClass, Comment: "重复类名"},
+		{Short: "-rd", BoolVar: &rmDuplicateClass, Comment: "删除重复类名"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-r", Value: "path", StringVar: &projectRoot, Comment: "Maven 项目根目录（默认当前目录）"},
@@ -105,6 +107,84 @@ func findDuplicateClass() {
 	}
 }
 
+func deleteDuplicateClass() {
+	root := projectRoot
+	if root == "" {
+		root = "."
+	}
+	dup, err := FindDuplicateClasses(root)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "扫描失败:", err)
+		os.Exit(1)
+	}
+	if len(dup) == 0 {
+		fmt.Println("未发现重名类，或当前目录不是 Maven 项目根（无 pom.xml）。")
+		return
+	}
+	names := make([]string, 0, len(dup))
+	for name := range dup {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	var allModified []string
+	var allDeleted []string
+	for _, name := range names {
+		list := dup[name]
+		identical, _ := CompareDuplicateContents(list)
+		if !identical {
+			continue
+		}
+		sorted := SortDuplicateListForKeep(root, list)
+		kept := sorted[0]
+		toDelete := sorted[1:]
+		excludePaths := make(map[string]struct{})
+		for _, jf := range toDelete {
+			excludePaths[jf.Path] = struct{}{}
+		}
+		for _, jf := range toDelete {
+			modified, err := ReplaceImportInProject(root, jf.FullClass, kept.FullClass, excludePaths)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "替换 import 失败:", err)
+				os.Exit(1)
+			}
+			allModified = append(allModified, modified...)
+		}
+		for _, jf := range toDelete {
+			// 暂时注释，先不删文件
+			fmt.Println("-- 删除： ", jf.Path)
+			if err := os.Remove(jf.Path); err != nil {
+				fmt.Fprintln(os.Stderr, "删除失败:", jf.Path, err)
+				os.Exit(1)
+			}
+			allDeleted = append(allDeleted, jf.Path)
+		}
+		fmt.Printf("- %s: 保留 %s，已删除 %d 个重复文件，并已将引用改为保留类\n",
+			name, ctool.Green.Print(kept.FullClass), len(toDelete))
+	}
+
+	if len(allDeleted) == 0 {
+		fmt.Println("没有类定义完全一致的重名类，未执行删除。")
+		return
+	}
+	fmt.Printf("\n共删除 %d 个重复类文件，修改 %d 个引用文件。\n", len(allDeleted), len(allModified))
+	if len(allModified) > 0 {
+		fmt.Println("被修改 import 的文件：")
+		seen := make(map[string]struct{})
+		for _, p := range allModified {
+			if _, ok := seen[p]; ok {
+				continue
+			}
+			seen[p] = struct{}{}
+			rel := strings.Replace(p, root, "", 1)
+			if rel == p {
+				rel = p
+			}
+			fmt.Printf("    %s\n", ctool.Yellow.Print(rel))
+		}
+	}
+}
+
 func main() {
 	info.Parse()
 	if help {
@@ -118,6 +198,10 @@ func main() {
 	}
 	if duplicateClass {
 		findDuplicateClass()
+		return
+	}
+	if rmDuplicateClass {
+		deleteDuplicateClass()
 		return
 	}
 	if noDep {
