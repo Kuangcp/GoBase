@@ -3,17 +3,19 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/kuangcp/gobase/pkg/ctool"
 )
 
 var (
-	buildVersion string
-	help         bool
-	noDep        bool
-	lessDep      bool
-	projectRoot  string
+	buildVersion   string
+	help           bool
+	noDep          bool
+	lessDep        bool
+	duplicateClass bool
+	projectRoot    string
 )
 var info = ctool.HelpInfo{
 	Description:   "Maven 项目依赖分析：找出无依赖类、少依赖类等",
@@ -25,6 +27,7 @@ var info = ctool.HelpInfo{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-n", BoolVar: &noDep, Comment: "找出未被任何其他类 import 或引用的类"},
 		{Short: "-l", BoolVar: &lessDep, Comment: "lessDep"},
+		{Short: "-d", BoolVar: &duplicateClass, Comment: "重复类名"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-r", Value: "path", StringVar: &projectRoot, Comment: "Maven 项目根目录（默认当前目录）"},
@@ -59,6 +62,49 @@ func findLessDepClass() {
 
 }
 
+func findDuplicateClass() {
+	root := projectRoot
+	if root == "" {
+		root = "."
+	}
+	dup, err := FindDuplicateClasses(root)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "扫描失败:", err)
+		os.Exit(1)
+	}
+	if len(dup) == 0 {
+		fmt.Println("未发现重名类，或当前目录不是 Maven 项目根（无 pom.xml）。")
+		return
+	}
+	fmt.Printf("共 %d 个重名类：\n", len(dup))
+	names := make([]string, 0, len(dup))
+	for name := range dup {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		list := dup[name]
+		fmt.Printf("\n  %s（%d 处）\n", name, len(list))
+		for _, jf := range list {
+			path := strings.Replace(jf.Path, root, "", 1)
+			if path == jf.Path {
+				path = jf.Path
+			}
+			fmt.Printf("    %s\n", ctool.Yellow.Print(path))
+		}
+		identical, diffPcts := CompareDuplicateContents(list)
+		if identical {
+			fmt.Printf("    %s\n", ctool.Green.Print("类定义完全一致"))
+		} else {
+			parts := make([]string, 0, len(diffPcts)-1)
+			for i := 1; i < len(diffPcts); i++ {
+				parts = append(parts, fmt.Sprintf("%.0f%%", diffPcts[i]))
+			}
+			fmt.Printf("    %s %s\n", ctool.Yellow.Print("类定义不一致，与首文件差异约"), strings.Join(parts, "、"))
+		}
+	}
+}
+
 func main() {
 	info.Parse()
 	if help {
@@ -69,6 +115,10 @@ func main() {
 	// 如果projectRoot没有值，默认取当前目录的完整路径
 	if projectRoot == "" {
 		projectRoot, _ = os.Getwd()
+	}
+	if duplicateClass {
+		findDuplicateClass()
+		return
 	}
 	if noDep {
 		findNoDepClass()

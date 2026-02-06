@@ -234,3 +234,190 @@ func FindNoDepClasses(projectRoot string) ([]JavaFile, error) {
 	}
 	return noDep, nil
 }
+
+// FindDuplicateClasses 扫描 Maven 项目，返回简单类名重复的类：类名 -> 多个 JavaFile（含路径）
+func FindDuplicateClasses(projectRoot string) (map[string][]JavaFile, error) {
+	root, ok := findMavenProjectRoot(projectRoot)
+	if !ok {
+		return nil, nil
+	}
+	modDirs, err := collectPomDirs(root)
+	if err != nil {
+		return nil, err
+	}
+
+	var allJava []string
+	var listMu sync.Mutex
+	var wg sync.WaitGroup
+	for _, dir := range modDirs {
+		wg.Add(1)
+		go func(d string) {
+			defer wg.Done()
+			files, _ := collectJavaFiles(d)
+			if len(files) > 0 {
+				listMu.Lock()
+				allJava = append(allJava, files...)
+				listMu.Unlock()
+			}
+		}(dir)
+	}
+	wg.Wait()
+
+	var allFiles []JavaFile
+	var allMu sync.Mutex
+	for _, p := range allJava {
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			jf, _, err := parseJavaFile(path)
+			if err != nil {
+				return
+			}
+			allMu.Lock()
+			allFiles = append(allFiles, *jf)
+			allMu.Unlock()
+		}(p)
+	}
+	wg.Wait()
+
+	// 按简单类名分组，只保留出现多于一次的
+	bySimple := make(map[string][]JavaFile)
+	for _, jf := range allFiles {
+		bySimple[jf.Class] = append(bySimple[jf.Class], jf)
+	}
+	dup := make(map[string][]JavaFile)
+	for name, list := range bySimple {
+		if len(list) > 1 {
+			dup[name] = list
+		}
+	}
+	return dup, nil
+}
+
+// normalizeJavaContent 做基础规范化便于比较：去掉注释、规整空白（忽略字符串内注释等边界情况）
+func normalizeJavaContent(data []byte) string {
+	s := string(data)
+	// 块注释 /* ... */
+	for {
+		start := strings.Index(s, "/*")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(s[start:], "*/")
+		if end == -1 {
+			break
+		}
+		s = s[:start] + " " + s[start+end+2:]
+	}
+	// 行注释 // ...
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		idx := strings.Index(line, "//")
+		if idx != -1 {
+			lines[i] = line[:idx]
+		}
+	}
+	// 对比时忽略 package 行（同名类可能在不同包下）
+	var filtered []string
+	for _, line := range lines {
+		t := strings.TrimSpace(line)
+		if strings.HasPrefix(t, "package ") && strings.HasSuffix(t, ";") {
+			continue
+		}
+		filtered = append(filtered, line)
+	}
+	s = strings.Join(filtered, "\n")
+	// 空白规整：连续空白变为单空格并 trim
+	var b strings.Builder
+	lastSpace := true
+	for _, r := range strings.TrimSpace(s) {
+		if r == ' ' || r == '\t' || r == '\n' || r == '\r' {
+			if !lastSpace {
+				b.WriteRune(' ')
+				lastSpace = true
+			}
+			continue
+		}
+		lastSpace = false
+		b.WriteRune(r)
+	}
+	return strings.TrimSpace(b.String())
+}
+
+// levenshteinDistance 编辑距离（rune 为单位）
+func levenshteinDistance(a, b []rune) int {
+	na, nb := len(a), len(b)
+	if na == 0 {
+		return nb
+	}
+	if nb == 0 {
+		return na
+	}
+	dp := make([]int, nb+1)
+	for j := 0; j <= nb; j++ {
+		dp[j] = j
+	}
+	for i := 1; i <= na; i++ {
+		prev := dp[0]
+		dp[0] = i
+		for j := 1; j <= nb; j++ {
+			curr := dp[j]
+			cost := 1
+			if a[i-1] == b[j-1] {
+				cost = 0
+			}
+			dp[j] = min(min(dp[j]+1, dp[j-1]+1), prev+cost)
+			prev = curr
+		}
+	}
+	return dp[nb]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// contentDiffPct 返回 0~100 的差异百分比（基于规范化后的内容，编辑距离 / max(len)）
+func contentDiffPct(normA, normB string) float64 {
+	ra, rb := []rune(normA), []rune(normB)
+	maxLen := len(ra)
+	if len(rb) > maxLen {
+		maxLen = len(rb)
+	}
+	if maxLen == 0 {
+		return 0
+	}
+	dist := levenshteinDistance(ra, rb)
+	return float64(dist) / float64(maxLen) * 100
+}
+
+// CompareDuplicateContents 对同名类的多个文件读入并比较：是否完全一致，以及各文件与首文件的差异百分比
+func CompareDuplicateContents(list []JavaFile) (identical bool, diffPcts []float64) {
+	if len(list) <= 1 {
+		return true, nil
+	}
+	norm := make([]string, len(list))
+	for i := range list {
+		data, err := os.ReadFile(list[i].Path)
+		if err != nil {
+			norm[i] = ""
+			continue
+		}
+		norm[i] = normalizeJavaContent(data)
+	}
+	first := norm[0]
+	diffPcts = make([]float64, len(list))
+	diffPcts[0] = 0
+	identical = true
+	for i := 1; i < len(list); i++ {
+		pct := contentDiffPct(first, norm[i])
+		diffPcts[i] = pct
+		if pct > 0 {
+			identical = false
+		}
+	}
+	return identical, diffPcts
+}
