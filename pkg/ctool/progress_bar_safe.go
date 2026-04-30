@@ -73,11 +73,19 @@ func (cpt *ConcurrentProgressTracker) SetMaxSamples(maxSamples int) {
 	}
 }
 
+func (cpt *ConcurrentProgressTracker) Run(fn func()) {
+	taskID := cpt.StartTask()
+	fn()
+	cpt.FinishTask(taskID)
+}
+
 func (cpt *ConcurrentProgressTracker) RunTask(fn func(), callback func()) {
 	taskID := cpt.StartTask()
 	fn()
 	cpt.FinishTask(taskID)
-	callback()
+	if callback != nil {
+		callback()
+	}
 }
 
 // StartTask 标记任务开始，返回任务ID
