@@ -24,6 +24,9 @@ const (
 	slideWindowMs        = 60_000                  // KPM 滑动窗口是一分钟
 	calculateKPMPeriod   = time.Millisecond * 888  // 从按键队列，计算得到最大KPM 操作的周期
 	printKPMWindowPeriod = time.Millisecond * 4500 // 输出最大KPM日志窗口大小
+
+	maxReadErrors       = 10  // 最大连续读取错误次数，超过后退出
+	retryInterval       = time.Second * 5 // 重试间隔
 )
 
 var (
@@ -77,8 +80,16 @@ func ListenDevice() {
 
 	fmt.Println("Try to listen " + ctool.Yellow.Print(targetDevice) + " ...")
 
-	device, err := Open("/dev/input/" + targetDevice)
-	defer closeDevice(device)
+	var device *InputDevice
+	var err error
+
+	defer func() {
+		if device != nil {
+			closeDevice(device)
+		}
+	}()
+
+	device, err = Open("/dev/input/" + targetDevice)
 	if device == nil || err != nil {
 		logger.Error(err)
 		return
@@ -87,12 +98,35 @@ func ListenDevice() {
 	go calculateKPM()
 
 	hasSuccess := false
-	for true {
+	readErrorCount := 0
+	devicePath := "/dev/input/" + targetDevice
+
+	for {
+		if device == nil {
+			device, err = Open(devicePath)
+			if device == nil || err != nil {
+				logger.Error("reopen device failed: ", err)
+				time.Sleep(retryInterval)
+				continue
+			}
+			fmt.Println(ctool.Green.Print("\n    Device reopened."))
+		}
+
 		inputEvents, err := device.Read()
 		if err != nil {
-			logger.Error(err)
-			return
+			readErrorCount++
+			logger.Error("read device error: ", err, " (", readErrorCount, "/", maxReadErrors, ")")
+			closeDevice(device)
+			device = nil
+			if readErrorCount >= maxReadErrors {
+				logger.Error("max read errors reached, exiting...")
+				return
+			}
+			time.Sleep(retryInterval)
+			continue
 		}
+
+		readErrorCount = 0
 
 		if inputEvents == nil || len(inputEvents) == 0 {
 			continue
