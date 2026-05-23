@@ -5,14 +5,15 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
-	"github.com/atotto/clipboard"
-	"github.com/go-git/go-git/v5"
-	"github.com/kuangcp/gobase/pkg/ctk"
-	"github.com/kuangcp/logger"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/atotto/clipboard"
+	"github.com/go-git/go-git/v5"
+	"github.com/kuangcp/gobase/pkg/ctk"
+	"github.com/kuangcp/logger"
 )
 
 type filterFun = func(string) bool
@@ -32,7 +33,7 @@ var (
 	}
 	// 制作标题跳转时需要去除的符号
 	titleRemoveChar = []string{
-		".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "（", "）", "《", "》", "*", "＊", "。", "?", "？",
+		".", "【", "】", ":", "：", ",", "，", "/", "(", ")", "（", "）", "《", "》", "*", "＊", "。", "?", "？", "+", "＋",
 	}
 )
 
