@@ -270,6 +270,14 @@ func buildMonthOfYearChartOption(result *AnalysisResult) (string, error) {
 }
 
 func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
+	n := len(result.YearMonthLabels)
+	revLabels := make([]string, n)
+	revData := make([]int, n)
+	for i := 0; i < n; i++ {
+		revLabels[i] = result.YearMonthLabels[n-1-i]
+		revData[i] = result.YearMonthData[n-1-i]
+	}
+
 	opt := map[string]interface{}{
 		"tooltip": map[string]string{"trigger": "axis"},
 		"legend": map[string]interface{}{
@@ -281,7 +289,7 @@ func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 			"containLabel": true,
 		},
 		"xAxis": map[string]interface{}{
-			"type": "category", "data": result.YearMonthLabels,
+			"type": "category", "data": revLabels,
 			"boundaryGap": false,
 		},
 		"yAxis": map[string]interface{}{
@@ -292,7 +300,7 @@ func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 				"name": "Commits",
 				"type": "line",
 				"smooth": true,
-				"data": result.YearMonthData,
+				"data": revData,
 				"areaStyle": map[string]interface{}{
 					"color": "rgba(84,112,198,0.2)",
 				},

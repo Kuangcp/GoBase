@@ -50,6 +50,11 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 .added { color: #4caf50; font-weight: 600; }
 .deleted { color: #f44336; font-weight: 600; }
 .chart-box { width: 100%; height: 420px; }
+.extra-row.hidden { display: none; }
+.collapse-toggle { display: block; width: 100%; padding: 8px; text-align: center;
+  background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;
+  cursor: pointer; font-size: 13px; color: #5470c6; margin-top: 8px; }
+.collapse-toggle:hover { background: #e9ecef; }
 
 .stats-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 32px;
   font-size: 14px; line-height: 2; }
@@ -119,7 +124,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section">
 <h2>Commits by Year/Month</h2>
 <div id="yearMonthChart" class="chart-box"></div>
-<table style="margin-top:16px">
+<table style="margin-top:16px" id="yearMonthTable">
 <thead>
 <tr>
 <th class="num">Month</th>
@@ -130,7 +135,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </thead>
 <tbody>
 {{range $i, $label := .YearMonthLabels}}
-<tr>
+<tr class="{{if ge $i 15}}extra-row hidden{{end}}">
 <td class="num">{{$label}}</td>
 <td class="num">{{index $.YearMonthData $i}}</td>
 <td class="num added">{{index $.YearMonthAddedData $i}}</td>
@@ -139,6 +144,9 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 {{end}}
 </tbody>
 </table>
+{{if gt (len .YearMonthLabels) 15}}
+<button class="collapse-toggle" onclick="toggleCollapse(this)" data-table="yearMonthTable">Show more ({{sub (len .YearMonthLabels) 15}})</button>
+{{end}}
 </div>
 </div>
 
@@ -178,7 +186,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </div>
 <div class="section">
 <h2>Author of Month</h2>
-<table>
+<table id="monthAuthorTable">
 <thead>
 <tr>
 <th>Month</th>
@@ -189,17 +197,20 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </tr>
 </thead>
 <tbody>
-{{range .MonthAuthorStats}}
-<tr>
-<td class="nowrap">{{.Period}}</td>
-<td class="col-author">{{.TopAuthor}}</td>
-<td class="num col-commits nowrap">{{printf "%4d" .TopCommits}}/{{printf "%-4d" .TotalCommits}} ({{printf "%.2f" (percent .TopCommits .TotalCommits)}}%)</td>
-<td class="col-next5">{{join .NextTop5 ", "}}</td>
-<td class="num">{{.AuthorCount}}</td>
+{{range $i, $stat := .MonthAuthorStats}}
+<tr class="{{if ge $i 15}}extra-row hidden{{end}}">
+<td class="nowrap">{{$stat.Period}}</td>
+<td class="col-author">{{$stat.TopAuthor}}</td>
+<td class="num col-commits nowrap">{{printf "%4d" $stat.TopCommits}}/{{printf "%-4d" $stat.TotalCommits}} ({{printf "%.2f" (percent $stat.TopCommits $stat.TotalCommits)}}%)</td>
+<td class="col-next5">{{join $stat.NextTop5 ", "}}</td>
+<td class="num">{{$stat.AuthorCount}}</td>
 </tr>
 {{end}}
 </tbody>
 </table>
+{{if gt (len .MonthAuthorStats) 15}}
+<button class="collapse-toggle" onclick="toggleCollapse(this)" data-table="monthAuthorTable">Show more ({{sub (len .MonthAuthorStats) 15}})</button>
+{{end}}
 </div>
 <div class="section">
 <h2>Author of Year</h2>
@@ -327,6 +338,14 @@ document.querySelectorAll('.tab').forEach(function(tab) {
     }, 100);
   });
 });
+
+function toggleCollapse(btn) {
+  var rows = document.getElementById(btn.getAttribute('data-table')).querySelectorAll('.extra-row');
+  var expanded = btn.getAttribute('data-expanded') === 'true';
+  rows.forEach(function(r) { r.classList.toggle('hidden', expanded); });
+  btn.textContent = expanded ? 'Show more (' + rows.length + ')' : 'Collapse';
+  btn.setAttribute('data-expanded', expanded ? 'false' : 'true');
+}
 
 window.addEventListener('resize', function(){
   commitChart.resize();

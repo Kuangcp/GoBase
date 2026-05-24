@@ -194,6 +194,9 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 			secs := int(d.Seconds()) % 60
 			return fmt.Sprintf("%d days, %02d:%02d:%02d", days, hours, mins, secs)
 		},
+		"sub": func(a, b int) int {
+			return a - b
+		},
 	}
 	tmpl, err := template.New("report").Funcs(funcMap).Parse(reportTemplate)
 	if err != nil {

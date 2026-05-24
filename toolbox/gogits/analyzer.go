@@ -213,7 +213,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	for k := range yearMonthMap {
 		ymKeys = append(ymKeys, k)
 	}
-	sort.Strings(ymKeys)
+	sort.Sort(sort.Reverse(sort.StringSlice(ymKeys)))
 	ymLabels := make([]string, len(ymKeys))
 	ymData := make([]int, len(ymKeys))
 	ymAdded := make([]int, len(ymKeys))
