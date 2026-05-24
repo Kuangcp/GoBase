@@ -88,6 +88,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <button class="tab active" data-tab="general">General</button>
 <button class="tab" data-tab="activity">Activity</button>
 <button class="tab" data-tab="authors">Authors</button>
+<button class="tab" data-tab="files">Files</button>
 </div>
 
 <div id="general" class="tab-content active">
@@ -248,6 +249,25 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </div>
 </div>
 
+<div id="files" class="tab-content">
+<div class="section">
+<h2>File Statistics</h2>
+<div class="stats-grid">
+<span class="stats-label">Total files</span><span class="stats-value">{{.TotalFiles}}</span>
+<span class="stats-label">Total lines</span><span class="stats-value">{{.TotalLoc}}</span>
+<span class="stats-label">Average file size</span><span class="stats-value">{{printf "%.2f" (avgFileSize .TotalLoc .TotalFiles)}} bytes</span>
+</div>
+</div>
+<div class="section">
+<h2>Files Count Over Time</h2>
+<div id="fileChart" class="chart-box"></div>
+</div>
+<div class="section">
+<h2>Lines of Code Over Time</h2>
+<div id="locChart" class="chart-box"></div>
+</div>
+</div>
+
 </div>
 
 <script>
@@ -272,6 +292,8 @@ yearMonthChart.setOption({{.YearMonthOpt}});
 var authorLineChart = null;
 var cumCommitChart = null;
 var cumAddedChart = null;
+var fileChart = null;
+var locChart = null;
 function initAuthorChart() {
   if (authorLineChart) return;
   authorLineChart = echarts.init(document.getElementById('authorLineChart'));
@@ -281,6 +303,16 @@ function initAuthorChart() {
   cumAddedChart = echarts.init(document.getElementById('cumAddedChart'));
   cumAddedChart.setOption({{.CumAddedOpt}});
 }
+function initFileChart() {
+  if (fileChart) return;
+  fileChart = echarts.init(document.getElementById('fileChart'));
+  fileChart.setOption({{.FilesChartOpt}});
+}
+function initLocChart() {
+  if (locChart) return;
+  locChart = echarts.init(document.getElementById('locChart'));
+  locChart.setOption({{.LocChartOpt}});
+}
 
 document.querySelectorAll('.tab').forEach(function(tab) {
   tab.addEventListener('click', function() {
@@ -289,6 +321,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
     tab.classList.add('active');
     document.getElementById(tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'authors') initAuthorChart();
+    if (tab.dataset.tab === 'files') { initFileChart(); initLocChart(); }
     setTimeout(function() {
       commitChart.resize();
       lineChart.resize();
@@ -298,6 +331,8 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       if (authorLineChart) authorLineChart.resize();
       if (cumCommitChart) cumCommitChart.resize();
       if (cumAddedChart) cumAddedChart.resize();
+      if (fileChart) fileChart.resize();
+      if (locChart) locChart.resize();
     }, 100);
   });
 });
@@ -311,6 +346,8 @@ window.addEventListener('resize', function(){
   if (authorLineChart) authorLineChart.resize();
   if (cumCommitChart) cumCommitChart.resize();
   if (cumAddedChart) cumAddedChart.resize();
+  if (fileChart) fileChart.resize();
+  if (locChart) locChart.resize();
 });
 
 (function() {
@@ -389,6 +426,8 @@ type templateData struct {
 	CumAddedOpt           template.JS
 	MonthAuthorStats      []PeriodAuthorStat
 	YearAuthorStats       []PeriodAuthorStat
+	FilesChartOpt         template.JS
+	LocChartOpt           template.JS
 }
 
 func GenerateReport(result *AnalysisResult, outputPath string) error {
@@ -421,6 +460,14 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		return err
 	}
 	cumAddedOpt, err := buildCumChartOption(result, false)
+	if err != nil {
+		return err
+	}
+	fileOpt, err := buildFileChartOption(result)
+	if err != nil {
+		return err
+	}
+	locOpt, err := buildLocChartOption(result)
 	if err != nil {
 		return err
 	}
@@ -498,6 +545,8 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		CumAddedOpt:          template.JS(cumAddedOpt),
 		MonthAuthorStats:     result.MonthAuthorStats,
 		YearAuthorStats:      result.YearAuthorStats,
+		FilesChartOpt:        template.JS(fileOpt),
+		LocChartOpt:          template.JS(locOpt),
 	}
 
 	funcMap := template.FuncMap{
@@ -509,6 +558,12 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		},
 		"join": func(a []string, sep string) string {
 			return strings.Join(a, sep)
+		},
+		"avgFileSize": func(totalLines, totalFiles int) float64 {
+			if totalFiles == 0 {
+				return 0
+			}
+			return float64(totalLines) / float64(totalFiles)
 		},
 		"age": func(first, last time.Time) string {
 			if first.IsZero() || last.IsZero() || last.Before(first) {
@@ -899,6 +954,102 @@ func buildCumChartOption(result *AnalysisResult, isCommit bool) (string, error) 
 			"type": "value",
 		},
 		"series": series,
+	}
+
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func buildFileChartOption(result *AnalysisResult) (string, error) {
+	var data [][]interface{}
+	for i, v := range result.FileChartData {
+		t, err := time.Parse("2006-01-02", result.FileChartLabels[i])
+		if err != nil {
+			continue
+		}
+		data = append(data, []interface{}{t.UnixMilli(), v})
+	}
+
+	series := map[string]interface{}{
+		"name":      "Files",
+		"type":      "line",
+		"symbol":    "none",
+		"data":      data,
+		"areaStyle": map[string]interface{}{"color": "rgba(84,112,198,0.2)"},
+		"lineStyle": map[string]interface{}{"color": "#5470c6"},
+		"itemStyle": map[string]interface{}{"color": "#5470c6"},
+	}
+
+	opt := map[string]interface{}{
+		"tooltip": map[string]interface{}{
+			"trigger": "axis",
+		},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "10%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "time",
+			"axisLabel": map[string]interface{}{
+				"formatter": "{yyyy}-{MM}",
+			},
+		},
+		"yAxis": map[string]interface{}{
+			"type":        "value",
+			"minInterval": 1,
+		},
+		"series": []map[string]interface{}{series},
+	}
+
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func buildLocChartOption(result *AnalysisResult) (string, error) {
+	var data [][]interface{}
+	for i, v := range result.LocChartData {
+		t, err := time.Parse("2006-01-02", result.LocChartLabels[i])
+		if err != nil {
+			continue
+		}
+		data = append(data, []interface{}{t.UnixMilli(), v})
+	}
+
+	series := map[string]interface{}{
+		"name":      "Lines of Code",
+		"type":      "line",
+		"symbol":    "none",
+		"data":      data,
+		"areaStyle": map[string]interface{}{"color": "rgba(76,175,80,0.2)"},
+		"lineStyle": map[string]interface{}{"color": "#4caf50"},
+		"itemStyle": map[string]interface{}{"color": "#4caf50"},
+	}
+
+	opt := map[string]interface{}{
+		"tooltip": map[string]interface{}{
+			"trigger": "axis",
+		},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "10%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "time",
+			"axisLabel": map[string]interface{}{
+				"formatter": "{yyyy}-{MM}",
+			},
+		},
+		"yAxis": map[string]interface{}{
+			"type": "value",
+			"minInterval": 1,
+		},
+		"series": []map[string]interface{}{series},
 	}
 
 	b, err := json.Marshal(opt)

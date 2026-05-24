@@ -77,6 +77,10 @@ type AnalysisResult struct {
 	YearMonthDeletedData   []int
 	MonthAuthorStats       []PeriodAuthorStat
 	YearAuthorStats        []PeriodAuthorStat
+	FileChartLabels        []string
+	FileChartData          []int
+	LocChartLabels         []string
+	LocChartData           []int
 	GenerationDuration     time.Duration
 }
 
@@ -100,6 +104,8 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 
 	result.TotalFiles = getTotalFiles(repoPath)
 	result.TotalLinesOfCode = getTotalLines(repoPath)
+	result.FileChartLabels, result.FileChartData = getDailyFileCounts(repoPath)
+	result.LocChartLabels, result.LocChartData = getDailyLocCounts(repoPath, result.TotalLinesOfCode)
 
 	return result, nil
 }
@@ -583,4 +589,176 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		MonthAuthorStats:      monthStats,
 		YearAuthorStats:       yearStats,
 	}
+}
+
+func getDailyFileCounts(repoPath string) ([]string, []int) {
+	cmd := exec.Command("git", "-C", repoPath, "log",
+		"--reverse",
+		"--format=COMMIT%n%H|%ai",
+		"--diff-filter=AD",
+		"--name-status",
+		"HEAD")
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+
+	files := make(map[string]bool)
+	type point struct {
+		date  time.Time
+		count int
+	}
+	var points []point
+	var currentDate time.Time
+
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	state := 0 // 0: expect COMMIT, 1: expect hash|date, 2: expect name-status lines
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch state {
+		case 0:
+			if line == "COMMIT" {
+				state = 1
+			}
+		case 1:
+			parts := strings.SplitN(line, "|", 2)
+			if len(parts) == 2 {
+				t, err := time.Parse(gitTimeFormat, parts[1])
+				if err == nil {
+					currentDate = t
+				}
+			}
+			state = 2
+		case 2:
+			if strings.HasPrefix(line, "COMMIT") {
+				points = append(points, point{currentDate, len(files)})
+				state = 1
+				continue
+			}
+			if len(line) > 1 && line[1] == '\t' {
+				filename := line[2:]
+				switch line[0] {
+				case 'A':
+					files[filename] = true
+				case 'D':
+					delete(files, filename)
+				}
+			}
+		}
+	}
+
+	if !currentDate.IsZero() {
+		points = append(points, point{currentDate, len(files)})
+	}
+
+	if len(points) == 0 {
+		return nil, nil
+	}
+
+	start := points[0].date
+	end := points[len(points)-1].date
+	allDays, allDayLabels := dayRange(start, end)
+
+	data := make([]int, len(allDays))
+	pi := 0
+	for i, day := range allDays {
+		for pi+1 < len(points) && !points[pi+1].date.After(day) {
+			pi++
+		}
+		if pi < len(points) {
+			data[i] = points[pi].count
+		}
+	}
+
+	return allDayLabels, data
+}
+
+func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
+	cmd := exec.Command("git", "-C", repoPath, "log",
+		"--reverse",
+		"--format=COMMIT%n%H|%ai",
+		"--numstat",
+		"HEAD")
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+
+	type point struct {
+		date time.Time
+		loc  int
+	}
+	var points []point
+	var currentDate time.Time
+	cumDiff := 0
+
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	state := 0 // 0: expect COMMIT, 1: expect hash|date, 2: expect numstat lines
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch state {
+		case 0:
+			if line == "COMMIT" {
+				state = 1
+			}
+		case 1:
+			parts := strings.SplitN(line, "|", 2)
+			if len(parts) == 2 {
+				t, err := time.Parse(gitTimeFormat, parts[1])
+				if err == nil {
+					currentDate = t
+				}
+			}
+			state = 2
+		case 2:
+			if line == "" {
+				points = append(points, point{currentDate, cumDiff})
+				state = 0
+				continue
+			}
+			if strings.HasPrefix(line, "COMMIT") {
+				points = append(points, point{currentDate, cumDiff})
+				state = 1
+				continue
+			}
+			parts := strings.SplitN(line, "\t", 3)
+			if len(parts) >= 3 {
+				added, err1 := strconv.Atoi(parts[0])
+				deleted, err2 := strconv.Atoi(parts[1])
+				if err1 == nil && err2 == nil {
+					cumDiff += added - deleted
+				}
+			}
+		}
+	}
+
+	if !currentDate.IsZero() {
+		points = append(points, point{currentDate, cumDiff})
+	}
+
+	if len(points) == 0 {
+		return nil, nil
+	}
+
+	baseLoc := totalLoc - points[len(points)-1].loc
+	start := points[0].date
+	end := points[len(points)-1].date
+	allDays, dayLabels := dayRange(start, end)
+
+	data := make([]int, len(allDays))
+	pi := 0
+	for i, day := range allDays {
+		for pi+1 < len(points) && !points[pi+1].date.After(day) {
+			pi++
+		}
+		if pi < len(points) {
+			data[i] = baseLoc + points[pi].loc
+		}
+	}
+
+	return dayLabels, data
 }
