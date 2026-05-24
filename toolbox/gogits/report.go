@@ -110,6 +110,14 @@ tr:hover td { background: #f8f9fa; }
 <h2>Hour of Week</h2>
 <div id="hourWeekChart" class="chart-box" style="height:340px"></div>
 </div>
+<div class="section">
+<h2>Month of Year</h2>
+<div id="monthOfYearChart" class="chart-box" style="height:360px"></div>
+</div>
+<div class="section">
+<h2>Commits by Year/Month</h2>
+<div id="yearMonthChart" class="chart-box"></div>
+</div>
 </div>
 
 <div id="authors" class="tab-content">
@@ -165,6 +173,12 @@ lineChart.setOption({{.LineChartOpt}});
 var hourWeekChart = echarts.init(document.getElementById('hourWeekChart'));
 hourWeekChart.setOption({{.HourWeekOpt}});
 
+var monthOfYearChart = echarts.init(document.getElementById('monthOfYearChart'));
+monthOfYearChart.setOption({{.MonthOfYearOpt}});
+
+var yearMonthChart = echarts.init(document.getElementById('yearMonthChart'));
+yearMonthChart.setOption({{.YearMonthOpt}});
+
 var authorLineChart = null;
 function initAuthorChart() {
   if (authorLineChart) return;
@@ -183,6 +197,8 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       commitChart.resize();
       lineChart.resize();
       hourWeekChart.resize();
+      monthOfYearChart.resize();
+      yearMonthChart.resize();
       if (authorLineChart) authorLineChart.resize();
     }, 100);
   });
@@ -192,6 +208,8 @@ window.addEventListener('resize', function(){
   commitChart.resize();
   lineChart.resize();
   hourWeekChart.resize();
+  monthOfYearChart.resize();
+  yearMonthChart.resize();
   if (authorLineChart) authorLineChart.resize();
 });
 </script>
@@ -224,6 +242,8 @@ type templateData struct {
 	LineChartOpt        template.JS
 	AuthorLineChartOpt  template.JS
 	HourWeekOpt         template.JS
+	MonthOfYearOpt      template.JS
+	YearMonthOpt        template.JS
 }
 
 func GenerateReport(result *AnalysisResult, outputPath string) error {
@@ -240,6 +260,14 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		return err
 	}
 	hourWeekOpt, err := buildHourWeekChartOption(result)
+	if err != nil {
+		return err
+	}
+	monthOfYearOpt, err := buildMonthOfYearChartOption(result)
+	if err != nil {
+		return err
+	}
+	yearMonthOpt, err := buildYearMonthChartOption(result)
 	if err != nil {
 		return err
 	}
@@ -307,6 +335,8 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		LineChartOpt:       template.JS(lineOpt),
 		AuthorLineChartOpt:  template.JS(authorLineOpt),
 		HourWeekOpt:         template.JS(hourWeekOpt),
+		MonthOfYearOpt:      template.JS(monthOfYearOpt),
+		YearMonthOpt:        template.JS(yearMonthOpt),
 	}
 
 	tmpl, err := template.New("report").Parse(reportTemplate)
@@ -540,6 +570,84 @@ func buildHourWeekChartOption(result *AnalysisResult) (string, error) {
 						"shadowBlur":   10,
 						"shadowColor":  "rgba(0,0,0,0.5)",
 					},
+				},
+			},
+		},
+	}
+
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func buildMonthOfYearChartOption(result *AnalysisResult) (string, error) {
+	months := []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+
+	opt := map[string]interface{}{
+		"tooltip": map[string]string{"trigger": "axis"},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "10%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "category", "data": months,
+		},
+		"yAxis": map[string]interface{}{
+			"type": "value",
+		},
+		"series": []map[string]interface{}{
+			{
+				"type": "bar",
+				"data": result.MonthOfYearData[:],
+				"itemStyle": map[string]interface{}{
+					"color": "#5470c6",
+				},
+			},
+		},
+	}
+
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
+	opt := map[string]interface{}{
+		"tooltip": map[string]string{"trigger": "axis"},
+		"legend": map[string]interface{}{
+			"data":   []string{"Commits"},
+			"bottom": 0,
+		},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "15%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "category", "data": result.YearMonthLabels,
+			"boundaryGap": false,
+		},
+		"yAxis": map[string]interface{}{
+			"type": "value",
+		},
+		"series": []map[string]interface{}{
+			{
+				"name": "Commits",
+				"type": "line",
+				"smooth": true,
+				"data": result.YearMonthData,
+				"areaStyle": map[string]interface{}{
+					"color": "rgba(84,112,198,0.2)",
+				},
+				"lineStyle": map[string]interface{}{
+					"color": "#5470c6",
+				},
+				"itemStyle": map[string]interface{}{
+					"color": "#5470c6",
 				},
 			},
 		},

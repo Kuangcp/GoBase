@@ -238,6 +238,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	totalAdded, totalDeleted := 0, 0
 	var firstCommit, lastCommit time.Time
 	var hourWeekData [7][24]int
+	var monthOfYearData [12]int
+	yearMonthMap := make(map[string]int)
 
 	for _, c := range commits {
 		key := authorKey(c.Author, c.Email)
@@ -276,9 +278,14 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 
 		dateStr := c.Date.Format("2006-01-02")
 
-		weekday := (c.Date.Weekday() + 6) % 7 // Mon=0, Sun=6
+		weekday := (c.Date.Weekday() + 6) % 7
 		hour := c.Date.Hour()
 		hourWeekData[weekday][hour]++
+
+		month := c.Date.Month() - 1
+		monthOfYearData[month]++
+		ymKey := c.Date.Format("2006-01")
+		yearMonthMap[ymKey]++
 
 		if authorActiveDates[key] == nil {
 			authorActiveDates[key] = make(map[string]bool)
@@ -349,6 +356,18 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		deletedSeries[i] = dailyDeleted[d]
 	}
 
+	ymKeys := make([]string, 0, len(yearMonthMap))
+	for k := range yearMonthMap {
+		ymKeys = append(ymKeys, k)
+	}
+	sort.Strings(ymKeys)
+	ymLabels := make([]string, len(ymKeys))
+	ymData := make([]int, len(ymKeys))
+	for i, k := range ymKeys {
+		ymLabels[i] = k
+		ymData[i] = yearMonthMap[k]
+	}
+
 	return &AnalysisResult{
 		RepoPath:           absPath,
 		RepoName:           repoName,
@@ -367,5 +386,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		AuthorAddedSeries:  authorAddedList,
 		AuthorDeletedSeries: authorDeletedList,
 		HourWeekData:        hourWeekData,
+		MonthOfYearData:     monthOfYearData,
+		YearMonthLabels:     ymLabels,
+		YearMonthData:       ymData,
 	}
 }
