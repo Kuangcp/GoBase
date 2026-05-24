@@ -38,6 +38,15 @@ type AuthorDayData struct {
 	Data []int
 }
 
+type PeriodAuthorStat struct {
+	Period       string
+	TopAuthor    string
+	TopCommits   int
+	TotalCommits int
+	NextTop5     []string
+	AuthorCount  int
+}
+
 type AnalysisResult struct {
 	RepoPath          string
 	RepoName          string
@@ -52,18 +61,23 @@ type AnalysisResult struct {
 	TotalLinesOfCode  int
 	Authors           []AuthorStat
 	DateRange         []string
-	AuthorSeries      []AuthorDayData
-	AddedLineSeries   []int
-	DeletedLineSeries []int
-	AuthorAddedSeries   []AuthorDayData
-	AuthorDeletedSeries []AuthorDayData
-	HourWeekData        [7][24]int
-	MonthOfYearData     [12]int
-	YearMonthLabels     []string
-	YearMonthData       []int
-	YearMonthAddedData  []int
-	YearMonthDeletedData []int
-	GenerationDuration  time.Duration
+	AuthorSeries           []AuthorDayData
+	AddedLineSeries        []int
+	DeletedLineSeries      []int
+	AuthorAddedSeries      []AuthorDayData
+	AuthorDeletedSeries    []AuthorDayData
+	AuthorCumCommitSeries  []AuthorDayData
+	AuthorCumAddedSeries   []AuthorDayData
+	AllDayLabels           []string
+	HourWeekData           [7][24]int
+	MonthOfYearData        [12]int
+	YearMonthLabels        []string
+	YearMonthData          []int
+	YearMonthAddedData     []int
+	YearMonthDeletedData   []int
+	MonthAuthorStats       []PeriodAuthorStat
+	YearAuthorStats        []PeriodAuthorStat
+	GenerationDuration     time.Duration
 }
 
 const gitTimeFormat = "2006-01-02 15:04:05 -0700"
@@ -128,6 +142,22 @@ func getTotalLines(repoPath string) int {
 		total += bytes.Count(data, []byte{'\n'})
 	}
 	return total
+}
+
+func dayRange(start, end time.Time) ([]time.Time, []string) {
+	if start.IsZero() || end.IsZero() || start.After(end) {
+		return nil, nil
+	}
+	s := time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
+	e := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
+	var times []time.Time
+	var labels []string
+	for !s.After(e) {
+		times = append(times, s)
+		labels = append(labels, s.Format("2006-01-02"))
+		s = s.AddDate(0, 0, 1)
+	}
+	return times, labels
 }
 
 func runGitLog(repoPath string) ([]CommitInfo, error) {
@@ -235,6 +265,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	authorDaily := make(map[string]map[string]*authorDayStats)
 	dailyAdded := make(map[string]int)
 	dailyDeleted := make(map[string]int)
+	authorAllDayCommit := make(map[string]map[string]int)
+	authorAllDayAdded := make(map[string]map[string]int)
 
 	totalActiveDates := make(map[string]bool)
 	totalAdded, totalDeleted := 0, 0
@@ -245,6 +277,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		commits, added, deleted int
 	}
 	yearMonthMap := make(map[string]*ymVal)
+	monthAuthorCommits := make(map[string]map[string]int)
+	yearAuthorCommits := make(map[string]map[string]int)
 
 	for _, c := range commits {
 		key := authorKey(c.Author, c.Email)
@@ -298,6 +332,23 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		ym.commits++
 		ym.added += c.Added
 		ym.deleted += c.Deleted
+		if monthAuthorCommits[ymKey] == nil {
+			monthAuthorCommits[ymKey] = make(map[string]int)
+		}
+		monthAuthorCommits[ymKey][key]++
+
+		yearKey := c.Date.Format("2006")
+		if yearAuthorCommits[yearKey] == nil {
+			yearAuthorCommits[yearKey] = make(map[string]int)
+		}
+		yearAuthorCommits[yearKey][key]++
+
+		if authorAllDayCommit[key] == nil {
+			authorAllDayCommit[key] = make(map[string]int)
+			authorAllDayAdded[key] = make(map[string]int)
+		}
+		authorAllDayCommit[key][dateStr]++
+		authorAllDayAdded[key][dateStr] += c.Added
 
 		if authorActiveDates[key] == nil {
 			authorActiveDates[key] = make(map[string]bool)
@@ -384,6 +435,125 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		ymDeleted[i] = yearMonthMap[k].deleted
 	}
 
+	allDays, allDayLabels := dayRange(firstCommit, lastCommit)
+
+	var cumCommitSeries []AuthorDayData
+	var cumAddedSeries []AuthorDayData
+	for _, a := range authors {
+		key := authorKey(a.Name, a.Email)
+		cc := 0
+		ca := 0
+		commitData := make([]int, len(allDays))
+		addedData := make([]int, len(allDays))
+		for i, t := range allDays {
+			ds := t.Format("2006-01-02")
+			cc += authorAllDayCommit[key][ds]
+			ca += authorAllDayAdded[key][ds]
+			commitData[i] = cc
+			addedData[i] = ca
+		}
+		cumCommitSeries = append(cumCommitSeries, AuthorDayData{Name: a.Name, Data: commitData})
+		cumAddedSeries = append(cumAddedSeries, AuthorDayData{Name: a.Name, Data: addedData})
+	}
+
+	monthKeys := make([]string, 0, len(monthAuthorCommits))
+	for k := range monthAuthorCommits {
+		monthKeys = append(monthKeys, k)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(monthKeys)))
+	var monthStats []PeriodAuthorStat
+	for _, mk := range monthKeys {
+		ac := monthAuthorCommits[mk]
+		total := 0
+		for _, c := range ac {
+			total += c
+		}
+		topAuthor, topCommits := "", 0
+		var others []struct{ name string; cnt int }
+		for k, cnt := range ac {
+			if cnt > topCommits {
+				topCommits = cnt
+				topAuthor = k
+			}
+			others = append(others, struct{ name string; cnt int }{k, cnt})
+		}
+		sort.Slice(others, func(i, j int) bool {
+			if others[i].cnt != others[j].cnt {
+				return others[i].cnt > others[j].cnt
+			}
+			return others[i].name < others[j].name
+		})
+		var nextTop5 []string
+		for _, o := range others {
+			if o.name == topAuthor {
+				continue
+			}
+			parts := strings.SplitN(o.name, "|", 2)
+			nextTop5 = append(nextTop5, parts[0])
+			if len(nextTop5) >= 5 {
+				break
+			}
+		}
+		parts := strings.SplitN(topAuthor, "|", 2)
+		monthStats = append(monthStats, PeriodAuthorStat{
+			Period:       mk,
+			TopAuthor:    parts[0],
+			TopCommits:   topCommits,
+			TotalCommits: total,
+			NextTop5:     nextTop5,
+			AuthorCount:  len(ac),
+		})
+	}
+
+	yearKeys := make([]string, 0, len(yearAuthorCommits))
+	for k := range yearAuthorCommits {
+		yearKeys = append(yearKeys, k)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(yearKeys)))
+	var yearStats []PeriodAuthorStat
+	for _, yk := range yearKeys {
+		ac := yearAuthorCommits[yk]
+		total := 0
+		for _, c := range ac {
+			total += c
+		}
+		topAuthor, topCommits := "", 0
+		var others []struct{ name string; cnt int }
+		for k, cnt := range ac {
+			if cnt > topCommits {
+				topCommits = cnt
+				topAuthor = k
+			}
+			others = append(others, struct{ name string; cnt int }{k, cnt})
+		}
+		sort.Slice(others, func(i, j int) bool {
+			if others[i].cnt != others[j].cnt {
+				return others[i].cnt > others[j].cnt
+			}
+			return others[i].name < others[j].name
+		})
+		var nextTop5 []string
+		for _, o := range others {
+			if o.name == topAuthor {
+				continue
+			}
+			parts := strings.SplitN(o.name, "|", 2)
+			nextTop5 = append(nextTop5, parts[0])
+			if len(nextTop5) >= 5 {
+				break
+			}
+		}
+		parts := strings.SplitN(topAuthor, "|", 2)
+		yearStats = append(yearStats, PeriodAuthorStat{
+			Period:       yk,
+			TopAuthor:    parts[0],
+			TopCommits:   topCommits,
+			TotalCommits: total,
+			NextTop5:     nextTop5,
+			AuthorCount:  len(ac),
+		})
+	}
+
 	return &AnalysisResult{
 		RepoPath:           absPath,
 		RepoName:           repoName,
@@ -403,9 +573,14 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		AuthorDeletedSeries: authorDeletedList,
 		HourWeekData:        hourWeekData,
 		MonthOfYearData:     monthOfYearData,
-		YearMonthLabels:      ymLabels,
-		YearMonthData:        ymData,
-		YearMonthAddedData:   ymAdded,
-		YearMonthDeletedData: ymDeleted,
+		YearMonthLabels:       ymLabels,
+		YearMonthData:         ymData,
+		YearMonthAddedData:    ymAdded,
+		YearMonthDeletedData:  ymDeleted,
+		AuthorCumCommitSeries: cumCommitSeries,
+		AuthorCumAddedSeries:  cumAddedSeries,
+		AllDayLabels:          allDayLabels,
+		MonthAuthorStats:      monthStats,
+		YearAuthorStats:       yearStats,
 	}
 }

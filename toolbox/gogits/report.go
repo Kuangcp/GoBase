@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -46,6 +47,15 @@ th { background: #f8f9fa; text-align: left; padding: 9px 12px; font-weight: 600;
 td { padding: 9px 12px; border-bottom: 1px solid #e9ecef; }
 tr:hover td { background: #f8f9fa; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+.col-author { max-width: 120px; width: 120px; }
+.col-commits { min-width: 140px; }
+.col-next5 { max-width: 200px; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { background: #e9ecef; }
+th.sortable::after { content: " \25B4\25BE"; font-size: 10px; opacity: .4; }
+th.sortable.asc::after { content: " \25B4"; opacity: 1; }
+th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 .added { color: #4caf50; font-weight: 600; }
 .deleted { color: #f44336; font-weight: 600; }
 .chart-box { width: 100%; height: 420px; }
@@ -143,17 +153,18 @@ tr:hover td { background: #f8f9fa; }
 <div id="authors" class="tab-content">
 <div class="section">
 <h2>Author Statistics</h2>
-<table>
+<table id="authorStatsTable">
 <thead>
 <tr>
-<th>Author</th>
+<th data-sort="name">Author</th>
 <th>Email</th>
-<th class="num">Commits</th>
-<th>First</th>
-<th>Last</th>
-<th class="num">Active Days</th>
-<th class="num added">++</th>
-<th class="num deleted">--</th>
+<th class="num" data-sort="commits">Commits</th>
+<th class="num" data-sort="age">Age</th>
+<th data-sort="first">First</th>
+<th data-sort="last">Last</th>
+<th class="num" data-sort="active">Active Days</th>
+<th class="num added" data-sort="added">++</th>
+<th class="num deleted" data-sort="deleted">--</th>
 </tr>
 </thead>
 <tbody>
@@ -162,6 +173,7 @@ tr:hover td { background: #f8f9fa; }
 <td>{{.Name}}</td>
 <td>{{.Email}}</td>
 <td class="num">{{.CommitCount}}</td>
+<td class="num">{{age .FirstCommit .LastCommit}}</td>
 <td>{{.FirstCommit.Format "2006-01-02"}}</td>
 <td>{{.LastCommit.Format "2006-01-02"}}</td>
 <td class="num">{{.ActiveDays}}</td>
@@ -173,8 +185,66 @@ tr:hover td { background: #f8f9fa; }
 </table>
 </div>
 <div class="section">
+<h2>Author of Month</h2>
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th class="col-author">Author</th>
+<th class="num col-commits nowrap">Commits (%)</th>
+<th class="col-next5">Next top 5</th>
+<th class="num">Number of authors</th>
+</tr>
+</thead>
+<tbody>
+{{range .MonthAuthorStats}}
+<tr>
+<td class="nowrap">{{.Period}}</td>
+<td class="col-author">{{.TopAuthor}}</td>
+<td class="num col-commits nowrap">{{printf "%4d" .TopCommits}}/{{printf "%-4d" .TotalCommits}} ({{printf "%.2f" (percent .TopCommits .TotalCommits)}}%)</td>
+<td class="col-next5">{{join .NextTop5 ", "}}</td>
+<td class="num">{{.AuthorCount}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+</div>
+<div class="section">
+<h2>Author of Year</h2>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th class="col-author">Author</th>
+<th class="num col-commits nowrap">Commits (%)</th>
+<th class="col-next5">Next top 5</th>
+<th class="num">Number of authors</th>
+</tr>
+</thead>
+<tbody>
+{{range .YearAuthorStats}}
+<tr>
+<td class="nowrap">{{.Period}}</td>
+<td class="col-author">{{.TopAuthor}}</td>
+<td class="num col-commits nowrap">{{printf "%4d" .TopCommits}}/{{printf "%-4d" .TotalCommits}} ({{printf "%.2f" (percent .TopCommits .TotalCommits)}}%)</td>
+<td class="col-next5">{{join .NextTop5 ", "}}</td>
+<td class="num">{{.AuthorCount}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+</div>
+<div class="section">
 <h2>Daily Line Changes by Author (Last 30 Days)</h2>
 <div id="authorLineChart" class="chart-box"></div>
+</div>
+<div class="section">
+<h2>Commits per Author (Cumulative)</h2>
+<div id="cumCommitChart" class="chart-box"></div>
+</div>
+<div class="section">
+<h2>Cumulated Added Lines of Code per Author</h2>
+<div id="cumAddedChart" class="chart-box"></div>
 </div>
 </div>
 
@@ -200,10 +270,16 @@ var yearMonthChart = echarts.init(document.getElementById('yearMonthChart'));
 yearMonthChart.setOption({{.YearMonthOpt}});
 
 var authorLineChart = null;
+var cumCommitChart = null;
+var cumAddedChart = null;
 function initAuthorChart() {
   if (authorLineChart) return;
   authorLineChart = echarts.init(document.getElementById('authorLineChart'));
   authorLineChart.setOption({{.AuthorLineChartOpt}});
+  cumCommitChart = echarts.init(document.getElementById('cumCommitChart'));
+  cumCommitChart.setOption({{.CumCommitOpt}});
+  cumAddedChart = echarts.init(document.getElementById('cumAddedChart'));
+  cumAddedChart.setOption({{.CumAddedOpt}});
 }
 
 document.querySelectorAll('.tab').forEach(function(tab) {
@@ -220,6 +296,8 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       monthOfYearChart.resize();
       yearMonthChart.resize();
       if (authorLineChart) authorLineChart.resize();
+      if (cumCommitChart) cumCommitChart.resize();
+      if (cumAddedChart) cumAddedChart.resize();
     }, 100);
   });
 });
@@ -231,7 +309,46 @@ window.addEventListener('resize', function(){
   monthOfYearChart.resize();
   yearMonthChart.resize();
   if (authorLineChart) authorLineChart.resize();
+  if (cumCommitChart) cumCommitChart.resize();
+  if (cumAddedChart) cumAddedChart.resize();
 });
+
+(function() {
+  var table = document.getElementById('authorStatsTable');
+  if (!table) return;
+  var tbody = table.querySelector('tbody');
+  var allThs = table.querySelectorAll('thead th');
+  var sortThs = table.querySelectorAll('thead th[data-sort]');
+  sortThs.forEach(function(th) {
+    th.classList.add('sortable');
+    th.addEventListener('click', function() {
+      var colIdx = Array.prototype.indexOf.call(allThs, th);
+      var key = th.getAttribute('data-sort');
+      var isAsc = th.classList.contains('asc');
+      sortThs.forEach(function(t) { t.classList.remove('asc', 'desc'); });
+      th.classList.add(isAsc ? 'desc' : 'asc');
+      var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+      rows.sort(function(a, b) {
+        var va = a.querySelectorAll('td')[colIdx].textContent.trim();
+        var vb = b.querySelectorAll('td')[colIdx].textContent.trim();
+        if (key === 'commits' || key === 'active' || key === 'added' || key === 'deleted') {
+          return (parseInt(va) || 0) - (parseInt(vb) || 0);
+        }
+        if (key === 'age') {
+          return parseAge(va) - parseAge(vb);
+        }
+        return va.localeCompare(vb);
+      });
+      if (isAsc) rows.reverse();
+      rows.forEach(function(r) { tbody.appendChild(r); });
+    });
+  });
+  function parseAge(s) {
+    var m = s.match(/(\d+) days?, (\d+):(\d+):(\d+)/);
+    if (!m) return 0;
+    return parseInt(m[1])*86400 + parseInt(m[2])*3600 + parseInt(m[3])*60 + parseInt(m[4]);
+  }
+})();
 </script>
 </body>
 </html>`
@@ -268,6 +385,10 @@ type templateData struct {
 	YearMonthData         []int
 	YearMonthAddedData    []int
 	YearMonthDeletedData  []int
+	CumCommitOpt          template.JS
+	CumAddedOpt           template.JS
+	MonthAuthorStats      []PeriodAuthorStat
+	YearAuthorStats       []PeriodAuthorStat
 }
 
 func GenerateReport(result *AnalysisResult, outputPath string) error {
@@ -292,6 +413,14 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		return err
 	}
 	yearMonthOpt, err := buildYearMonthChartOption(result)
+	if err != nil {
+		return err
+	}
+	cumCommitOpt, err := buildCumChartOption(result, true)
+	if err != nil {
+		return err
+	}
+	cumAddedOpt, err := buildCumChartOption(result, false)
 	if err != nil {
 		return err
 	}
@@ -361,13 +490,39 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		HourWeekOpt:         template.JS(hourWeekOpt),
 		MonthOfYearOpt:      template.JS(monthOfYearOpt),
 		YearMonthOpt:        template.JS(yearMonthOpt),
-		YearMonthLabels:     result.YearMonthLabels,
-		YearMonthData:       result.YearMonthData,
-		YearMonthAddedData:  result.YearMonthAddedData,
+		YearMonthLabels:      result.YearMonthLabels,
+		YearMonthData:        result.YearMonthData,
+		YearMonthAddedData:   result.YearMonthAddedData,
 		YearMonthDeletedData: result.YearMonthDeletedData,
+		CumCommitOpt:         template.JS(cumCommitOpt),
+		CumAddedOpt:          template.JS(cumAddedOpt),
+		MonthAuthorStats:     result.MonthAuthorStats,
+		YearAuthorStats:      result.YearAuthorStats,
 	}
 
-	tmpl, err := template.New("report").Parse(reportTemplate)
+	funcMap := template.FuncMap{
+		"percent": func(a, b int) float64 {
+			if b == 0 {
+				return 0
+			}
+			return float64(a) / float64(b) * 100
+		},
+		"join": func(a []string, sep string) string {
+			return strings.Join(a, sep)
+		},
+		"age": func(first, last time.Time) string {
+			if first.IsZero() || last.IsZero() || last.Before(first) {
+				return ""
+			}
+			d := last.Sub(first)
+			days := int(d.Hours() / 24)
+			hours := int(d.Hours()) % 24
+			mins := int(d.Minutes()) % 60
+			secs := int(d.Seconds()) % 60
+			return fmt.Sprintf("%d days, %02d:%02d:%02d", days, hours, mins, secs)
+		},
+	}
+	tmpl, err := template.New("report").Funcs(funcMap).Parse(reportTemplate)
 	if err != nil {
 		return err
 	}
@@ -679,6 +834,71 @@ func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 				},
 			},
 		},
+	}
+
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func buildCumChartOption(result *AnalysisResult, isCommit bool) (string, error) {
+	var source []AuthorDayData
+	if isCommit {
+		source = result.AuthorCumCommitSeries
+	} else {
+		source = result.AuthorCumAddedSeries
+	}
+
+	dayLabels := result.AllDayLabels
+	if len(dayLabels) == 0 {
+		dayLabels = result.YearMonthLabels
+	}
+
+	type seriesItem struct {
+		Name      string          `json:"name"`
+		Type      string          `json:"type"`
+		Symbol    string          `json:"symbol"`
+		Data      [][]interface{} `json:"data"`
+		LineStyle map[string]interface{} `json:"lineStyle,omitempty"`
+	}
+
+	var series []seriesItem
+	for _, s := range source {
+		data := make([][]interface{}, len(s.Data))
+		for i, v := range s.Data {
+			t, _ := time.Parse("2006-01-02", dayLabels[i])
+			data[i] = []interface{}{t.UnixMilli(), v}
+		}
+		series = append(series, seriesItem{
+			Name:   s.Name,
+			Type:   "line",
+			Symbol: "none",
+			Data:   data,
+		})
+	}
+
+	opt := map[string]interface{}{
+		"tooltip": map[string]string{"trigger": "axis"},
+		"legend": map[string]interface{}{
+			"data":   authorNames(source),
+			"bottom": 0,
+		},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "15%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "time",
+			"axisLabel": map[string]interface{}{
+				"formatter": `{yyyy}-{MM}`,
+			},
+		},
+		"yAxis": map[string]interface{}{
+			"type": "value",
+		},
+		"series": series,
 	}
 
 	b, err := json.Marshal(opt)
