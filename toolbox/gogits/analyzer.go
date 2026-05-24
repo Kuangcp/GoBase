@@ -657,6 +657,10 @@ func getDailyFileCounts(repoPath string) ([]string, []int) {
 		return nil, nil
 	}
 
+	for i := range points {
+		points[i].date = time.Date(points[i].date.Year(), points[i].date.Month(), points[i].date.Day(), 0, 0, 0, 0, points[i].date.Location())
+	}
+
 	start := points[0].date
 	end := points[len(points)-1].date
 	allDays, allDayLabels := dayRange(start, end)
@@ -676,11 +680,25 @@ func getDailyFileCounts(repoPath string) ([]string, []int) {
 }
 
 func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
-	cmd := exec.Command("git", "-C", repoPath, "log",
+	rootCmd := exec.Command("git", "-C", repoPath, "rev-parse", "--show-toplevel")
+	rootOut, err := rootCmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+	repoRoot := strings.TrimSpace(string(rootOut))
+	prefix, err := filepath.Rel(repoRoot, repoPath)
+	if err != nil {
+		prefix = "."
+	}
+	args := []string{"-C", repoPath, "log",
 		"--reverse",
 		"--format=COMMIT%n%H|%ai",
 		"--numstat",
-		"HEAD")
+		"HEAD"}
+	if prefix != "." {
+		args = append(args, "--", prefix+"/")
+	}
+	cmd := exec.Command("git", args...)
 
 	out, err := cmd.Output()
 	if err != nil {
@@ -693,10 +711,10 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 	}
 	var points []point
 	var currentDate time.Time
-	cumDiff := 0
+	fileLOC := make(map[string]int)
 
 	scanner := bufio.NewScanner(bytes.NewReader(out))
-	state := 0 // 0: expect COMMIT, 1: expect hash|date, 2: expect numstat lines
+	state := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -716,12 +734,14 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 			state = 2
 		case 2:
 			if line == "" {
-				points = append(points, point{currentDate, cumDiff})
-				state = 0
 				continue
 			}
 			if strings.HasPrefix(line, "COMMIT") {
-				points = append(points, point{currentDate, cumDiff})
+				var total int
+				for _, v := range fileLOC {
+					total += v
+				}
+				points = append(points, point{currentDate, total})
 				state = 1
 				continue
 			}
@@ -730,21 +750,39 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 				added, err1 := strconv.Atoi(parts[0])
 				deleted, err2 := strconv.Atoi(parts[1])
 				if err1 == nil && err2 == nil {
-					cumDiff += added - deleted
+name := parts[2]
+			if strings.Contains(name, " => ") {
+				sub := strings.SplitN(name, " => ", 2)
+				oldSize := fileLOC[sub[0]]
+				delete(fileLOC, sub[0])
+				name = sub[1]
+				fileLOC[name] = oldSize
+			}
+			fileLOC[name] += added - deleted
+					if fileLOC[name] <= 0 {
+						delete(fileLOC, name)
+					}
 				}
 			}
 		}
 	}
 
 	if !currentDate.IsZero() {
-		points = append(points, point{currentDate, cumDiff})
+		var total int
+		for _, v := range fileLOC {
+			total += v
+		}
+		points = append(points, point{currentDate, total})
 	}
 
 	if len(points) == 0 {
 		return nil, nil
 	}
 
-	baseLoc := totalLoc - points[len(points)-1].loc
+	for i := range points {
+		points[i].date = time.Date(points[i].date.Year(), points[i].date.Month(), points[i].date.Day(), 0, 0, 0, 0, points[i].date.Location())
+	}
+
 	start := points[0].date
 	end := points[len(points)-1].date
 	allDays, dayLabels := dayRange(start, end)
@@ -756,7 +794,14 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 			pi++
 		}
 		if pi < len(points) {
-			data[i] = baseLoc + points[pi].loc
+			data[i] = points[pi].loc
+		}
+	}
+
+	if len(data) > 0 {
+		adjust := totalLoc - data[len(data)-1]
+		for i := range data {
+			data[i] += adjust
 		}
 	}
 
