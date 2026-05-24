@@ -117,6 +117,26 @@ tr:hover td { background: #f8f9fa; }
 <div class="section">
 <h2>Commits by Year/Month</h2>
 <div id="yearMonthChart" class="chart-box"></div>
+<table style="margin-top:16px">
+<thead>
+<tr>
+<th class="num">Month</th>
+<th class="num">Commits</th>
+<th class="num added">++</th>
+<th class="num deleted">--</th>
+</tr>
+</thead>
+<tbody>
+{{range $i, $label := .YearMonthLabels}}
+<tr>
+<td class="num">{{$label}}</td>
+<td class="num">{{index $.YearMonthData $i}}</td>
+<td class="num added">{{index $.YearMonthAddedData $i}}</td>
+<td class="num deleted">{{index $.YearMonthDeletedData $i}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
 </div>
 </div>
 
@@ -242,8 +262,12 @@ type templateData struct {
 	LineChartOpt        template.JS
 	AuthorLineChartOpt  template.JS
 	HourWeekOpt         template.JS
-	MonthOfYearOpt      template.JS
-	YearMonthOpt        template.JS
+	MonthOfYearOpt        template.JS
+	YearMonthOpt          template.JS
+	YearMonthLabels       []string
+	YearMonthData         []int
+	YearMonthAddedData    []int
+	YearMonthDeletedData  []int
 }
 
 func GenerateReport(result *AnalysisResult, outputPath string) error {
@@ -337,6 +361,10 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		HourWeekOpt:         template.JS(hourWeekOpt),
 		MonthOfYearOpt:      template.JS(monthOfYearOpt),
 		YearMonthOpt:        template.JS(yearMonthOpt),
+		YearMonthLabels:     result.YearMonthLabels,
+		YearMonthData:       result.YearMonthData,
+		YearMonthAddedData:  result.YearMonthAddedData,
+		YearMonthDeletedData: result.YearMonthDeletedData,
 	}
 
 	tmpl, err := template.New("report").Parse(reportTemplate)

@@ -61,6 +61,8 @@ type AnalysisResult struct {
 	MonthOfYearData     [12]int
 	YearMonthLabels     []string
 	YearMonthData       []int
+	YearMonthAddedData  []int
+	YearMonthDeletedData []int
 	GenerationDuration  time.Duration
 }
 
@@ -239,7 +241,10 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	var firstCommit, lastCommit time.Time
 	var hourWeekData [7][24]int
 	var monthOfYearData [12]int
-	yearMonthMap := make(map[string]int)
+	type ymVal struct {
+		commits, added, deleted int
+	}
+	yearMonthMap := make(map[string]*ymVal)
 
 	for _, c := range commits {
 		key := authorKey(c.Author, c.Email)
@@ -285,7 +290,14 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		month := c.Date.Month() - 1
 		monthOfYearData[month]++
 		ymKey := c.Date.Format("2006-01")
-		yearMonthMap[ymKey]++
+		ym, ok := yearMonthMap[ymKey]
+		if !ok {
+			ym = &ymVal{}
+			yearMonthMap[ymKey] = ym
+		}
+		ym.commits++
+		ym.added += c.Added
+		ym.deleted += c.Deleted
 
 		if authorActiveDates[key] == nil {
 			authorActiveDates[key] = make(map[string]bool)
@@ -363,9 +375,13 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	sort.Strings(ymKeys)
 	ymLabels := make([]string, len(ymKeys))
 	ymData := make([]int, len(ymKeys))
+	ymAdded := make([]int, len(ymKeys))
+	ymDeleted := make([]int, len(ymKeys))
 	for i, k := range ymKeys {
 		ymLabels[i] = k
-		ymData[i] = yearMonthMap[k]
+		ymData[i] = yearMonthMap[k].commits
+		ymAdded[i] = yearMonthMap[k].added
+		ymDeleted[i] = yearMonthMap[k].deleted
 	}
 
 	return &AnalysisResult{
@@ -387,7 +403,9 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		AuthorDeletedSeries: authorDeletedList,
 		HourWeekData:        hourWeekData,
 		MonthOfYearData:     monthOfYearData,
-		YearMonthLabels:     ymLabels,
-		YearMonthData:       ymData,
+		YearMonthLabels:      ymLabels,
+		YearMonthData:        ymData,
+		YearMonthAddedData:   ymAdded,
+		YearMonthDeletedData: ymDeleted,
 	}
 }
