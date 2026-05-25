@@ -13,9 +13,10 @@ var (
 	listRepo     bool
 	help         bool
 
-	push    bool
-	pull    bool
-	allRepo bool
+	push        bool
+	pull        bool
+	allRepo     bool
+	checkChange bool
 )
 
 var info = ctool.HelpInfo{
@@ -29,6 +30,7 @@ var info = ctool.HelpInfo{
 		{Short: "-pu", BoolVar: &push, Comment: "push repo"},
 		{Short: "-pl", BoolVar: &pull, Comment: "pull repo"},
 		{Short: "-l", BoolVar: &listRepo, Comment: "list repo"},
+		{Short: "-s", BoolVar: &checkChange, Comment: "check repo change (default)"},
 		{Short: "-all", BoolVar: &allRepo, Comment: "all repo"},
 	},
 	Options: []ctool.ParamVO{
