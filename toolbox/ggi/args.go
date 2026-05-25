@@ -14,13 +14,14 @@ var (
 	help         bool
 
 	push        bool
+	pushCur     bool
 	pull        bool
 	allRepo     bool
 	checkChange bool
 
-	lod       bool
-	lods      bool
-	afterDate string
+	lod        bool
+	lods       bool
+	afterDate  string
 	beforeDate string
 )
 
@@ -32,7 +33,8 @@ var info = ctool.HelpInfo{
 	ValueLen:      -6,
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
-		{Short: "-pu", BoolVar: &push, Comment: "push repo"},
+		{Short: "-p", BoolVar: &pushCur, Comment: "push current repo to all remotes"},
+		{Short: "-pu", BoolVar: &push, Comment: "push ahead repos"},
 		{Short: "-pl", BoolVar: &pull, Comment: "pull repo"},
 		{Short: "-l", BoolVar: &listRepo, Comment: "list repo"},
 		{Short: "-s", BoolVar: &checkChange, Comment: "check repo change (default)"},

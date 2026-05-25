@@ -64,12 +64,17 @@ func main() {
 		return
 	}
 
+	if pushCur {
+		pushCurDir()
+		return
+	}
+
 	if push {
 		if allRepo {
 			pushAllRepo()
 			return
 		} else {
-			pushCurDir()
+			pushConfigedRepos()
 			return
 		}
 	}
@@ -123,6 +128,28 @@ func addRepos() {
 	cfg.Repos = append(cfg.Repos, repo)
 	Write(cfg)
 	return
+}
+
+func pushConfigedRepos() {
+	cfg := Read()
+	for _, repo := range cfg.Repos {
+		out, err := runGit(repo.Path, "status", "--short", "--branch")
+		if err != nil {
+			logger.Error("Repo %s check error: %v", repo.Alias, err)
+			continue
+		}
+		if !strings.Contains(out, "[ahead") {
+			continue
+		}
+
+		fmt.Printf("\033[35m%-20s\033[0m %s\n", repo.Alias, repo.Path)
+		msg, err := runGitErr(repo.Path, "push")
+		if err != nil {
+			logger.Error("push error: %v\n%s", err, msg)
+		} else if msg != "" {
+			fmt.Println(msg)
+		}
+	}
 }
 
 func pushCurDir() {
