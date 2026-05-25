@@ -32,13 +32,20 @@ var info = ctool.HelpInfo{
 	Options: []ctool.ParamVO{
 		{Short: "-p", StringVar: &repoPath, String: ".", Value: "path",
 			Comment: "git repository path"},
-		{Short: "-f", StringVar: &outputPath, String: "report.html", Value: "file",
+		{Short: "-f", StringVar: &outputPath, String: "", Value: "file",
 			Comment: "output HTML report file"},
 	},
 }
 
 func main() {
 	info.Parse()
+	if outputPath == "" {
+		if _, err := os.Stat(filepath.Join(repoPath, ".git")); err == nil {
+			outputPath = filepath.Join(repoPath, ".git", "gogits-report.html")
+		} else {
+			outputPath = "gogits-report.html"
+		}
+	}
 	if help {
 		info.PrintHelp()
 		return
