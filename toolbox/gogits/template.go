@@ -9,8 +9,28 @@ const reportTemplate = `<!DOCTYPE html>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0f0f23;
+  --bg-card: #1a1a2e;
+  --bg-hover: rgba(255,255,255,.06);
+  --text: #e0e0e0;
+  --text-secondary: #aaa;
+  --text-muted: #777;
+  --border: #2a2a4a;
+  --shadow: 0 1px 4px rgba(0,0,0,.4);
+}
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #f5f5f5; color: #333; }
+  background: var(--bg); color: var(--text); }
+body.light {
+  --bg: #f5f5f5;
+  --bg-card: #fff;
+  --bg-hover: #f8f9fa;
+  --text: #333;
+  --text-secondary: #555;
+  --text-muted: #888;
+  --border: #e9ecef;
+  --shadow: 0 1px 3px rgba(0,0,0,.1);
+}
 .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #fff; padding: 28px 0; }
 .header .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
@@ -18,32 +38,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .header p { font-size: 13px; opacity: .75; margin-top: 4px; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
-.tabs { display: flex; gap: 0; border-bottom: 2px solid #e9ecef; margin: 20px 0 24px; }
+.theme-toggle { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+  color: #fff; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
+  margin-top: 8px; transition: background .2s; }
+.theme-toggle:hover { background: rgba(255,255,255,.25); }
+
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin: 20px 0 24px; }
 .tab { padding: 10px 28px; cursor: pointer; border: none; background: none;
-  font-size: 14px; font-weight: 500; color: #888;
+  font-size: 14px; font-weight: 500; color: var(--text-muted);
   border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
-.tab:hover { color: #1a1a2e; }
-.tab.active { color: #1a1a2e; border-bottom-color: #1a1a2e; background: rgba(26,26,46,.04); }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); border-bottom-color: var(--text); background: var(--bg-hover); }
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-.section { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-.section h2 { font-size: 17px; margin-bottom: 16px; color: #1a1a2e; }
+.section { background: var(--bg-card); border-radius: 8px; padding: 24px; margin-bottom: 24px;
+  box-shadow: var(--shadow); }
+.section h2 { font-size: 17px; margin-bottom: 16px; color: var(--text); }
 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th { background: #f8f9fa; text-align: left; padding: 9px 12px; font-weight: 600;
-  border-bottom: 2px solid #e9ecef; white-space: nowrap; }
-td { padding: 9px 12px; border-bottom: 1px solid #e9ecef; }
-tr:hover td { background: #f8f9fa; }
+th { background: var(--bg-hover); text-align: left; padding: 9px 12px; font-weight: 600;
+  border-bottom: 2px solid var(--border); white-space: nowrap; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+tr:hover td { background: var(--bg-hover); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .nowrap { white-space: nowrap; }
 .col-author { max-width: 120px; width: 120px; }
 .col-commits { min-width: 140px; }
 .col-next5 { max-width: 200px; }
 th.sortable { cursor: pointer; user-select: none; }
-th.sortable:hover { background: #e9ecef; }
+th.sortable:hover { background: var(--border); }
 th.sortable::after { content: " \25B4\25BE"; font-size: 10px; opacity: .4; }
 th.sortable.asc::after { content: " \25B4"; opacity: 1; }
 th.sortable.desc::after { content: " \25BE"; opacity: 1; }
@@ -52,14 +77,14 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 .chart-box { width: 100%; height: 420px; }
 .extra-row.hidden { display: none; }
 .collapse-toggle { display: block; width: 100%; padding: 8px; text-align: center;
-  background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px;
+  background: var(--bg-hover); border: 1px solid var(--border); border-radius: 4px;
   cursor: pointer; font-size: 13px; color: #5470c6; margin-top: 8px; }
-.collapse-toggle:hover { background: #e9ecef; }
+.collapse-toggle:hover { background: var(--border); }
 
 .stats-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 32px;
   font-size: 14px; line-height: 2; }
-.stats-label { color: #888; white-space: nowrap; text-align: right; }
-.stats-value { color: #333; font-weight: 500; }
+.stats-label { color: var(--text-muted); white-space: nowrap; text-align: right; }
+.stats-value { color: var(--text); font-weight: 500; }
 
 @media (max-width: 640px) {
   .chart-box { height: 280px; }
@@ -76,6 +101,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="wrap">
 <h1>{{.RepoName}}</h1>
 <p>{{.RepoPath}} &nbsp;·&nbsp; {{.Branch}} branch &nbsp;·&nbsp; Generated {{.GeneratedAt}}</p>
+<button class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
 </div>
 </div>
 
@@ -316,20 +342,33 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 const colors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc',
   '#97b552','#95706d','#dc69aa','#07a2a4','#9a7fd1','#588dd5','#f5994e','#c05050','#59678c','#c9ab00'];
 
-var commitChart = echarts.init(document.getElementById('commitChart'));
-commitChart.setOption({{.CommitChartOpt}});
+var allCharts = [];
+function addChart(el, opt) {
+  var c = echarts.init(el);
+  c.setOption(opt);
+  allCharts.push(c);
+  return c;
+}
 
-var lineChart = echarts.init(document.getElementById('lineChart'));
-lineChart.setOption({{.LineChartOpt}});
+var commitChart = addChart(document.getElementById('commitChart'), {{.CommitChartOpt}});
+var lineChart = addChart(document.getElementById('lineChart'), {{.LineChartOpt}});
+var hourWeekChart = addChart(document.getElementById('hourWeekChart'), {{.HourWeekOpt}});
+var monthOfYearChart = addChart(document.getElementById('monthOfYearChart'), {{.MonthOfYearOpt}});
+var yearMonthChart = addChart(document.getElementById('yearMonthChart'), {{.YearMonthOpt}});
 
-var hourWeekChart = echarts.init(document.getElementById('hourWeekChart'));
-hourWeekChart.setOption({{.HourWeekOpt}});
-
-var monthOfYearChart = echarts.init(document.getElementById('monthOfYearChart'));
-monthOfYearChart.setOption({{.MonthOfYearOpt}});
-
-var yearMonthChart = echarts.init(document.getElementById('yearMonthChart'));
-yearMonthChart.setOption({{.YearMonthOpt}});
+function chartAxisColor(isLight) {
+  return isLight ? '#333' : '#e0e0e0';
+}
+function updateChartTheme() {
+  var color = chartAxisColor(document.body.classList.contains('light'));
+  allCharts.forEach(function(c) {
+    c.setOption({
+      textStyle: { color: color },
+      xAxis: { axisLabel: { color: color } },
+      yAxis: { axisLabel: { color: color } }
+    });
+  });
+}
 
 var authorLineChart = null;
 var cumCommitChart = null;
@@ -340,20 +379,28 @@ function initAuthorChart() {
   if (authorLineChart) return;
   authorLineChart = echarts.init(document.getElementById('authorLineChart'));
   authorLineChart.setOption({{.AuthorLineChartOpt}});
+  allCharts.push(authorLineChart);
   cumCommitChart = echarts.init(document.getElementById('cumCommitChart'));
   cumCommitChart.setOption({{.CumCommitOpt}});
+  allCharts.push(cumCommitChart);
   cumAddedChart = echarts.init(document.getElementById('cumAddedChart'));
   cumAddedChart.setOption({{.CumAddedOpt}});
+  allCharts.push(cumAddedChart);
+  updateChartTheme();
 }
 function initFileChart() {
   if (fileChart) return;
   fileChart = echarts.init(document.getElementById('fileChart'));
   fileChart.setOption({{.FilesChartOpt}});
+  allCharts.push(fileChart);
+  updateChartTheme();
 }
 function initLocChart() {
   if (locChart) return;
   locChart = echarts.init(document.getElementById('locChart'));
   locChart.setOption({{.LocChartOpt}});
+  allCharts.push(locChart);
+  updateChartTheme();
 }
 
 document.querySelectorAll('.tab').forEach(function(tab) {
@@ -434,6 +481,21 @@ window.addEventListener('resize', function(){
     var m = s.match(/(\d+) days?, (\d+):(\d+):(\d+)/);
     if (!m) return 0;
     return parseInt(m[1])*86400 + parseInt(m[2])*3600 + parseInt(m[3])*60 + parseInt(m[4]);
+  }
+})();
+
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  var btn = document.querySelector('.theme-toggle');
+  btn.textContent = document.body.classList.contains('light') ? 'Dark Mode' : 'Light Mode';
+  localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+  updateChartTheme();
+}
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    var btn = document.querySelector('.theme-toggle');
+    if (btn) btn.textContent = 'Dark Mode';
   }
 })();
 </script>
