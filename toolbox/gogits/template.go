@@ -343,6 +343,16 @@ const colors = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc
   '#97b552','#95706d','#dc69aa','#07a2a4','#9a7fd1','#588dd5','#f5994e','#c05050','#59678c','#c9ab00'];
 
 var allCharts = [];
+
+// restore saved theme before creating charts
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    var btn = document.querySelector('.theme-toggle');
+    if (btn) btn.textContent = 'Dark Mode';
+  }
+})();
+
 function addChart(el, opt) {
   var c = echarts.init(el);
   c.setOption(opt);
@@ -356,17 +366,36 @@ var hourWeekChart = addChart(document.getElementById('hourWeekChart'), {{.HourWe
 var monthOfYearChart = addChart(document.getElementById('monthOfYearChart'), {{.MonthOfYearOpt}});
 var yearMonthChart = addChart(document.getElementById('yearMonthChart'), {{.YearMonthOpt}});
 
+// apply theme to initial charts
+updateChartTheme();
+
 function chartAxisColor(isLight) {
   return isLight ? '#333' : '#e0e0e0';
 }
 function updateChartTheme() {
   var color = chartAxisColor(document.body.classList.contains('light'));
   allCharts.forEach(function(c) {
-    c.setOption({
-      textStyle: { color: color },
-      xAxis: { axisLabel: { color: color } },
-      yAxis: { axisLabel: { color: color } }
+    var opt = c.getOption();
+    if (!opt.textStyle) opt.textStyle = {};
+    opt.textStyle.color = color;
+    if (!opt.xAxis) opt.xAxis = {};
+    if (!opt.yAxis) opt.yAxis = {};
+    [opt.xAxis, opt.yAxis].forEach(function(axis) {
+      if (!axis) return;
+      var list = Array.isArray(axis) ? axis : [axis];
+      list.forEach(function(a) {
+        a.axisLabel = a.axisLabel || {};
+        a.axisLabel.color = color;
+      });
     });
+    if (opt.legend) {
+      var legs = Array.isArray(opt.legend) ? opt.legend : [opt.legend];
+      legs.forEach(function(l) {
+        l.textStyle = l.textStyle || {};
+        l.textStyle.color = color;
+      });
+    }
+    c.setOption(opt, { notMerge: true });
   });
 }
 
@@ -491,13 +520,6 @@ function toggleTheme() {
   localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
   updateChartTheme();
 }
-(function() {
-  if (localStorage.getItem('theme') === 'light') {
-    document.body.classList.add('light');
-    var btn = document.querySelector('.theme-toggle');
-    if (btn) btn.textContent = 'Dark Mode';
-  }
-})();
 </script>
 </body>
 </html>`

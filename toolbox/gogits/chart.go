@@ -41,13 +41,16 @@ func buildCommitChartOption(result *AnalysisResult) (string, error) {
 			"type":        "category",
 			"data":        result.DateRange,
 			"boundaryGap": false,
+			"axisLabel":   map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"yAxis": map[string]interface{}{
-			"type": "value",
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"series": series,
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -95,11 +98,16 @@ func buildLineChartOption(result *AnalysisResult) (string, error) {
 		},
 		"xAxis": map[string]interface{}{
 			"type": "category", "data": result.DateRange, "boundaryGap": false,
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
-		"yAxis": map[string]interface{}{"type": "value"},
+		"yAxis": map[string]interface{}{
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
+		},
 		"series": series,
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -147,11 +155,16 @@ func buildAuthorLineChartOption(result *AnalysisResult) (string, error) {
 		},
 		"xAxis": map[string]interface{}{
 			"type": "category", "data": result.DateRange, "boundaryGap": false,
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
-		"yAxis": map[string]interface{}{"type": "value"},
+		"yAxis": map[string]interface{}{
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
+		},
 		"series": series,
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -193,12 +206,14 @@ func buildHourWeekChartOption(result *AnalysisResult) (string, error) {
 			"type": "category",
 			"data": hours,
 			"splitArea": map[string]interface{}{"show": true},
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"yAxis": map[string]interface{}{
 			"type": "category",
 			"data": days,
 			"inverse": true,
 			"splitArea": map[string]interface{}{"show": true},
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"visualMap": map[string]interface{}{
 			"min":        0,
@@ -229,6 +244,7 @@ func buildHourWeekChartOption(result *AnalysisResult) (string, error) {
 		},
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -248,9 +264,11 @@ func buildMonthOfYearChartOption(result *AnalysisResult) (string, error) {
 		},
 		"xAxis": map[string]interface{}{
 			"type": "category", "data": months,
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"yAxis": map[string]interface{}{
-			"type": "value",
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"series": []map[string]interface{}{
 			{
@@ -263,6 +281,7 @@ func buildMonthOfYearChartOption(result *AnalysisResult) (string, error) {
 		},
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -292,9 +311,11 @@ func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 		"xAxis": map[string]interface{}{
 			"type": "category", "data": revLabels,
 			"boundaryGap": false,
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"yAxis": map[string]interface{}{
-			"type": "value",
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"series": []map[string]interface{}{
 			{
@@ -315,6 +336,7 @@ func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 		},
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -372,14 +394,17 @@ func buildCumChartOption(result *AnalysisResult, isCommit bool) (string, error) 
 			"type": "time",
 			"axisLabel": map[string]interface{}{
 				"formatter": `{yyyy}-{MM}`,
+				"color":     "#e0e0e0",
 			},
 		},
 		"yAxis": map[string]interface{}{
-			"type": "value",
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"series": series,
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -419,15 +444,18 @@ func buildFileChartOption(result *AnalysisResult) (string, error) {
 			"type": "time",
 			"axisLabel": map[string]interface{}{
 				"formatter": "{yyyy}-{MM}",
+				"color":     "#e0e0e0",
 			},
 		},
 		"yAxis": map[string]interface{}{
 			"type":        "value",
 			"minInterval": 1,
+			"axisLabel":   map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"series": []map[string]interface{}{series},
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
@@ -467,20 +495,30 @@ func buildLocChartOption(result *AnalysisResult) (string, error) {
 			"type": "time",
 			"axisLabel": map[string]interface{}{
 				"formatter": "{yyyy}-{MM}",
+				"color":     "#e0e0e0",
 			},
 		},
 		"yAxis": map[string]interface{}{
 			"type":        "value",
 			"minInterval": 1,
+			"axisLabel":   map[string]interface{}{"color": "#e0e0e0"},
 		},
 		"series": []map[string]interface{}{series},
 	}
 
+	applyDarkTheme(opt)
 	b, err := json.Marshal(opt)
 	if err != nil {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func applyDarkTheme(opt map[string]interface{}) {
+	opt["textStyle"] = map[string]interface{}{"color": "#e0e0e0"}
+	if legend, ok := opt["legend"].(map[string]interface{}); ok {
+		legend["textStyle"] = map[string]interface{}{"color": "#e0e0e0"}
+	}
 }
 
 func authorNames(series []AuthorDayData) []string {
