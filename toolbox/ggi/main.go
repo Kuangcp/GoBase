@@ -261,9 +261,9 @@ func runLod(sorted bool) {
 		})
 	}
 
-	format := fmt.Sprintf("%%-%ds %%5d\n", maxLen)
+	format := fmt.Sprintf("%%4d %%-%ds\n", maxLen)
 	for _, r := range results {
-		fmt.Printf(format, r.name, r.count)
+		fmt.Printf(format, r.count, r.name)
 	}
 }
 

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/kuangcp/gobase/pkg/ctool"
@@ -12,6 +14,7 @@ import (
 var (
 	buildVersion string
 	help         bool
+	openInChrome bool
 	repoPath     string
 	outputPath   string
 )
@@ -24,11 +27,12 @@ var info = ctool.HelpInfo{
 	ValueLen:      -6,
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
+		{Short: "-o", BoolVar: &openInChrome, Comment: "open report in Chrome after generation"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-p", StringVar: &repoPath, String: ".", Value: "path",
 			Comment: "git repository path"},
-		{Short: "-o", StringVar: &outputPath, String: "report.html", Value: "file",
+		{Short: "-f", StringVar: &outputPath, String: "report.html", Value: "file",
 			Comment: "output HTML report file"},
 	},
 }
@@ -53,5 +57,21 @@ func main() {
 	}
 
 	fmt.Println("Report generated:", outputPath)
+
+	if openInChrome {
+		absPath, err := filepath.Abs(outputPath)
+		if err != nil {
+			logger.Fatal(err)
+		}
+		chromeURL := "file://" + absPath
+		cmd := exec.Command("google-chrome-stable", "--window-size=1300,800", "--window-position=500,200", "--app="+chromeURL)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Start()
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}
+
 	os.Exit(0)
 }
