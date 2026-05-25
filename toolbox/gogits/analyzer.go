@@ -28,6 +28,7 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 	result.TotalLinesOfCode = getTotalLines(repoPath)
 	result.FileChartLabels, result.FileChartData = getDailyFileCounts(repoPath)
 	result.LocChartLabels, result.LocChartData = getDailyLocCounts(repoPath, result.TotalLinesOfCode)
+	result.ExtensionStats = getExtensionStats(repoPath)
 
 	return result, nil
 }

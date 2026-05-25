@@ -91,15 +91,32 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section">
 <h2>Overview</h2>
 <div class="stats-grid">
-<span class="stats-label">Project name</span><span class="stats-value">{{.RepoName}}</span>
-<span class="stats-label">Generated</span><span class="stats-value">{{.GeneratedAt}} (in {{.GenDuration}})</span>
-<span class="stats-label">Generator</span><span class="stats-value">gogits {{.Version}}</span>
-<span class="stats-label">Report Period</span><span class="stats-value">{{.ReportStart}} to {{.ReportEnd}}</span>
-<span class="stats-label">Age</span><span class="stats-value">{{.AgeDays}} days, {{.TotalActiveDays}} active days ({{.ActivePct}}%)</span>
-<span class="stats-label">Total Files</span><span class="stats-value">{{.TotalFiles}}</span>
-<span class="stats-label">Total Lines of Code</span><span class="stats-value">{{.TotalLoc}} ({{.TotalAdded}} added, {{.TotalDeleted}} removed)</span>
-<span class="stats-label">Total Commits</span><span class="stats-value">{{.TotalCommits}} (avg {{.AvgPerActive}} per active day, {{.AvgPerDay}} per all days)</span>
-<span class="stats-label">Authors</span><span class="stats-value">{{.AuthorCount}} (avg {{.AvgPerAuthor}} commits per author)</span>
+<span class="stats-label">Project</span><span class="stats-value">{{.RepoName}}</span>
+<span class="stats-label">Report Range</span><span class="stats-value">{{.ReportStart}} &rarr; {{.ReportEnd}} ({{.AgeDays}} Days)</span>
+<span class="stats-label">Health Score</span><span class="stats-value">{{.TotalActiveDays}} Active Days ({{.ActivePct}}%)</span>
+</div>
+</div>
+<div class="section">
+<h2>Development Velocity</h2>
+<div class="stats-grid">
+<span class="stats-label">Total Commits</span><span class="stats-value">{{.TotalCommits}}</span>
+<span class="stats-label">Commit Intensity</span><span class="stats-value">{{.AvgPerActive}} per active day / {{.AvgPerDay}} per calendar day</span>
+<span class="stats-label">Code Churn</span><span class="stats-value">{{.TotalLoc}} LOC ({{.TotalAdded}} ++ / {{.TotalDeleted}} --), ratio {{.ChurnRatio}}:1</span>
+</div>
+</div>
+<div class="section">
+<h2>Team &amp; Scale</h2>
+<div class="stats-grid">
+<span class="stats-label">Team Size</span><span class="stats-value">{{.AuthorCount}} Authors (Avg {{.AvgPerAuthor}} commits/person)</span>
+<span class="stats-label">Repository Size</span><span class="stats-value">{{.TotalFiles}} Files</span>
+<span class="stats-label">Workload Density</span><span class="stats-value">{{.WorkloadDensity}} LOC / Commit (Avg)</span>
+</div>
+</div>
+<div class="section">
+<h2>Gold Metrics</h2>
+<div class="stats-grid">
+<span class="stats-label">Bus Factor</span><span class="stats-value">{{.BusFactorCount}} Authors control {{.BusFactorPct}}% of commits</span>
+<span class="stats-label">Recent Momentum</span><span class="stats-value">Last 30 days: {{.RecentMonthCommits}} commits ({{.RecentMomentumPct}}% of total)</span>
 </div>
 </div>
 </div>
@@ -263,6 +280,29 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section">
 <h2>Files Count Over Time</h2>
 <div id="fileChart" class="chart-box"></div>
+</div>
+<div class="section">
+<h2>Extensions</h2>
+<table>
+<thead>
+<tr>
+<th>Extension</th>
+<th class="num">Files (%)</th>
+<th class="num">Lines (%)</th>
+<th class="num">Lines/file</th>
+</tr>
+</thead>
+<tbody>
+{{range .ExtensionStats}}
+<tr>
+<td>{{if eq .Extension ""}}(empty){{else}}.{{.Extension}}{{end}}</td>
+<td class="num">{{.FileCount}} ({{printf "%.2f" (percent .FileCount $.TotalFiles)}}%)</td>
+<td class="num">{{.LineCount}} ({{printf "%.2f" (percent .LineCount $.TotalLoc)}}%)</td>
+<td class="num">{{printf "%.0f" (avgFileSize .LineCount .FileCount)}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
 </div>
 <div class="section">
 <h2>Lines of Code Over Time</h2>

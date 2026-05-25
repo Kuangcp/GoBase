@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -50,6 +51,54 @@ func getTotalLines(repoPath string) int {
 		total += bytes.Count(data, []byte{'\n'})
 	}
 	return total
+}
+
+func getExtensionStats(repoPath string) []ExtensionStat {
+	cmd := exec.Command("git", "-C", repoPath, "ls-files")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+	files := strings.Fields(string(out))
+
+	extFiles := make(map[string]int)
+	extLines := make(map[string]int)
+	for _, f := range files {
+		ext := ""
+		if idx := strings.LastIndex(f, "."); idx >= 0 {
+			ext = f[idx+1:]
+		}
+		extFiles[ext]++
+		data, err := os.ReadFile(filepath.Join(repoPath, f))
+		if err != nil {
+			continue
+		}
+		extLines[ext] += bytes.Count(data, []byte{'\n'})
+	}
+
+	var stats []ExtensionStat
+	for ext, fc := range extFiles {
+		stats = append(stats, ExtensionStat{
+			Extension: ext,
+			FileCount: fc,
+			LineCount: extLines[ext],
+		})
+	}
+
+	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].Extension == "" {
+			return true
+		}
+		if stats[j].Extension == "" {
+			return false
+		}
+		if stats[i].FileCount != stats[j].FileCount {
+			return stats[i].FileCount > stats[j].FileCount
+		}
+		return stats[i].Extension < stats[j].Extension
+	})
+
+	return stats
 }
 
 func dayRange(start, end time.Time) ([]time.Time, []string) {

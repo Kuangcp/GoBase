@@ -9,27 +9,33 @@ import (
 )
 
 type templateData struct {
-	RepoPath         string
-	RepoName         string
-	Branch           string
-	Version          string
-	GeneratedAt      string
-	GenDuration      string
-	TotalCommits     int
-	TotalAdded       int
-	TotalDeleted     int
-	TotalLoc         int
-	TotalFiles       int
-	ReportStart      string
-	ReportEnd        string
-	AgeDays          int
-	TotalActiveDays  int
-	ActivePct        string
-	AvgPerActive     string
-	AvgPerDay        string
-	AuthorCount      int
-	AvgPerAuthor     string
-	Authors          []AuthorStat
+	RepoPath           string
+	RepoName           string
+	Branch             string
+	Version            string
+	GeneratedAt        string
+	GenDuration        string
+	TotalCommits       int
+	TotalAdded         int
+	TotalDeleted       int
+	TotalLoc           int
+	TotalFiles         int
+	ReportStart        string
+	ReportEnd          string
+	AgeDays            int
+	TotalActiveDays    int
+	ActivePct          string
+	AvgPerActive       string
+	AvgPerDay          string
+	AuthorCount        int
+	AvgPerAuthor       string
+	RecentMonthCommits int
+	BusFactorCount     int
+	BusFactorPct       string
+	RecentMomentumPct  string
+	WorkloadDensity    string
+	ChurnRatio         string
+	Authors            []AuthorStat
 	CommitChartOpt      template.JS
 	LineChartOpt        template.JS
 	AuthorLineChartOpt  template.JS
@@ -46,6 +52,7 @@ type templateData struct {
 	YearAuthorStats     []PeriodAuthorStat
 	FilesChartOpt       template.JS
 	LocChartOpt         template.JS
+	ExtensionStats      []ExtensionStat
 }
 
 func GenerateReport(result *AnalysisResult, outputPath string) error {
@@ -121,6 +128,42 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		avgPerAuthor = float64(result.TotalCommits) / float64(authorCount)
 	}
 
+	recentMonthCommits := 0
+	for _, s := range result.AuthorSeries {
+		for _, v := range s.Data {
+			recentMonthCommits += v
+		}
+	}
+
+	busTotal := 0
+	busCount := 0
+	for _, a := range result.Authors {
+		busTotal += a.CommitCount
+		busCount++
+		if float64(busTotal) >= float64(result.TotalCommits)*0.8 {
+			break
+		}
+	}
+	busPct := 0.0
+	if result.TotalCommits > 0 {
+		busPct = float64(busTotal) / float64(result.TotalCommits) * 100
+	}
+
+	recentPct := 0.0
+	if result.TotalCommits > 0 {
+		recentPct = float64(recentMonthCommits) / float64(result.TotalCommits) * 100
+	}
+
+	workloadDensity := 0.0
+	if result.TotalCommits > 0 {
+		workloadDensity = float64(result.TotalLinesOfCode) / float64(result.TotalCommits)
+	}
+
+	churnRatio := 0.0
+	if result.TotalDeleted > 0 {
+		churnRatio = float64(result.TotalAdded) / float64(result.TotalDeleted)
+	}
+
 	dur := result.GenerationDuration
 	durStr := fmt.Sprintf("%.1fs", dur.Seconds())
 	if dur.Seconds() < 1 {
@@ -148,6 +191,12 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		AvgPerDay:          fmt.Sprintf("%.1f", avgPerDay),
 		AuthorCount:        authorCount,
 		AvgPerAuthor:       fmt.Sprintf("%.1f", avgPerAuthor),
+		RecentMonthCommits: recentMonthCommits,
+		BusFactorCount:     busCount,
+		BusFactorPct:       fmt.Sprintf("%.1f", busPct),
+		RecentMomentumPct:  fmt.Sprintf("%.2f", recentPct),
+		WorkloadDensity:    fmt.Sprintf("%.1f", workloadDensity),
+		ChurnRatio:         fmt.Sprintf("%.1f", churnRatio),
 		Authors:            result.Authors,
 		CommitChartOpt:     template.JS(commitOpt),
 		LineChartOpt:       template.JS(lineOpt),
@@ -165,6 +214,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		YearAuthorStats:      result.YearAuthorStats,
 		FilesChartOpt:        template.JS(fileOpt),
 		LocChartOpt:          template.JS(locOpt),
+		ExtensionStats:       result.ExtensionStats,
 	}
 
 	funcMap := template.FuncMap{

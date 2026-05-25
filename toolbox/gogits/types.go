@@ -22,6 +22,12 @@ type AuthorStat struct {
 	DeletedLines int
 }
 
+type ExtensionStat struct {
+	Extension string
+	FileCount int
+	LineCount int
+}
+
 type AuthorDayData struct {
 	Name string
 	Data []int
@@ -71,6 +77,7 @@ type AnalysisResult struct {
 	LocChartLabels       []string
 	LocChartData         []int
 	GenerationDuration   time.Duration
+	ExtensionStats       []ExtensionStat
 }
 
 type authorDayStats struct {
