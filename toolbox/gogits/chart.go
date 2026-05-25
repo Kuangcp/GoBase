@@ -197,6 +197,7 @@ func buildHourWeekChartOption(result *AnalysisResult) (string, error) {
 		"yAxis": map[string]interface{}{
 			"type": "category",
 			"data": days,
+			"inverse": true,
 			"splitArea": map[string]interface{}{"show": true},
 		},
 		"visualMap": map[string]interface{}{
