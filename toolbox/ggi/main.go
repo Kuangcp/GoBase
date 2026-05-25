@@ -6,6 +6,7 @@ import (
 	"github.com/kuangcp/gobase/pkg/ctool"
 	"github.com/kuangcp/logger"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -74,6 +75,11 @@ func main() {
 	}
 	if pull {
 		pullRepo()
+		return
+	}
+
+	if lod || lods {
+		runLod(lods)
 		return
 	}
 
@@ -175,6 +181,62 @@ func pullRepo() {
 		} else {
 			logger.Info("Repo %s: %s", repo.Alias, strings.ReplaceAll(msg, "\n", " | "))
 		}
+	}
+}
+
+func runLod(sorted bool) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		logger.Error("read dir error: %v", err)
+		return
+	}
+
+	type dirCount struct {
+		name  string
+		count int
+	}
+	var results []dirCount
+	maxLen := 0
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if len(name) > maxLen {
+			maxLen = len(name)
+		}
+
+		args := []string{"log", "--oneline", "--all"}
+		if afterDate != "" {
+			args = append(args, "--after="+afterDate)
+		}
+		if beforeDate != "" {
+			args = append(args, "--before="+beforeDate)
+		}
+		args = append(args, "--", name)
+
+		out, err := runGit(".", args...)
+		if err != nil {
+			results = append(results, dirCount{name, 0})
+			continue
+		}
+		count := 0
+		if out != "" {
+			count = len(strings.Split(out, "\n"))
+		}
+		results = append(results, dirCount{name, count})
+	}
+
+	if sorted {
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].count > results[j].count
+		})
+	}
+
+	format := fmt.Sprintf("%%-%ds %%5d\n", maxLen)
+	for _, r := range results {
+		fmt.Printf(format, r.name, r.count)
 	}
 }
 
