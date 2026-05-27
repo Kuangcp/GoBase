@@ -26,6 +26,12 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 
 	result.TotalFiles = getTotalFiles(repoPath)
 	result.TotalLinesOfCode = getTotalLines(repoPath)
+	result.LargeFileCount = getLargeFileCount(repoPath, 1000)
+	result.TodoCount = getTodoCount(repoPath)
+	result.Hotspots = getHotspots(repoPath, 8)
+	result.AbandonedPct, result.AbandonedLOC = getAbandonedData(repoPath, result.TotalLinesOfCode)
+	result.CodeAgeDays = getCodeAgeDays(repoPath)
+	result.ReleaseCount = getReleaseCount(repoPath)
 	result.FileChartLabels, result.FileChartData = getDailyFileCounts(repoPath)
 	result.LocChartLabels, result.LocChartData = getDailyLocCounts(repoPath, result.TotalLinesOfCode)
 	result.ExtensionStats = getExtensionStats(repoPath)
@@ -62,6 +68,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	totalActiveDates := make(map[string]bool)
 	totalAdded, totalDeleted := 0, 0
 	var firstCommit, lastCommit time.Time
+	activeWeeks := make(map[string]bool)
 	var hourWeekData [7][24]int
 	var monthOfYearData [12]int
 	type ymVal struct {
@@ -107,6 +114,9 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		}
 
 		dateStr := c.Date.Format("2006-01-02")
+		year, week := c.Date.ISOWeek()
+		weekKey := fmt.Sprintf("%d-W%02d", year, week)
+		activeWeeks[weekKey] = true
 
 		weekday := (c.Date.Weekday() + 6) % 7
 		hour := c.Date.Hour()
@@ -169,6 +179,15 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	}
 
 	totalActiveDays := len(totalActiveDates)
+	totalWeeks := 0
+	if !firstCommit.IsZero() && !lastCommit.IsZero() {
+		fy, fw := firstCommit.ISOWeek()
+		ly, lw := lastCommit.ISOWeek()
+		totalWeeks = (ly-fy)*52 + (lw - fw) + 1
+		if totalWeeks < 1 {
+			totalWeeks = 1
+		}
+	}
 
 	var authors []AuthorStat
 	for _, stat := range authorMap {
@@ -371,6 +390,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		AuthorCumCommitSeries: cumCommitSeries,
 		AuthorCumAddedSeries:  cumAddedSeries,
 		AllDayLabels:          allDayLabels,
+		ActiveWeeks:           len(activeWeeks),
+		TotalWeeks:            totalWeeks,
 		MonthAuthorStats:      monthStats,
 		YearAuthorStats:       yearStats,
 	}

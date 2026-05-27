@@ -22,6 +22,11 @@ type AuthorStat struct {
 	DeletedLines int
 }
 
+type FileHotspot struct {
+	Path        string
+	ModifyCount int
+}
+
 type ExtensionStat struct {
 	Extension string
 	FileCount int
@@ -76,6 +81,15 @@ type AnalysisResult struct {
 	FileChartData        []int
 	LocChartLabels       []string
 	LocChartData         []int
+	LargeFileCount       int
+	TodoCount            int
+	Hotspots             []FileHotspot
+	AbandonedPct         float64
+	AbandonedLOC         int
+	CodeAgeDays          float64
+	ActiveWeeks          int
+	TotalWeeks           int
+	ReleaseCount         int
 	GenerationDuration   time.Duration
 	ExtensionStats       []ExtensionStat
 }

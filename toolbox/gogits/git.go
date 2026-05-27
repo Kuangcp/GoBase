@@ -281,6 +281,185 @@ func getDailyFileCounts(repoPath string) ([]string, []int) {
 	return allDayLabels, data
 }
 
+func getLargeFileCount(repoPath string, threshold int) int {
+	cmd := exec.Command("git", "-C", repoPath, "ls-files")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	files := strings.Fields(string(out))
+	count := 0
+	for _, f := range files {
+		data, err := os.ReadFile(filepath.Join(repoPath, f))
+		if err != nil {
+			continue
+		}
+		if bytes.Count(data, []byte{'\n'}) > threshold {
+			count++
+		}
+	}
+	return count
+}
+
+func getTodoCount(repoPath string) int {
+	cmd := exec.Command("git", "-C", repoPath, "ls-files")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	files := strings.Fields(string(out))
+	count := 0
+	for _, f := range files {
+		data, err := os.ReadFile(filepath.Join(repoPath, f))
+		if err != nil {
+			continue
+		}
+		content := string(data)
+		for _, kw := range []string{"TODO", "FIXME", "HACK", "XXX"} {
+			idx := 0
+			for {
+				pos := strings.Index(content[idx:], kw)
+				if pos < 0 {
+					break
+				}
+				count++
+				idx += pos + len(kw)
+			}
+		}
+	}
+	return count
+}
+
+func getHotspots(repoPath string, topN int) []FileHotspot {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--since=90 days ago",
+		"--pretty=format:", "--name-only", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+	freq := make(map[string]int)
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		freq[line]++
+	}
+	type kv struct {
+		path string
+		cnt  int
+	}
+	var sorted []kv
+	for k, v := range freq {
+		sorted = append(sorted, kv{k, v})
+	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].cnt > sorted[j].cnt
+	})
+	if len(sorted) > topN {
+		sorted = sorted[:topN]
+	}
+	result := make([]FileHotspot, len(sorted))
+	for i, s := range sorted {
+		result[i] = FileHotspot{Path: s.path, ModifyCount: s.cnt}
+	}
+	return result
+}
+
+func getAbandonedData(repoPath string, totalLOC int) (float64, int) {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--since=1 year ago",
+		"--pretty=format:", "--name-only", "--diff-filter=AM", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0, 0
+	}
+	recent := make(map[string]bool)
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		recent[line] = true
+	}
+	cmd2 := exec.Command("git", "-C", repoPath, "ls-files")
+	out2, err := cmd2.Output()
+	if err != nil {
+		return 0, 0
+	}
+	abandonedLOC := 0
+	for _, f := range strings.Fields(string(out2)) {
+		if recent[f] {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(repoPath, f))
+		if err != nil {
+			continue
+		}
+		abandonedLOC += bytes.Count(data, []byte{'\n'})
+	}
+	if totalLOC <= 0 {
+		return 0, abandonedLOC
+	}
+	return float64(abandonedLOC) / float64(totalLOC), abandonedLOC
+}
+
+func getCodeAgeDays(repoPath string) float64 {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--diff-filter=A",
+		"--name-only", "--pretty=format:%ai|", "--no-merges", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	created := make(map[string]time.Time)
+	var curDate time.Time
+	for _, line := range strings.Split(string(out), "\n") {
+		if idx := strings.IndexByte(line, '|'); idx >= 0 {
+			t, err := time.Parse("2006-01-02 15:04:05 -0700", line[:idx])
+			if err == nil {
+				curDate = t
+			}
+		} else {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				if _, ok := created[line]; !ok {
+					created[line] = curDate
+				}
+			}
+		}
+	}
+	cmd2 := exec.Command("git", "-C", repoPath, "ls-files")
+	out2, err := cmd2.Output()
+	if err != nil {
+		return 0
+	}
+	now := time.Now()
+	totalDays := 0.0
+	count := 0
+	for _, f := range strings.Fields(string(out2)) {
+		if cd, ok := created[f]; ok {
+			totalDays += now.Sub(cd).Hours() / 24
+			count++
+		}
+	}
+	if count == 0 {
+		return 0
+	}
+	return totalDays / float64(count)
+}
+
+func getReleaseCount(repoPath string) int {
+	cmd := exec.Command("git", "-C", repoPath, "tag", "--list")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	trimmed := strings.TrimSpace(string(out))
+	if trimmed == "" {
+		return 0
+	}
+	return len(strings.Split(trimmed, "\n"))
+}
+
 func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 	rootCmd := exec.Command("git", "-C", repoPath, "rev-parse", "--show-toplevel")
 	rootOut, err := rootCmd.Output()

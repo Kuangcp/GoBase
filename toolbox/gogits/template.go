@@ -86,12 +86,70 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 .stats-label { color: var(--text-muted); white-space: nowrap; text-align: right; }
 .stats-value { color: var(--text); font-weight: 500; }
 
+.section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+.section-grid .section { margin-bottom: 0; }
+
+.overall-badge { display: flex; flex-direction: column; align-items: center;
+  padding: 10px 20px; border-radius: 10px; min-width: 100px;
+  background: var(--bg-card); border: 2px solid var(--border);
+  box-shadow: var(--shadow); }
+.overall-label { font-size: 10px; opacity: .7; margin-bottom: 1px;
+  text-transform: uppercase; letter-spacing: 1px; }
+.overall-badge .badge-grade { font-size: 28px; }
+.overall-badge .badge-score { font-size: 10px; }
+.overall-badge.overall-S { border-color: #ffd700; background: linear-gradient(135deg, rgba(255,215,0,0.08), transparent); }
+.overall-badge.overall-A { border-color: #4caf50; background: linear-gradient(135deg, rgba(76,175,80,0.08), transparent); }
+.overall-badge.overall-B { border-color: #5470c6; background: linear-gradient(135deg, rgba(84,112,198,0.08), transparent); }
+.overall-badge.overall-C { border-color: #ff9800; background: linear-gradient(135deg, rgba(255,152,0,0.08), transparent); }
+.overall-badge.overall-D { border-color: #f44336; background: linear-gradient(135deg, rgba(244,67,54,0.08), transparent); }
+.overall-badge.overall-E { border-color: #9e9e9e; background: linear-gradient(135deg, rgba(158,158,158,0.08), transparent); }
+
+.radar-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 24px; align-items: center; }
+.radar-stats { display: flex; flex-direction: column; gap: 10px; }
+.radar-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.radar-item .badge-dot { flex-shrink: 0; }
+.radar-item .radar-name { flex: 1; }
+.radar-item .radar-grade { width: 44px; font-weight: 600; white-space: nowrap; }
+.radar-item .radar-score { width: 56px; text-align: right; font-weight: 500; white-space: nowrap; }
+.badge { display: flex; flex-direction: column; align-items: center; padding: 16px 20px;
+  border-radius: 12px; min-width: 110px; background: var(--bg-card);
+  border: 2px solid var(--border); box-shadow: var(--shadow); transition: transform .2s; }
+.badge:hover { transform: translateY(-3px); }
+.badge-grade { font-size: 38px; font-weight: 800; line-height: 1; }
+.badge-label { font-size: 13px; margin-top: 6px; opacity: .85; }
+.badge-score { font-size: 11px; margin-top: 3px; opacity: .65; }
+.badge.badge-S { border-color: #ffd700; }
+.badge-S .badge-grade { color: #ffd700; }
+.badge.badge-A { border-color: #4caf50; }
+.badge-A .badge-grade { color: #4caf50; }
+.badge.badge-B { border-color: #5470c6; }
+.badge-B .badge-grade { color: #5470c6; }
+.badge.badge-C { border-color: #ff9800; }
+.badge-C .badge-grade { color: #ff9800; }
+.badge.badge-D { border-color: #f44336; }
+.badge-D .badge-grade { color: #f44336; }
+.badge.badge-E { border-color: #9e9e9e; }
+.badge-E .badge-grade { color: #9e9e9e; }
+.badge-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle; }
+.badge-dot-S { background: #ffd700; }
+.badge-dot-A { background: #4caf50; }
+.badge-dot-B { background: #5470c6; }
+.badge-dot-C { background: #ff9800; }
+.badge-dot-D { background: #f44336; }
+.badge-dot-E { background: #9e9e9e; }
+.section-title { display: flex; align-items: center; font-size: 17px; margin-bottom: 16px; color: var(--text); }
+
 @media (max-width: 640px) {
   .chart-box { height: 280px; }
   table { font-size: 11px; }
   th, td { padding: 5px 6px; }
   .stats-grid { font-size: 12px; gap: 2px 16px; }
   .tab { padding: 8px 14px; font-size: 13px; }
+  .badge { min-width: 80px; padding: 12px 14px; }
+  .badge-grade { font-size: 28px; }
+  .section-grid { grid-template-columns: 1fr; }
+  .radar-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -114,37 +172,99 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </div>
 
 <div id="general" class="tab-content active">
+
 <div class="section">
-<h2>Overview</h2>
+<div class="radar-grid">
+<div class="overall-badge overall-{{.OverallGrade}}">
+<span class="overall-label">综合评级</span>
+<span class="badge-grade">{{.OverallGrade}}</span>
+<span class="badge-score">{{.OverallScore}} 分</span>
+</div>
+<div><div id="radarChart" class="chart-box" style="height:300px"></div></div>
+<div>
+<h2 style="margin-bottom:16px;font-size:15px">各维度评分</h2>
+<div class="radar-stats">
+<div class="radar-item"><span class="badge-dot badge-dot-{{.ActivityGrade}}"></span><span class="radar-name">活跃度</span><span class="radar-grade">{{.ActivityGrade}} 级</span><span class="radar-score">{{.ActivityScore}} 分</span></div>
+<div class="radar-item"><span class="badge-dot badge-dot-{{.ScaleGrade}}"></span><span class="radar-name">项目规模</span><span class="radar-grade">{{.ScaleGrade}} 级</span><span class="radar-score">{{.ScaleScore}} 分</span></div>
+<div class="radar-item"><span class="badge-dot badge-dot-{{.HealthGrade}}"></span><span class="radar-name">代码健康</span><span class="radar-grade">{{.HealthGrade}} 级</span><span class="radar-score">{{.HealthScore}} 分</span></div>
+<div class="radar-item"><span class="badge-dot badge-dot-{{.DiversityGrade}}"></span><span class="radar-name">协作多样</span><span class="radar-grade">{{.DiversityGrade}} 级</span><span class="radar-score">{{.DiversityScore}} 分</span></div>
+<div class="radar-item"><span class="badge-dot badge-dot-{{.DebtGrade}}"></span><span class="radar-name">技术债</span><span class="radar-grade">{{.DebtGrade}} 级</span><span class="radar-score">{{.DebtScore}} 分</span></div>
+<div class="radar-item"><span class="badge-dot badge-dot-{{.RhythmGrade}}"></span><span class="radar-name">研发节奏</span><span class="radar-grade">{{.RhythmGrade}} 级</span><span class="radar-score">{{.RhythmScore}} 分</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section-grid">
+<div class="section">
+<div class="section-title"><span class="badge-dot badge-dot-{{.ActivityGrade}}"></span>活跃度 · {{.ActivityGrade}} 级 ({{.ActivityScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">Project</span><span class="stats-value">{{.RepoName}}</span>
-<span class="stats-label">Report Range</span><span class="stats-value">{{.ReportStart}} &rarr; {{.ReportEnd}} ({{.AgeDays}} Days)</span>
-<span class="stats-label">Health Score</span><span class="stats-value">{{.TotalActiveDays}} Active Days ({{.ActivePct}}%)</span>
+<span class="stats-label">总提交数</span><span class="stats-value">{{.TotalCommits}}</span>
+<span class="stats-label">近30天提交</span><span class="stats-value">{{.Commits30d}}</span>
+<span class="stats-label">近30天活跃开发者</span><span class="stats-value">{{.ActiveDevs30d}} 人</span>
+<span class="stats-label">近30天活跃天数</span><span class="stats-value">{{.ActiveDays30d}} 天</span>
+<span class="stats-label">提交强度</span><span class="stats-value">{{.AvgPerActive}} 次/活跃日 · {{.AvgPerDay}} 次/日历日</span>
+<span class="stats-label">近期动量</span><span class="stats-value">近30天 {{.RecentMonthCommits}} 次提交 ({{.RecentMomentumPct}}%)</span>
 </div>
 </div>
 <div class="section">
-<h2>Development Velocity</h2>
+<div class="section-title"><span class="badge-dot badge-dot-{{.ScaleGrade}}"></span>项目规模 · {{.ScaleGrade}} 级 ({{.ScaleScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">Total Commits</span><span class="stats-value">{{.TotalCommits}}</span>
-<span class="stats-label">Commit Intensity</span><span class="stats-value">{{.AvgPerActive}} per active day / {{.AvgPerDay}} per calendar day</span>
-<span class="stats-label">Code Churn</span><span class="stats-value">{{.TotalLoc}} LOC ({{.TotalAdded}} ++ / {{.TotalDeleted}} --), ratio {{.ChurnRatio}}:1</span>
+<span class="stats-label">代码行数</span><span class="stats-value">{{.TotalLoc}}</span>
+<span class="stats-label">文件总数</span><span class="stats-value">{{.TotalFiles}}</span>
+<span class="stats-label">贡献者总数</span><span class="stats-value">{{.AuthorCount}} 人</span>
+<span class="stats-label">人均提交数</span><span class="stats-value">{{.AvgPerAuthor}} 次/人</span>
+<span class="stats-label">工作量密度</span><span class="stats-value">{{.WorkloadDensity}} LOC/提交</span>
+<span class="stats-label">Bus Factor</span><span class="stats-value">{{.BusFactorCount}} 位作者控制 {{.BusFactorPct}}% 的提交</span>
+</div>
+</div>
+</div>
+
+<div class="section-grid">
+<div class="section">
+<div class="section-title"><span class="badge-dot badge-dot-{{.HealthGrade}}"></span>代码健康 · {{.HealthGrade}} 级 ({{.HealthScore}} 分)</div>
+<div class="stats-grid">
+<span class="stats-label">大文件数 (>1000行)</span><span class="stats-value">{{.LargeFileCount}} 个</span>
+<span class="stats-label">TODO/FIXME 标记</span><span class="stats-value">{{.TodoCount}} 处</span>
+<span class="stats-label">新增/删除比</span><span class="stats-value">{{.TotalAdded}} / {{.TotalDeleted}} ({{.ChurnRatio}}:1)</span>
+<span class="stats-label">活跃天数占比</span><span class="stats-value">{{.ActivePct}}% ({{.TotalActiveDays}}/{{.AgeDays}} 天有提交)</span>
 </div>
 </div>
 <div class="section">
-<h2>Team &amp; Scale</h2>
+<div class="section-title"><span class="badge-dot badge-dot-{{.DebtGrade}}"></span>技术债 · {{.DebtGrade}} 级 ({{.DebtScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">Team Size</span><span class="stats-value">{{.AuthorCount}} Authors (Avg {{.AvgPerAuthor}} commits/person)</span>
-<span class="stats-label">Repository Size</span><span class="stats-value">{{.TotalFiles}} Files</span>
-<span class="stats-label">Workload Density</span><span class="stats-value">{{.WorkloadDensity}} LOC / Commit (Avg)</span>
+<span class="stats-label">热点文件 (近90天)</span><span class="stats-value">{{.HotspotCount}} 个</span>
+<span class="stats-label">遗弃代码 (1年未动)</span><span class="stats-value">{{.AbandonedPct}}%</span>
+<span class="stats-label">代码平均年龄</span><span class="stats-value">{{.CodeAgeDays}} 天</span>
+</div>
+<div style="margin-top:12px;font-size:12px;color:var(--text-muted)">修改最频繁的文件 Top {{.HotspotCount}}</div>
+<div style="margin-top:6px;font-size:13px;line-height:2">
+{{range .Hotspots}}<div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:36px;text-align:right;font-weight:600">({{.ModifyCount}})</span><span>{{.Path}}</span></div>{{end}}
+</div>
+</div>
+</div>
+
+<div class="section-grid">
+<div class="section">
+<div class="section-title"><span class="badge-dot badge-dot-{{.RhythmGrade}}"></span>研发节奏 · {{.RhythmGrade}} 级 ({{.RhythmScore}} 分)</div>
+<div class="stats-grid">
+<span class="stats-label">提交连续性</span><span class="stats-value">{{.ConsistencyPct}}% ({{.ActiveWeeks}}/{{.TotalWeeks}} 周有提交)</span>
+<span class="stats-label">版本发布数</span><span class="stats-value">{{.ReleaseCount}} 个标签</span>
+<span class="stats-label">加班疲劳度</span><span class="stats-value">{{.OffHoursPct}}% (非工作时间提交)</span>
+<span class="stats-label">项目持续天数</span><span class="stats-value">{{.AgeDays}} 天</span>
 </div>
 </div>
 <div class="section">
-<h2>Gold Metrics</h2>
+<div class="section-title"><span class="badge-dot badge-dot-{{.DiversityGrade}}"></span>协作多样 · {{.DiversityGrade}} 级 ({{.DiversityScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">Bus Factor</span><span class="stats-value">{{.BusFactorCount}} Authors control {{.BusFactorPct}}% of commits</span>
-<span class="stats-label">Recent Momentum</span><span class="stats-value">Last 30 days: {{.RecentMonthCommits}} commits ({{.RecentMomentumPct}}% of total)</span>
+<span class="stats-label">贡献者分布</span><span class="stats-value">{{.BusFactorCount}} 位核心作者控制 {{.BusFactorPct}}% 的提交</span>
+<span class="stats-label">团队纵深</span><span class="stats-value">{{sub .AuthorCount .BusFactorCount}} 人超出 Bus Factor 核心</span>
+<span class="stats-label">总贡献者</span><span class="stats-value">{{.AuthorCount}} 人</span>
+<span class="stats-label">人均提交数</span><span class="stats-value">{{.AvgPerAuthor}} 次/人</span>
 </div>
 </div>
+</div>
+
 </div>
 
 <div id="activity" class="tab-content">
@@ -365,6 +485,7 @@ var lineChart = addChart(document.getElementById('lineChart'), {{.LineChartOpt}}
 var hourWeekChart = addChart(document.getElementById('hourWeekChart'), {{.HourWeekOpt}});
 var monthOfYearChart = addChart(document.getElementById('monthOfYearChart'), {{.MonthOfYearOpt}});
 var yearMonthChart = addChart(document.getElementById('yearMonthChart'), {{.YearMonthOpt}});
+var radarChart = addChart(document.getElementById('radarChart'), {{.RadarChartOpt}});
 
 // apply theme to initial charts
 updateChartTheme();
@@ -393,6 +514,15 @@ function updateChartTheme() {
       legs.forEach(function(l) {
         l.textStyle = l.textStyle || {};
         l.textStyle.color = color;
+      });
+    }
+    if (opt.radar) {
+      var radar = Array.isArray(opt.radar) ? opt.radar : [opt.radar];
+      radar.forEach(function(r) {
+        if (r.axisName) {
+          r.axisName.textStyle = r.axisName.textStyle || {};
+          r.axisName.textStyle.color = color;
+        }
       });
     }
     c.setOption(opt, { notMerge: true });
@@ -446,6 +576,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       hourWeekChart.resize();
       monthOfYearChart.resize();
       yearMonthChart.resize();
+      radarChart.resize();
       if (authorLineChart) authorLineChart.resize();
       if (cumCommitChart) cumCommitChart.resize();
       if (cumAddedChart) cumAddedChart.resize();
@@ -469,6 +600,7 @@ window.addEventListener('resize', function(){
   hourWeekChart.resize();
   monthOfYearChart.resize();
   yearMonthChart.resize();
+  radarChart.resize();
   if (authorLineChart) authorLineChart.resize();
   if (cumCommitChart) cumCommitChart.resize();
   if (cumAddedChart) cumAddedChart.resize();

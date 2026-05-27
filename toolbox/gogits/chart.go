@@ -514,6 +514,61 @@ func buildLocChartOption(result *AnalysisResult) (string, error) {
 	return string(b), nil
 }
 
+func buildRadarChartOption(scores []float64) (string, error) {
+	opt := map[string]interface{}{
+		"tooltip": map[string]interface{}{},
+		"radar": map[string]interface{}{
+			"indicator": []map[string]interface{}{
+				{"name": "活跃度", "max": 100},
+				{"name": "项目规模", "max": 100},
+				{"name": "代码健康", "max": 100},
+				{"name": "协作多样", "max": 100},
+				{"name": "技术债", "max": 100},
+				{"name": "研发节奏", "max": 100},
+			},
+			"shape":  "circle",
+			"center": []interface{}{"50%", "50%"},
+			"radius": "65%",
+			"axisName": map[string]interface{}{
+				"textStyle": map[string]interface{}{"color": "#e0e0e0"},
+			},
+			"splitArea": map[string]interface{}{
+				"areaStyle": map[string]interface{}{
+					"color": []string{"rgba(26,26,46,0.3)", "rgba(26,26,46,0.1)"},
+				},
+			},
+			"splitLine": map[string]interface{}{
+				"lineStyle": map[string]interface{}{"color": "rgba(42,42,74,0.6)"},
+			},
+		},
+		"series": []map[string]interface{}{
+			{
+				"type": "radar",
+				"data": []map[string]interface{}{
+					{
+						"value": scores,
+						"areaStyle": map[string]interface{}{
+							"color": "rgba(84,112,198,0.3)",
+						},
+						"lineStyle": map[string]interface{}{
+							"color": "#5470c6", "width": 2,
+						},
+						"itemStyle": map[string]interface{}{
+							"color": "#5470c6",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func applyDarkTheme(opt map[string]interface{}) {
 	opt["textStyle"] = map[string]interface{}{"color": "#e0e0e0"}
 	if legend, ok := opt["legend"].(map[string]interface{}); ok {
