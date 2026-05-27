@@ -73,6 +73,7 @@ type templateData struct {
 	HotspotCount    int
 	RecentFileCount int
 	Hotspots        []FileHotspot
+	TopLinesFiles   []FileHotspot
 	DebtGrade       string
 	DebtScore       string
 	RhythmGrade     string
@@ -448,6 +449,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		HotspotCount:      len(result.Hotspots),
 		RecentFileCount:   result.RecentFileCount,
 		Hotspots:          result.Hotspots,
+		TopLinesFiles:     result.TopLinesFiles,
 		OverallGrade:      overallGrade,
 		OverallScore:      fmt.Sprintf("%.0f", overallScore),
 		RadarChartOpt:     template.JS(radarOpt),

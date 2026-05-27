@@ -86,6 +86,7 @@ type AnalysisResult struct {
 	OldCodeTouchPct      float64
 	RecentFileCount      int
 	Hotspots             []FileHotspot
+	TopLinesFiles         []FileHotspot
 	AbandonedPct         float64
 	AbandonedLOC         int
 	CodeAgeDays          float64

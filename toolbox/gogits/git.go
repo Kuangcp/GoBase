@@ -301,6 +301,38 @@ func getLargeFileCount(repoPath string, threshold int) int {
 	return count
 }
 
+func getTopLinesFiles(repoPath string, topN int) []FileHotspot {
+	cmd := exec.Command("git", "-C", repoPath, "ls-files")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+	files := strings.Fields(string(out))
+	type fileLine struct {
+		path string
+		line int
+	}
+	var list []fileLine
+	for _, f := range files {
+		data, err := os.ReadFile(filepath.Join(repoPath, f))
+		if err != nil {
+			continue
+		}
+		list = append(list, fileLine{path: f, line: bytes.Count(data, []byte{'\n'})})
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].line > list[j].line
+	})
+	if len(list) > topN {
+		list = list[:topN]
+	}
+	var result []FileHotspot
+	for _, fl := range list {
+		result = append(result, FileHotspot{Path: fl.path, ModifyCount: fl.line})
+	}
+	return result
+}
+
 func getTodoCount(repoPath string) int {
 	cmd := exec.Command("git", "-C", repoPath, "ls-files")
 	out, err := cmd.Output()
