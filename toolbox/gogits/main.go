@@ -72,8 +72,8 @@ func main() {
 		}
 		chromeURL := "file://" + absPath
 		cmd := exec.Command("google-chrome-stable", "--window-size=1300,800", "--window-position=500,200", "--app="+chromeURL)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		cmd.Stdout = nil
+		cmd.Stderr = nil
 		err = cmd.Start()
 		if err != nil {
 			logger.Fatal(err)

@@ -58,7 +58,7 @@ type templateData struct {
 	ActivityScore  string
 	ScaleGrade     string
 	ScaleScore     string
-HealthGrade    string
+    HealthGrade    string
 	HealthScore    string
 	Commits30d     int
 	ActiveDevs30d  int
@@ -364,7 +364,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	overallScore := overallSum / 6.0
 	overallGrade := scoreToGrade(overallScore)
 
-	radarOpt, err := buildRadarChartOption(scores6)
+	radarOpt, err := buildRadarChartOption(scores6, overallGrade)
 	if err != nil {
 		return err
 	}

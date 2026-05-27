@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -514,7 +515,11 @@ func buildLocChartOption(result *AnalysisResult) (string, error) {
 	return string(b), nil
 }
 
-func buildRadarChartOption(scores []float64) (string, error) {
+func buildRadarChartOption(scores []float64, overallGrade string) (string, error) {
+	roundedScores := make([]int, len(scores))
+	for i, s := range scores {
+		roundedScores[i] = int(math.Round(s))
+	}
 	opt := map[string]interface{}{
 		"tooltip": map[string]interface{}{},
 		"radar": map[string]interface{}{
@@ -544,9 +549,10 @@ func buildRadarChartOption(scores []float64) (string, error) {
 		"series": []map[string]interface{}{
 			{
 				"type": "radar",
+				"name": "综合评级：" + overallGrade,
 				"data": []map[string]interface{}{
 					{
-						"value": scores,
+						"value": roundedScores,
 						"areaStyle": map[string]interface{}{
 							"color": "rgba(84,112,198,0.3)",
 						},
