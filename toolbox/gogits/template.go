@@ -227,17 +227,18 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <span class="stats-label">大文件数 (>1000行)</span><span class="stats-value">{{.LargeFileCount}} 个</span>
 <span class="stats-label">TODO/FIXME 标记</span><span class="stats-value">{{.TodoCount}} 处</span>
 <span class="stats-label">新增/删除比</span><span class="stats-value">{{.TotalAdded}} / {{.TotalDeleted}} ({{.ChurnRatio}}:1)</span>
+<span class="stats-label">老代码触碰率</span><span class="stats-value">{{.OldCodeTouchPct}}% (近30天触碰3月前代码)</span>
 <span class="stats-label">活跃天数占比</span><span class="stats-value">{{.ActivePct}}% ({{.TotalActiveDays}}/{{.AgeDays}} 天有提交)</span>
 </div>
 </div>
 <div class="section">
 <div class="section-title"><span class="badge-dot badge-dot-{{.DebtGrade}}"></span>技术债 · {{.DebtGrade}} 级 ({{.DebtScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">热点文件 (近90天)</span><span class="stats-value">{{.HotspotCount}} 个</span>
+<span class="stats-label">热点文件 (近120天)</span><span class="stats-value">{{.RecentFileCount}} 个</span>
 <span class="stats-label">遗弃代码 (1年未动)</span><span class="stats-value">{{.AbandonedPct}}%</span>
 <span class="stats-label">代码平均年龄</span><span class="stats-value">{{.CodeAgeDays}} 天</span>
 </div>
-<div style="margin-top:12px;font-size:12px;color:var(--text-muted)">修改最频繁的文件 Top {{.HotspotCount}}</div>
+<div style="margin-top:12px;font-size:12px;color:var(--text-muted)">近120天修改最频繁的文件 Top {{.HotspotCount}}</div>
 <div style="margin-top:6px;font-size:13px;line-height:2">
 {{range .Hotspots}}<div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:36px;text-align:right;font-weight:600">({{.ModifyCount}})</span><span>{{.Path}}</span></div>{{end}}
 </div>

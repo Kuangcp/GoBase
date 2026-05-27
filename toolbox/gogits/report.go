@@ -67,9 +67,11 @@ HealthGrade    string
 	DiversityScore  string
 	LargeFileCount  int
 	TodoCount       int
+	OldCodeTouchPct string
 	AbandonedPct    string
 	CodeAgeDays     string
 	HotspotCount    int
+	RecentFileCount int
 	Hotspots        []FileHotspot
 	DebtGrade       string
 	DebtScore       string
@@ -128,22 +130,23 @@ func calcScaleScore(loc, totalFiles, contributors int) (string, float64) {
 	return scoreToGrade(total), total
 }
 
-func calcHealthScore(largeFileCount, todoCount int, totalAdded, totalDeleted int, activePct float64) (string, float64) {
-	largeScore := (1.0 - minFloat(float64(largeFileCount)/20.0, 1.0)) * 25
-	todoScore := (1.0 - minFloat(float64(todoCount)/50.0, 1.0)) * 25
+func calcHealthScore(largeFileCount, todoCount int, totalAdded, totalDeleted int, activePct, oldCodeTouchPct float64) (string, float64) {
+	largeScore := (1.0 - minFloat(float64(largeFileCount)/20.0, 1.0)) * 20
+	todoScore := (1.0 - minFloat(float64(todoCount)/50.0, 1.0)) * 20
 	cleanupScore := 0.0
 	if totalAdded > 0 {
 		r := float64(totalDeleted) / float64(totalAdded)
 		if r >= 0.2 && r <= 3.0 {
-			cleanupScore = 25
+			cleanupScore = 20
 		} else if r < 0.2 {
-			cleanupScore = r / 0.2 * 25
+			cleanupScore = r / 0.2 * 20
 		} else {
-			cleanupScore = (1.0 - minFloat((r-3.0)/10.0, 1.0)) * 25
+			cleanupScore = (1.0 - minFloat((r-3.0)/10.0, 1.0)) * 20
 		}
 	}
-	activeScore := minFloat(activePct/100.0, 1.0) * 25
-	total := largeScore + todoScore + cleanupScore + activeScore
+	activeScore := minFloat(activePct/100.0, 1.0) * 20
+	oldCodeScore := (1.0 - minFloat(oldCodeTouchPct/0.8, 1.0)) * 20
+	total := largeScore + todoScore + cleanupScore + activeScore + oldCodeScore
 	return scoreToGrade(total), total
 }
 
@@ -157,8 +160,14 @@ func calcDiversityScore(authorCount, busFactorCount int, busPct float64) (string
 	return scoreToGrade(total), total
 }
 
-func calcTechDebtScore(hotspotCount int, abandonedPct float64, codeAgeDays float64) (string, float64) {
-	hotspotScore := (1.0 - minFloat(float64(hotspotCount)/8.0, 1.0)) * 25
+func calcTechDebtScore(hotspots []FileHotspot, abandonedPct float64, codeAgeDays float64) (string, float64) {
+	maxCount := 0
+	for _, h := range hotspots {
+		if h.ModifyCount > maxCount {
+			maxCount = h.ModifyCount
+		}
+	}
+	hotspotScore := (1.0 - minFloat(float64(maxCount)/100.0, 1.0)) * 25
 	abandonedScore := (1.0 - minFloat(abandonedPct, 1.0)) * 40
 	ageScore := 0.0
 	switch {
@@ -322,9 +331,9 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 
 	actGrade, actScore := calcActivityScore(recentMonthCommits, activeDevs30d, activeDays30d)
 	scaleGrade, scaleScore := calcScaleScore(result.TotalLinesOfCode, result.TotalFiles, authorCount)
-	healthGrade, healthScore := calcHealthScore(result.LargeFileCount, result.TodoCount, result.TotalAdded, result.TotalDeleted, activePct)
+	healthGrade, healthScore := calcHealthScore(result.LargeFileCount, result.TodoCount, result.TotalAdded, result.TotalDeleted, activePct, result.OldCodeTouchPct)
 	divGrade, divScore := calcDiversityScore(authorCount, busCount, busPct)
-	debtGrade, debtScore := calcTechDebtScore(len(result.Hotspots), result.AbandonedPct, result.CodeAgeDays)
+	debtGrade, debtScore := calcTechDebtScore(result.Hotspots, result.AbandonedPct, result.CodeAgeDays)
 
 	offHoursTotal := 0
 	allTotal := 0
@@ -419,6 +428,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		HealthScore:       fmt.Sprintf("%.0f", healthScore),
 		LargeFileCount:    result.LargeFileCount,
 		TodoCount:         result.TodoCount,
+		OldCodeTouchPct:   fmt.Sprintf("%.1f", result.OldCodeTouchPct*100),
 		Commits30d:        recentMonthCommits,
 		ActiveDevs30d:     activeDevs30d,
 		ActiveDays30d:     activeDays30d,
@@ -436,6 +446,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		AbandonedPct:      fmt.Sprintf("%.1f", result.AbandonedPct*100),
 		CodeAgeDays:       fmt.Sprintf("%.0f", result.CodeAgeDays),
 		HotspotCount:      len(result.Hotspots),
+		RecentFileCount:   result.RecentFileCount,
 		Hotspots:          result.Hotspots,
 		OverallGrade:      overallGrade,
 		OverallScore:      fmt.Sprintf("%.0f", overallScore),

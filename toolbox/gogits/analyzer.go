@@ -32,6 +32,8 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 	result.AbandonedPct, result.AbandonedLOC = getAbandonedData(repoPath, result.TotalLinesOfCode)
 	result.CodeAgeDays = getCodeAgeDays(repoPath)
 	result.ReleaseCount = getReleaseCount(repoPath)
+	result.OldCodeTouchPct = getOldCodeTouchRate(repoPath)
+	result.RecentFileCount = getRecentFileCount(repoPath)
 	result.FileChartLabels, result.FileChartData = getDailyFileCounts(repoPath)
 	result.LocChartLabels, result.LocChartData = getDailyLocCounts(repoPath, result.TotalLinesOfCode)
 	result.ExtensionStats = getExtensionStats(repoPath)

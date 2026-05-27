@@ -83,6 +83,8 @@ type AnalysisResult struct {
 	LocChartData         []int
 	LargeFileCount       int
 	TodoCount            int
+	OldCodeTouchPct      float64
+	RecentFileCount      int
 	Hotspots             []FileHotspot
 	AbandonedPct         float64
 	AbandonedLOC         int

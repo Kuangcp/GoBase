@@ -331,8 +331,8 @@ func getTodoCount(repoPath string) int {
 }
 
 func getHotspots(repoPath string, topN int) []FileHotspot {
-	cmd := exec.Command("git", "-C", repoPath, "log", "--since=90 days ago",
-		"--pretty=format:", "--name-only", "HEAD")
+	cmd := exec.Command("git", "-C", repoPath, "log", "--since=120 days ago",
+		"--pretty=format:", "--name-only", "--no-merges", "HEAD")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil
@@ -458,6 +458,75 @@ func getReleaseCount(repoPath string) int {
 		return 0
 	}
 	return len(strings.Split(trimmed, "\n"))
+}
+
+func getOldCodeTouchRate(repoPath string) float64 {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--diff-filter=A",
+		"--name-only", "--pretty=format:%ai|", "--no-merges", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	created := make(map[string]time.Time)
+	var curDate time.Time
+	for _, line := range strings.Split(string(out), "\n") {
+		if idx := strings.IndexByte(line, '|'); idx >= 0 {
+			t, err := time.Parse("2006-01-02 15:04:05 -0700", line[:idx])
+			if err == nil {
+				curDate = t
+			}
+		} else {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				if _, ok := created[line]; !ok {
+					created[line] = curDate
+				}
+			}
+		}
+	}
+	cmd2 := exec.Command("git", "-C", repoPath, "log", "--since=30 days ago",
+		"--pretty=format:", "--name-only", "--no-merges", "HEAD")
+	out2, err := cmd2.Output()
+	if err != nil {
+		return 0
+	}
+	cutoff := time.Now().AddDate(0, -3, 0)
+	recentFiles := make(map[string]bool)
+	for _, line := range strings.Split(string(out2), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		recentFiles[line] = true
+	}
+	oldCount := 0
+	for f := range recentFiles {
+		if cd, ok := created[f]; ok && cd.Before(cutoff) {
+			oldCount++
+		}
+	}
+	if len(recentFiles) == 0 {
+		return 0
+	}
+	return float64(oldCount) / float64(len(recentFiles))
+}
+
+func getRecentFileCount(repoPath string) int {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--since=120 days ago",
+		"--pretty=format:", "--name-only", "--no-merges", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	files := make(map[string]bool)
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		files[line] = true
+	}
+	return len(files)
 }
 
 func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
