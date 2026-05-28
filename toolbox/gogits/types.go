@@ -84,6 +84,8 @@ type AnalysisResult struct {
 	LargeFileCount       int
 	TodoCount            int
 	OldCodeTouchPct      float64
+	TestFileCount        int
+	AvgFilesPerCommit    float64
 	RecentFileCount      int
 	Hotspots             []FileHotspot
 	TopLinesFiles         []FileHotspot

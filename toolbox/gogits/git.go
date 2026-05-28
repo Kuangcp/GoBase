@@ -543,6 +543,63 @@ func getOldCodeTouchRate(repoPath string) float64 {
 	return float64(oldCount) / float64(len(recentFiles))
 }
 
+func isTestFile(path string) bool {
+	lower := strings.ToLower(path)
+	base := filepath.Base(lower)
+	if strings.Contains(base, "_test") || strings.Contains(base, ".test.") ||
+		strings.Contains(base, "_spec") || strings.Contains(base, ".spec.") ||
+		strings.Contains(base, "_unittest") || strings.HasPrefix(base, "test_") {
+		return true
+	}
+	dir := filepath.Dir(lower)
+	for _, d := range []string{"/test/", "/tests/", "/__tests__/", "/spec/", "/specs/"} {
+		if strings.Contains(dir, d) || dir == strings.Trim(d, "/") {
+			return true
+		}
+	}
+	return false
+}
+
+func getTestFileCount(repoPath string) int {
+	cmd := exec.Command("git", "-C", repoPath, "ls-files")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	files := strings.Fields(string(out))
+	count := 0
+	for _, f := range files {
+		if isTestFile(f) {
+			count++
+		}
+	}
+	return count
+}
+
+func getAvgFilesPerCommit(repoPath string) float64 {
+	cmd := exec.Command("git", "-C", repoPath, "log", "--no-merges",
+		"--format=COMMIT%n", "--name-only", "HEAD")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	lines := strings.Split(string(out), "\n")
+	totalFiles := 0
+	commitCount := 0
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "COMMIT" {
+			commitCount++
+		} else if line != "" {
+			totalFiles++
+		}
+	}
+	if commitCount == 0 {
+		return 0
+	}
+	return float64(totalFiles) / float64(commitCount)
+}
+
 func getRecentFileCount(repoPath string) int {
 	cmd := exec.Command("git", "-C", repoPath, "log", "--since=120 days ago",
 		"--pretty=format:", "--name-only", "--no-merges", "HEAD")

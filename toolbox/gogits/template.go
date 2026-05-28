@@ -224,11 +224,11 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section">
 <div class="section-title"><span class="badge-dot badge-dot-{{.HealthGrade}}"></span>代码健康 · {{.HealthGrade}} 级 ({{.HealthScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">大文件数 (>1000行)</span><span class="stats-value">{{.LargeFileCount}} 个</span>
-<span class="stats-label">TODO/FIXME 标记</span><span class="stats-value">{{.TodoCount}} 处</span>
-<span class="stats-label">新增/删除比</span><span class="stats-value">{{.TotalAdded}} / {{.TotalDeleted}} ({{.ChurnRatio}}:1)</span>
+<span class="stats-label">大文件率 (>1000行)</span><span class="stats-value">{{.LargeFileCount}}/{{.TotalFiles}} ({{.LargeFileRatioStr}}%)</span>
+<span class="stats-label">TODO 密度</span><span class="stats-value">{{.TodoCount}} 处 ({{.TodoDensityStr}}/千行)</span>
+<span class="stats-label">测试文件比例</span><span class="stats-value">{{.TestFileCount}}/{{.TotalFiles}} ({{.TestRatioStr}}%)</span>
 <span class="stats-label">老代码触碰率</span><span class="stats-value">{{.OldCodeTouchPct}}% (近30天触碰3月前代码)</span>
-<span class="stats-label">活跃天数占比</span><span class="stats-value">{{.ActivePct}}% ({{.TotalActiveDays}}/{{.AgeDays}} 天有提交)</span>
+<span class="stats-label">提交粒度</span><span class="stats-value">{{.AvgFilesPerCommitStr}} 文件/次提交</span>
 </div>
 <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">文件行数列表 Top 8</div>
 <div style="margin-top:6px;font-size:13px;line-height:2">

@@ -28,6 +28,8 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 	result.TotalLinesOfCode = getTotalLines(repoPath)
 	result.LargeFileCount = getLargeFileCount(repoPath, 1000)
 	result.TodoCount = getTodoCount(repoPath)
+	result.TestFileCount = getTestFileCount(repoPath)
+	result.AvgFilesPerCommit = getAvgFilesPerCommit(repoPath)
 	result.Hotspots = getHotspots(repoPath, 8)
 	result.TopLinesFiles = getTopLinesFiles(repoPath, 8)
 	result.AbandonedPct, result.AbandonedLOC = getAbandonedData(repoPath, result.TotalLinesOfCode)

@@ -65,9 +65,14 @@ type templateData struct {
 	ActiveDays30d  int
 	DiversityGrade  string
 	DiversityScore  string
-	LargeFileCount  int
-	TodoCount       int
-	OldCodeTouchPct string
+	LargeFileCount      int
+	LargeFileRatioStr   string
+	TodoCount           int
+	TodoDensityStr      string
+	TestFileCount       int
+	TestRatioStr        string
+	OldCodeTouchPct     string
+	AvgFilesPerCommitStr string
 	AbandonedPct    string
 	CodeAgeDays     string
 	HotspotCount    int
@@ -86,6 +91,20 @@ type templateData struct {
 	OverallGrade   string
 	OverallScore   string
 	RadarChartOpt   template.JS
+}
+
+func safeRatio(a, b float64) float64 {
+	if b == 0 {
+		return 0
+	}
+	return a / b
+}
+
+func safeTodoDensity(todoCount, totalLoc int) float64 {
+	if totalLoc == 0 {
+		return 0
+	}
+	return float64(todoCount) / (float64(totalLoc) / 1000.0)
 }
 
 func minFloat(a, b float64) float64 {
@@ -131,23 +150,47 @@ func calcScaleScore(loc, totalFiles, contributors int) (string, float64) {
 	return scoreToGrade(total), total
 }
 
-func calcHealthScore(largeFileCount, todoCount int, totalAdded, totalDeleted int, activePct, oldCodeTouchPct float64) (string, float64) {
-	largeScore := (1.0 - minFloat(float64(largeFileCount)/20.0, 1.0)) * 20
-	todoScore := (1.0 - minFloat(float64(todoCount)/50.0, 1.0)) * 20
-	cleanupScore := 0.0
-	if totalAdded > 0 {
-		r := float64(totalDeleted) / float64(totalAdded)
-		if r >= 0.2 && r <= 3.0 {
-			cleanupScore = 20
-		} else if r < 0.2 {
-			cleanupScore = r / 0.2 * 20
-		} else {
-			cleanupScore = (1.0 - minFloat((r-3.0)/10.0, 1.0)) * 20
-		}
+func calcHealthScore(largeFileCount, totalFiles, todoCount, totalLoc, testFileCount int, oldCodeTouchPct, avgFilesPerCommit float64) (string, float64) {
+	// 1. 大文件率 (Large file ratio ≤ 10% → full marks)
+	largeRatio := 0.0
+	if totalFiles > 0 {
+		largeRatio = float64(largeFileCount) / float64(totalFiles)
 	}
-	activeScore := minFloat(activePct/100.0, 1.0) * 20
-	oldCodeScore := (1.0 - minFloat(oldCodeTouchPct/0.8, 1.0)) * 20
-	total := largeScore + todoScore + cleanupScore + activeScore + oldCodeScore
+	largeScore := (1.0 - minFloat(largeRatio/0.1, 1.0)) * 20
+
+	// 2. TODO 密度 (TODO count per 1000 LOC ≤ 5 → full marks)
+	todoDensity := 0.0
+	if totalLoc > 0 {
+		todoDensity = float64(todoCount) / (float64(totalLoc) / 1000.0)
+	}
+	todoScore := (1.0 - minFloat(todoDensity/5.0, 1.0)) * 20
+
+	// 3. 测试文件比例 (Test file ratio ≥ 30% → full marks)
+	testRatio := 0.0
+	if totalFiles > 0 {
+		testRatio = float64(testFileCount) / float64(totalFiles)
+	}
+	testScore := minFloat(testRatio/0.3, 1.0) * 20
+
+	// 4. 老代码维护率 (Old code touch rate: optimal [10%, 60%])
+	oldCodeScore := 0.0
+	if oldCodeTouchPct < 0.1 {
+		oldCodeScore = oldCodeTouchPct / 0.1 * 20
+	} else if oldCodeTouchPct <= 0.6 {
+		oldCodeScore = 20
+	} else {
+		oldCodeScore = (1.0 - minFloat((oldCodeTouchPct-0.6)/0.4, 1.0)) * 20
+	}
+
+	// 5. 提交粒度 (Avg files per commit: ≤ 5 → full marks, 5-15 linear, ≥ 15 → 0)
+	granularityScore := 0.0
+	if avgFilesPerCommit <= 5 {
+		granularityScore = 20
+	} else if avgFilesPerCommit <= 15 {
+		granularityScore = (1.0 - (avgFilesPerCommit-5.0)/10.0) * 20
+	}
+
+	total := largeScore + todoScore + testScore + oldCodeScore + granularityScore
 	return scoreToGrade(total), total
 }
 
@@ -332,7 +375,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 
 	actGrade, actScore := calcActivityScore(recentMonthCommits, activeDevs30d, activeDays30d)
 	scaleGrade, scaleScore := calcScaleScore(result.TotalLinesOfCode, result.TotalFiles, authorCount)
-	healthGrade, healthScore := calcHealthScore(result.LargeFileCount, result.TodoCount, result.TotalAdded, result.TotalDeleted, activePct, result.OldCodeTouchPct)
+	healthGrade, healthScore := calcHealthScore(result.LargeFileCount, result.TotalFiles, result.TodoCount, result.TotalLinesOfCode, result.TestFileCount, result.OldCodeTouchPct, result.AvgFilesPerCommit)
 	divGrade, divScore := calcDiversityScore(authorCount, busCount, busPct)
 	debtGrade, debtScore := calcTechDebtScore(result.Hotspots, result.AbandonedPct, result.CodeAgeDays)
 
@@ -427,9 +470,14 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		ScaleScore:        fmt.Sprintf("%.0f", scaleScore),
 		HealthGrade:       healthGrade,
 		HealthScore:       fmt.Sprintf("%.0f", healthScore),
-		LargeFileCount:    result.LargeFileCount,
-		TodoCount:         result.TodoCount,
-		OldCodeTouchPct:   fmt.Sprintf("%.1f", result.OldCodeTouchPct*100),
+		LargeFileCount:      result.LargeFileCount,
+		LargeFileRatioStr:   fmt.Sprintf("%.1f", safeRatio(float64(result.LargeFileCount), float64(result.TotalFiles))*100),
+		TodoCount:           result.TodoCount,
+		TodoDensityStr:      fmt.Sprintf("%.1f", safeTodoDensity(result.TodoCount, result.TotalLinesOfCode)),
+		TestFileCount:       result.TestFileCount,
+		TestRatioStr:        fmt.Sprintf("%.1f", safeRatio(float64(result.TestFileCount), float64(result.TotalFiles))*100),
+		OldCodeTouchPct:     fmt.Sprintf("%.1f", result.OldCodeTouchPct*100),
+		AvgFilesPerCommitStr: fmt.Sprintf("%.1f", result.AvgFilesPerCommit),
 		Commits30d:        recentMonthCommits,
 		ActiveDevs30d:     activeDevs30d,
 		ActiveDays30d:     activeDays30d,
