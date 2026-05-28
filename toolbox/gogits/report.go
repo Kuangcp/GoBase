@@ -83,8 +83,11 @@ type templateData struct {
 	DebtScore       string
 	RhythmGrade     string
 	RhythmScore     string
-	OffHoursPct     string
-	ConsistencyPct  string
+	OffHoursPct      string
+	OffHoursCommits  int
+	OffHoursLinePct  string
+	OffHoursLineStr  string
+	ConsistencyPct   string
 	ReleaseCount    int
 	ActiveWeeks     int
 	TotalWeeks      int
@@ -394,6 +397,12 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	if allTotal > 0 {
 		offHoursPct = float64(offHoursTotal) / float64(allTotal)
 	}
+	offHoursLines := result.OffHoursAdded + result.OffHoursDeleted
+	totalLines := result.TotalAdded + result.TotalDeleted
+	offHoursLinePct := 0.0
+	if totalLines > 0 {
+		offHoursLinePct = float64(offHoursLines) / float64(totalLines) * 100
+	}
 	consistencyPct := 0.0
 	if result.TotalWeeks > 0 {
 		consistencyPct = float64(result.ActiveWeeks) / float64(result.TotalWeeks) * 100
@@ -488,6 +497,9 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		RhythmGrade:       rhythmGrade,
 		RhythmScore:       fmt.Sprintf("%.0f", rhythmScore),
 		OffHoursPct:       fmt.Sprintf("%.1f", offHoursPct*100),
+		OffHoursCommits:   result.OffHoursCommits,
+		OffHoursLinePct:   fmt.Sprintf("%.1f", offHoursLinePct),
+		OffHoursLineStr:   fmt.Sprintf("%d / %d", offHoursLines, totalLines),
 		ConsistencyPct:    fmt.Sprintf("%.1f", consistencyPct),
 		ReleaseCount:      result.ReleaseCount,
 		ActiveWeeks:       result.ActiveWeeks,

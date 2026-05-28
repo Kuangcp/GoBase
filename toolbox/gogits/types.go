@@ -86,6 +86,9 @@ type AnalysisResult struct {
 	OldCodeTouchPct      float64
 	TestFileCount        int
 	AvgFilesPerCommit    float64
+	OffHoursCommits      int
+	OffHoursAdded        int
+	OffHoursDeleted      int
 	RecentFileCount      int
 	Hotspots             []FileHotspot
 	TopLinesFiles         []FileHotspot

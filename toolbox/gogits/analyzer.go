@@ -72,6 +72,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 
 	totalActiveDates := make(map[string]bool)
 	totalAdded, totalDeleted := 0, 0
+	offHoursCommits, offHoursAdded, offHoursDeleted := 0, 0, 0
 	var firstCommit, lastCommit time.Time
 	activeWeeks := make(map[string]bool)
 	var hourWeekData [7][24]int
@@ -126,6 +127,11 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		weekday := (c.Date.Weekday() + 6) % 7
 		hour := c.Date.Hour()
 		hourWeekData[weekday][hour]++
+		if weekday >= 5 || hour < 6 || hour >= 22 {
+			offHoursCommits++
+			offHoursAdded += c.Added
+			offHoursDeleted += c.Deleted
+		}
 
 		month := c.Date.Month() - 1
 		monthOfYearData[month]++
@@ -376,6 +382,9 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		TotalCommits:        len(commits),
 		TotalAdded:          totalAdded,
 		TotalDeleted:        totalDeleted,
+		OffHoursCommits:     offHoursCommits,
+		OffHoursAdded:       offHoursAdded,
+		OffHoursDeleted:     offHoursDeleted,
 		ReportStart:         firstCommit,
 		ReportEnd:           lastCommit,
 		TotalActiveDays:     totalActiveDays,
