@@ -47,6 +47,20 @@ type PeriodAuthorStat struct {
 	AuthorCount  int
 }
 
+type AuthorMonthlyStat struct {
+	Month      string  `json:"month"`
+	Commits    int     `json:"commits"`
+	CumFiles   int     `json:"cumFiles"`
+	TotalFiles int     `json:"totalFiles"`
+	Breadth    float64 `json:"breadth"`
+}
+
+type AuthorMonthlyReport struct {
+	Name    string              `json:"name"`
+	Score   float64             `json:"score"`
+	Monthly []AuthorMonthlyStat `json:"monthly"`
+}
+
 type AnalysisResult struct {
 	RepoPath             string
 	RepoName             string
@@ -100,6 +114,7 @@ type AnalysisResult struct {
 	ReleaseCount         int
 	GenerationDuration   time.Duration
 	ExtensionStats       []ExtensionStat
+	AuthorMonthlyReports []AuthorMonthlyReport
 }
 
 type authorDayStats struct {

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -65,6 +67,13 @@ type templateData struct {
 	ActiveDays30d  int
 	DiversityGrade  string
 	DiversityScore  string
+	GiniCoefficient  string
+	CoreTurnover     string
+	NewcomerRate     string
+	ActiveLayerActive   int
+	ActiveLayerSemi     int
+	ActiveLayerDormant  int
+	ActiveLayerLost     int
 	LargeFileCount      int
 	LargeFileRatioStr   string
 	TodoCount           int
@@ -94,6 +103,7 @@ type templateData struct {
 	OverallGrade   string
 	OverallScore   string
 	RadarChartOpt   template.JS
+	AuthorReportsJSON template.JS
 }
 
 func safeRatio(a, b float64) float64 {
@@ -115,6 +125,113 @@ func minFloat(a, b float64) float64 {
 		return a
 	}
 	return b
+}
+
+func maxFloat(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+type activeLayers struct {
+	Active     int
+	SemiActive int
+	Dormant    int
+	Lost       int
+}
+
+func calcGini(authors []AuthorStat) float64 {
+	n := len(authors)
+	if n <= 1 {
+		return 0
+	}
+	counts := make([]int, n)
+	for i, a := range authors {
+		counts[i] = a.CommitCount
+	}
+	sort.Ints(counts)
+
+	total := 0.0
+	for _, c := range counts {
+		total += float64(c)
+	}
+	if total == 0 {
+		return 0
+	}
+
+	sum := 0.0
+	for i, c := range counts {
+		sum += float64(i+1) * float64(c)
+	}
+	return (2.0*sum)/(float64(n)*total) - float64(n+1)/float64(n)
+}
+
+func calcCoreTurnover(stats []PeriodAuthorStat) float64 {
+	if len(stats) <= 1 {
+		return 0.25
+	}
+	totalDist := 0.0
+	pairs := 0
+	for i := 0; i < len(stats)-1; i++ {
+		prev := make(map[string]bool)
+		prev[stats[i].TopAuthor] = true
+		for _, n := range stats[i].NextTop5 {
+			prev[n] = true
+		}
+		curr := make(map[string]bool)
+		curr[stats[i+1].TopAuthor] = true
+		for _, n := range stats[i+1].NextTop5 {
+			curr[n] = true
+		}
+		inter := 0
+		for name := range prev {
+			if curr[name] {
+				inter++
+			}
+		}
+		union := len(prev) + len(curr) - inter
+		if union > 0 {
+			totalDist += 1.0 - float64(inter)/float64(union)
+			pairs++
+		}
+	}
+	if pairs == 0 {
+		return 0.25
+	}
+	return totalDist / float64(pairs)
+}
+
+func calcNewcomerRate(authors []AuthorStat, now time.Time) float64 {
+	threshold := now.AddDate(0, 0, -180)
+	newcomers := 0
+	for _, a := range authors {
+		if a.FirstCommit.After(threshold) {
+			newcomers++
+		}
+	}
+	if len(authors) == 0 {
+		return 0
+	}
+	return float64(newcomers) / float64(len(authors))
+}
+
+func calcActiveLayers(authors []AuthorStat, now time.Time) activeLayers {
+	var layers activeLayers
+	for _, a := range authors {
+		days := now.Sub(a.LastCommit).Hours() / 24
+		switch {
+		case days <= 30:
+			layers.Active++
+		case days <= 90:
+			layers.SemiActive++
+		case days <= 365:
+			layers.Dormant++
+		default:
+			layers.Lost++
+		}
+	}
+	return layers
 }
 
 func scoreToGrade(score float64) string {
@@ -197,14 +314,41 @@ func calcHealthScore(largeFileCount, totalFiles, todoCount, totalLoc, testFileCo
 	return scoreToGrade(total), total
 }
 
-func calcDiversityScore(authorCount, busFactorCount int, busPct float64) (string, float64) {
-	spreadScore := (1.0 - minFloat(busPct/100.0, 1.0)) * 50
-	depthScore := 0.0
-	if authorCount > 1 {
-		depthScore = minFloat(float64(authorCount-busFactorCount)/10.0, 1.0) * 50
+func calcDiversityScore(authors []AuthorStat, yearStats []PeriodAuthorStat, now time.Time) (string, float64, float64, float64, float64, activeLayers) {
+	gini := calcGini(authors)
+	turnover := calcCoreTurnover(yearStats)
+	newcomerRate := calcNewcomerRate(authors, now)
+	layers := calcActiveLayers(authors, now)
+
+	giniScore := maxFloat(25.0*(1.0-minFloat(gini/0.9, 1.0)), 0)
+
+	turnoverScore := 0.0
+	if len(yearStats) <= 1 {
+		turnoverScore = 15.0
+	} else if turnover <= 0.2 {
+		turnoverScore = maxFloat(turnover/0.2*12.5, 0)
+	} else if turnover <= 0.5 {
+		turnoverScore = 12.5 + (turnover-0.2)/0.3*12.5
+	} else {
+		turnoverScore = maxFloat(25.0*(1.0-(turnover-0.5)/0.5), 0)
 	}
-	total := spreadScore + depthScore
-	return scoreToGrade(total), total
+
+	newcomerScore := 0.0
+	if newcomerRate <= 0.3 {
+		newcomerScore = newcomerRate / 0.3 * 25.0
+	} else {
+		newcomerScore = maxFloat(25.0*(1.0-(newcomerRate-0.3)/0.3), 0)
+	}
+
+	total := layers.Active + layers.SemiActive + layers.Dormant + layers.Lost
+	distributionScore := 0.0
+	if total > 0 {
+		activeRatio := float64(layers.Active+layers.SemiActive) / float64(total)
+		distributionScore = activeRatio * 25.0
+	}
+
+	totalScore := giniScore + turnoverScore + newcomerScore + distributionScore
+	return scoreToGrade(totalScore), totalScore, gini, turnover*100, newcomerRate*100, layers
 }
 
 func calcTechDebtScore(hotspots []FileHotspot, abandonedPct float64, codeAgeDays float64) (string, float64) {
@@ -379,7 +523,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	actGrade, actScore := calcActivityScore(recentMonthCommits, activeDevs30d, activeDays30d)
 	scaleGrade, scaleScore := calcScaleScore(result.TotalLinesOfCode, result.TotalFiles, authorCount)
 	healthGrade, healthScore := calcHealthScore(result.LargeFileCount, result.TotalFiles, result.TodoCount, result.TotalLinesOfCode, result.TestFileCount, result.OldCodeTouchPct, result.AvgFilesPerCommit)
-	divGrade, divScore := calcDiversityScore(authorCount, busCount, busPct)
+	divGrade, divScore, giniVal, turnoverVal, newcomerVal, layers := calcDiversityScore(result.Authors, result.YearAuthorStats, end)
 	debtGrade, debtScore := calcTechDebtScore(result.Hotspots, result.AbandonedPct, result.CodeAgeDays)
 
 	offHoursTotal := 0
@@ -420,6 +564,24 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	radarOpt, err := buildRadarChartOption(scores6, overallGrade)
 	if err != nil {
 		return err
+	}
+
+	authorReportsJSON := "{}"
+	if len(result.AuthorMonthlyReports) > 0 {
+		// Build a structure that JavaScript can easily consume
+		type authorEntry struct {
+			Name    string              `json:"name"`
+			Score   float64             `json:"score"`
+			Monthly []AuthorMonthlyStat `json:"monthly"`
+		}
+		var list []authorEntry
+		for _, r := range result.AuthorMonthlyReports {
+			list = append(list, authorEntry{Name: r.Name, Score: r.Score, Monthly: r.Monthly})
+		}
+		b, err := json.Marshal(list)
+		if err == nil {
+			authorReportsJSON = string(b)
+		}
 	}
 
 	dur := result.GenerationDuration
@@ -492,6 +654,13 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		ActiveDays30d:     activeDays30d,
 		DiversityGrade:    divGrade,
 		DiversityScore:    fmt.Sprintf("%.0f", divScore),
+		GiniCoefficient:   fmt.Sprintf("%.2f", giniVal),
+		CoreTurnover:      fmt.Sprintf("%.0f", turnoverVal),
+		NewcomerRate:      fmt.Sprintf("%.0f", newcomerVal),
+		ActiveLayerActive: layers.Active,
+		ActiveLayerSemi:   layers.SemiActive,
+		ActiveLayerDormant: layers.Dormant,
+		ActiveLayerLost:   layers.Lost,
 		DebtGrade:         debtGrade,
 		DebtScore:         fmt.Sprintf("%.0f", debtScore),
 		RhythmGrade:       rhythmGrade,
@@ -513,6 +682,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		OverallGrade:      overallGrade,
 		OverallScore:      fmt.Sprintf("%.0f", overallScore),
 		RadarChartOpt:     template.JS(radarOpt),
+		AuthorReportsJSON: template.JS(authorReportsJSON),
 	}
 
 	funcMap := template.FuncMap{

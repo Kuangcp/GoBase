@@ -746,3 +746,95 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 
 	return dayLabels, data
 }
+
+func extractAuthorMonthlyStats(repoPath string) (map[string]map[string][]string, map[string]map[string]int, error) {
+	cmd := exec.Command("git", "-C", repoPath, "log",
+		"--all", "--no-merges",
+		"--format=%H|%an|%ai",
+		"--name-only", ".")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil, err
+	}
+	lines := strings.Split(string(out), "\n")
+
+	authorMonthFiles := make(map[string]map[string][]string)
+	authorMonthCommits := make(map[string]map[string]int)
+
+	var currentAuthor, currentDate string
+	for _, line := range lines {
+		line = strings.TrimRight(line, "\r")
+		if line == "" {
+			continue
+		}
+		if strings.Contains(line, "|") && len(line) > 41 && line[40] == '|' {
+			// Commit format line: hash|author|date
+			parts := strings.SplitN(line, "|", 3)
+			if len(parts) >= 3 {
+				currentAuthor = parts[1]
+				currentDate = parts[2]
+				// Count this commit once for the author's month
+				month := ""
+				if len(currentDate) >= 7 {
+					month = currentDate[:7]
+				}
+				if month != "" && currentAuthor != "" {
+					if authorMonthCommits[currentAuthor] == nil {
+						authorMonthCommits[currentAuthor] = make(map[string]int)
+					}
+					authorMonthCommits[currentAuthor][month]++
+				}
+			}
+			continue
+		}
+		// File path line
+		if currentAuthor == "" || currentDate == "" {
+			continue
+		}
+		month := ""
+		if len(currentDate) >= 7 {
+			month = currentDate[:7]
+		}
+		if month == "" {
+			continue
+		}
+		if authorMonthFiles[currentAuthor] == nil {
+			authorMonthFiles[currentAuthor] = make(map[string][]string)
+		}
+		authorMonthFiles[currentAuthor][month] = append(authorMonthFiles[currentAuthor][month], line)
+	}
+	return authorMonthFiles, authorMonthCommits, nil
+}
+
+func getTotalFilesByMonth(repoPath string, months []string) map[string]int {
+	sorted := make([]string, len(months))
+	copy(sorted, months)
+	sort.Strings(sorted)
+
+	result := make(map[string]int)
+	for _, month := range sorted {
+		endOfMonth := month + "-31 23:59:59"
+		cmd := exec.Command("git", "-C", repoPath, "log",
+			"--all", "--before="+endOfMonth,
+			"--format=%H", "-1", ".")
+		hashBytes, err := cmd.Output()
+		if err != nil {
+			continue
+		}
+		hash := strings.TrimSpace(string(hashBytes))
+		if hash == "" {
+			continue
+		}
+		cmd2 := exec.Command("git", "-C", repoPath, "ls-tree", "-r", "--name-only", hash)
+		filesBytes, err := cmd2.Output()
+		if err != nil {
+			continue
+		}
+		count := 0
+		if trimmed := strings.TrimSpace(string(filesBytes)); trimmed != "" {
+			count = len(strings.Split(trimmed, "\n"))
+		}
+		result[month] = count
+	}
+	return result
+}

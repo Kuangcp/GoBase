@@ -41,6 +41,11 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 	result.LocChartLabels, result.LocChartData = getDailyLocCounts(repoPath, result.TotalLinesOfCode)
 	result.ExtensionStats = getExtensionStats(repoPath)
 
+	authorMonthFiles, authorMonthCommits, err := extractAuthorMonthlyStats(repoPath)
+	if err == nil {
+		result.AuthorMonthlyReports = buildAuthorMonthlyReports(result.Authors, authorMonthFiles, authorMonthCommits, repoPath)
+	}
+
 	return result, nil
 }
 
@@ -409,4 +414,77 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		MonthAuthorStats:      monthStats,
 		YearAuthorStats:       yearStats,
 	}
+}
+
+func buildAuthorMonthlyReports(authors []AuthorStat, authorMonthFiles map[string]map[string][]string, authorMonthCommits map[string]map[string]int, repoPath string) []AuthorMonthlyReport {
+	allMonths := make(map[string]bool)
+	for _, mf := range authorMonthFiles {
+		for m := range mf {
+			allMonths[m] = true
+		}
+	}
+	for _, mc := range authorMonthCommits {
+		for m := range mc {
+			allMonths[m] = true
+		}
+	}
+	var monthList []string
+	for m := range allMonths {
+		monthList = append(monthList, m)
+	}
+	sort.Strings(monthList)
+
+	totalFilesByMonth := getTotalFilesByMonth(repoPath, monthList)
+
+	authorName := make(map[string]string)
+	for _, a := range authors {
+		authorName[a.Name] = a.Name
+	}
+
+	var reports []AuthorMonthlyReport
+	for author, monthFiles := range authorMonthFiles {
+		cumFiles := make(map[string]bool)
+		monthKeys := make([]string, 0, len(monthFiles))
+		for m := range monthFiles {
+			monthKeys = append(monthKeys, m)
+		}
+		sort.Strings(monthKeys)
+
+		var monthly []AuthorMonthlyStat
+		for _, m := range monthKeys {
+			files := monthFiles[m]
+			for _, f := range files {
+				cumFiles[f] = true
+			}
+			totalF := totalFilesByMonth[m]
+			breadth := 0.0
+			if totalF > 0 {
+				breadth = float64(len(cumFiles)) / float64(totalF)
+			}
+			monthly = append(monthly, AuthorMonthlyStat{
+				Month:      m,
+				Commits:    authorMonthCommits[author][m],
+				CumFiles:   len(cumFiles),
+				TotalFiles: totalF,
+				Breadth:    breadth,
+			})
+		}
+
+		score := 0.0
+		if len(monthly) > 0 {
+			last := monthly[len(monthly)-1]
+			normActivity := minFloat(float64(last.Commits)/50.0, 1.0)
+			score = last.Breadth*100*0.5 + normActivity*50.0
+		}
+		reports = append(reports, AuthorMonthlyReport{
+			Name:    author,
+			Score:   score,
+			Monthly: monthly,
+		})
+	}
+
+	sort.Slice(reports, func(i, j int) bool {
+		return reports[i].Score > reports[j].Score
+	})
+	return reports
 }

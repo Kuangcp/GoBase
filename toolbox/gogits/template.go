@@ -263,10 +263,10 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section">
 <div class="section-title"><span class="badge-dot badge-dot-{{.DiversityGrade}}"></span>协作多样 · {{.DiversityGrade}} 级 ({{.DiversityScore}} 分)</div>
 <div class="stats-grid">
-<span class="stats-label">贡献者分布</span><span class="stats-value">{{.BusFactorCount}} 位核心作者控制 {{.BusFactorPct}}% 的提交</span>
-<span class="stats-label">团队纵深</span><span class="stats-value">{{sub .AuthorCount .BusFactorCount}} 人超出 Bus Factor 核心</span>
-<span class="stats-label">总贡献者</span><span class="stats-value">{{.AuthorCount}} 人</span>
-<span class="stats-label">人均提交数</span><span class="stats-value">{{.AvgPerAuthor}} 次/人</span>
+<span class="stats-label">贡献均衡度</span><span class="stats-value">基尼系数 {{.GiniCoefficient}} (0=完全均衡)</span>
+<span class="stats-label">核心开放度</span><span class="stats-value">Top 作者更替率 {{.CoreTurnover}}%</span>
+<span class="stats-label">新作者吸纳</span><span class="stats-value">近180天加入 {{.NewcomerRate}}%</span>
+<span class="stats-label">活跃分层</span><span class="stats-value">活跃 {{.ActiveLayerActive}} 人 / 半活跃 {{.ActiveLayerSemi}} 人 / 休眠 {{.ActiveLayerDormant}} 人 / 流失 {{.ActiveLayerLost}} 人</span>
 </div>
 </div>
 </div>
@@ -417,6 +417,25 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section">
 <h2>Cumulated Added Lines of Code per Author</h2>
 <div id="cumAddedChart" class="chart-box"></div>
+</div>
+
+<div class="section">
+<h2 style="margin-bottom:16px">作者广度 &amp; 活跃度排行</h2>
+<div style="margin-bottom:16px">
+<label style="margin-right:8px;color:var(--text-muted)">选择作者:</label>
+<select id="authorSelect" onchange="renderAuthorChart()" style="background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:4px;font-size:14px;max-width:300px">
+<option value="">-- Top 10 综合排行 --</option>
+</select>
+</div>
+<div id="authorTableSection">
+<table>
+<thead>
+<tr><th>#</th><th>作者</th><th class="num">综合评分</th><th class="num">广度 (当月)</th><th class="num">活跃度 (当月)</th></tr>
+</thead>
+<tbody id="authorRankBody"></tbody>
+</table>
+</div>
+<div id="authorDualChart" class="chart-box" style="height:380px;margin-top:16px"></div>
 </div>
 </div>
 
@@ -574,7 +593,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
     document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
     tab.classList.add('active');
     document.getElementById(tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'authors') initAuthorChart();
+    if (tab.dataset.tab === 'authors') { initAuthorChart(); initAuthorDualChart(); }
     if (tab.dataset.tab === 'files') { initFileChart(); initLocChart(); }
     setTimeout(function() {
       commitChart.resize();
@@ -588,6 +607,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       if (cumAddedChart) cumAddedChart.resize();
       if (fileChart) fileChart.resize();
       if (locChart) locChart.resize();
+      if (authorDualChart) authorDualChart.resize();
     }, 100);
   });
 });
@@ -612,6 +632,7 @@ window.addEventListener('resize', function(){
   if (cumAddedChart) cumAddedChart.resize();
   if (fileChart) fileChart.resize();
   if (locChart) locChart.resize();
+  if (authorDualChart) authorDualChart.resize();
 });
 
 (function() {
@@ -652,11 +673,114 @@ window.addEventListener('resize', function(){
 })();
 
 function toggleTheme() {
-  document.body.classList.toggle('light');
-  var btn = document.querySelector('.theme-toggle');
-  btn.textContent = document.body.classList.contains('light') ? 'Dark Mode' : 'Light Mode';
-  localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
-  updateChartTheme();
+	document.body.classList.toggle('light');
+	var btn = document.querySelector('.theme-toggle');
+	btn.textContent = document.body.classList.contains('light') ? 'Dark Mode' : 'Light Mode';
+	localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+	updateChartTheme();
+}
+
+// Author monthly breadth & activity chart
+var authorReportsData = {{.AuthorReportsJSON}};
+
+function populateAuthorSelect() {
+	var select = document.getElementById('authorSelect');
+	if (!select) return;
+	authorReportsData.forEach(function(r) {
+		var opt = document.createElement('option');
+		opt.value = r.name;
+		opt.textContent = r.name + ' (' + r.score.toFixed(1) + '分)';
+		select.appendChild(opt);
+	});
+}
+
+function renderAuthorRankTable() {
+	var tbody = document.getElementById('authorRankBody');
+	if (!tbody) return;
+	tbody.innerHTML = '';
+	var top10 = authorReportsData.slice(0, 10);
+	top10.forEach(function(r, i) {
+		var last = r.monthly.length > 0 ? r.monthly[r.monthly.length-1] : null;
+		var tr = document.createElement('tr');
+		tr.innerHTML = '<td>' + (i+1) + '</td><td>' + r.name + '</td><td class="num">' + r.score.toFixed(1) + '</td>'
+			+ '<td class="num">' + (last ? (last.breadth*100).toFixed(1) + '%' : '-') + '</td>'
+			+ '<td class="num">' + (last ? last.commits : '-') + '</td>';
+		tbody.appendChild(tr);
+	});
+}
+
+var authorDualChart = null;
+function renderAuthorChart() {
+	var select = document.getElementById('authorSelect');
+	if (!authorDualChart) {
+		var el = document.getElementById('authorDualChart');
+		if (!el) return;
+		authorDualChart = echarts.init(el);
+		allCharts.push(authorDualChart);
+	}
+	if (authorReportsData.length === 0) return;
+	var selected = select ? select.value : '';
+	var report;
+	if (!selected) {
+		report = authorReportsData[0];
+	} else {
+		report = authorReportsData.find(function(r) { return r.name === selected; });
+	}
+	if (!report) report = authorReportsData[0];
+	if (!report) return;
+
+	var months = report.monthly.map(function(m) { return m.month; });
+	var breadthData = report.monthly.map(function(m) { return +(m.breadth * 100).toFixed(1); });
+	var commitData = report.monthly.map(function(m) { return m.commits; });
+	var cumFilesData = report.monthly.map(function(m) { return m.cumFiles; });
+	var totalFilesData = report.monthly.map(function(m) { return m.totalFiles; });
+
+	var isLight = document.body.classList.contains('light');
+	var axisColor = isLight ? '#333' : '#e0e0e0';
+	var opt = {
+		title: { text: report.name + ' 月度趋势', textStyle: { color: axisColor, fontSize: 15 } },
+		tooltip: {
+			trigger: 'axis',
+			formatter: function(params) {
+				var p = Array.isArray(params) ? params : [params];
+				var tip = '<strong>' + p[0].axisValue + '</strong><br/>';
+				p.forEach(function(s) {
+					tip += s.marker + ' ' + s.seriesName + ': ' + s.value;
+					if (s.seriesName === '广度') tip += '%';
+					tip += '<br/>';
+				});
+				var idx = p[0].dataIndex;
+				tip += '<span style="color:#777">累计文件: ' + cumFilesData[idx] + ' / 总文件: ' + totalFilesData[idx] + '</span>';
+				return tip;
+			}
+		},
+		legend: { data: ['广度', '活跃度'], textStyle: { color: axisColor } },
+		grid: { left: 60, right: 60, bottom: 30, top: 50 },
+		xAxis: { type: 'category', data: months, axisLabel: { color: axisColor } },
+		yAxis: [
+			{ type: 'value', name: '广度 (%)', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#5470c6' }, nameTextStyle: { color: '#5470c6' } },
+			{ type: 'value', name: '活跃度 (提交数)', min: 0, axisLabel: { color: '#91cc75' }, nameTextStyle: { color: '#91cc75' } }
+		],
+		series: [
+			{ name: '广度', type: 'line', data: breadthData, smooth: true, lineStyle: { width: 2, color: '#5470c6' }, itemStyle: { color: '#5470c6' }, areaStyle: { color: 'rgba(84,112,198,0.15)' } },
+			{ name: '活跃度', type: 'bar', yAxisIndex: 1, data: commitData, itemStyle: { color: 'rgba(145,204,117,0.7)' } }
+		]
+	};
+	authorDualChart.setOption(opt, { notMerge: true });
+	updateChartTheme();
+}
+
+function initAuthorDualChart() {
+	if (!authorDualChart && authorReportsData && authorReportsData.length > 0) {
+		renderAuthorChart();
+	}
+	if (authorDualChart) authorDualChart.resize();
+}
+
+if (authorReportsData && authorReportsData.length > 0) {
+	populateAuthorSelect();
+	renderAuthorRankTable();
+	renderAuthorChart();
 }
 </script>
 </body>
