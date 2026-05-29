@@ -806,12 +806,12 @@ func extractAuthorMonthlyStats(repoPath string) (map[string]map[string][]string,
 	return authorMonthFiles, authorMonthCommits, nil
 }
 
-func getTotalFilesByMonth(repoPath string, months []string) map[string]int {
+func getTotalFilesByMonth(repoPath string, months []string) map[string]map[string]bool {
 	sorted := make([]string, len(months))
 	copy(sorted, months)
 	sort.Strings(sorted)
 
-	result := make(map[string]int)
+	result := make(map[string]map[string]bool)
 	for _, month := range sorted {
 		endOfMonth := month + "-31 23:59:59"
 		cmd := exec.Command("git", "-C", repoPath, "log",
@@ -830,11 +830,13 @@ func getTotalFilesByMonth(repoPath string, months []string) map[string]int {
 		if err != nil {
 			continue
 		}
-		count := 0
+		fileSet := make(map[string]bool)
 		if trimmed := strings.TrimSpace(string(filesBytes)); trimmed != "" {
-			count = len(strings.Split(trimmed, "\n"))
+			for _, f := range strings.Split(trimmed, "\n") {
+				fileSet[f] = true
+			}
 		}
-		result[month] = count
+		result[month] = fileSet
 	}
 	return result
 }

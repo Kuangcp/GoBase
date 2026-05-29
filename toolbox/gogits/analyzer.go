@@ -456,16 +456,26 @@ func buildAuthorMonthlyReports(authors []AuthorStat, authorMonthFiles map[string
 			for _, f := range files {
 				cumFiles[f] = true
 			}
-			totalF := totalFilesByMonth[m]
+			fileSet := totalFilesByMonth[m]
+			intersection := 0
+			totalCount := 0
+			if fileSet != nil {
+				totalCount = len(fileSet)
+				for f := range cumFiles {
+					if fileSet[f] {
+						intersection++
+					}
+				}
+			}
 			breadth := 0.0
-			if totalF > 0 {
-				breadth = float64(len(cumFiles)) / float64(totalF)
+			if totalCount > 0 {
+				breadth = float64(intersection) / float64(totalCount)
 			}
 			monthly = append(monthly, AuthorMonthlyStat{
 				Month:      m,
 				Commits:    authorMonthCommits[author][m],
-				CumFiles:   len(cumFiles),
-				TotalFiles: totalF,
+				CumFiles:   intersection,
+				TotalFiles: totalCount,
 				Breadth:    breadth,
 			})
 		}

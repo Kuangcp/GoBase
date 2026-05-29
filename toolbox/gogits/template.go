@@ -420,13 +420,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </div>
 
 <div class="section">
-<h2 style="margin-bottom:16px">作者广度 &amp; 活跃度排行</h2>
-<div style="margin-bottom:16px">
-<label style="margin-right:8px;color:var(--text-muted)">选择作者:</label>
-<select id="authorSelect" onchange="renderAuthorChart()" style="background:var(--bg-card);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:4px;font-size:14px;max-width:300px">
-<option value="">-- Top 10 综合排行 --</option>
-</select>
-</div>
+<h2 style="margin-bottom:16px">作者广度趋势</h2>
 <div id="authorTableSection">
 <table>
 <thead>
@@ -683,102 +677,113 @@ function toggleTheme() {
 // Author monthly breadth & activity chart
 var authorReportsData = {{.AuthorReportsJSON}};
 
-function populateAuthorSelect() {
-	var select = document.getElementById('authorSelect');
-	if (!select) return;
-	authorReportsData.forEach(function(r) {
-		var opt = document.createElement('option');
-		opt.value = r.name;
-		opt.textContent = r.name + ' (' + r.score.toFixed(1) + '分)';
-		select.appendChild(opt);
-	});
-}
-
 function renderAuthorRankTable() {
 	var tbody = document.getElementById('authorRankBody');
 	if (!tbody) return;
 	tbody.innerHTML = '';
-	var top10 = authorReportsData.slice(0, 10);
-	top10.forEach(function(r, i) {
-		var last = r.monthly.length > 0 ? r.monthly[r.monthly.length-1] : null;
+	var latestMonth = '';
+	authorReportsData.forEach(function(r) {
+		r.monthly.forEach(function(m) {
+			if (m.month > latestMonth) latestMonth = m.month;
+		});
+	});
+	if (!latestMonth) return;
+	var monthData = [];
+	authorReportsData.forEach(function(r) {
+		var found = null;
+		for (var i = 0; i < r.monthly.length; i++) {
+			if (r.monthly[i].month === latestMonth) { found = r.monthly[i]; break; }
+		}
+		if (found) monthData.push({ name: r.name, score: r.score, month: found });
+	});
+	monthData.sort(function(a, b) { return b.month.breadth - a.month.breadth; });
+	monthData.slice(0, 10).forEach(function(r, i) {
 		var tr = document.createElement('tr');
 		tr.innerHTML = '<td>' + (i+1) + '</td><td>' + r.name + '</td><td class="num">' + r.score.toFixed(1) + '</td>'
-			+ '<td class="num">' + (last ? (last.breadth*100).toFixed(1) + '%' : '-') + '</td>'
-			+ '<td class="num">' + (last ? last.commits : '-') + '</td>';
+			+ '<td class="num">' + (r.month.breadth*100).toFixed(1) + '%' + '</td>'
+			+ '<td class="num">' + r.month.commits + '</td>';
 		tbody.appendChild(tr);
 	});
 }
 
-var authorDualChart = null;
+var authorBreadthChart = null;
 function renderAuthorChart() {
-	var select = document.getElementById('authorSelect');
-	if (!authorDualChart) {
+	if (!authorBreadthChart) {
 		var el = document.getElementById('authorDualChart');
 		if (!el) return;
-		authorDualChart = echarts.init(el);
-		allCharts.push(authorDualChart);
+		authorBreadthChart = echarts.init(el);
+		allCharts.push(authorBreadthChart);
 	}
 	if (authorReportsData.length === 0) return;
-	var selected = select ? select.value : '';
-	var report;
-	if (!selected) {
-		report = authorReportsData[0];
-	} else {
-		report = authorReportsData.find(function(r) { return r.name === selected; });
-	}
-	if (!report) report = authorReportsData[0];
-	if (!report) return;
 
-	var months = report.monthly.map(function(m) { return m.month; });
-	var breadthData = report.monthly.map(function(m) { return +(m.breadth * 100).toFixed(1); });
-	var commitData = report.monthly.map(function(m) { return m.commits; });
-	var cumFilesData = report.monthly.map(function(m) { return m.cumFiles; });
-	var totalFilesData = report.monthly.map(function(m) { return m.totalFiles; });
+	var latestMonth = '';
+	authorReportsData.forEach(function(r) {
+		r.monthly.forEach(function(m) {
+			if (m.month > latestMonth) latestMonth = m.month;
+		});
+	});
+	if (!latestMonth) return;
+
+	var chartAuthors = [];
+	authorReportsData.forEach(function(r) {
+		for (var i = 0; i < r.monthly.length; i++) {
+			if (r.monthly[i].month === latestMonth) { chartAuthors.push(r); break; }
+		}
+	});
+	chartAuthors.sort(function(a, b) {
+		var ba = 0, bb = 0;
+		for (var i = 0; i < a.monthly.length; i++) { if (a.monthly[i].month === latestMonth) { ba = a.monthly[i].breadth; break; } }
+		for (var i = 0; i < b.monthly.length; i++) { if (b.monthly[i].month === latestMonth) { bb = b.monthly[i].breadth; break; } }
+		return bb - ba;
+	});
+	chartAuthors = chartAuthors.slice(0, 10);
+
+	var monthSet = {};
+	chartAuthors.forEach(function(r) {
+		r.monthly.forEach(function(m) { monthSet[m.month] = true; });
+	});
+	var months = Object.keys(monthSet).sort();
 
 	var isLight = document.body.classList.contains('light');
 	var axisColor = isLight ? '#333' : '#e0e0e0';
+	var legendData = [];
+	var series = [];
+
+	chartAuthors.forEach(function(r, idx) {
+		var mMap = {};
+		r.monthly.forEach(function(m) { mMap[m.month] = +(m.breadth * 100).toFixed(1); });
+		var data = months.map(function(m) { return mMap[m] !== undefined ? mMap[m] : null; });
+		var c = colors[idx % colors.length];
+		legendData.push(r.name);
+		series.push({
+			name: r.name, type: 'line',
+			data: data, smooth: true,
+			lineStyle: { width: 2, color: c },
+			itemStyle: { color: c },
+			connectNulls: false
+		});
+	});
+
 	var opt = {
-		title: { text: report.name + ' 月度趋势', textStyle: { color: axisColor, fontSize: 15 } },
-		tooltip: {
-			trigger: 'axis',
-			formatter: function(params) {
-				var p = Array.isArray(params) ? params : [params];
-				var tip = '<strong>' + p[0].axisValue + '</strong><br/>';
-				p.forEach(function(s) {
-					tip += s.marker + ' ' + s.seriesName + ': ' + s.value;
-					if (s.seriesName === '广度') tip += '%';
-					tip += '<br/>';
-				});
-				var idx = p[0].dataIndex;
-				tip += '<span style="color:#777">累计文件: ' + cumFilesData[idx] + ' / 总文件: ' + totalFilesData[idx] + '</span>';
-				return tip;
-			}
-		},
-		legend: { data: ['广度', '活跃度'], textStyle: { color: axisColor } },
-		grid: { left: 60, right: 60, bottom: 30, top: 50 },
+		tooltip: { trigger: 'axis' },
+		legend: { data: legendData, textStyle: { color: axisColor }, type: 'scroll' },
+		grid: { left: 60, right: 30, bottom: 30, top: 50 },
 		xAxis: { type: 'category', data: months, axisLabel: { color: axisColor } },
-		yAxis: [
-			{ type: 'value', name: '广度 (%)', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#5470c6' }, nameTextStyle: { color: '#5470c6' } },
-			{ type: 'value', name: '活跃度 (提交数)', min: 0, axisLabel: { color: '#91cc75' }, nameTextStyle: { color: '#91cc75' } }
-		],
-		series: [
-			{ name: '广度', type: 'line', data: breadthData, smooth: true, lineStyle: { width: 2, color: '#5470c6' }, itemStyle: { color: '#5470c6' }, areaStyle: { color: 'rgba(84,112,198,0.15)' } },
-			{ name: '活跃度', type: 'bar', yAxisIndex: 1, data: commitData, itemStyle: { color: 'rgba(145,204,117,0.7)' } }
-		]
+		yAxis: { type: 'value', name: '广度 (%)', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#5470c6' }, nameTextStyle: { color: '#5470c6' } },
+		series: series
 	};
-	authorDualChart.setOption(opt, { notMerge: true });
+	authorBreadthChart.setOption(opt, { notMerge: true });
 	updateChartTheme();
 }
 
 function initAuthorDualChart() {
-	if (!authorDualChart && authorReportsData && authorReportsData.length > 0) {
+	if (!authorBreadthChart && authorReportsData && authorReportsData.length > 0) {
 		renderAuthorChart();
 	}
-	if (authorDualChart) authorDualChart.resize();
+	if (authorBreadthChart) authorBreadthChart.resize();
 }
 
 if (authorReportsData && authorReportsData.length > 0) {
-	populateAuthorSelect();
 	renderAuthorRankTable();
 	renderAuthorChart();
 }
