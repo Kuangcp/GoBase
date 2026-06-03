@@ -132,7 +132,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		weekday := (c.Date.Weekday() + 6) % 7
 		hour := c.Date.Hour()
 		hourWeekData[weekday][hour]++
-		if weekday >= 5 || hour < 6 || hour >= 22 {
+		if weekday >= 5 || hour < 9 || hour >= 18 {
 			offHoursCommits++
 			offHoursAdded += c.Added
 			offHoursDeleted += c.Deleted

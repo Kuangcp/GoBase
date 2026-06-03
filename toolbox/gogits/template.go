@@ -255,7 +255,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="stats-grid">
 <span class="stats-label">提交连续性</span><span class="stats-value">{{.ConsistencyPct}}% ({{.ActiveWeeks}}/{{.TotalWeeks}} 周有提交)</span>
 <span class="stats-label">版本发布数</span><span class="stats-value">{{.ReleaseCount}} 个标签</span>
-<span class="stats-label">加班疲劳度</span><span class="stats-value">提交数 {{.OffHoursCommits}} ({{.OffHoursPct}}%) (非工作时间提交)</span>
+<span class="stats-label">加班疲劳度</span><span class="stats-value">提交数 {{.OffHoursCommitStr}} ({{.OffHoursPct}}%) (非工作时间提交)</span>
 <span class="stats-label">加班产出</span><span class="stats-value">修改行数 {{.OffHoursLineStr}} ({{.OffHoursLinePct}}%) (非工作时间提交)</span>
 <span class="stats-label">项目持续天数</span><span class="stats-value">{{.AgeDays}} 天</span>
 </div>

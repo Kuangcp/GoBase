@@ -92,10 +92,11 @@ type templateData struct {
 	DebtScore       string
 	RhythmGrade     string
 	RhythmScore     string
-	OffHoursPct      string
-	OffHoursCommits  int
-	OffHoursLinePct  string
-	OffHoursLineStr  string
+	OffHoursPct       string
+	OffHoursCommits   int
+	OffHoursCommitStr string
+	OffHoursLinePct   string
+	OffHoursLineStr   string
 	ConsistencyPct   string
 	ReleaseCount    int
 	ActiveWeeks     int
@@ -382,12 +383,14 @@ func calcRhythmScore(consistencyPct, offHoursPct float64, releaseCount int, ageD
 		expected = 1
 	}
 	releaseScore := minFloat(float64(releaseCount)/expected, 1.0) * 25
-	offHoursScore := (1.0 - minFloat(offHoursPct/0.4, 1.0)) * 25
 	longevityScore := 0.0
 	if ageDays >= 30 {
 		longevityScore = minFloat(float64(ageDays)/365.0, 1.0) * 15
 	}
-	total := consistencyScore + releaseScore + offHoursScore + longevityScore
+	baseScore := consistencyScore + releaseScore + longevityScore
+	penaltyRatio := maxFloat((offHoursPct-0.2)/0.5, 0.0)
+	penaltyRatio = minFloat(penaltyRatio, 1.0)
+	total := baseScore * (1.0 - penaltyRatio*0.5)
 	return scoreToGrade(total), total
 }
 
@@ -532,7 +535,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		for h := 0; h < 24; h++ {
 			v := result.HourWeekData[d][h]
 			allTotal += v
-			if d >= 5 || h < 6 || h >= 22 {
+			if d >= 5 || h < 9 || h >= 18 {
 				offHoursTotal += v
 			}
 		}
@@ -667,6 +670,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		RhythmScore:       fmt.Sprintf("%.0f", rhythmScore),
 		OffHoursPct:       fmt.Sprintf("%.1f", offHoursPct*100),
 		OffHoursCommits:   result.OffHoursCommits,
+		OffHoursCommitStr: fmt.Sprintf("%d / %d", result.OffHoursCommits, result.TotalCommits),
 		OffHoursLinePct:   fmt.Sprintf("%.1f", offHoursLinePct),
 		OffHoursLineStr:   fmt.Sprintf("%d / %d", offHoursLines, totalLines),
 		ConsistencyPct:    fmt.Sprintf("%.1f", consistencyPct),
