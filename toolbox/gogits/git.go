@@ -400,7 +400,7 @@ func getHotspots(repoPath string, topN int) []FileHotspot {
 
 func getAbandonedData(repoPath string, totalLOC int) (float64, int) {
 	cmd := exec.Command("git", "-C", repoPath, "log", "--since=1 year ago",
-		"--pretty=format:", "--name-only", "--diff-filter=AM", "HEAD")
+		"--pretty=format:", "--name-only", "--diff-filter=AMRC", "HEAD")
 	out, err := cmd.Output()
 	if err != nil {
 		return 0, 0
