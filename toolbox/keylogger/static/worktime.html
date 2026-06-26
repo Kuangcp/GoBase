@@ -84,6 +84,9 @@
             calculable: true,
             orient: 'vertical',
             top: 'left',
+            formatter: function (v) {
+                return (v / 60).toFixed(1) + 'h';
+            },
             inRange: {
                 color: ['#edffe9', '#dcffd3', '#bbffab',
                     '#9be9a8', '#40c463', '#30a14e', '#216e39'
