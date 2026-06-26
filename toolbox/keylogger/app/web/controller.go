@@ -69,11 +69,13 @@ type (
 	}
 
 	HeatMapVO struct {
-		Data  [168][3]int `json:"data"`
-		Max   int         `json:"max"`
-		Total int         `json:"total"`
-		Start string      `json:"start"`
-		End   string      `json:"end"`
+		Data             [168][3]int `json:"data"`
+		Max              int         `json:"max"`
+		Total            int         `json:"total"`
+		Start            string      `json:"start"`
+		End              string      `json:"end"`
+		WorkMinutes      int         `json:"workMinutes"`
+		WorkMinutesPerDay int        `json:"workMinutesPerDay"`
 	}
 
 	CalendarHeatMapVO struct {
@@ -334,27 +336,53 @@ func HeatMap(c *gin.Context) {
 	ghelp.GinSuccessWith(c, mapVO)
 }
 
+const mergeThresholdMicros = int64(4 * 3600 * 1_000_000) // 4 hours
+
+type dayTimeRange struct {
+	first int64
+	last  int64
+}
+
 func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	dayList := buildDayList(length, offset)
-
-	// data: [weekday, hour, count], [weekday, hour, count]
 	var result [168][3]int
 
-	//TODO no mutex or sync.Map use read write lock
 	var mutex = &sync.Mutex{}
-	// weekday -> hour -> count
 	totalMap := make(map[int]map[int]int)
+	timeRanges := make([]dayTimeRange, len(dayList))
 	var latch sync.WaitGroup
 	latch.Add(len(dayList))
 
 	watch := ctool.NewStopWatchWithName("")
 	watch.Start(fmt.Sprint(len(dayList), "day"))
-	for _, day := range dayList {
-		var curDay = day
+	for i, day := range dayList {
+		curDay := day
+		idx := i
 		go func() {
 			defer latch.Done()
 
-			readDetailToMap(curDay, mutex, totalMap)
+			list := store.QueryDetailByDay(curDay)
+			for _, d := range list {
+				curStrokeTime := time.Unix(d.HitTime/1000_000, 0)
+				weekDay := (int(curStrokeTime.Weekday()) + 6) % 7
+
+				actionRoundLock(mutex, func() {
+					dayMap := totalMap[weekDay]
+					if dayMap == nil {
+						dayMap = make(map[int]int)
+						totalMap[weekDay] = dayMap
+					}
+					dayMap[curStrokeTime.Hour()] += 1
+				})
+
+				hitTime := d.HitTime
+				if timeRanges[idx].first == 0 || hitTime < timeRanges[idx].first {
+					timeRanges[idx].first = hitTime
+				}
+				if hitTime > timeRanges[idx].last {
+					timeRanges[idx].last = hitTime
+				}
+			}
 		}()
 	}
 	latch.Wait()
@@ -365,7 +393,6 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	for weekday, v := range totalMap {
 		chartIndex := 6 - weekday
 		for hour, count := range v {
-			//logger.Info(weekday, hour)
 			if count > max {
 				max = count
 			}
@@ -374,36 +401,49 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 		}
 	}
 
+	workMinutes := computeWorkTime(timeRanges)
+	totalWorkMin := 0
+	for _, m := range workMinutes {
+		totalWorkMin += m
+	}
+
 	strings.Replace(dayList[0], ":", "-", -1)
 	return &HeatMapVO{
-		Max:   max,
-		Total: total,
-		Data:  result,
-		Start: strings.Replace(dayList[0], ":", "-", -1),
-		End:   strings.Replace(dayList[len(dayList)-1], ":", "-", -1),
+		Max:              max,
+		Total:            total,
+		Data:             result,
+		Start:            strings.Replace(dayList[0], ":", "-", -1),
+		End:              strings.Replace(dayList[len(dayList)-1], ":", "-", -1),
+		WorkMinutes:      totalWorkMin,
+		WorkMinutesPerDay: totalWorkMin / len(dayList),
 	}
 }
 
-func readDetailToMap(curDay string, mutex *sync.Mutex, totalMap map[int]map[int]int) {
-
-	list := store.QueryDetailByDay(curDay)
-	for _, d := range list {
-		curStrokeTime := time.Unix(d.HitTime/1000_000, 0)
-		weekDay := (int(curStrokeTime.Weekday()) + 6) % 7
-
-		actionRoundLock(mutex, func() {
-			dayMap := totalMap[weekDay]
-			//curStr := cur.Format(DateFormat)
-			//if curStr != curDay {
-			//	logger.Error("error detail data", curStr, curDay)
-			//}
-			if dayMap == nil {
-				dayMap = make(map[int]int)
-				totalMap[weekDay] = dayMap
+func computeWorkTime(timeRanges []dayTimeRange) []int {
+	minutes := make([]int, len(timeRanges))
+	i := 0
+	for i < len(timeRanges) {
+		if timeRanges[i].first == 0 {
+			i++
+			continue
+		}
+		last := timeRanges[i].last
+		j := i + 1
+		for j < len(timeRanges) && timeRanges[j].first > 0 {
+			gap := timeRanges[j].first - last
+			if gap > mergeThresholdMicros {
+				break
 			}
-			dayMap[curStrokeTime.Hour()] += 1
-		})
+			last = timeRanges[j].last
+			j++
+		}
+		minutes[i] = int((last - timeRanges[i].first) / 60_000_000)
+		for k := i + 1; k < j; k++ {
+			minutes[k] = 0
+		}
+		i = j
 	}
+	return minutes
 }
 
 func actionRoundLock(mutex *sync.Mutex, action func()) {

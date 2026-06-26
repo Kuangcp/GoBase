@@ -121,6 +121,9 @@
         });
 
         let title = heatMap.start + " ➡️ " + heatMap.end + " [" + heatMap.total + "]"
+        if (heatMap.workMinutes) {
+            title += " 「工时 " + (heatMap.workMinutes / 60).toFixed(1) + "h / 日均 " + (heatMap.workMinutesPerDay / 60).toFixed(1) + "h」"
+        }
         let option = {
             title: {
                 text: title,
