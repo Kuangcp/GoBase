@@ -436,25 +436,19 @@ func buildAuthorMonthlyReports(authors []AuthorStat, authorMonthFiles map[string
 
 	totalFilesByMonth := getTotalFilesByMonth(repoPath, monthList)
 
-	authorName := make(map[string]string)
-	for _, a := range authors {
-		authorName[a.Name] = a.Name
-	}
-
 	var reports []AuthorMonthlyReport
-	for author, monthFiles := range authorMonthFiles {
-		cumFiles := make(map[string]bool)
-		monthKeys := make([]string, 0, len(monthFiles))
-		for m := range monthFiles {
-			monthKeys = append(monthKeys, m)
-		}
-		sort.Strings(monthKeys)
+	for _, a := range authors {
+		author := a.Name
+		monthFiles := authorMonthFiles[author]
+		monthCommits := authorMonthCommits[author]
 
+		cumFiles := make(map[string]bool)
 		var monthly []AuthorMonthlyStat
-		for _, m := range monthKeys {
-			files := monthFiles[m]
-			for _, f := range files {
-				cumFiles[f] = true
+		for _, m := range monthList {
+			if files, ok := monthFiles[m]; ok {
+				for _, f := range files {
+					cumFiles[f] = true
+				}
 			}
 			fileSet := totalFilesByMonth[m]
 			intersection := 0
@@ -471,9 +465,13 @@ func buildAuthorMonthlyReports(authors []AuthorStat, authorMonthFiles map[string
 			if totalCount > 0 {
 				breadth = float64(intersection) / float64(totalCount)
 			}
+			commits := 0
+			if monthCommits != nil {
+				commits = monthCommits[m]
+			}
 			monthly = append(monthly, AuthorMonthlyStat{
 				Month:      m,
-				Commits:    authorMonthCommits[author][m],
+				Commits:    commits,
 				CumFiles:   intersection,
 				TotalFiles: totalCount,
 				Breadth:    breadth,

@@ -764,9 +764,9 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 
 func extractAuthorMonthlyStats(repoPath string) (map[string]map[string][]string, map[string]map[string]int, error) {
 	cmd := exec.Command("git", "-C", repoPath, "log",
-		"--all", "--no-merges",
+		"--no-merges",
 		"--format=%H|%an|%ai",
-		"--name-only", ".")
+		"--name-only", "HEAD")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, nil, err
