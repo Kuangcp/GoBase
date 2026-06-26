@@ -618,6 +618,20 @@ func getRecentFileCount(repoPath string) int {
 	return len(files)
 }
 
+func parseRenamePath(path string) (oldPath, newPath string) {
+	braceStart := strings.Index(path, "{")
+	arrowStart := strings.Index(path, " => ")
+	braceEnd := strings.Index(path, "}")
+	if braceStart == -1 || arrowStart == -1 || braceEnd == -1 {
+		return path, path
+	}
+	prefix := path[:braceStart]
+	oldPart := path[braceStart+1 : arrowStart]
+	newPart := path[arrowStart+4 : braceEnd]
+	suffix := path[braceEnd+1:]
+	return prefix + oldPart + suffix, prefix + newPart + suffix
+}
+
 func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 	rootCmd := exec.Command("git", "-C", repoPath, "rev-parse", "--show-toplevel")
 	rootOut, err := rootCmd.Output()
@@ -629,7 +643,7 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 	if err != nil {
 		prefix = "."
 	}
-	args := []string{"-C", repoPath, "log",
+	args := []string{"-C", repoRoot, "log",
 		"--reverse",
 		"--format=COMMIT%n%H|%ai",
 		"--numstat",
@@ -689,14 +703,15 @@ func getDailyLocCounts(repoPath string, totalLoc int) ([]string, []int) {
 				added, err1 := strconv.Atoi(parts[0])
 				deleted, err2 := strconv.Atoi(parts[1])
 				if err1 == nil && err2 == nil {
-					name := parts[2]
-					if strings.Contains(name, " => ") {
-						sub := strings.SplitN(name, " => ", 2)
-						oldSize := fileLOC[sub[0]]
-						delete(fileLOC, sub[0])
-						name = sub[1]
-						fileLOC[name] = oldSize
+				name := parts[2]
+				if strings.Contains(name, " => ") && strings.Contains(name, "{") && strings.Contains(name, "}") {
+					oldName, newName := parseRenamePath(name)
+					if oldSize, ok := fileLOC[oldName]; ok {
+						delete(fileLOC, oldName)
+						fileLOC[newName] = oldSize
 					}
+					name = newName
+				}
 					fileLOC[name] += added - deleted
 					if fileLOC[name] <= 0 {
 						delete(fileLOC, name)
