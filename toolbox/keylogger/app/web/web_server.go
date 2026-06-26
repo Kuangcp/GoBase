@@ -57,6 +57,7 @@ func registerRouter(router *gin.Engine) {
 	router.GET(buildPath("/heatMap"), HeatMap)
 	router.GET(buildPath("/weeksHeatMap"), MultipleHeatMap)
 	router.GET(buildPath("/calendarMap"), CalendarMap)
+	router.GET(buildPath("/workTimeCalendar"), WorkTimeCalendar)
 	router.GET(buildPath("/exportDetail"), ExportDetail)
 	router.GET(buildPath("/syncDetails"), SyncDetails)
 }

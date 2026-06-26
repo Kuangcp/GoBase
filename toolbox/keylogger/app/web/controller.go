@@ -294,6 +294,160 @@ func fillEmptyDay(startDay time.Time, endDay time.Time) [][2]string {
 	return result
 }
 
+func WorkTimeCalendar(c *gin.Context) {
+	conn := store.GetConnection()
+	totalData, err := conn.ZRangeWithScores(store.TotalCount, 0, -1).Result()
+	ctool.CheckIfError(err)
+
+	yearMap := make(map[string][]string)
+	for _, ele := range totalData {
+		day := ele.Member.(string)
+		fields := strings.Split(day, ":")
+		yearStr := fields[0]
+		yearMap[yearStr] = append(yearMap[yearStr], day)
+	}
+
+	var yearList []string
+	for k := range yearMap {
+		yearList = append(yearList, k)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(yearList)))
+
+	chartIndex := -1
+	var mapList []CalendarHeatMapVO
+	var styleList []CalendarStyleVO
+	globalMax := 0
+
+	for _, year := range yearList {
+		days := yearMap[year]
+		sort.Strings(days)
+
+		timeRanges := fetchYearTimeRanges(days)
+
+		workMinutes := mergeWorkTimeByDays(days, timeRanges)
+		dayWorkMap := make(map[string]int)
+		maxScore := 0
+		for i, d := range days {
+			dayWorkMap[d] = workMinutes[i]
+			if workMinutes[i] > maxScore {
+				maxScore = workMinutes[i]
+			}
+		}
+
+		result, tempMax := buildYearWorkTime(days, dayWorkMap)
+		if tempMax > maxScore {
+			maxScore = tempMax
+		}
+
+		chartIndex++
+		mapList = append(mapList, CalendarHeatMapVO{
+			Type:             "heatmap",
+			CoordinateSystem: "calendar",
+			CalendarIndex:    chartIndex,
+			Data:             result,
+		})
+		styleList = append(styleList, CalendarStyleVO{Range: year})
+		if maxScore > globalMax {
+			globalMax = maxScore
+		}
+	}
+
+	ghelp.GinSuccessWith(c, CalendarResultVO{Maps: mapList, Styles: styleList, Max: globalMax})
+}
+
+func fetchYearTimeRanges(days []string) []dayTimeRange {
+	ranges := make([]dayTimeRange, len(days))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 20)
+	for i, day := range days {
+		wg.Add(1)
+		go func(idx int, d string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			first, last := store.QueryDayTimeRange(d)
+			if first > 0 {
+				ranges[idx] = dayTimeRange{first: first, last: last}
+			}
+		}(i, day)
+	}
+	wg.Wait()
+	return ranges
+}
+
+func mergeWorkTimeByDays(days []string, timeRanges []dayTimeRange) []int {
+	minutes := make([]int, len(timeRanges))
+	i := 0
+	for i < len(timeRanges) {
+		if timeRanges[i].first == 0 {
+			i++
+			continue
+		}
+		last := timeRanges[i].last
+		j := i + 1
+		for j < len(timeRanges) && timeRanges[j].first > 0 {
+			if !isConsecutiveDay(days[j-1], days[j]) {
+				break
+			}
+			gap := timeRanges[j].first - last
+			if gap > mergeThresholdMicros {
+				break
+			}
+			last = timeRanges[j].last
+			j++
+		}
+		m := int((last - timeRanges[i].first) / 60_000_000)
+		if m > maxWorkMinutesPerDay {
+			m = 0
+		}
+		minutes[i] = m
+		for k := i + 1; k < j; k++ {
+			minutes[k] = 0
+		}
+		i = j
+	}
+	return minutes
+}
+
+func isConsecutiveDay(prev, next string) bool {
+	prevTime, err := time.Parse(store.DateFormat, prev)
+	if err != nil {
+		return false
+	}
+	nextTime, err := time.Parse(store.DateFormat, next)
+	if err != nil {
+		return false
+	}
+	return prevTime.AddDate(0, 0, 1).Equal(nextTime)
+}
+
+func buildYearWorkTime(data []string, workMap map[string]int) ([][2]string, int) {
+	var result [][2]string
+	maxScore := 0
+	var lastTime *time.Time = nil
+	for _, day := range data {
+		var dayTime, err = time.Parse(store.DateFormat, day)
+		ctool.CheckIfError(err)
+
+		if lastTime == nil {
+			emptyDay := fillEmptyDay(dayTime.AddDate(0, 0, -dayTime.YearDay()+1), dayTime)
+			result = append(result, emptyDay...)
+			lastTime = &dayTime
+		} else {
+			emptyDay := fillEmptyDay(lastTime.AddDate(0, 0, 1), dayTime)
+			result = append(result, emptyDay...)
+			lastTime = &dayTime
+		}
+		minutes := workMap[day]
+		if minutes > maxScore {
+			maxScore = minutes
+		}
+
+		result = append(result, [2]string{dayTime.Format(ctool.YYYY_MM_DD), strconv.Itoa(minutes)})
+	}
+	return result, maxScore
+}
+
 func MultipleHeatMap(c *gin.Context) {
 	param, err := parseParam(c)
 	if err != nil {
@@ -337,6 +491,7 @@ func HeatMap(c *gin.Context) {
 }
 
 const mergeThresholdMicros = int64(4 * 3600 * 1_000_000) // 4 hours
+const maxWorkMinutesPerDay = 1440 // 24h, exceeded means dirty data
 
 type dayTimeRange struct {
 	first int64
@@ -437,7 +592,11 @@ func computeWorkTime(timeRanges []dayTimeRange) []int {
 			last = timeRanges[j].last
 			j++
 		}
-		minutes[i] = int((last - timeRanges[i].first) / 60_000_000)
+		m := int((last - timeRanges[i].first) / 60_000_000)
+		if m > maxWorkMinutesPerDay {
+			m = 0
+		}
+		minutes[i] = m
 		for k := i + 1; k < j; k++ {
 			minutes[k] = 0
 		}

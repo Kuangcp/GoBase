@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Calendar</title>
-    <!-- https://echarts.apache.org/examples/zh/editor.html?c=calendar-heatmap -->
+    <title>Work Time</title>
 
     <script src="/s/js/lib/jquery.min.js"></script>
     <script src="/s/js/lib/echarts.min.js"></script>
@@ -21,7 +20,8 @@
 <body>
 <nav class="nav">
     <button onclick="window.location='/s'">首页</button>
-    <button onclick="window.location='/s/worktime.html'">工时年视图</button>
+    <button onclick="window.location='/s/calendar.html'">年视图</button>
+    <button onclick="window.location='/s/weeks.html'">每周热力图</button>
 </nav>
 <div id="calendarMap" class="calendar-map"></div>
 
@@ -30,21 +30,33 @@
         title: {
             top: 15,
             left: 'center',
-            text: '年度数据'
+            text: '每日工时 (小时)'
         },
         tooltip: {
             position: 'top',
             formatter: function (p) {
                 let format = echarts.format.formatTime('yyyy-MM-dd', p.data[0]);
-                return format + ': ' + p.data[1];
+                let hours = (p.data[1] / 60).toFixed(1);
+                return format + ': ' + hours + 'h';
             }
         },
     };
 
-    handleGet('/calendarMap', function (response) {
-        // console.log(data.data)
+    handleGet('/workTimeCalendar', function (response) {
         let calendar = []
         let topVal = -140
+
+        let maxVal = response.data.max
+        let pieces = []
+        if (maxVal > 0) {
+            let rawStep = maxVal / 7
+            let step = Math.ceil(rawStep / 30) * 30
+            if (step < 30) step = 30
+            for (let i = 0; i < 7; i++) {
+                pieces.push({min: Math.round(i * step), max: Math.round((i + 1) * step)})
+            }
+        }
+
         for (let idx in response.data.styles) {
             topVal += 220
             calendar.push({
@@ -68,11 +80,9 @@
 
         option.visualMap = {
             min: 0,
-            max: response.data.max,
-            // type: 'piecewise',
+            max: maxVal,
             calculable: true,
             orient: 'vertical',
-            // orient: 'horizontal',
             top: 'left',
             inRange: {
                 color: ['#edffe9', '#dcffd3', '#bbffab',

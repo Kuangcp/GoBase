@@ -30,6 +30,54 @@ func QueryDetailByDay(day string) []DetailVO {
 	return QueryDetailByKey(key)
 }
 
+func QueryDayTimeRange(day string) (first, last int64) {
+	key := GetDetailKeyByString(day)
+	conn := GetConnection()
+	result, _ := conn.Exists(key).Result()
+	if result == 1 {
+		members, err := conn.ZRange(key, 0, 0).Result()
+		if err == nil && len(members) > 0 {
+			first, _ = strconv.ParseInt(members[0], 0, 64)
+		}
+		members, err = conn.ZRevRange(key, 0, 0).Result()
+		if err == nil && len(members) > 0 {
+			last, _ = strconv.ParseInt(members[0], 0, 64)
+		}
+		return
+	}
+
+	db := GetDb()
+	ret, err := db.Has([]byte(key), nil)
+	if err != nil || !ret {
+		return
+	}
+	value, err := db.Get([]byte(key), nil)
+	if err != nil {
+		return
+	}
+	rows := strings.Split(string(value), "\n")
+	for _, row := range rows {
+		if row == "" {
+			continue
+		}
+		cols := strings.Split(row, ",")
+		if len(cols) < 2 {
+			continue
+		}
+		hitTime, parseErr := strconv.ParseInt(cols[1], 0, 64)
+		if parseErr != nil {
+			continue
+		}
+		if first == 0 || hitTime < first {
+			first = hitTime
+		}
+		if hitTime > last {
+			last = hitTime
+		}
+	}
+	return
+}
+
 func QueryDetailByKey(key string) []DetailVO {
 	conn := GetConnection()
 	result, _ := conn.Exists(key).Result()
