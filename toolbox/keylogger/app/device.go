@@ -117,6 +117,9 @@ func ListenDevice() {
 			if device == nil || err != nil {
 				readErrorCount++
 				logger.Error("reopen device failed: ", err, " (", readErrorCount, "/", maxRetries, ")")
+				if readErrorCount == 1 {
+					printCurrentDeviceList()
+				}
 				if readErrorCount >= maxRetries {
 					logger.Error("max retries reached, exiting...")
 					return
@@ -131,6 +134,9 @@ func ListenDevice() {
 		if err != nil {
 			readErrorCount++
 			logger.Error("read device error: ", err, " (", readErrorCount, "/", maxRetries, ")")
+			if readErrorCount == 1 {
+				printCurrentDeviceList()
+			}
 			closeDevice(device)
 			device = nil
 			if readErrorCount >= maxRetries {
@@ -513,6 +519,17 @@ func ListAllDevice() {
 	for _, dev := range devices {
 		fmt.Printf("%s %s %s\n", dev.Fn, dev.Name, dev.Phys)
 	}
+}
+
+func printCurrentDeviceList() {
+	devices, _ := ListInputDevices()
+	var lines []string
+	for _, dev := range devices {
+		eventName := dev.Fn[11:]
+		lines = append(lines, fmt.Sprintf("%-10s %s", eventName, dev.Name))
+	}
+	fmt.Println("\n--- Current input devices ---")
+	printByColumn(2, len(lines), func(i int) string { return lines[i] })
 }
 
 func ListAllKeyBoardDevice() {
