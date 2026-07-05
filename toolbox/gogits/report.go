@@ -102,6 +102,8 @@ type templateData struct {
 	ReleaseCount    int
 	ActiveWeeks     int
 	TotalWeeks      int
+	RepoAge     string
+	DailyAvgCommits string
 	OverallGrade   string
 	OverallScore   string
 	RadarChartOpt   template.JS
@@ -395,6 +397,48 @@ func calcRhythmScore(consistencyPct, offHoursPct float64, releaseCount int, ageD
 	return scoreToGrade(total), total
 }
 
+func countWorkingDays(start, end time.Time) int {
+	if start.IsZero() || end.IsZero() || end.Before(start) {
+		return 0
+	}
+	count := 0
+	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+		wd := d.Weekday()
+		if wd != time.Saturday && wd != time.Sunday {
+			count++
+		}
+	}
+	if count < 1 {
+		count = 1
+	}
+	return count
+}
+
+func formatAge(start, end time.Time) string {
+	if start.IsZero() || end.IsZero() || end.Before(start) {
+		return "0天"
+	}
+	years := end.Year() - start.Year()
+	months := int(end.Month()) - int(start.Month())
+	days := end.Day() - start.Day()
+	if days < 0 {
+		months--
+		endPrev := time.Date(end.Year(), end.Month(), 0, 0, 0, 0, 0, time.UTC)
+		days += endPrev.Day()
+	}
+	if months < 0 {
+		years--
+		months += 12
+	}
+	if years == 0 && months == 0 {
+		return fmt.Sprintf("%d天", days)
+	}
+	if years == 0 {
+		return fmt.Sprintf("%d个月%d天", months, days)
+	}
+	return fmt.Sprintf("%d年%d个月%d天", years, months, days)
+}
+
 func GenerateReport(result *AnalysisResult, outputPath string) error {
 	commitOpt, err := buildCommitChartOption(result)
 	if err != nil {
@@ -569,6 +613,18 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	}
 	rhythmGrade, rhythmScore := calcRhythmScore(consistencyPct, offHoursPct, result.ReleaseCount, ageDays)
 
+	// Repo age: first commit to now
+	repoAge := "0天"
+	dailyAvgCommits := 0.0
+	if !result.ReportStart.IsZero() {
+		now := time.Now()
+		repoAge = formatAge(result.ReportStart, now)
+		workingDays := countWorkingDays(result.ReportStart, now)
+		if workingDays > 0 {
+			dailyAvgCommits = float64(result.TotalCommits) / float64(workingDays)
+		}
+	}
+
 	scores6 := []float64{actScore, scaleScore, healthScore, divScore, debtScore, rhythmScore}
 	overallSum := 0.0
 	for _, s := range scores6 {
@@ -691,6 +747,8 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		ReleaseCount:      result.ReleaseCount,
 		ActiveWeeks:       result.ActiveWeeks,
 		TotalWeeks:        result.TotalWeeks,
+		RepoAge:           repoAge,
+		DailyAvgCommits:   fmt.Sprintf("%.2f", dailyAvgCommits),
 		AbandonedPct:      fmt.Sprintf("%.1f", result.AbandonedPct*100),
 		CodeAgeDays:       fmt.Sprintf("%.0f", result.CodeAgeDays),
 		HotspotCount:      len(result.Hotspots),

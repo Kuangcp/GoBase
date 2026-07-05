@@ -205,6 +205,8 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <span class="stats-label">近30天活跃天数</span><span class="stats-value">{{.ActiveDays30d}} 天</span>
 <span class="stats-label">提交强度</span><span class="stats-value">{{.AvgPerActive}} 次/活跃日 · {{.AvgPerDay}} 次/日历日</span>
 <span class="stats-label">近期动量</span><span class="stats-value">近30天 {{.RecentMonthCommits}} 次提交 ({{.RecentMomentumPct}}%)</span>
+<span class="stats-label">仓库年龄</span><span class="stats-value">{{.RepoAge}}</span>
+<span class="stats-label">日均提交</span><span class="stats-value">{{.DailyAvgCommits}} 次/工作日</span>
 </div>
 </div>
 <div class="section">
