@@ -36,6 +36,7 @@ type templateData struct {
 	BusFactorPct       string
 	RecentMomentumPct  string
 	WorkloadDensity    string
+	RecentLocPerCommit string
 	ChurnRatio         string
 	Authors            []AuthorStat
 	CommitChartOpt      template.JS
@@ -523,6 +524,18 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		churnRatio = float64(result.TotalAdded) / float64(result.TotalDeleted)
 	}
 
+	recentLocTotal := 0
+	for _, v := range result.AddedLineSeries {
+		recentLocTotal += v
+	}
+	for _, v := range result.DeletedLineSeries {
+		recentLocTotal += v
+	}
+	recentLocPerCommit := 0.0
+	if recentMonthCommits > 0 {
+		recentLocPerCommit = float64(recentLocTotal) / float64(recentMonthCommits)
+	}
+
 	actGrade, actScore := calcActivityScore(recentMonthCommits, activeDevs30d, activeDays30d)
 	scaleGrade, scaleScore := calcScaleScore(result.TotalLinesOfCode, result.TotalFiles, authorCount)
 	healthGrade, healthScore := calcHealthScore(result.LargeFileCount, result.TotalFiles, result.TodoCount, result.TotalLinesOfCode, result.TestFileCount, result.OldCodeTouchPct, result.AvgFilesPerCommit)
@@ -619,6 +632,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		BusFactorPct:       fmt.Sprintf("%.1f", busPct),
 		RecentMomentumPct:  fmt.Sprintf("%.2f", recentPct),
 		WorkloadDensity:    fmt.Sprintf("%.1f", workloadDensity),
+		RecentLocPerCommit: fmt.Sprintf("%.1f", recentLocPerCommit),
 		ChurnRatio:         fmt.Sprintf("%.1f", churnRatio),
 		Authors:            result.Authors,
 		CommitChartOpt:     template.JS(commitOpt),

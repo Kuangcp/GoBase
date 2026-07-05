@@ -200,7 +200,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div class="section-title"><span class="badge-dot badge-dot-{{.ActivityGrade}}"></span>活跃度 · {{.ActivityGrade}} 级 ({{.ActivityScore}} 分)</div>
 <div class="stats-grid">
 <span class="stats-label">总提交数</span><span class="stats-value">{{.TotalCommits}}</span>
-<span class="stats-label">近30天提交</span><span class="stats-value">{{.Commits30d}}</span>
+<span class="stats-label">近30天LOC/提交</span><span class="stats-value">{{.RecentLocPerCommit}}</span>
 <span class="stats-label">近30天活跃开发者</span><span class="stats-value">{{.ActiveDevs30d}} 人</span>
 <span class="stats-label">近30天活跃天数</span><span class="stats-value">{{.ActiveDays30d}} 天</span>
 <span class="stats-label">提交强度</span><span class="stats-value">{{.AvgPerActive}} 次/活跃日 · {{.AvgPerDay}} 次/日历日</span>
