@@ -33,10 +33,10 @@ body.light {
 }
 .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #fff; padding: 28px 0; }
-.header .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.header .wrap { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
 .header h1 { font-size: 22px; font-weight: 600; }
 .header p { font-size: 13px; opacity: .75; margin-top: 4px; }
-.wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.wrap { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
 
 .theme-toggle { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
   color: #fff; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
@@ -87,7 +87,8 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 .stats-value { color: var(--text); font-weight: 500; }
 
 .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-.section-grid .section { margin-bottom: 0; }
+.section-grid .section { margin-bottom: 0; min-width: 0; overflow: hidden; }
+.file-path { word-break: break-all; }
 
 .overall-badge { display: flex; flex-direction: column; align-items: center;
   padding: 10px 20px; border-radius: 10px; min-width: 100px;
@@ -234,7 +235,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </div>
 <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">文件行数列表 Top 8</div>
 <div style="margin-top:6px;font-size:13px;line-height:2">
-{{range .TopLinesFiles}}<div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:36px;text-align:right;font-weight:600">{{.ModifyCount}}</span><span>{{.Path}}</span></div>{{end}}
+{{range .TopLinesFiles}}<div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:36px;text-align:right;font-weight:600;flex-shrink:0">{{.ModifyCount}}</span><span class="file-path">{{.Path}}</span></div>{{end}}
 </div>
 </div>
 <div class="section">
@@ -246,7 +247,7 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 </div>
 <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">近120天修改最频繁的文件 Top {{.HotspotCount}}</div>
 <div style="margin-top:6px;font-size:13px;line-height:2">
-{{range .Hotspots}}<div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:36px;text-align:right;font-weight:600">({{.ModifyCount}})</span><span>{{.Path}}</span></div>{{end}}
+{{range .Hotspots}}<div style="display:flex;gap:8px"><span style="color:var(--text-muted);min-width:36px;text-align:right;font-weight:600;flex-shrink:0">({{.ModifyCount}})</span><span class="file-path">{{.Path}}</span></div>{{end}}
 </div>
 </div>
 </div>
