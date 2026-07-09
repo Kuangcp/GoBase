@@ -618,7 +618,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	dailyAvgCommits := 0.0
 	if !result.ReportStart.IsZero() {
 		now := time.Now()
-		repoAge = formatAge(result.ReportStart, now)
+		repoAge = formatAge(result.ReportStart, now) + ", " + result.ReportStart.Format("2006-01-02")
 		workingDays := countWorkingDays(result.ReportStart, now)
 		if workingDays > 0 {
 			dailyAvgCommits = float64(result.TotalCommits) / float64(workingDays)
