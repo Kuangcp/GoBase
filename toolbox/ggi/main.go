@@ -206,7 +206,7 @@ func pullRepo() {
 		if err != nil {
 			logger.Error("Repo %s pull error: %v\n%s", repo.Alias, err, msg)
 		} else {
-			logger.Info("Repo %s: %s", repo.Alias, strings.ReplaceAll(msg, "\n", " | "))
+			logger.Info("Repo %s: %s", repo.Alias, msg)
 		}
 	}
 }
