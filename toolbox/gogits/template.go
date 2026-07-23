@@ -294,6 +294,10 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <div id="monthOfYearChart" class="chart-box" style="height:360px"></div>
 </div>
 <div class="section">
+<h2>Weeks of Year (Last 60 Weeks)</h2>
+<div id="weekOfYearChart" class="chart-box" style="height:360px"></div>
+</div>
+<div class="section">
 <h2>Commits by Year/Month</h2>
 <div id="yearMonthChart" class="chart-box"></div>
 <table style="margin-top:16px" id="yearMonthTable">
@@ -506,6 +510,7 @@ var commitChart = addChart(document.getElementById('commitChart'), {{.CommitChar
 var lineChart = addChart(document.getElementById('lineChart'), {{.LineChartOpt}});
 var hourWeekChart = addChart(document.getElementById('hourWeekChart'), {{.HourWeekOpt}});
 var monthOfYearChart = addChart(document.getElementById('monthOfYearChart'), {{.MonthOfYearOpt}});
+var weekOfYearChart = addChart(document.getElementById('weekOfYearChart'), {{.WeekOfYearOpt}});
 var yearMonthChart = addChart(document.getElementById('yearMonthChart'), {{.YearMonthOpt}});
 var radarChart = addChart(document.getElementById('radarChart'), {{.RadarChartOpt}});
 
@@ -597,6 +602,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       lineChart.resize();
       hourWeekChart.resize();
       monthOfYearChart.resize();
+      weekOfYearChart.resize();
       yearMonthChart.resize();
       radarChart.resize();
       if (authorLineChart) authorLineChart.resize();
@@ -622,6 +628,7 @@ window.addEventListener('resize', function(){
   lineChart.resize();
   hourWeekChart.resize();
   monthOfYearChart.resize();
+  weekOfYearChart.resize();
   yearMonthChart.resize();
   radarChart.resize();
   if (authorLineChart) authorLineChart.resize();

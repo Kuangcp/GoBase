@@ -44,6 +44,7 @@ type templateData struct {
 	AuthorLineChartOpt  template.JS
 	HourWeekOpt         template.JS
 	MonthOfYearOpt      template.JS
+	WeekOfYearOpt       template.JS
 	YearMonthOpt        template.JS
 	YearMonthLabels     []string
 	YearMonthData       []int
@@ -460,6 +461,10 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	if err != nil {
 		return err
 	}
+	weekOfYearOpt, err := buildWeekOfYearChartOption(result)
+	if err != nil {
+		return err
+	}
 	yearMonthOpt, err := buildYearMonthChartOption(result)
 	if err != nil {
 		return err
@@ -696,6 +701,7 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		AuthorLineChartOpt:  template.JS(authorLineOpt),
 		HourWeekOpt:         template.JS(hourWeekOpt),
 		MonthOfYearOpt:      template.JS(monthOfYearOpt),
+		WeekOfYearOpt:       template.JS(weekOfYearOpt),
 		YearMonthOpt:        template.JS(yearMonthOpt),
 		YearMonthLabels:      result.YearMonthLabels,
 		YearMonthData:        result.YearMonthData,

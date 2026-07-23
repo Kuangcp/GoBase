@@ -85,6 +85,8 @@ type AnalysisResult struct {
 	AllDayLabels         []string
 	HourWeekData         [7][24]int
 	MonthOfYearData      [12]int
+	WeekOfYearLabels     []string
+	WeekOfYearData       []int
 	YearMonthLabels      []string
 	YearMonthData        []int
 	YearMonthAddedData   []int

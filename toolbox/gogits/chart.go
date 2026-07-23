@@ -299,6 +299,44 @@ func buildMonthOfYearChartOption(result *AnalysisResult) (string, error) {
 	return string(b), nil
 }
 
+func buildWeekOfYearChartOption(result *AnalysisResult) (string, error) {
+	opt := map[string]interface{}{
+		"tooltip": map[string]string{"trigger": "axis"},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "10%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "category", "data": result.WeekOfYearLabels,
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0", "rotate": 45},
+		},
+		"yAxis": map[string]interface{}{
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
+		},
+		"dataZoom": []map[string]interface{}{
+			{"type": "inside", "start": 0, "end": 100},
+			{"type": "slider", "start": 0, "end": 100, "bottom": 0},
+		},
+		"series": []map[string]interface{}{
+			{
+				"type": "bar",
+				"data": result.WeekOfYearData,
+				"itemStyle": map[string]interface{}{
+					"color": "#5470c6",
+				},
+			},
+		},
+	}
+
+	applyDarkTheme(opt)
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 	n := len(result.YearMonthLabels)
 	revLabels := make([]string, n)

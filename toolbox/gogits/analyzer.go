@@ -82,6 +82,25 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	activeWeeks := make(map[string]bool)
 	var hourWeekData [7][24]int
 	var monthOfYearData [12]int
+
+	var weekOfYearLabels []string
+	weekOfYearIndex := make(map[string]int)
+	for i := 59; i >= 0; i-- {
+		t := now.AddDate(0, 0, -7*i)
+		y, w := t.ISOWeek()
+		// ensure we don't duplicate weeks (edge case at year boundaries)
+		label := fmt.Sprintf("%d-W%02d", y, w)
+		if _, exists := weekOfYearIndex[label]; !exists {
+			idx := len(weekOfYearLabels)
+			weekOfYearIndex[label] = idx
+			weekOfYearLabels = append(weekOfYearLabels, label)
+		}
+	}
+	// trim to at most 60 weeks
+	if len(weekOfYearLabels) > 60 {
+		weekOfYearLabels = weekOfYearLabels[:60]
+	}
+	weekOfYearData := make([]int, len(weekOfYearLabels))
 	type ymVal struct {
 		commits, added, deleted int
 	}
@@ -140,6 +159,11 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 
 		month := c.Date.Month() - 1
 		monthOfYearData[month]++
+		if idx, ok := weekOfYearIndex[weekKey]; ok {
+			if idx < len(weekOfYearData) {
+				weekOfYearData[idx]++
+			}
+		}
 		ymKey := c.Date.Format("2006-01")
 		ym, ok := yearMonthMap[ymKey]
 		if !ok {
@@ -402,6 +426,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		AuthorDeletedSeries: authorDeletedList,
 		HourWeekData:        hourWeekData,
 		MonthOfYearData:     monthOfYearData,
+		WeekOfYearLabels:    weekOfYearLabels,
+		WeekOfYearData:      weekOfYearData,
 		YearMonthLabels:     ymLabels,
 		YearMonthData:       ymData,
 		YearMonthAddedData:  ymAdded,
