@@ -61,56 +61,36 @@ func buildCommitChartOption(result *AnalysisResult) (string, error) {
 
 func buildLineChartOption(result *AnalysisResult) (string, error) {
 	type seriesItem struct {
-		Name      string                 `json:"name"`
-		Type      string                 `json:"type"`
-		Stack     string                 `json:"stack"`
-		AreaStyle map[string]interface{} `json:"areaStyle,omitempty"`
-		Data      []int                  `json:"data"`
+		Name      string   `json:"name"`
+		Type      string   `json:"type"`
+		Stack     string   `json:"stack"`
+		AreaStyle struct{} `json:"areaStyle"`
+		Data      []int    `json:"data"`
 	}
 
 	var series []seriesItem
-	var legendData []string
-
 	for i, a := range result.AuthorAddedSeries {
-		delData := result.AuthorDeletedSeries[i].Data
-		if !hasAny(a.Data) && !hasAny(delData) {
-			continue
+		netData := make([]int, len(a.Data))
+		for j := range a.Data {
+			netData[j] = a.Data[j]
+			if j < len(result.AuthorDeletedSeries[i].Data) {
+				netData[j] -= result.AuthorDeletedSeries[i].Data[j]
+			}
 		}
-		name := a.Name + " +"
-		series = append(series, seriesItem{
-			Name:      name,
-			Type:      "line",
-			Stack:     "Added",
-			AreaStyle: map[string]interface{}{},
-			Data:      a.Data,
-		})
-		legendData = append(legendData, name)
-	}
-
-	for i, a := range result.AuthorDeletedSeries {
-		addData := result.AuthorAddedSeries[i].Data
-		if !hasAny(a.Data) && !hasAny(addData) {
-			continue
+		item := seriesItem{
+			Name:  a.Name,
+			Type:  "line",
+			Stack: "Total",
+			Data:  netData,
 		}
-		negData := make([]int, len(a.Data))
-		for j, v := range a.Data {
-			negData[j] = -v
-		}
-		name := a.Name + " -"
-		series = append(series, seriesItem{
-			Name:      name,
-			Type:      "line",
-			Stack:     "Deleted",
-			AreaStyle: map[string]interface{}{"opacity": 0.5},
-			Data:      negData,
-		})
-		legendData = append(legendData, name)
+		item.AreaStyle = struct{}{}
+		series = append(series, item)
 	}
 
 	opt := map[string]interface{}{
 		"tooltip": map[string]string{"trigger": "axis"},
 		"legend": map[string]interface{}{
-			"data":   legendData,
+			"data":   authorNames(result.AuthorAddedSeries),
 			"bottom": 0,
 		},
 		"grid": map[string]interface{}{
