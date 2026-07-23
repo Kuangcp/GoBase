@@ -61,36 +61,56 @@ func buildCommitChartOption(result *AnalysisResult) (string, error) {
 
 func buildLineChartOption(result *AnalysisResult) (string, error) {
 	type seriesItem struct {
-		Name      string            `json:"name"`
-		Type      string            `json:"type"`
-		Stack     string            `json:"stack"`
-		AreaStyle map[string]string `json:"areaStyle"`
-		Data      []int             `json:"data"`
-		LineStyle map[string]string `json:"lineStyle,omitempty"`
-		ItemStyle map[string]string `json:"itemStyle,omitempty"`
+		Name      string                 `json:"name"`
+		Type      string                 `json:"type"`
+		Stack     string                 `json:"stack"`
+		AreaStyle map[string]interface{} `json:"areaStyle,omitempty"`
+		Data      []int                  `json:"data"`
 	}
 
-	series := []seriesItem{
-		{
-			Name: "Added", Type: "line", Stack: "Total",
-			AreaStyle: map[string]string{"color": "#4caf50"},
-			LineStyle: map[string]string{"color": "#4caf50"},
-			ItemStyle: map[string]string{"color": "#4caf50"},
-			Data:      result.AddedLineSeries,
-		},
-		{
-			Name: "Deleted", Type: "line", Stack: "Total",
-			AreaStyle: map[string]string{"color": "#f44336"},
-			LineStyle: map[string]string{"color": "#f44336"},
-			ItemStyle: map[string]string{"color": "#f44336"},
-			Data:      result.DeletedLineSeries,
-		},
+	var series []seriesItem
+	var legendData []string
+
+	for i, a := range result.AuthorAddedSeries {
+		delData := result.AuthorDeletedSeries[i].Data
+		if !hasAny(a.Data) && !hasAny(delData) {
+			continue
+		}
+		name := a.Name + " +"
+		series = append(series, seriesItem{
+			Name:      name,
+			Type:      "line",
+			Stack:     "Added",
+			AreaStyle: map[string]interface{}{},
+			Data:      a.Data,
+		})
+		legendData = append(legendData, name)
+	}
+
+	for i, a := range result.AuthorDeletedSeries {
+		addData := result.AuthorAddedSeries[i].Data
+		if !hasAny(a.Data) && !hasAny(addData) {
+			continue
+		}
+		negData := make([]int, len(a.Data))
+		for j, v := range a.Data {
+			negData[j] = -v
+		}
+		name := a.Name + " -"
+		series = append(series, seriesItem{
+			Name:      name,
+			Type:      "line",
+			Stack:     "Deleted",
+			AreaStyle: map[string]interface{}{"opacity": 0.5},
+			Data:      negData,
+		})
+		legendData = append(legendData, name)
 	}
 
 	opt := map[string]interface{}{
 		"tooltip": map[string]string{"trigger": "axis"},
 		"legend": map[string]interface{}{
-			"data":   []string{"Added", "Deleted"},
+			"data":   legendData,
 			"bottom": 0,
 		},
 		"grid": map[string]interface{}{
@@ -114,6 +134,15 @@ func buildLineChartOption(result *AnalysisResult) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+func hasAny(data []int) bool {
+	for _, v := range data {
+		if v > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func buildAuthorLineChartOption(result *AnalysisResult) (string, error) {
