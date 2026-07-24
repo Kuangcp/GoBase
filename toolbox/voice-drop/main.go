@@ -25,7 +25,7 @@ type sendResponse struct {
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "6601"
 	}
 
 	mux := http.NewServeMux()
@@ -54,17 +54,28 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := exec.Command("xdotool", "type", "--delay", "0", req.Text)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("xdotool error: %v, output: %s", err, string(out))
+	clipCmd := exec.Command("xclip", "-selection", "clipboard")
+	clipCmd.Stdin = strings.NewReader(req.Text)
+	if out, err := clipCmd.CombinedOutput(); err != nil {
+		log.Printf("xclip error: %v, output: %s", err, string(out))
 		writeJSON(w, http.StatusInternalServerError, sendResponse{
 			Ok:    false,
-			Error: "failed to type text",
+			Error: "failed to copy to clipboard",
 		})
 		return
 	}
 
-	log.Printf("typed %d characters", len(req.Text))
+	pasteCmd := exec.Command("xdotool", "key", "ctrl+v")
+	if out, err := pasteCmd.CombinedOutput(); err != nil {
+		log.Printf("xdotool key error: %v, output: %s", err, string(out))
+		writeJSON(w, http.StatusInternalServerError, sendResponse{
+			Ok:    false,
+			Error: "failed to paste",
+		})
+		return
+	}
+
+	log.Printf("pasted %d characters", len(req.Text))
 	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
 }
 
