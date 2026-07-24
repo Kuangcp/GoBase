@@ -22,11 +22,8 @@
     flex-direction: column;
     height: 100dvh;
   }
-  .spacer {
-    flex: 3;
-  }
   .input-area {
-    flex: 7;
+    margin-top: 30dvh;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -72,6 +69,7 @@
     overflow-y: auto;
     list-style: none;
     min-height: 0;
+    padding-bottom: 24px;
   }
   .history li {
     padding: 8px 0;
@@ -85,7 +83,6 @@
 </head>
 <body>
 <div class="container">
-  <div class="spacer"></div>
   <div class="input-area">
     <textarea id="textInput" placeholder="输入文字..." rows="2"></textarea>
     <button class="send-btn" id="sendBtn">发送</button>
