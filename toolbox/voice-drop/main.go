@@ -33,8 +33,7 @@ type sendResponse struct {
 func main() {
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("POST /api/send", handleSend)
-	httpMux.HandleFunc("POST /api/start-record", handleStartRecord)
-	httpMux.HandleFunc("POST /api/stop-record", handleStopRecord)
+	httpMux.HandleFunc("POST /api/toggle-record", handleToggleRecord)
 
 	go func() {
 		log.Printf("http api on :6600")
@@ -49,8 +48,7 @@ func main() {
 	httpsMux := http.NewServeMux()
 	httpsMux.Handle("GET /", http.FileServerFS(staticFS))
 	httpsMux.HandleFunc("POST /api/send", handleSend)
-	httpsMux.HandleFunc("POST /api/start-record", handleStartRecord)
-	httpsMux.HandleFunc("POST /api/stop-record", handleStopRecord)
+	httpsMux.HandleFunc("POST /api/toggle-record", handleToggleRecord)
 	httpsMux.HandleFunc("GET /ws", hub.HandleWS)
 
 	log.Printf("https on :6601")
@@ -72,20 +70,8 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
 }
 
-func handleStartRecord(w http.ResponseWriter, r *http.Request) {
-	if err := hub.Send("start_recording"); err != nil {
-		msg := "phone not connected"
-		if !errors.Is(err, errNoClient) {
-			msg = "send failed"
-		}
-		writeJSON(w, http.StatusServiceUnavailable, sendResponse{Ok: false, Error: msg})
-		return
-	}
-	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
-}
-
-func handleStopRecord(w http.ResponseWriter, r *http.Request) {
-	if err := hub.Send("stop_recording"); err != nil {
+func handleToggleRecord(w http.ResponseWriter, r *http.Request) {
+	if err := hub.Send("toggle_recording"); err != nil {
 		msg := "phone not connected"
 		if !errors.Is(err, errNoClient) {
 			msg = "send failed"

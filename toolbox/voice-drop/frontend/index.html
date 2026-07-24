@@ -189,8 +189,10 @@ function connectWS() {
   ws.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
-      if (msg.cmd === 'start_recording') startRecording();
-      else if (msg.cmd === 'stop_recording') stopRecording();
+      if (msg.cmd === 'toggle_recording') {
+        if (isRecording) stopRecording();
+        else startRecording();
+      }
     } catch {}
   };
 }

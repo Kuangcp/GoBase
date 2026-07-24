@@ -93,6 +93,16 @@ func (h *Hub) Connected() bool {
 	return h.conn != nil
 }
 
+func (h *Hub) SendJSON(v any) error {
+	h.mu.Lock()
+	conn := h.conn
+	h.mu.Unlock()
+	if conn == nil {
+		return errNoClient
+	}
+	return conn.WriteJSON(v)
+}
+
 func execCmd(env []string, name string, args ...string) *exec.Cmd {
 	cmd := exec.Command(name, args...)
 	cmd.Env = env
