@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Voice Drop</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4A90D9">
@@ -14,7 +14,6 @@
     color: #eee;
     min-height: 100dvh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 24px;
@@ -24,165 +23,65 @@
     max-width: 400px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 24px;
+    gap: 16px;
   }
-  .mic-btn {
-    width: 96px;
-    height: 96px;
-    border-radius: 50%;
-    border: 4px solid #4A90D9;
-    background: #16213e;
-    color: #4A90D9;
-    font-size: 40px;
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
+  .input-row {
+    display: flex;
+    gap: 8px;
   }
-  .mic-btn:active, .mic-btn.recording {
-    background: #e74c3c;
-    border-color: #e74c3c;
-    color: #fff;
-    transform: scale(1.1);
-  }
-  .mic-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-  }
-  .status {
-    font-size: 14px;
-    color: #888;
-    min-height: 20px;
-  }
-  textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 12px;
+  input {
+    flex: 1;
+    padding: 14px 16px;
     border-radius: 8px;
     border: 1px solid #333;
     background: #16213e;
     color: #eee;
-    font-size: 16px;
-    resize: vertical;
+    font-size: 18px;
+    outline: none;
     font-family: inherit;
   }
-  textarea:focus { outline: none; border-color: #4A90D9; }
+  input:focus { border-color: #4A90D9; }
+  input::placeholder { color: #555; }
   .send-btn {
-    width: 100%;
-    padding: 14px;
+    padding: 14px 20px;
     border-radius: 8px;
     border: none;
     background: #4A90D9;
     color: #fff;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    white-space: nowrap;
   }
   .send-btn:active { background: #357ABD; }
-  .send-btn:disabled {
-    background: #333;
-    color: #666;
-    cursor: not-allowed;
-  }
+  .send-btn:disabled { opacity: 0.4; }
   .feedback {
     font-size: 14px;
-    min-height: 20px;
     text-align: center;
+    min-height: 20px;
   }
   .feedback.ok { color: #2ecc71; }
   .feedback.err { color: #e74c3c; }
+  .hint {
+    font-size: 13px;
+    color: #555;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
 <div class="container">
-  <button class="mic-btn" id="micBtn">🎤</button>
-  <div class="status" id="status">按住录音，松手识别</div>
-  <textarea id="textInput" placeholder="识别结果将显示在这里..."></textarea>
-  <button class="send-btn" id="sendBtn" disabled>发送</button>
+  <div class="input-row">
+    <input type="text" id="textInput" placeholder="输入文字..." autofocus>
+    <button class="send-btn" id="sendBtn">发送</button>
+  </div>
   <div class="feedback" id="feedback"></div>
 </div>
 
 <script>
-const micBtn = document.getElementById('micBtn');
-const statusEl = document.getElementById('status');
 const textInput = document.getElementById('textInput');
 const sendBtn = document.getElementById('sendBtn');
 const feedbackEl = document.getElementById('feedback');
-
-let recognition = null;
-let isRecording = false;
-let finalTranscript = '';
-
-function initRecognition() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    statusEl.textContent = '浏览器不支持语音识别';
-    micBtn.disabled = true;
-    return;
-  }
-  recognition = new SpeechRecognition();
-  recognition.lang = 'zh-CN';
-  recognition.interimResults = true;
-  recognition.continuous = true;
-
-  recognition.onresult = (e) => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        finalTranscript += transcript;
-      } else {
-        interim = transcript;
-      }
-    }
-    textInput.value = finalTranscript + interim;
-  };
-
-  recognition.onerror = (e) => {
-    console.error('recognition error:', e.error);
-    stopRecording();
-    statusEl.textContent = '识别出错: ' + e.error;
-  };
-
-  recognition.onend = () => {
-    if (isRecording) {
-      try { recognition.start(); } catch {}
-    }
-  };
-}
-
-function startRecording() {
-  if (!recognition) return;
-  finalTranscript = '';
-  textInput.value = '';
-  feedbackEl.textContent = '';
-  feedbackEl.className = 'feedback';
-  isRecording = true;
-  micBtn.classList.add('recording');
-  statusEl.textContent = '录音中...';
-  sendBtn.disabled = true;
-  try { recognition.start(); } catch {}
-}
-
-function stopRecording() {
-  if (!recognition) return;
-  isRecording = false;
-  micBtn.classList.remove('recording');
-  statusEl.textContent = '识别完成，可编辑后发送';
-  sendBtn.disabled = !finalTranscript.trim();
-  try { recognition.stop(); } catch {}
-}
-
-micBtn.addEventListener('mousedown', startRecording);
-micBtn.addEventListener('mouseup', stopRecording);
-micBtn.addEventListener('mouseleave', stopRecording);
-micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); });
-micBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopRecording(); });
-micBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); stopRecording(); });
 
 sendBtn.addEventListener('click', async () => {
   const text = textInput.value.trim();
@@ -198,21 +97,24 @@ sendBtn.addEventListener('click', async () => {
     });
     const data = await resp.json();
     if (data.ok) {
-      feedbackEl.textContent = '✅ 已发送';
+      feedbackEl.textContent = '已发送';
       feedbackEl.className = 'feedback ok';
       textInput.value = '';
+      textInput.focus();
     } else {
-      feedbackEl.textContent = '❌ ' + (data.error || '发送失败');
+      feedbackEl.textContent = '失败: ' + (data.error || '');
       feedbackEl.className = 'feedback err';
     }
   } catch (err) {
-    feedbackEl.textContent = '❌ 网络错误: ' + err.message;
+    feedbackEl.textContent = '网络错误';
     feedbackEl.className = 'feedback err';
   }
   sendBtn.disabled = false;
 });
 
-initRecognition();
+textInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendBtn.click();
+});
 </script>
 </body>
 </html>
