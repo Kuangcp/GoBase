@@ -3,15 +3,22 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 //go:embed frontend
-var frontendFS embed.FS
+var staticFiles embed.FS
+
+var staticFS = func() fs.FS {
+	s, _ := fs.Sub(staticFiles, "frontend")
+	return s
+}()
 
 type sendRequest struct {
 	Text string `json:"text"`
@@ -29,7 +36,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /", http.FileServerFS(frontendFS))
+	mux.Handle("GET /", http.FileServerFS(staticFS))
 	mux.HandleFunc("POST /api/send", handleSend)
 
 	log.Printf("listening on :%s", port)
@@ -54,29 +61,53 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	env := xenv()
+
 	clipCmd := exec.Command("xclip", "-selection", "clipboard")
+	clipCmd.Env = env
 	clipCmd.Stdin = strings.NewReader(req.Text)
-	if out, err := clipCmd.CombinedOutput(); err != nil {
-		log.Printf("xclip error: %v, output: %s", err, string(out))
-		writeJSON(w, http.StatusInternalServerError, sendResponse{
-			Ok:    false,
-			Error: "failed to copy to clipboard",
-		})
+	if err := clipCmd.Start(); err != nil {
+		log.Printf("xclip start error: %v", err)
+		writeJSON(w, http.StatusInternalServerError, sendResponse{Ok: false, Error: "failed to start xclip"})
 		return
 	}
 
+	time.Sleep(200 * time.Millisecond)
+
 	pasteCmd := exec.Command("xdotool", "key", "ctrl+v")
+	pasteCmd.Env = env
 	if out, err := pasteCmd.CombinedOutput(); err != nil {
-		log.Printf("xdotool key error: %v, output: %s", err, string(out))
-		writeJSON(w, http.StatusInternalServerError, sendResponse{
-			Ok:    false,
-			Error: "failed to paste",
-		})
+		clipCmd.Process.Kill()
+		log.Printf("xdotool error: %v, output: %s", err, string(out))
+		writeJSON(w, http.StatusInternalServerError, sendResponse{Ok: false, Error: "failed to paste"})
 		return
+	}
+
+	clipDone := make(chan error, 1)
+	go func() { clipDone <- clipCmd.Wait() }()
+	select {
+	case <-clipDone:
+	case <-time.After(time.Second):
+		clipCmd.Process.Kill()
 	}
 
 	log.Printf("pasted %d characters", len(req.Text))
 	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
+}
+
+func xenv() []string {
+	env := os.Environ()
+	display := os.Getenv("DISPLAY")
+	if display == "" {
+		display = ":0"
+	}
+	out := make([]string, 0, len(env))
+	for _, e := range env {
+		if !strings.HasPrefix(e, "DISPLAY=") {
+			out = append(out, e)
+		}
+	}
+	return append(out, "DISPLAY="+display)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

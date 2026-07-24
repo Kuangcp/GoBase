@@ -13,24 +13,26 @@
     background: #1a1a2e;
     color: #eee;
     min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
+    padding: 0 24px;
   }
   .container {
-    width: 100%;
     max-width: 400px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    height: 100dvh;
   }
-  .input-row {
+  .spacer {
+    flex: 3;
+  }
+  .input-area {
+    flex: 7;
     display: flex;
+    flex-direction: column;
     gap: 8px;
   }
-  input {
-    flex: 1;
+  textarea {
+    width: 100%;
     padding: 14px 16px;
     border-radius: 8px;
     border: 1px solid #333;
@@ -39,11 +41,15 @@
     font-size: 18px;
     outline: none;
     font-family: inherit;
+    resize: none;
+    min-height: 60px;
+    max-height: 150px;
   }
-  input:focus { border-color: #4A90D9; }
-  input::placeholder { color: #555; }
+  textarea:focus { border-color: #4A90D9; }
+  textarea::placeholder { color: #555; }
   .send-btn {
-    padding: 14px 20px;
+    width: 100%;
+    padding: 14px;
     border-radius: 8px;
     border: none;
     background: #4A90D9;
@@ -51,37 +57,84 @@
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
   }
   .send-btn:active { background: #357ABD; }
   .send-btn:disabled { opacity: 0.4; }
   .feedback {
     font-size: 14px;
-    text-align: center;
     min-height: 20px;
   }
   .feedback.ok { color: #2ecc71; }
   .feedback.err { color: #e74c3c; }
-  .hint {
-    font-size: 13px;
-    color: #555;
-    text-align: center;
+  .history {
+    flex: 1;
+    margin-top: 16px;
+    overflow-y: auto;
+    list-style: none;
+    min-height: 0;
+  }
+  .history li {
+    padding: 8px 0;
+    border-bottom: 1px solid #2a2a4a;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #ccc;
+    word-break: break-all;
   }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="input-row">
-    <input type="text" id="textInput" placeholder="输入文字..." autofocus>
+  <div class="spacer"></div>
+  <div class="input-area">
+    <textarea id="textInput" placeholder="输入文字..." rows="2"></textarea>
     <button class="send-btn" id="sendBtn">发送</button>
+    <div class="feedback" id="feedback"></div>
   </div>
-  <div class="feedback" id="feedback"></div>
+  <ul class="history" id="history"></ul>
 </div>
 
 <script>
 const textInput = document.getElementById('textInput');
 const sendBtn = document.getElementById('sendBtn');
 const feedbackEl = document.getElementById('feedback');
+const historyEl = document.getElementById('history');
+
+const MAX_HISTORY = 20;
+
+function truncate(s, n) {
+  if (s.length <= n) return s;
+  return s.slice(0, n) + '…';
+}
+
+function loadHistory() {
+  try {
+    return JSON.parse(localStorage.getItem('history') || '[]');
+  } catch { return []; }
+}
+
+function saveHistory(items) {
+  localStorage.setItem('history', JSON.stringify(items));
+}
+
+function renderHistory(items) {
+  historyEl.innerHTML = '';
+  for (const text of items) {
+    const li = document.createElement('li');
+    li.textContent = truncate(text, 60);
+    historyEl.appendChild(li);
+  }
+}
+
+function addHistory(text) {
+  const items = loadHistory();
+  items.unshift(text);
+  if (items.length > MAX_HISTORY) items.length = MAX_HISTORY;
+  saveHistory(items);
+  renderHistory(items);
+}
+
+renderHistory(loadHistory());
 
 sendBtn.addEventListener('click', async () => {
   const text = textInput.value.trim();
@@ -90,15 +143,19 @@ sendBtn.addEventListener('click', async () => {
   feedbackEl.textContent = '发送中...';
   feedbackEl.className = 'feedback';
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
     const resp = await fetch('/api/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
+      signal: ctrl.signal,
     });
+    clearTimeout(timer);
     const data = await resp.json();
     if (data.ok) {
-      feedbackEl.textContent = '已发送';
-      feedbackEl.className = 'feedback ok';
+      feedbackEl.textContent = '';
+      addHistory(text);
       textInput.value = '';
       textInput.focus();
     } else {
@@ -106,14 +163,17 @@ sendBtn.addEventListener('click', async () => {
       feedbackEl.className = 'feedback err';
     }
   } catch (err) {
-    feedbackEl.textContent = '网络错误';
+    feedbackEl.textContent = err.name === 'AbortError' ? '请求超时' : '网络错误';
     feedbackEl.className = 'feedback err';
   }
   sendBtn.disabled = false;
 });
 
 textInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendBtn.click();
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendBtn.click();
+  }
 });
 </script>
 </body>
