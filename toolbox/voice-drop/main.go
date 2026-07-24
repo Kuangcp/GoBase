@@ -34,6 +34,7 @@ func main() {
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("POST /api/send", handleSend)
 	httpMux.HandleFunc("POST /api/toggle-record", handleToggleRecord)
+	httpMux.HandleFunc("POST /api/log", handleLog)
 
 	go func() {
 		log.Printf("http api on :6600")
@@ -49,6 +50,7 @@ func main() {
 	httpsMux.Handle("GET /", http.FileServerFS(staticFS))
 	httpsMux.HandleFunc("POST /api/send", handleSend)
 	httpsMux.HandleFunc("POST /api/toggle-record", handleToggleRecord)
+	httpsMux.HandleFunc("POST /api/log", handleLog)
 	httpsMux.HandleFunc("GET /ws", hub.HandleWS)
 
 	log.Printf("https on :6601")
@@ -67,6 +69,20 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pasteText(req.Text)
+	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
+}
+
+func handleLog(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Level   string `json:"level"`
+		Message string `json:"message"`
+		Data    any    `json:"data,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, sendResponse{Ok: false})
+		return
+	}
+	log.Printf("[phone %s] %s %v", req.Level, req.Message, req.Data)
 	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
 }
 

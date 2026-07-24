@@ -125,11 +125,24 @@ const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 
 const MAX_HISTORY = 20;
+const MAX_RETRIES = 5;
 let ws = null;
 let recognition = null;
 let isRecording = false;
 let finalTranscript = '';
+let lastResult = '';
 let wsReconnectTimer = null;
+let retryCount = 0;
+let recordStartTime = 0;
+let pendingStop = false;
+let hadError = false;
+function logToServer(level, message, data) {
+  fetch('/api/log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level, message, data: data || null }),
+  }).catch(() => {});
+}
 
 function truncate(s, n) {
   if (s.length <= n) return s;
@@ -197,30 +210,13 @@ function connectWS() {
   };
 }
 
-function startRecording() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    feedbackEl.textContent = '浏览器不支持语音识别';
-    feedbackEl.className = 'feedback err';
-    return;
-  }
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
-    feedbackEl.textContent = 'WebSocket 未连接';
-    feedbackEl.className = 'feedback err';
-    return;
-  }
-  if (isRecording) return;
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  finalTranscript = '';
-  isRecording = true;
-  setStatus('recording', '录音中...');
-  feedbackEl.textContent = '';
-  feedbackEl.className = 'feedback';
-
-  recognition = new SpeechRecognition();
+function startRecognition() {
+  recognition = new SR();
   recognition.lang = 'zh-CN';
   recognition.interimResults = true;
-  recognition.continuous = true;
+  recognition.continuous = false;
 
   recognition.onresult = (e) => {
     let interim = '';
@@ -229,41 +225,99 @@ function startRecording() {
       if (e.results[i].isFinal) finalTranscript += t;
       else interim = t;
     }
-    textInput.value = finalTranscript + interim;
+    const display = finalTranscript + interim;
+    textInput.value = display;
+    if (display.trim()) lastResult = display;
   };
 
   recognition.onerror = (e) => {
-    console.error('recognition error:', e.error);
-    if (isRecording) stopRecording();
+    logToServer('error', 'recognition error', { error: e.error, duration: Date.now() - recordStartTime });
+    hadError = true;
   };
 
   recognition.onend = () => {
-    if (isRecording) {
-      try { recognition.start(); } catch {}
+    if (pendingStop) {
+      pendingStop = false;
+      isRecording = false;
+      recognition = null;
+      const text = (finalTranscript || lastResult).trim();
+      if (text) {
+        logToServer('info', 'recording stopped', { text_length: text.length, duration: Date.now() - recordStartTime });
+        sendText(text);
+      } else {
+        logToServer('warn', 'recording stopped with no text', {
+          duration: Date.now() - recordStartTime,
+          final_len: finalTranscript.length,
+          last_len: lastResult.length,
+          final_preview: finalTranscript.slice(0, 50),
+          last_preview: lastResult.slice(0, 50),
+        });
+      }
+    } else if (isRecording) {
+      if (hadError && retryCount < MAX_RETRIES) {
+        retryCount++;
+        hadError = false;
+        logToServer('warn', 'recognition ended, retrying', { retry: retryCount });
+        setTimeout(() => { if (isRecording) startRecognition(); }, 300);
+      } else if (hadError) {
+        logToServer('error', 'recognition max retries', { duration: Date.now() - recordStartTime });
+        const text = (finalTranscript || lastResult).trim();
+        isRecording = false;
+        recognition = null;
+        setStatus('', '录音异常');
+        if (text) sendText(text);
+      } else {
+        logToServer('info', 'utterance ended, restarting', { duration: Date.now() - recordStartTime });
+        setTimeout(() => { if (isRecording) startRecognition(); }, 100);
+      }
     }
   };
 
-  try { recognition.start(); } catch {}
+  try { recognition.start(); } catch (e) {
+    logToServer('error', 'recognition start failed', { error: e.message });
+    if (isRecording) {
+      isRecording = false;
+      recognition = null;
+      setStatus('', '启动录音失败');
+    }
+  }
+}
+
+function startRecording() {
+  if (!SR) {
+    logToServer('error', 'browser not support SpeechRecognition');
+    feedbackEl.textContent = '浏览器不支持语音识别';
+    feedbackEl.className = 'feedback err';
+    return;
+  }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    logToServer('warn', 'ws not connected');
+    feedbackEl.textContent = 'WebSocket 未连接';
+    feedbackEl.className = 'feedback err';
+    return;
+  }
+  if (isRecording) return;
+
+  retryCount = 0;
+  pendingStop = false;
+finalTranscript = '';
+  lastResult = '';
+  isRecording = true;
+  recordStartTime = Date.now();
+  setStatus('recording', '录音中...');
+  feedbackEl.textContent = '';
+  feedbackEl.className = 'feedback';
+
+  logToServer('info', 'recording started');
+  startRecognition();
 }
 
 function stopRecording() {
   if (!isRecording || !recognition) return;
-  isRecording = false;
-  try { recognition.stop(); } catch {}
-  recognition = null;
-
+  pendingStop = true;
+  retryCount = MAX_RETRIES;
   setStatus('connected', '已连接');
-
-  const text = finalTranscript.trim();
-  if (!text) return;
-
-  textInput.value = text;
-
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'transcript', text }));
-  }
-
-  sendText(text);
+  try { recognition.stop(); } catch {}
 }
 
 async function sendText(text) {
