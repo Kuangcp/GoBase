@@ -261,18 +261,12 @@ function stopRecording() {
 
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'transcript', text }));
-    addHistory(text);
-    feedbackEl.textContent = '';
-    textInput.value = '';
-    textInput.focus();
   }
+
+  sendText(text);
 }
 
-connectWS();
-
-sendBtn.addEventListener('click', async () => {
-  const text = textInput.value.trim();
-  if (!text) return;
+async function sendText(text) {
   sendBtn.disabled = true;
   feedbackEl.textContent = '发送中...';
   feedbackEl.className = 'feedback';
@@ -301,6 +295,13 @@ sendBtn.addEventListener('click', async () => {
     feedbackEl.className = 'feedback err';
   }
   sendBtn.disabled = false;
+}
+
+connectWS();
+
+sendBtn.addEventListener('click', () => {
+  const text = textInput.value.trim();
+  if (text) sendText(text);
 });
 
 textInput.addEventListener('keydown', (e) => {
