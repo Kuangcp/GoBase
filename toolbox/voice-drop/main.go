@@ -3,14 +3,15 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
-	"time"
 )
+
+var hub = NewHub()
 
 //go:embed frontend
 var staticFiles embed.FS
@@ -30,68 +31,68 @@ type sendResponse struct {
 }
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "6601"
+	httpMux := http.NewServeMux()
+	httpMux.HandleFunc("POST /api/send", handleSend)
+	httpMux.HandleFunc("POST /api/start-record", handleStartRecord)
+	httpMux.HandleFunc("POST /api/stop-record", handleStopRecord)
+
+	go func() {
+		log.Printf("http api on :6600")
+		log.Fatal(http.ListenAndServe(":6600", withCORS(httpMux)))
+	}()
+
+	certFile, keyFile, err := certFiles()
+	if err != nil {
+		log.Fatalf("cert: %v", err)
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("GET /", http.FileServerFS(staticFS))
-	mux.HandleFunc("POST /api/send", handleSend)
+	httpsMux := http.NewServeMux()
+	httpsMux.Handle("GET /", http.FileServerFS(staticFS))
+	httpsMux.HandleFunc("POST /api/send", handleSend)
+	httpsMux.HandleFunc("POST /api/start-record", handleStartRecord)
+	httpsMux.HandleFunc("POST /api/stop-record", handleStopRecord)
+	httpsMux.HandleFunc("GET /ws", hub.HandleWS)
 
-	log.Printf("listening on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, withCORS(mux)))
+	log.Printf("https on :6601")
+	log.Fatal(http.ListenAndServeTLS(":6601", certFile, keyFile, withCORS(httpsMux)))
 }
 
 func handleSend(w http.ResponseWriter, r *http.Request) {
 	var req sendRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, sendResponse{
-			Ok:    false,
-			Error: "invalid JSON",
-		})
+		writeJSON(w, http.StatusBadRequest, sendResponse{Ok: false, Error: "invalid JSON"})
 		return
 	}
 	req.Text = strings.TrimSpace(req.Text)
 	if req.Text == "" {
-		writeJSON(w, http.StatusBadRequest, sendResponse{
-			Ok:    false,
-			Error: "text is empty",
-		})
+		writeJSON(w, http.StatusBadRequest, sendResponse{Ok: false, Error: "text is empty"})
 		return
 	}
+	pasteText(req.Text)
+	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
+}
 
-	env := xenv()
-
-	clipCmd := exec.Command("xclip", "-selection", "clipboard")
-	clipCmd.Env = env
-	clipCmd.Stdin = strings.NewReader(req.Text)
-	if err := clipCmd.Start(); err != nil {
-		log.Printf("xclip start error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, sendResponse{Ok: false, Error: "failed to start xclip"})
+func handleStartRecord(w http.ResponseWriter, r *http.Request) {
+	if err := hub.Send("start_recording"); err != nil {
+		msg := "phone not connected"
+		if !errors.Is(err, errNoClient) {
+			msg = "send failed"
+		}
+		writeJSON(w, http.StatusServiceUnavailable, sendResponse{Ok: false, Error: msg})
 		return
 	}
+	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
+}
 
-	time.Sleep(200 * time.Millisecond)
-
-	pasteCmd := exec.Command("xdotool", "key", "ctrl+v")
-	pasteCmd.Env = env
-	if out, err := pasteCmd.CombinedOutput(); err != nil {
-		clipCmd.Process.Kill()
-		log.Printf("xdotool error: %v, output: %s", err, string(out))
-		writeJSON(w, http.StatusInternalServerError, sendResponse{Ok: false, Error: "failed to paste"})
+func handleStopRecord(w http.ResponseWriter, r *http.Request) {
+	if err := hub.Send("stop_recording"); err != nil {
+		msg := "phone not connected"
+		if !errors.Is(err, errNoClient) {
+			msg = "send failed"
+		}
+		writeJSON(w, http.StatusServiceUnavailable, sendResponse{Ok: false, Error: msg})
 		return
 	}
-
-	clipDone := make(chan error, 1)
-	go func() { clipDone <- clipCmd.Wait() }()
-	select {
-	case <-clipDone:
-	case <-time.After(time.Second):
-		clipCmd.Process.Kill()
-	}
-
-	log.Printf("pasted %d characters", len(req.Text))
 	writeJSON(w, http.StatusOK, sendResponse{Ok: true})
 }
 

@@ -57,6 +57,27 @@
   }
   .send-btn:active { background: #357ABD; }
   .send-btn:disabled { opacity: 0.4; }
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    min-height: 18px;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #555;
+    flex-shrink: 0;
+  }
+  .status-dot.connected { background: #2ecc71; }
+  .status-dot.recording { background: #e74c3c; animation: pulse 1s infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
   .feedback {
     font-size: 14px;
     min-height: 20px;
@@ -86,6 +107,10 @@
   <div class="input-area">
     <textarea id="textInput" placeholder="输入文字..." rows="2"></textarea>
     <button class="send-btn" id="sendBtn">发送</button>
+    <div class="status-bar">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">未连接</span>
+    </div>
     <div class="feedback" id="feedback"></div>
   </div>
   <ul class="history" id="history"></ul>
@@ -96,8 +121,15 @@ const textInput = document.getElementById('textInput');
 const sendBtn = document.getElementById('sendBtn');
 const feedbackEl = document.getElementById('feedback');
 const historyEl = document.getElementById('history');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
 
 const MAX_HISTORY = 20;
+let ws = null;
+let recognition = null;
+let isRecording = false;
+let finalTranscript = '';
+let wsReconnectTimer = null;
 
 function truncate(s, n) {
   if (s.length <= n) return s;
@@ -105,9 +137,7 @@ function truncate(s, n) {
 }
 
 function loadHistory() {
-  try {
-    return JSON.parse(localStorage.getItem('history') || '[]');
-  } catch { return []; }
+  try { return JSON.parse(localStorage.getItem('history') || '[]'); } catch { return []; }
 }
 
 function saveHistory(items) {
@@ -132,6 +162,111 @@ function addHistory(text) {
 }
 
 renderHistory(loadHistory());
+
+function setStatus(state, text) {
+  statusDot.className = 'status-dot' + (state ? ' ' + state : '');
+  statusText.textContent = text;
+}
+
+function connectWS() {
+  if (wsReconnectTimer) {
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = null;
+  }
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(proto + '//' + location.host + '/ws');
+
+  ws.onopen = () => setStatus('connected', '已连接');
+
+  ws.onclose = () => {
+    setStatus('', '未连接');
+    ws = null;
+    wsReconnectTimer = setTimeout(connectWS, 3000);
+  };
+
+  ws.onerror = () => { ws.close(); };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.cmd === 'start_recording') startRecording();
+      else if (msg.cmd === 'stop_recording') stopRecording();
+    } catch {}
+  };
+}
+
+function startRecording() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    feedbackEl.textContent = '浏览器不支持语音识别';
+    feedbackEl.className = 'feedback err';
+    return;
+  }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    feedbackEl.textContent = 'WebSocket 未连接';
+    feedbackEl.className = 'feedback err';
+    return;
+  }
+  if (isRecording) return;
+
+  finalTranscript = '';
+  isRecording = true;
+  setStatus('recording', '录音中...');
+  feedbackEl.textContent = '';
+  feedbackEl.className = 'feedback';
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.interimResults = true;
+  recognition.continuous = true;
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += t;
+      else interim = t;
+    }
+    textInput.value = finalTranscript + interim;
+  };
+
+  recognition.onerror = (e) => {
+    console.error('recognition error:', e.error);
+    if (isRecording) stopRecording();
+  };
+
+  recognition.onend = () => {
+    if (isRecording) {
+      try { recognition.start(); } catch {}
+    }
+  };
+
+  try { recognition.start(); } catch {}
+}
+
+function stopRecording() {
+  if (!isRecording || !recognition) return;
+  isRecording = false;
+  try { recognition.stop(); } catch {}
+  recognition = null;
+
+  setStatus('connected', '已连接');
+
+  const text = finalTranscript.trim();
+  if (!text) return;
+
+  textInput.value = text;
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'transcript', text }));
+    addHistory(text);
+    feedbackEl.textContent = '';
+    textInput.value = '';
+    textInput.focus();
+  }
+}
+
+connectWS();
 
 sendBtn.addEventListener('click', async () => {
   const text = textInput.value.trim();
