@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"time"
 )
 
@@ -300,10 +301,86 @@ func buildMonthOfYearChartOption(result *AnalysisResult) (string, error) {
 }
 
 func buildWeekOfYearChartOption(result *AnalysisResult) (string, error) {
+	colors := []string{"#5470c6", "#91cc75", "#fac858", "#ee6666", "#73c0de",
+		"#3ba272", "#fc8452", "#9a60b4", "#ea7ccc", "#97b552", "#95706d"}
+
+	type seriesItem struct {
+		Name      string `json:"name"`
+		Type      string `json:"type"`
+		Stack     string `json:"stack"`
+		Data      []int  `json:"data"`
+		ItemStyle struct {
+			Color string `json:"color"`
+		} `json:"itemStyle"`
+	}
+
+	var series []seriesItem
+
+	// Sort authors by total commits descending
+	type authorTotal struct {
+		name  string
+		data  []int
+		total int
+	}
+	var ats []authorTotal
+	for _, s := range result.AuthorWeekOfYearSeries {
+		total := 0
+		for _, v := range s.Data {
+			total += v
+		}
+		ats = append(ats, authorTotal{name: s.Name, data: s.Data, total: total})
+	}
+	sort.Slice(ats, func(i, j int) bool {
+		return ats[i].total > ats[j].total
+	})
+
+	topN := 10
+	if len(ats) < topN {
+		topN = len(ats)
+	}
+
+	for i := 0; i < topN; i++ {
+		item := seriesItem{
+			Name:  ats[i].name,
+			Type:  "bar",
+			Stack: "total",
+			Data:  ats[i].data,
+		}
+		item.ItemStyle.Color = colors[i%len(colors)]
+		series = append(series, item)
+	}
+
+	// Merge remaining into "Others"
+	if len(ats) > topN {
+		others := make([]int, len(result.WeekOfYearLabels))
+		for i := topN; i < len(ats); i++ {
+			for j := range ats[i].data {
+				others[j] += ats[i].data[j]
+			}
+		}
+		item := seriesItem{
+			Name:  "Others",
+			Type:  "bar",
+			Stack: "total",
+			Data:  others,
+		}
+		item.ItemStyle.Color = "#b0b0b0"
+		series = append(series, item)
+	}
+
+	var legendNames []string
+	for _, s := range series {
+		legendNames = append(legendNames, s.Name)
+	}
+
 	opt := map[string]interface{}{
 		"tooltip": map[string]string{"trigger": "axis"},
+		"legend": map[string]interface{}{
+			"data":   legendNames,
+			"bottom": 0,
+		},
 		"grid": map[string]interface{}{
-			"left": "3%", "right": "4%", "bottom": "10%", "top": "3%",
+			"left": "3%", "right": "4%", "bottom": "15%", "top": "3%",
 			"containLabel": true,
 		},
 		"xAxis": map[string]interface{}{
@@ -316,17 +393,9 @@ func buildWeekOfYearChartOption(result *AnalysisResult) (string, error) {
 		},
 		"dataZoom": []map[string]interface{}{
 			{"type": "inside", "start": 0, "end": 100},
-			{"type": "slider", "start": 0, "end": 100, "bottom": 0},
+			{"type": "slider", "start": 0, "end": 100, "bottom": 30},
 		},
-		"series": []map[string]interface{}{
-			{
-				"type": "bar",
-				"data": result.WeekOfYearData,
-				"itemStyle": map[string]interface{}{
-					"color": "#5470c6",
-				},
-			},
-		},
+		"series": series,
 	}
 
 	applyDarkTheme(opt)

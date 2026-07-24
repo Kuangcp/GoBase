@@ -87,6 +87,7 @@ type AnalysisResult struct {
 	MonthOfYearData      [12]int
 	WeekOfYearLabels     []string
 	WeekOfYearData       []int
+	AuthorWeekOfYearSeries []AuthorDayData
 	YearMonthLabels      []string
 	YearMonthData        []int
 	YearMonthAddedData   []int

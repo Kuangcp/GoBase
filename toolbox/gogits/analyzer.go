@@ -74,6 +74,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	dailyDeleted := make(map[string]int)
 	authorAllDayCommit := make(map[string]map[string]int)
 	authorAllDayAdded := make(map[string]map[string]int)
+	authorWeekCommits := make(map[string]map[int]int)
 
 	totalActiveDates := make(map[string]bool)
 	totalAdded, totalDeleted := 0, 0
@@ -163,6 +164,10 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 			if idx < len(weekOfYearData) {
 				weekOfYearData[idx]++
 			}
+			if authorWeekCommits[key] == nil {
+				authorWeekCommits[key] = make(map[int]int)
+			}
+			authorWeekCommits[key][idx]++
 		}
 		ymKey := c.Date.Format("2006-01")
 		ym, ok := yearMonthMap[ymKey]
@@ -306,6 +311,20 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		cumAddedSeries = append(cumAddedSeries, AuthorDayData{Name: a.Name, Data: addedData})
 	}
 
+	var authorWeekSeries []AuthorDayData
+	for _, a := range authors {
+		key := authorKey(a.Name, a.Email)
+		weekData := make([]int, len(weekOfYearLabels))
+		if awc, ok := authorWeekCommits[key]; ok {
+			for wi, cnt := range awc {
+				if wi < len(weekData) {
+					weekData[wi] = cnt
+				}
+			}
+		}
+		authorWeekSeries = append(authorWeekSeries, AuthorDayData{Name: a.Name, Data: weekData})
+	}
+
 	monthKeys := make([]string, 0, len(monthAuthorCommits))
 	for k := range monthAuthorCommits {
 		monthKeys = append(monthKeys, k)
@@ -428,6 +447,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		MonthOfYearData:     monthOfYearData,
 		WeekOfYearLabels:    weekOfYearLabels,
 		WeekOfYearData:      weekOfYearData,
+		AuthorWeekOfYearSeries: authorWeekSeries,
 		YearMonthLabels:     ymLabels,
 		YearMonthData:       ymData,
 		YearMonthAddedData:  ymAdded,
