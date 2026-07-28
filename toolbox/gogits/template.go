@@ -33,15 +33,24 @@ body.light {
 }
 .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: #fff; padding: 28px 0; }
-.header .wrap { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
+.header .wrap { max-width: 1300px; margin: 0 auto; padding: 0 20px;
+  display: flex; align-items: center; justify-content: space-between; }
+.header .title-group { min-width: 0; }
 .header h1 { font-size: 22px; font-weight: 600; }
 .header p { font-size: 13px; opacity: .75; margin-top: 4px; }
 .wrap { max-width: 1300px; margin: 0 auto; padding: 0 20px; }
 
 .theme-toggle { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
-  color: #fff; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 13px;
-  margin-top: 8px; transition: background .2s; }
+  color: #fff; width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .2s; }
 .theme-toggle:hover { background: rgba(255,255,255,.25); }
+.theme-toggle svg { width: 18px; height: 18px; fill: currentColor; }
+.theme-toggle .icon-sun { display: block; }
+.theme-toggle .icon-moon { display: none; }
+body.light .theme-toggle { color: #333; }
+body.light .theme-toggle .icon-sun { display: none; }
+body.light .theme-toggle .icon-moon { display: block; }
 
 .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin: 20px 0 24px; }
 .tab { padding: 10px 28px; cursor: pointer; border: none; background: none;
@@ -158,9 +167,14 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 
 <div class="header">
 <div class="wrap">
+<div class="title-group">
 <h1>{{.RepoName}}</h1>
 <p>{{.RepoPath}} &nbsp;·&nbsp; {{.Branch}} branch &nbsp;·&nbsp; Generated {{.GeneratedAt}}</p>
-<button class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
+</div>
+<button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+<svg class="icon-sun" viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM12 3v2m0 14v2m-7-9H3m18 0h-2M5.64 5.64l1.42 1.42m11.3 11.3l1.42 1.42M5.64 18.36l1.42-1.42m11.3-11.3l1.42-1.42"/></svg>
+<svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
 </div>
 </div>
 
@@ -494,8 +508,6 @@ var allCharts = [];
 (function() {
   if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light');
-    var btn = document.querySelector('.theme-toggle');
-    if (btn) btn.textContent = 'Dark Mode';
   }
 })();
 
@@ -678,8 +690,6 @@ window.addEventListener('resize', function(){
 
 function toggleTheme() {
 	document.body.classList.toggle('light');
-	var btn = document.querySelector('.theme-toggle');
-	btn.textContent = document.body.classList.contains('light') ? 'Dark Mode' : 'Light Mode';
 	localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
 	updateChartTheme();
 }
