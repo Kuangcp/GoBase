@@ -5,7 +5,7 @@ Analyze git repository commit history and generate a self-contained HTML report 
 ## Usage
 
 ```bash
-gogits [-p repo_path] [-f output_file] [-o] [-h]
+gogits [-p repo_path] [-f output_file] [-o] [-g] [-h]
 ```
 
 | Flag | Default | Description |
@@ -13,6 +13,7 @@ gogits [-p repo_path] [-f output_file] [-o] [-h]
 | `-p` | `.` | Git repository path |
 | `-f` | auto | Output HTML report path (auto: `.git/gogits-report.html` if `.git` exists, else `./gogits-report.html`) |
 | `-o` | false | Open report in Chrome app mode after generation |
+| `-g` | false | Print charts to terminal instead of generating HTML (project overview + last 7 days per-author line changes) |
 | `-h` | false | Print help |
 
 ## Report Contents

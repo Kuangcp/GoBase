@@ -8,7 +8,10 @@ import (
 	"time"
 )
 
-func Analyze(repoPath string) (*AnalysisResult, error) {
+// analyzeLight only runs git log and builds the commit-derived stats.
+// It skips the expensive file-scanning and per-month analysis used by the
+// HTML report, which the terminal charts do not need.
+func analyzeLight(repoPath string) (*AnalysisResult, error) {
 	branch, err := getBranch(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("get branch: %w", err)
@@ -20,9 +23,14 @@ func Analyze(repoPath string) (*AnalysisResult, error) {
 	}
 
 	absPath, _ := filepath.Abs(repoPath)
-	repoName := filepath.Base(absPath)
+	return buildResult(absPath, filepath.Base(absPath), branch, commits), nil
+}
 
-	result := buildResult(absPath, repoName, branch, commits)
+func Analyze(repoPath string) (*AnalysisResult, error) {
+	result, err := analyzeLight(repoPath)
+	if err != nil {
+		return nil, err
+	}
 
 	result.TotalFiles = getTotalFiles(repoPath)
 	result.TotalLinesOfCode = getTotalLines(repoPath)

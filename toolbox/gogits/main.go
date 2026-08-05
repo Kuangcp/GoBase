@@ -15,6 +15,7 @@ var (
 	buildVersion string
 	help         bool
 	openInChrome bool
+	showTerminal  bool
 	repoPath     string
 	outputPath   string
 )
@@ -28,6 +29,7 @@ var info = ctool.HelpInfo{
 	Flags: []ctool.ParamVO{
 		{Short: "-h", BoolVar: &help, Comment: "help"},
 		{Short: "-o", BoolVar: &openInChrome, Comment: "open report in Chrome after generation"},
+		{Short: "-g", BoolVar: &showTerminal, Comment: "display project overview chart in terminal"},
 	},
 	Options: []ctool.ParamVO{
 		{Short: "-p", StringVar: &repoPath, String: ".", Value: "path",
@@ -52,11 +54,24 @@ func main() {
 	}
 
 	start := time.Now()
-	result, err := Analyze(repoPath)
+	var result *AnalysisResult
+	var err error
+	if showTerminal {
+		result, err = analyzeLight(repoPath)
+	} else {
+		result, err = Analyze(repoPath)
+	}
 	if err != nil {
 		logger.Fatal(err)
 	}
 	result.GenerationDuration = time.Since(start)
+
+	if showTerminal {
+		fmt.Println(RenderProjectOverview(result))
+		fmt.Println()
+		fmt.Println(RenderAuthorWeekTable(result))
+		os.Exit(0)
+	}
 
 	err = GenerateReport(result, outputPath)
 	if err != nil {
