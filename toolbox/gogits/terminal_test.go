@@ -50,7 +50,12 @@ func TestRenderProjectOverview(t *testing.T) {
 }
 
 func TestRenderAuthorWeekTable(t *testing.T) {
-	out := RenderAuthorWeekTable(sampleResult())
+	result := sampleResult()
+	// day0: alice added10/deleted1 (net +9), bob added12/deleted10 (net +2)
+	result.AuthorAddedSeries[1].Data[0] = 12
+	result.AuthorDeletedSeries[1].Data[0] = 10
+	result.AuthorSeries[1].Data[0] = 2
+	out := RenderAuthorWeekTable(result)
 
 	for _, want := range []string{"最近7天代码变更", "日期", "人员", "提交数", "新增", "删除", "净变更", "当日合计", "alice", "bob", "无提交"} {
 		if !strings.Contains(out, want) {
@@ -62,6 +67,13 @@ func TestRenderAuthorWeekTable(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Errorf("table missing net %q", want)
 		}
+	}
+
+	// on day0 alice (+9) must appear above bob (+2): net-sorted descending
+	ai := strings.Index(out, "alice")
+	bi := strings.Index(out, "bob")
+	if ai < 0 || bi < 0 || ai > bi {
+		t.Errorf("expected alice (net +9) before bob (net +2) on day0")
 	}
 }
 
@@ -106,6 +118,13 @@ func TestWrapByWidth(t *testing.T) {
 		if got := strings.Join(wrapByWidth(c.in, c.maxW), "|"); got != c.want {
 			t.Errorf("wrapByWidth(%q, %d) = %q, want %q", c.in, c.maxW, got, c.want)
 		}
+	}
+}
+
+func TestRenderCommitCurve(t *testing.T) {
+	out := RenderCommitCurve(sampleResult())
+	if !strings.Contains(out, "最近30天提交曲线") {
+		t.Errorf("curve missing caption:\n%s", out)
 	}
 }
 

@@ -13,7 +13,7 @@ gogits [-p repo_path] [-f output_file] [-o] [-g] [-h]
 | `-p` | `.` | Git repository path |
 | `-f` | auto | Output HTML report path (auto: `.git/gogits-report.html` if `.git` exists, else `./gogits-report.html`) |
 | `-o` | false | Open report in Chrome app mode after generation |
-| `-g` | false | Print charts to terminal instead of generating HTML (project overview + last 7 days per-author line changes) |
+| `-g` | false | Print charts to terminal instead of generating HTML (project overview · last 7 days per-author line changes · recent 30 days commit curve) |
 | `-h` | false | Print help |
 
 ## Report Contents

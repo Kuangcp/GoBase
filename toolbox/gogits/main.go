@@ -70,6 +70,8 @@ func main() {
 		fmt.Println(RenderProjectOverview(result))
 		fmt.Println()
 		fmt.Println(RenderAuthorWeekTable(result))
+		fmt.Println()
+		fmt.Println(RenderCommitCurve(result))
 		os.Exit(0)
 	}
 

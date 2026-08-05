@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/guptarohit/asciigraph"
 	"github.com/kuangcp/gobase/pkg/ctool"
 )
 
@@ -205,10 +207,10 @@ func wrapByWidth(s string, maxW int) []string {
 }
 
 type weekEntry struct {
-	name     string
-	commits  int
-	added    int
-	deleted  int
+	name    string
+	commits int
+	added   int
+	deleted int
 }
 
 type weekDay struct {
@@ -271,6 +273,14 @@ func RenderAuthorWeekTable(result *AnalysisResult) string {
 				wd.entries = append(wd.entries, weekEntry{name: result.AuthorAddedSeries[si].Name, commits: commits, added: added, deleted: deleted})
 			}
 		}
+		sort.SliceStable(wd.entries, func(a, b int) bool {
+			na := wd.entries[a].added - wd.entries[a].deleted
+			nb := wd.entries[b].added - wd.entries[b].deleted
+			if na != nb {
+				return na > nb
+			}
+			return wd.entries[a].name < wd.entries[b].name
+		})
 		days = append(days, wd)
 	}
 
@@ -343,10 +353,10 @@ func RenderAuthorWeekTable(result *AnalysisResult) string {
 		subCells := []string{
 			"",
 			colorize(ctool.LightYellow, padRight("当日合计", authorW)),
-			colorize(ctool.LightCyan, padLeft(fmt.Sprintf("%d", dayCommits), numW)),
-			colorize(ctool.Green, padLeft(fmt.Sprintf("%d", dayAdded), numW)),
-			colorize(ctool.Red, padLeft(fmt.Sprintf("%d", dayDeleted), numW)),
-			colorize(ctool.LightYellow, padLeft(netStr(dayAdded-dayDeleted), numW)),
+			colorize(ctool.White, padLeft(fmt.Sprintf("%d", dayCommits), numW)),
+			colorize(ctool.White, padLeft(fmt.Sprintf("%d", dayAdded), numW)),
+			colorize(ctool.White, padLeft(fmt.Sprintf("%d", dayDeleted), numW)),
+			colorize(ctool.White, padLeft(netStr(dayAdded-dayDeleted), numW)),
 		}
 		rows = append(rows, rowT{cells: subCells, sep: true})
 	}
@@ -371,4 +381,40 @@ func RenderAuthorWeekTable(result *AnalysisResult) string {
 	}
 	b.WriteString(borderRow(widths, "└", "┴", "┘"))
 	return b.String()
+}
+
+// RenderCommitCurve builds the recent-30-days daily commit line chart.
+func RenderCommitCurve(result *AnalysisResult) string {
+	n := len(result.DateRange)
+	if n == 0 {
+		return ""
+	}
+	data := make([]float64, n)
+	for i := 0; i < n; i++ {
+		var total int
+		for _, s := range result.AuthorSeries {
+			if i < len(s.Data) {
+				total += s.Data[i]
+			}
+		}
+		data[i] = float64(total)
+	}
+	return asciigraph.Plot(data,
+		asciigraph.Height(12),
+		asciigraph.Width(n*2+12),
+		asciigraph.XAxisRange(0, float64(n-1)),
+		asciigraph.XAxisTickCount(6),
+		asciigraph.Caption(fmt.Sprintf("最近30天提交曲线 (%s ~ %s)",
+			result.DateRange[0], result.DateRange[n-1])),
+		asciigraph.XAxisValueFormatter(func(v float64) string {
+			i := int(v + 0.5)
+			if i >= 0 && i < n {
+				return result.DateRange[i][5:]
+			}
+			return ""
+		}),
+		asciigraph.YAxisValueFormatter(func(v float64) string {
+			return fmt.Sprintf("%.0f", v)
+		}),
+	)
 }

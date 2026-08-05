@@ -7,4 +7,7 @@ require (
 	github.com/kuangcp/logger v1.0.9
 )
 
-require golang.org/x/exp v0.0.0-20231219180239-dc181d75b848 // indirect
+require (
+	github.com/guptarohit/asciigraph v0.10.0 // indirect
+	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848 // indirect
+)
