@@ -69,13 +69,14 @@ type (
 	}
 
 	HeatMapVO struct {
-		Data             [168][3]int `json:"data"`
-		Max              int         `json:"max"`
-		Total            int         `json:"total"`
-		Start            string      `json:"start"`
-		End              string      `json:"end"`
-		WorkMinutes      int         `json:"workMinutes"`
-		WorkMinutesPerDay int        `json:"workMinutesPerDay"`
+		Data              [168][3]int `json:"data"`
+		Max               int         `json:"max"`
+		Total             int         `json:"total"`
+		Start             string      `json:"start"`
+		End               string      `json:"end"`
+		WorkMinutes       int         `json:"workMinutes"`
+		WorkDays          int         `json:"workDays"`
+		WorkMinutesPerDay int         `json:"workMinutesPerDay"`
 	}
 
 	CalendarHeatMapVO struct {
@@ -491,11 +492,19 @@ func HeatMap(c *gin.Context) {
 }
 
 const mergeThresholdMicros = int64(4 * 3600 * 1_000_000) // 4 hours
-const maxWorkMinutesPerDay = 1440 // 24h, exceeded means dirty data
+const maxWorkMinutesPerDay = 1440                        // 24h, exceeded means dirty data
+// 跨夜连续性阈值: 前一日最后键与次日首键间隔不超过该值时，才视为同一段跨夜工作
+const crossMidnightGapMicros = int64(2 * 3600 * 1_000_000) // 2 hours
 
 type dayTimeRange struct {
 	first int64
 	last  int64
+	// late 该日是否在 22~23 点有按键，用于触发跨日归属
+	late bool
+	// lastMorning 该日 0~10 点段内最后一次按键(0 表示无)，前一日跨夜会话以此为结束
+	lastMorning int64
+	// firstNoon 该日 hour>=11 首次按键(0 表示无)，当前一日吸收凌晨后作为当日开始
+	firstNoon int64
 }
 
 func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
@@ -519,6 +528,7 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 			list := store.QueryDetailByDay(curDay)
 			for _, d := range list {
 				curStrokeTime := time.Unix(d.HitTime/1000_000, 0)
+				curHour := curStrokeTime.Hour()
 				weekDay := (int(curStrokeTime.Weekday()) + 6) % 7
 
 				actionRoundLock(mutex, func() {
@@ -527,16 +537,30 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 						dayMap = make(map[int]int)
 						totalMap[weekDay] = dayMap
 					}
-					dayMap[curStrokeTime.Hour()] += 1
+					dayMap[curHour] += 1
 				})
 
 				hitTime := d.HitTime
-				if timeRanges[idx].first == 0 || hitTime < timeRanges[idx].first {
-					timeRanges[idx].first = hitTime
-				}
-				if hitTime > timeRanges[idx].last {
-					timeRanges[idx].last = hitTime
-				}
+				actionRoundLock(mutex, func() {
+					cur := &timeRanges[idx]
+					if cur.first == 0 || hitTime < cur.first {
+						cur.first = hitTime
+					}
+					if hitTime > cur.last {
+						cur.last = hitTime
+					}
+					if curHour >= 22 && curHour <= 23 {
+						cur.late = true
+					}
+					if curHour >= 0 && curHour <= 10 {
+						if hitTime > cur.lastMorning {
+							cur.lastMorning = hitTime
+						}
+					}
+					if curHour >= 11 && (cur.firstNoon == 0 || hitTime < cur.firstNoon) {
+						cur.firstNoon = hitTime
+					}
+				})
 			}
 		}()
 	}
@@ -558,49 +582,64 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 
 	workMinutes := computeWorkTime(timeRanges)
 	totalWorkMin := 0
+	workDays := 0
 	for _, m := range workMinutes {
 		totalWorkMin += m
+		if m > 0 {
+			workDays++
+		}
 	}
 
 	strings.Replace(dayList[0], ":", "-", -1)
+	perDay := 0
+	if workDays > 0 {
+		perDay = totalWorkMin / workDays
+	}
 	return &HeatMapVO{
-		Max:              max,
-		Total:            total,
-		Data:             result,
-		Start:            strings.Replace(dayList[0], ":", "-", -1),
-		End:              strings.Replace(dayList[len(dayList)-1], ":", "-", -1),
-		WorkMinutes:      totalWorkMin,
-		WorkMinutesPerDay: totalWorkMin / len(dayList),
+		Max:               max,
+		Total:             total,
+		Data:              result,
+		Start:             strings.Replace(dayList[0], ":", "-", -1),
+		End:               strings.Replace(dayList[len(dayList)-1], ":", "-", -1),
+		WorkMinutes:       totalWorkMin,
+		WorkDays:          workDays,
+		WorkMinutesPerDay: perDay,
 	}
 }
 
 func computeWorkTime(timeRanges []dayTimeRange) []int {
 	minutes := make([]int, len(timeRanges))
-	i := 0
-	for i < len(timeRanges) {
-		if timeRanges[i].first == 0 {
-			i++
+	for i := range timeRanges {
+		cur := &timeRanges[i]
+		if cur.first == 0 {
+			minutes[i] = 0
 			continue
 		}
-		last := timeRanges[i].last
-		j := i + 1
-		for j < len(timeRanges) && timeRanges[j].first > 0 {
-			gap := timeRanges[j].first - last
-			if gap > mergeThresholdMicros {
-				break
+
+		start := cur.first
+		// 前一天 22~23 有按键、本日 0~10 有按键且与前夜连续(间隔<=2h)，则本日清晨被跨夜会话吸收，
+		// 本日工时应从 11 点及之后首次按键开始
+		if i > 0 && timeRanges[i-1].late && cur.lastMorning > 0 &&
+			cur.first-timeRanges[i-1].last <= crossMidnightGapMicros {
+			if cur.firstNoon == 0 {
+				continue
 			}
-			last = timeRanges[j].last
-			j++
+			start = cur.firstNoon
 		}
-		m := int((last - timeRanges[i].first) / 60_000_000)
-		if m > maxWorkMinutesPerDay {
+
+		end := cur.last
+		// 本日 22~23 有按键、后一天 0~10 有按键且间隔≤2h(连续跨夜)，则跨夜会话归属本日，
+		// 结束时间取后一天凌晨段最后一次按键
+		if cur.late && i+1 < len(timeRanges) && timeRanges[i+1].lastMorning > 0 &&
+			timeRanges[i+1].first-cur.last <= crossMidnightGapMicros {
+			end = timeRanges[i+1].lastMorning
+		}
+
+		m := int((end - start) / 60_000_000)
+		if m < 0 || m > maxWorkMinutesPerDay {
 			m = 0
 		}
 		minutes[i] = m
-		for k := i + 1; k < j; k++ {
-			minutes[k] = 0
-		}
-		i = j
 	}
 	return minutes
 }
