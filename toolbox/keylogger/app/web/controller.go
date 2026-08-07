@@ -325,7 +325,7 @@ func WorkTimeCalendar(c *gin.Context) {
 
 		timeRanges := fetchYearTimeRanges(days)
 
-		workMinutes := mergeWorkTimeByDays(days, timeRanges)
+		workMinutes := computeWorkTime(timeRanges, days)
 		dayWorkMap := make(map[string]int)
 		maxScore := 0
 		for i, d := range days {
@@ -366,48 +366,11 @@ func fetchYearTimeRanges(days []string) []dayTimeRange {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			first, last := store.QueryDayTimeRange(d)
-			if first > 0 {
-				ranges[idx] = dayTimeRange{first: first, last: last}
-			}
+			ranges[idx] = buildDayTimeRange(store.QueryDetailByDay(d))
 		}(i, day)
 	}
 	wg.Wait()
 	return ranges
-}
-
-func mergeWorkTimeByDays(days []string, timeRanges []dayTimeRange) []int {
-	minutes := make([]int, len(timeRanges))
-	i := 0
-	for i < len(timeRanges) {
-		if timeRanges[i].first == 0 {
-			i++
-			continue
-		}
-		last := timeRanges[i].last
-		j := i + 1
-		for j < len(timeRanges) && timeRanges[j].first > 0 {
-			if !isConsecutiveDay(days[j-1], days[j]) {
-				break
-			}
-			gap := timeRanges[j].first - last
-			if gap > mergeThresholdMicros {
-				break
-			}
-			last = timeRanges[j].last
-			j++
-		}
-		m := int((last - timeRanges[i].first) / 60_000_000)
-		if m > maxWorkMinutesPerDay {
-			m = 0
-		}
-		minutes[i] = m
-		for k := i + 1; k < j; k++ {
-			minutes[k] = 0
-		}
-		i = j
-	}
-	return minutes
 }
 
 func isConsecutiveDay(prev, next string) bool {
@@ -491,8 +454,7 @@ func HeatMap(c *gin.Context) {
 	ghelp.GinSuccessWith(c, mapVO)
 }
 
-const mergeThresholdMicros = int64(4 * 3600 * 1_000_000) // 4 hours
-const maxWorkMinutesPerDay = 1440                        // 24h, exceeded means dirty data
+const maxWorkMinutesPerDay = 1440 // 24h, exceeded means dirty data
 // 跨夜连续性阈值: 前一日最后键与次日首键间隔不超过该值时，才视为同一段跨夜工作
 const crossMidnightGapMicros = int64(2 * 3600 * 1_000_000) // 2 hours
 
@@ -505,6 +467,33 @@ type dayTimeRange struct {
 	lastMorning int64
 	// firstNoon 该日 hour>=11 首次按键(0 表示无)，当前一日吸收凌晨后作为当日开始
 	firstNoon int64
+}
+
+func buildDayTimeRange(list []store.DetailVO) dayTimeRange {
+	var r dayTimeRange
+	for _, d := range list {
+		curStrokeTime := time.Unix(d.HitTime/1000_000, 0)
+		curHour := curStrokeTime.Hour()
+		hitTime := d.HitTime
+		if r.first == 0 || hitTime < r.first {
+			r.first = hitTime
+		}
+		if hitTime > r.last {
+			r.last = hitTime
+		}
+		if curHour >= 22 && curHour <= 23 {
+			r.late = true
+		}
+		if curHour >= 0 && curHour <= 10 {
+			if hitTime > r.lastMorning {
+				r.lastMorning = hitTime
+			}
+		}
+		if curHour >= 11 && (r.firstNoon == 0 || hitTime < r.firstNoon) {
+			r.firstNoon = hitTime
+		}
+	}
+	return r
 }
 
 func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
@@ -526,6 +515,7 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 			defer latch.Done()
 
 			list := store.QueryDetailByDay(curDay)
+			actionRoundLock(mutex, func() { timeRanges[idx] = buildDayTimeRange(list) })
 			for _, d := range list {
 				curStrokeTime := time.Unix(d.HitTime/1000_000, 0)
 				curHour := curStrokeTime.Hour()
@@ -538,28 +528,6 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 						totalMap[weekDay] = dayMap
 					}
 					dayMap[curHour] += 1
-				})
-
-				hitTime := d.HitTime
-				actionRoundLock(mutex, func() {
-					cur := &timeRanges[idx]
-					if cur.first == 0 || hitTime < cur.first {
-						cur.first = hitTime
-					}
-					if hitTime > cur.last {
-						cur.last = hitTime
-					}
-					if curHour >= 22 && curHour <= 23 {
-						cur.late = true
-					}
-					if curHour >= 0 && curHour <= 10 {
-						if hitTime > cur.lastMorning {
-							cur.lastMorning = hitTime
-						}
-					}
-					if curHour >= 11 && (cur.firstNoon == 0 || hitTime < cur.firstNoon) {
-						cur.firstNoon = hitTime
-					}
 				})
 			}
 		}()
@@ -580,7 +548,7 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 		}
 	}
 
-	workMinutes := computeWorkTime(timeRanges)
+	workMinutes := computeWorkTime(timeRanges, dayList)
 	totalWorkMin := 0
 	workDays := 0
 	for _, m := range workMinutes {
@@ -607,7 +575,10 @@ func buildDataByDatePeriod(length int, offset int) *HeatMapVO {
 	}
 }
 
-func computeWorkTime(timeRanges []dayTimeRange) []int {
+// computeWorkTime 计算每天工时(分钟)，使用跨夜规则。
+// consecutive 为各日对应的自然日串(非空时要求相邻两日才是连续日才做跨夜判断；
+// 传 nil 表示 timeRanges 相邻元素即连续日)。
+func computeWorkTime(timeRanges []dayTimeRange, consecutive []string) []int {
 	minutes := make([]int, len(timeRanges))
 	for i := range timeRanges {
 		cur := &timeRanges[i]
@@ -616,10 +587,11 @@ func computeWorkTime(timeRanges []dayTimeRange) []int {
 			continue
 		}
 
+		prevAdj := i > 0 && (consecutive == nil || isConsecutiveDay(consecutive[i-1], consecutive[i]))
 		start := cur.first
 		// 前一天 22~23 有按键、本日 0~10 有按键且与前夜连续(间隔<=2h)，则本日清晨被跨夜会话吸收，
 		// 本日工时应从 11 点及之后首次按键开始
-		if i > 0 && timeRanges[i-1].late && cur.lastMorning > 0 &&
+		if prevAdj && timeRanges[i-1].late && cur.lastMorning > 0 &&
 			cur.first-timeRanges[i-1].last <= crossMidnightGapMicros {
 			if cur.firstNoon == 0 {
 				continue
@@ -627,10 +599,11 @@ func computeWorkTime(timeRanges []dayTimeRange) []int {
 			start = cur.firstNoon
 		}
 
+		nextAdjacent := i+1 < len(timeRanges) && (consecutive == nil || isConsecutiveDay(consecutive[i], consecutive[i+1]))
 		end := cur.last
 		// 本日 22~23 有按键、后一天 0~10 有按键且间隔≤2h(连续跨夜)，则跨夜会话归属本日，
 		// 结束时间取后一天凌晨段最后一次按键
-		if cur.late && i+1 < len(timeRanges) && timeRanges[i+1].lastMorning > 0 &&
+		if nextAdjacent && cur.late && timeRanges[i+1].lastMorning > 0 &&
 			timeRanges[i+1].first-cur.last <= crossMidnightGapMicros {
 			end = timeRanges[i+1].lastMorning
 		}
