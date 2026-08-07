@@ -69,9 +69,9 @@ func main() {
 	if showTerminal {
 		fmt.Println(RenderProjectOverview(result))
 		fmt.Println()
-		fmt.Println(RenderAuthorWeekTable(result))
-		fmt.Println()
 		fmt.Println(RenderCommitCurve(result))
+		fmt.Println()
+		fmt.Println(RenderAuthorWeekTable(result))
 		os.Exit(0)
 	}
 
