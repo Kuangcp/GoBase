@@ -52,6 +52,7 @@
 	- value: keyCode score: 当日按键数
 
 ## Version
+- 1.3.0 work hour report
 - 1.2.0 move detail data from redis to leveldb, reduce 90% memory usage
 - 1.1.0 fix memory leak
 - 1.0.9 fix 00：00 cache problem
