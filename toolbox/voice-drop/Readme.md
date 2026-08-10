@@ -4,3 +4,4 @@
 
 PC端 发送请求 curl -X POST http://localhost:6600/api/toggle-record 触发 录音识别的开始和结束
 
+配置 Window+I
