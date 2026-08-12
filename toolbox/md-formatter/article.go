@@ -28,6 +28,7 @@ func BuildArticle(filename string) *Article {
 	catalogMatch := false
 	catalogIdx := 0
 	contentIdx := 0
+	frontMatterEnd := 0
 	for i, line := range lines {
 		line = strings.Replace(line, "**目录 ", splitTag, 1)
 		line = strings.Replace(line, "\r\n", "\n", 1)
@@ -59,12 +60,18 @@ func BuildArticle(filename string) *Article {
 			} else if header && !tagEnd {
 				tagEnd = true
 				tag = append(tag, line)
+				frontMatterEnd = i + 1
 			}
 			continue
 		}
 		if header && !tagEnd {
 			tag = append(tag, line)
 		}
+	}
+	// 未找到 catalog 时，正文应从 front matter 之后开始（无 front matter 则从文件开头开始）
+	if !catalogMatch {
+		catalogIdx = frontMatterEnd
+		contentIdx = frontMatterEnd
 	}
 	if catalogIdx > contentIdx {
 		return nil
