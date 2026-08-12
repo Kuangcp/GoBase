@@ -31,13 +31,8 @@ func BuildArticle(filename string) *Article {
 	for i, line := range lines {
 		line = strings.Replace(line, "**目录 ", splitTag, 1)
 		line = strings.Replace(line, "\r\n", "\n", 1)
-		if line == headerLast {
-			header = false
-			contentIdx = i + 1
-			break
-		}
 
-		// 兼容脏数据
+		// 定位 catalog 结束：第二个 💠 定位行（兼容脏数据）
 		if strings.Contains(line, splitTag) && catalogMatch {
 			header = false
 			contentIdx = i + 2
@@ -48,20 +43,27 @@ func BuildArticle(filename string) *Article {
 			catalogIdx = i
 			catalogMatch = true
 		}
+		// 定位 catalog 结束：headerLast 分隔行（仅当已进入 catalog 时有效）
+		if line == headerLast && catalogMatch {
+			header = false
+			contentIdx = i + 1
+			break
+		}
 
-		if line == headerFirst && header {
-			tagEnd = true
-			tag = append(tag, line)
-			continue
-		}
+		// 处理 front matter：仅当文件第一行以 --- 开头时才视为 front matter，
+		// 避免正文中的 ---（分隔线）被误判为 front matter 起始
 		if line == headerFirst {
-			header = true
-		}
-		if header {
-			if !tagEnd {
+			if !header && i == 0 {
+				header = true
+				tag = append(tag, line)
+			} else if header && !tagEnd {
+				tagEnd = true
 				tag = append(tag, line)
 			}
 			continue
+		}
+		if header && !tagEnd {
+			tag = append(tag, line)
 		}
 	}
 	if catalogIdx > contentIdx {
