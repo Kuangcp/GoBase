@@ -461,6 +461,41 @@ func buildYearMonthChartOption(result *AnalysisResult) (string, error) {
 	return string(b), nil
 }
 
+func buildYearChartOption(result *AnalysisResult) (string, error) {
+	opt := map[string]interface{}{
+		"tooltip": map[string]string{"trigger": "axis"},
+		"grid": map[string]interface{}{
+			"left": "3%", "right": "4%", "bottom": "10%", "top": "3%",
+			"containLabel": true,
+		},
+		"xAxis": map[string]interface{}{
+			"type": "category", "data": result.YearLabels,
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
+		},
+		"yAxis": map[string]interface{}{
+			"type":      "value",
+			"axisLabel": map[string]interface{}{"color": "#e0e0e0"},
+		},
+		"series": []map[string]interface{}{
+			{
+				"name": "Commits",
+				"type": "bar",
+				"data": result.YearData,
+				"itemStyle": map[string]interface{}{
+					"color": "#5470c6",
+				},
+			},
+		},
+	}
+
+	applyDarkTheme(opt)
+	b, err := json.Marshal(opt)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func buildCumChartOption(result *AnalysisResult, isCommit bool) (string, error) {
 	var source []AuthorDayData
 	if isCommit {

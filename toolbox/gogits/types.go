@@ -92,6 +92,8 @@ type AnalysisResult struct {
 	YearMonthData        []int
 	YearMonthAddedData   []int
 	YearMonthDeletedData []int
+	YearLabels           []string
+	YearData             []int
 	MonthAuthorStats     []PeriodAuthorStat
 	YearAuthorStats      []PeriodAuthorStat
 	FileChartLabels      []string

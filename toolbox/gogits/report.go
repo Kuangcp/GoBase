@@ -50,6 +50,9 @@ type templateData struct {
 	YearMonthData       []int
 	YearMonthAddedData  []int
 	YearMonthDeletedData []int
+	YearOpt             template.JS
+	YearLabels          []string
+	YearData            []int
 	CumCommitOpt        template.JS
 	CumAddedOpt         template.JS
 	MonthAuthorStats    []PeriodAuthorStat
@@ -469,6 +472,10 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 	if err != nil {
 		return err
 	}
+	yearOpt, err := buildYearChartOption(result)
+	if err != nil {
+		return err
+	}
 	cumCommitOpt, err := buildCumChartOption(result, true)
 	if err != nil {
 		return err
@@ -707,6 +714,9 @@ func GenerateReport(result *AnalysisResult, outputPath string) error {
 		YearMonthData:        result.YearMonthData,
 		YearMonthAddedData:   result.YearMonthAddedData,
 		YearMonthDeletedData: result.YearMonthDeletedData,
+		YearOpt:              template.JS(yearOpt),
+		YearLabels:           result.YearLabels,
+		YearData:             result.YearData,
 		CumCommitOpt:         template.JS(cumCommitOpt),
 		CumAddedOpt:          template.JS(cumAddedOpt),
 		MonthAuthorStats:     result.MonthAuthorStats,

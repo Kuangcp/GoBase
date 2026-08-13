@@ -20,12 +20,13 @@ gogits [-p repo_path] [-f output_file] [-o] [-g] [-h]
 
 **General tab** — Project overview: period, age, active days, total commits/files/LOC, per-author averages.
 
-**Activity tab** — 5 charts:
+**Activity tab** — 6 charts:
 - Daily Commits (Last 30 Days) — stacked area per author
 - Daily Line Changes (Last 30 Days) — added vs deleted
 - Hour of Week — commit heatmap (7×24)
 - Month of Year — commits by calendar month
 - Commits by Year/Month — smooth area + data table with show-more toggle
+- Commits by Year — per-year commit totals
 
 **Authors tab** — Sortable author stats table + 4 charts:
 - Author of Month / Author of Year tables

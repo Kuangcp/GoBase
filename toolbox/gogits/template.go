@@ -338,6 +338,28 @@ th.sortable.desc::after { content: " \25BE"; opacity: 1; }
 <button class="collapse-toggle" onclick="toggleCollapse(this)" data-table="yearMonthTable">Show more ({{sub (len .YearMonthLabels) 15}})</button>
 {{end}}
 </div>
+<div class="section">
+<h2>Commits by Year</h2>
+<div id="yearChart" class="chart-box" style="height:340px"></div>
+{{if .YearLabels}}
+<table style="margin-top:16px">
+<thead>
+<tr>
+<th class="num">Year</th>
+<th class="num">Commits</th>
+</tr>
+</thead>
+<tbody>
+{{range $i, $label := .YearLabels}}
+<tr>
+<td class="num">{{$label}}</td>
+<td class="num">{{index $.YearData $i}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+{{end}}
+</div>
 </div>
 
 <div id="authors" class="tab-content">
@@ -524,6 +546,7 @@ var hourWeekChart = addChart(document.getElementById('hourWeekChart'), {{.HourWe
 var monthOfYearChart = addChart(document.getElementById('monthOfYearChart'), {{.MonthOfYearOpt}});
 var weekOfYearChart = addChart(document.getElementById('weekOfYearChart'), {{.WeekOfYearOpt}});
 var yearMonthChart = addChart(document.getElementById('yearMonthChart'), {{.YearMonthOpt}});
+var yearChart = addChart(document.getElementById('yearChart'), {{.YearOpt}});
 var radarChart = addChart(document.getElementById('radarChart'), {{.RadarChartOpt}});
 
 // apply theme to initial charts
@@ -616,6 +639,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
       monthOfYearChart.resize();
       weekOfYearChart.resize();
       yearMonthChart.resize();
+      yearChart.resize();
       radarChart.resize();
       if (authorLineChart) authorLineChart.resize();
       if (cumCommitChart) cumCommitChart.resize();
@@ -642,6 +666,7 @@ window.addEventListener('resize', function(){
   monthOfYearChart.resize();
   weekOfYearChart.resize();
   yearMonthChart.resize();
+  yearChart.resize();
   radarChart.resize();
   if (authorLineChart) authorLineChart.resize();
   if (cumCommitChart) cumCommitChart.resize();

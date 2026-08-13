@@ -116,6 +116,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 	yearMonthMap := make(map[string]*ymVal)
 	monthAuthorCommits := make(map[string]map[string]int)
 	yearAuthorCommits := make(map[string]map[string]int)
+	yearCounts := make(map[string]int)
 
 	for _, c := range commits {
 		key := authorKey(c.Author, c.Email)
@@ -192,6 +193,7 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		monthAuthorCommits[ymKey][key]++
 
 		yearKey := c.Date.Format("2006")
+		yearCounts[yearKey]++
 		if yearAuthorCommits[yearKey] == nil {
 			yearAuthorCommits[yearKey] = make(map[string]int)
 		}
@@ -296,6 +298,16 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		ymData[i] = yearMonthMap[k].commits
 		ymAdded[i] = yearMonthMap[k].added
 		ymDeleted[i] = yearMonthMap[k].deleted
+	}
+
+	yrKeys := make([]string, 0, len(yearCounts))
+	for k := range yearCounts {
+		yrKeys = append(yrKeys, k)
+	}
+	sort.Strings(yrKeys)
+	yrData := make([]int, len(yrKeys))
+	for i, k := range yrKeys {
+		yrData[i] = yearCounts[k]
 	}
 
 	allDays, allDayLabels := dayRange(firstCommit, lastCommit)
@@ -460,6 +472,8 @@ func buildResult(absPath, repoName, branch string, commits []CommitInfo) *Analys
 		YearMonthData:       ymData,
 		YearMonthAddedData:  ymAdded,
 		YearMonthDeletedData: ymDeleted,
+		YearLabels:          yrKeys,
+		YearData:            yrData,
 		AuthorCumCommitSeries: cumCommitSeries,
 		AuthorCumAddedSeries:  cumAddedSeries,
 		AllDayLabels:          allDayLabels,
